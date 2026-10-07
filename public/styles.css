@@ -883,3 +883,29 @@ footer{background:#090909;color:var(--warm);border-top:1px solid rgba(247,246,24
   .v16-proof .thinking-layout{gap:48px}
   .v16-analysis{padding-top:92px;padding-bottom:106px}
 }
+
+
+/* V16 mobile precision */
+@media(max-width:389px){
+  .section{padding:88px 0}
+  .v16-hero{padding:58px 0 78px}
+  .v16-hero h1{font-size:50px}
+  .v16-hero .hero-stage{min-height:370px}
+  .diagnosis{padding-top:94px;padding-bottom:94px}
+}
+@media(min-width:390px) and (max-width:429px){
+  :root{--pad:22px}
+  .section{padding:90px 0}
+  .v16-hero{padding:60px 0 82px}
+  .v16-hero h1{font-size:53px}
+  .v16-hero .hero-stage{min-height:395px}
+  .diagnosis{padding-top:96px;padding-bottom:96px}
+}
+@media(min-width:430px) and (max-width:767px){
+  :root{--pad:24px}
+  .section{padding:94px 0}
+  .v16-hero{padding:62px 0 86px}
+  .v16-hero h1{font-size:57px}
+  .v16-hero .hero-stage{min-height:420px}
+  .diagnosis{padding-top:100px;padding-bottom:100px}
+}
