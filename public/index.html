@@ -13,6 +13,23 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<svg class="svg-sprite" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.7-4 2.6-6 5.5-6s4.8 2 5.5 6M18 7v6M15 10h6"/></symbol>
+  <symbol id="i-crm" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M8 4v5M15 4v5M7 13h4M7 16h8"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13.5 2-8 12h6L10.5 22l8-12h-6l1-8Z"/></symbol>
+  <symbol id="i-ai" viewBox="0 0 24 24"><path d="M12 3c.5 3.1 2.3 4.9 5.5 5.5C14.3 9 12.5 10.8 12 14c-.5-3.2-2.3-5-5.5-5.5C9.7 7.9 11.5 6.1 12 3Z"/><path d="M18.5 14.5c.3 1.7 1.3 2.7 3 3-1.7.3-2.7 1.3-3 3-.3-1.7-1.3-2.7-3-3 1.7-.3 2.7-1.3 3-3Z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V5M4 20h16"/><path d="m7 16 4-5 3 2 5-7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="5" rx="1"/><rect x="15" y="15" width="6" height="5" rx="1"/><path d="M9 6.5h4a4 4 0 0 1 4 4V15M15 17.5H9a4 4 0 0 1-4-4V9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4 4L19 6.5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"/><circle cx="12" cy="12" r="2.2"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2.5 14 9l6.5 2-6.5 2-2 6.5-2-6.5-6.5-2 6.5-2 2-6.5Z"/></symbol>
+</svg>
+
 <header class="site-header">
   <div class="shell nav">
     <a class="brand" href="#top"><img src="assets/impresax-logo-primary.svg" alt="ImpresaX"></a>
@@ -35,71 +52,162 @@
 <main id="top">
 <section class="hero shell">
   <div class="hero-copy reveal">
-    <div class="eyebrow"><span></span> IMPRESAX / PARTNER PER LA CRESCITA</div>
+    <div class="eyebrow"><span></span> STRATEGIA · MARKETING · TECNOLOGIA · AI</div>
     <h1>Facciamo crescere la tua impresa.<br><em>Senza complicarti la vita.</em></h1>
-    <p>Tu ci racconti dove vuoi arrivare. Noi capiamo cosa sta rallentando la crescita e costruiamo il modo più semplice per migliorare clienti, processi e risultati.</p>
+    <p>Tu ci racconti dove vuoi arrivare. Noi capiamo cosa sta rallentando la crescita e mettiamo insieme le soluzioni giuste per migliorare clienti, processi e risultati.</p>
     <div class="hero-actions">
       <a class="btn primary" href="#analisi">Raccontaci cosa vuoi migliorare <span>→</span></a>
       <a class="soft-link" href="#partenza">Scopri come lavoriamo</a>
     </div>
-    <div class="trust-row">
-      <span>Strategia</span><i>+</i><span>Marketing</span><i>+</i><span>Tecnologia</span><i>+</i><span>AI</span>
+    <div class="benefit-pills">
+      <span><svg><use href="#i-user"/></svg>Più clienti</span>
+      <span><svg><use href="#i-flow"/></svg>Più ordine</span>
+      <span><svg><use href="#i-clock"/></svg>Meno lavoro manuale</span>
+      <span><svg><use href="#i-chart"/></svg>Più controllo</span>
     </div>
   </div>
 
-  <div class="conversation-card reveal">
-    <div class="conversation-top">
-      <span>DA DOVE PARTIAMO?</span>
-      <span class="status"><i></i> ascolto</span>
+  <div class="hero-visual reveal" aria-label="ImpresaX collega acquisizione, clienti, automazioni e dati">
+    <div class="visual-cap"><span>IL TUO BUSINESS, PIÙ CONNESSO</span><b>IMPRESA×</b></div>
+
+    <div class="business-scene">
+      <div class="scene-card scene-search">
+        <div class="scene-icon"><svg><use href="#i-search"/></svg></div>
+        <div><small>TI TROVANO</small><strong>Google + sito</strong></div>
+        <span class="scene-status">+ domanda</span>
+      </div>
+
+      <div class="scene-card scene-message">
+        <div class="scene-icon"><svg><use href="#i-message"/></svg></div>
+        <div><small>TI CONTATTANO</small><strong>Lead + WhatsApp</strong></div>
+        <span class="scene-status">+ opportunità</span>
+      </div>
+
+      <div class="scene-center">
+        <div class="center-ring">
+          <img src="assets/impresax-symbol.svg" alt="">
+        </div>
+        <span>mettiamo ordine</span>
+      </div>
+
+      <div class="scene-card scene-crm">
+        <div class="scene-icon"><svg><use href="#i-crm"/></svg></div>
+        <div><small>NON SI PERDONO</small><strong>CRM + follow-up</strong></div>
+        <span class="scene-status">+ conversione</span>
+      </div>
+
+      <div class="scene-card scene-auto">
+        <div class="scene-icon"><svg><use href="#i-ai"/></svg></div>
+        <div><small>LAVORI MEGLIO</small><strong>Automazioni + AI</strong></div>
+        <span class="scene-status">- attrito</span>
+      </div>
+
+      <svg class="scene-lines" viewBox="0 0 640 470" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M170 110 C250 110 245 225 320 235"/>
+        <path d="M470 110 C390 110 395 225 320 235"/>
+        <path d="M170 360 C250 360 245 245 320 235"/>
+        <path d="M470 360 C390 360 395 245 320 235"/>
+      </svg>
     </div>
-    <div class="bubble customer">Vorrei più clienti, ma non so da dove iniziare.</div>
-    <div class="bubble customer">Perdiamo troppo tempo in cose manuali.</div>
-    <div class="bubble customer">Abbiamo tanti strumenti, ma poco controllo.</div>
-    <div class="bubble us">
-      <img src="assets/impresax-symbol.svg" alt="">
-      <div><small>IMPRESAX</small><strong>Partiamo da ciò che oggi ti costa più crescita.</strong></div>
+
+    <div class="visual-foot">
+      <span><i></i> marketing</span>
+      <span><i></i> vendita</span>
+      <span><i></i> operatività</span>
+      <span><i></i> dati</span>
     </div>
-    <div class="conversation-bottom">Prima capiamo. Poi costruiamo.</div>
   </div>
 </section>
 
-<section class="warm-band">
-  <div class="shell band-grid reveal">
-    <div class="mini-label">IL NOSTRO PUNTO DI VISTA</div>
-    <h2>Non devi diventare esperto di marketing, CRM o AI.<br><em>Deve funzionare per te.</em></h2>
-    <p>Il nostro lavoro è togliere complessità, collegare ciò che serve e lasciarti un sistema più semplice da usare e più facile da far crescere.</p>
+<section class="brand-statement">
+  <div class="shell statement-grid">
+    <div class="statement-copy reveal">
+      <span class="mini-label">IL NOSTRO PUNTO DI VISTA</span>
+      <h2>Non devi diventare esperto di marketing, CRM o AI.<br><em>Deve funzionare per te.</em></h2>
+      <p>Il nostro lavoro è togliere complessità, collegare ciò che serve e lasciarti un sistema più semplice da usare e più facile da far crescere.</p>
+    </div>
+
+    <div class="statement-visual reveal" aria-hidden="true">
+      <div class="before">
+        <small>PRIMA</small>
+        <span><svg><use href="#i-search"/></svg></span>
+        <span><svg><use href="#i-message"/></svg></span>
+        <span><svg><use href="#i-crm"/></svg></span>
+        <span><svg><use href="#i-chart"/></svg></span>
+      </div>
+      <div class="statement-arrow">→</div>
+      <div class="after">
+        <small>DOPO</small>
+        <div class="after-core"><img src="assets/impresax-symbol.svg" alt=""></div>
+        <div class="after-ring r1"></div>
+        <div class="after-ring r2"></div>
+      </div>
+    </div>
   </div>
 </section>
 
 <section class="section shell" id="partenza">
   <div class="section-head reveal">
-    <div><span class="mini-label dark">DA DOVE PARTIAMO</span><h2>Di solito il problema suona così.</h2></div>
+    <div>
+      <span class="mini-label dark">DA DOVE PARTIAMO</span>
+      <h2>Di solito il problema suona così.</h2>
+    </div>
     <p>Non servono parole tecniche. Se riconosci una di queste situazioni, abbiamo già un buon punto di partenza.</p>
   </div>
 
-  <div class="friendly-grid">
-    <article class="friendly-card reveal">
-      <div class="card-icon">01</div>
+  <div class="problem-grid">
+    <article class="problem-card p-peach reveal">
+      <div class="problem-top">
+        <div class="icon-box"><svg><use href="#i-user"/></svg></div>
+        <span>01</span>
+      </div>
       <h3>“Vorrei più clienti.”</h3>
       <p>Capiremo dove ti cercano, perché oggi non ti scelgono abbastanza e come aumentare le opportunità.</p>
+      <div class="micro-visual mv-search">
+        <span class="searchbar"><svg><use href="#i-search"/></svg> servizio vicino a me</span>
+        <div class="result-line wide"></div><div class="result-line"></div><div class="result-line short"></div>
+      </div>
       <small>VISIBILITÀ · ACQUISIZIONE · OFFERTA</small>
     </article>
-    <article class="friendly-card reveal">
-      <div class="card-icon">02</div>
+
+    <article class="problem-card p-sand reveal">
+      <div class="problem-top">
+        <div class="icon-box"><svg><use href="#i-message"/></svg></div>
+        <span>02</span>
+      </div>
       <h3>“I contatti arrivano, ma si perdono.”</h3>
       <p>Mettiamo ordine tra sito, WhatsApp, appuntamenti e follow-up per non lasciare occasioni per strada.</p>
+      <div class="micro-visual mv-leads">
+        <div class="lead-dot"></div><div class="lead-line"></div><div class="lead-card">Nuovo contatto <b>→</b></div>
+        <div class="lead-dot second"></div><div class="lead-line second"></div>
+      </div>
       <small>CONVERSIONE · CRM · FOLLOW-UP</small>
     </article>
-    <article class="friendly-card reveal">
-      <div class="card-icon">03</div>
+
+    <article class="problem-card p-cream reveal">
+      <div class="problem-top">
+        <div class="icon-box"><svg><use href="#i-bolt"/></svg></div>
+        <span>03</span>
+      </div>
       <h3>“Facciamo troppe cose a mano.”</h3>
       <p>Riduciamo passaggi ripetitivi e colleghiamo i processi giusti con automazioni e AI dove servono davvero.</p>
+      <div class="micro-visual mv-flow">
+        <span><svg><use href="#i-message"/></svg></span><i>→</i><span><svg><use href="#i-ai"/></svg></span><i>→</i><span><svg><use href="#i-check"/></svg></span>
+      </div>
       <small>PROCESSI · AUTOMAZIONE · AI</small>
     </article>
-    <article class="friendly-card reveal">
-      <div class="card-icon">04</div>
+
+    <article class="problem-card p-white reveal">
+      <div class="problem-top">
+        <div class="icon-box"><svg><use href="#i-chart"/></svg></div>
+        <span>04</span>
+      </div>
       <h3>“Non so cosa sta funzionando.”</h3>
       <p>Rendiamo leggibili numeri, opportunità e risultati così puoi decidere con più sicurezza.</p>
+      <div class="micro-visual mv-chart">
+        <div class="bar h1"></div><div class="bar h2"></div><div class="bar h3"></div><div class="bar h4"></div>
+        <svg><use href="#i-chart"/></svg>
+      </div>
       <small>DATI · KPI · CONTROLLO</small>
     </article>
   </div>
@@ -107,121 +215,157 @@
 
 <section class="together" id="insieme">
   <div class="shell">
-    <div class="section-head inverse reveal">
-      <div><span class="mini-label">COSA FACCIAMO INSIEME</span><h2>Mettiamo in ordine il percorso, non aggiungiamo confusione.</h2></div>
+    <div class="section-head reveal">
+      <div>
+        <span class="mini-label dark">COSA FACCIAMO INSIEME</span>
+        <h2>Mettiamo in ordine il percorso.<br>Non aggiungiamo confusione.</h2>
+      </div>
       <p>Ogni pezzo deve avere un motivo per esserci. Se non aiuta a crescere, lavorare meglio o capire di più, non serve.</p>
     </div>
 
-    <div class="journey reveal">
-      <article>
+    <div class="journey">
+      <article class="journey-card reveal">
+        <div class="journey-illustration">
+          <div class="big-icon"><svg><use href="#i-search"/></svg></div>
+          <div class="tiny-tag t1">SEO</div><div class="tiny-tag t2">Google</div><div class="tiny-tag t3">Local</div>
+        </div>
         <span>01</span>
-        <div class="journey-symbol">◎</div>
         <h3>Ti facciamo trovare</h3>
-        <p>SEO, Google, campagne, presenza locale e contenuti.</p>
+        <p>Portiamo più persone giuste davanti alla tua impresa.</p>
       </article>
-      <div class="journey-arrow">→</div>
-      <article>
+
+      <div class="journey-connector">→</div>
+
+      <article class="journey-card reveal">
+        <div class="journey-illustration">
+          <div class="big-icon"><svg><use href="#i-target"/></svg></div>
+          <div class="tiny-bubble b1">visita</div><div class="tiny-bubble b2">richiesta</div>
+        </div>
         <span>02</span>
-        <div class="journey-symbol">↗</div>
         <h3>Ti aiutiamo a convertire</h3>
-        <p>Sito, landing, messaggi, percorsi e prenotazioni.</p>
+        <p>Rendiamo più semplice passare dall’interesse al contatto.</p>
       </article>
-      <div class="journey-arrow">→</div>
-      <article class="highlight">
+
+      <div class="journey-connector">→</div>
+
+      <article class="journey-card featured reveal">
+        <div class="journey-illustration">
+          <div class="big-icon"><svg><use href="#i-crm"/></svg></div>
+          <div class="tiny-chip c1"><svg><use href="#i-message"/></svg></div>
+          <div class="tiny-chip c2"><svg><use href="#i-ai"/></svg></div>
+        </div>
         <span>03</span>
-        <div class="journey-symbol">∞</div>
         <h3>Ti aiutiamo a gestire</h3>
-        <p>CRM, WhatsApp, follow-up, automazioni e AI.</p>
+        <p>CRM, WhatsApp, follow-up e automazioni lavorano insieme.</p>
       </article>
-      <div class="journey-arrow">→</div>
-      <article>
+
+      <div class="journey-connector">→</div>
+
+      <article class="journey-card reveal">
+        <div class="journey-illustration">
+          <div class="big-icon"><svg><use href="#i-eye"/></svg></div>
+          <div class="mini-bars"><i></i><i></i><i></i><i></i></div>
+        </div>
         <span>04</span>
-        <div class="journey-symbol">◉</div>
         <h3>Ti aiutiamo a capire</h3>
-        <p>Dati, tracking, KPI e ciò che conviene migliorare dopo.</p>
+        <p>Numeri chiari per sapere cosa migliorare dopo.</p>
       </article>
     </div>
   </div>
 </section>
 
-<section class="section shell" id="metodo">
+<section class="method section shell" id="metodo">
   <div class="method-intro reveal">
     <span class="mini-label dark">COME LAVORIAMO</span>
     <h2>Una cosa alla volta.<br><em>Nell’ordine giusto.</em></h2>
-    <p>Niente pacchetti preconfezionati e niente tecnologia messa lì per fare scena.</p>
+    <p>Niente pacchetti preconfezionati. Niente tecnologia messa lì per fare scena.</p>
   </div>
 
-  <div class="method-list">
-    <article class="method-step reveal">
-      <span>01</span>
-      <div>
-        <small>CI RACCONTI</small>
-        <h3>Dove vuoi arrivare</h3>
-        <p>Partiamo dagli obiettivi e dai problemi reali del business, non dagli strumenti.</p>
-      </div>
+  <div class="timeline">
+    <article class="timeline-step reveal">
+      <div class="timeline-icon"><svg><use href="#i-message"/></svg></div>
+      <div class="timeline-no">01</div>
+      <div><small>CI RACCONTI</small><h3>Dove vuoi arrivare</h3><p>Partiamo dagli obiettivi e dai problemi reali del business.</p></div>
     </article>
-    <article class="method-step reveal">
-      <span>02</span>
-      <div>
-        <small>GUARDIAMO</small>
-        <h3>Dove si inceppa oggi</h3>
-        <p>Individuiamo il punto che sta facendo perdere più valore, tempo o opportunità.</p>
-      </div>
+
+    <article class="timeline-step reveal">
+      <div class="timeline-icon"><svg><use href="#i-search"/></svg></div>
+      <div class="timeline-no">02</div>
+      <div><small>GUARDIAMO</small><h3>Dove si inceppa oggi</h3><p>Troviamo il punto che sta facendo perdere più valore o tempo.</p></div>
     </article>
-    <article class="method-step reveal">
-      <span>03</span>
-      <div>
-        <small>COSTRUIAMO</small>
-        <h3>La soluzione più semplice</h3>
-        <p>Uniamo solo i pezzi necessari: marketing, sito, CRM, automazione, AI o dati.</p>
-      </div>
+
+    <article class="timeline-step reveal">
+      <div class="timeline-icon"><svg><use href="#i-flow"/></svg></div>
+      <div class="timeline-no">03</div>
+      <div><small>COSTRUIAMO</small><h3>La soluzione più semplice</h3><p>Uniamo solo i pezzi necessari: marketing, sito, CRM, automazione, AI o dati.</p></div>
     </article>
-    <article class="method-step reveal">
-      <span>04</span>
-      <div>
-        <small>MIGLIORIAMO</small>
-        <h3>Quello che funziona</h3>
-        <p>Misuriamo i risultati e continuiamo a intervenire dove c’è più valore da recuperare.</p>
-      </div>
+
+    <article class="timeline-step reveal">
+      <div class="timeline-icon"><svg><use href="#i-chart"/></svg></div>
+      <div class="timeline-no">04</div>
+      <div><small>MIGLIORIAMO</small><h3>Quello che funziona</h3><p>Misuriamo e continuiamo a intervenire dove c’è più valore.</p></div>
     </article>
   </div>
 </section>
 
 <section class="why">
-  <div class="shell why-grid reveal">
-    <div>
+  <div class="shell why-grid">
+    <div class="why-copy reveal">
       <span class="mini-label">PERCHÉ IMPRESAX</span>
-      <h2>Non partiamo da ciò che possiamo venderti.<br><em>Partiamo da ciò che ti serve.</em></h2>
+      <h2>Partiamo da ciò che ti serve.<br><em>Non da ciò che possiamo venderti.</em></h2>
+      <p>Preferiamo una soluzione più semplice che funziona, piuttosto che un progetto più grande che non serve.</p>
     </div>
+
     <div class="why-points">
-      <div><span>✓</span><p>Se non ti serve rifare il sito, non te lo proponiamo.</p></div>
-      <div><span>✓</span><p>Se prima va sistemato il processo, partiamo da quello.</p></div>
-      <div><span>✓</span><p>Se l’AI non aggiunge valore, non la infiliamo per forza.</p></div>
-      <div><span>✓</span><p>Se il problema è commerciale, non lo chiamiamo “problema di marketing”.</p></div>
+      <div class="reveal"><span class="check"><svg><use href="#i-check"/></svg></span><p>Se non ti serve rifare il sito, non te lo proponiamo.</p></div>
+      <div class="reveal"><span class="check"><svg><use href="#i-check"/></svg></span><p>Se prima va sistemato il processo, partiamo da quello.</p></div>
+      <div class="reveal"><span class="check"><svg><use href="#i-check"/></svg></span><p>Se l’AI non aggiunge valore, non la usiamo per fare scena.</p></div>
+      <div class="reveal"><span class="check"><svg><use href="#i-check"/></svg></span><p>Se il problema è commerciale, non lo chiamiamo “marketing”.</p></div>
     </div>
   </div>
 </section>
 
-<section class="section shell examples">
+<section class="examples section shell">
   <div class="section-head reveal">
-    <div><span class="mini-label dark">ESEMPI SEMPLICI</span><h2>Come può cambiare il lavoro, nella pratica.</h2></div>
+    <div>
+      <span class="mini-label dark">NELLA PRATICA</span>
+      <h2>Tre imprese. Tre problemi diversi.</h2>
+    </div>
     <p>Non sono promesse di risultato: sono esempi di come colleghiamo i pezzi quando il problema lo richiede.</p>
   </div>
+
   <div class="example-grid">
-    <article class="example reveal">
+    <article class="example-card reveal">
+      <div class="example-visual ev-local">
+        <div class="shop-roof"></div>
+        <div class="shop-body"><span></span><span></span></div>
+        <div class="map-pin"><svg><use href="#i-target"/></svg></div>
+      </div>
       <span>ATTIVITÀ LOCALE</span>
       <h3>Più richieste dal territorio</h3>
-      <p>Google Business → pagina dedicata → contatto → follow-up</p>
+      <p>Google Business → pagina dedicata → contatto → follow-up.</p>
     </article>
-    <article class="example reveal">
+
+    <article class="example-card e-peach reveal">
+      <div class="example-visual ev-pro">
+        <div class="phone"><div class="phone-top"></div><div class="chat-one"></div><div class="chat-two"></div></div>
+        <div class="calendar"><svg><use href="#i-crm"/></svg></div>
+      </div>
       <span>PROFESSIONISTA</span>
       <h3>Meno lead persi</h3>
-      <p>Campagna → qualificazione → CRM → appuntamento</p>
+      <p>Campagna → qualificazione → CRM → appuntamento.</p>
     </article>
-    <article class="example reveal">
+
+    <article class="example-card reveal">
+      <div class="example-visual ev-pmi">
+        <div class="flow-node n1"><svg><use href="#i-message"/></svg></div>
+        <div class="flow-node n2"><svg><use href="#i-ai"/></svg></div>
+        <div class="flow-node n3"><svg><use href="#i-check"/></svg></div>
+        <span class="flow-link l1"></span><span class="flow-link l2"></span>
+      </div>
       <span>PMI</span>
       <h3>Meno lavoro ripetitivo</h3>
-      <p>Processo → automazione → AI → controllo KPI</p>
+      <p>Processo → automazione → AI → controllo KPI.</p>
     </article>
   </div>
 </section>
@@ -231,16 +375,21 @@
     <div class="final-copy reveal">
       <span class="mini-label dark">IL PRIMO PASSO È SEMPLICE</span>
       <h2>Raccontaci cosa vuoi migliorare.</h2>
-      <p>Non serve arrivare con una soluzione già in mente. Basta dirci qual è il problema che senti di più oggi.</p>
+      <p>Non serve sapere già quale soluzione ti serve. Basta dirci qual è il problema che senti di più oggi.</p>
+
+      <div class="final-visual" aria-hidden="true">
+        <div class="final-icon"><svg><use href="#i-spark"/></svg></div>
+        <div><strong>Da problema confuso</strong><span>→</span><strong>prima priorità chiara</strong></div>
+      </div>
     </div>
 
     <div class="starter reveal">
       <div class="starter-head"><span>COSA VORRESTI MIGLIORARE?</span><span>30 SECONDI</span></div>
       <div class="starter-options">
-        <button data-key="clienti">Trovare più clienti <span>→</span></button>
-        <button data-key="conversione">Convertire meglio <span>→</span></button>
-        <button data-key="tempo">Risparmiare tempo <span>→</span></button>
-        <button data-key="controllo">Avere più controllo <span>→</span></button>
+        <button data-key="clienti"><span><svg><use href="#i-user"/></svg>Trovare più clienti</span><b>→</b></button>
+        <button data-key="conversione"><span><svg><use href="#i-target"/></svg>Convertire meglio</span><b>→</b></button>
+        <button data-key="tempo"><span><svg><use href="#i-clock"/></svg>Risparmiare tempo</span><b>→</b></button>
+        <button data-key="controllo"><span><svg><use href="#i-chart"/></svg>Avere più controllo</span><b>→</b></button>
       </div>
       <div class="starter-result">
         <small>DA QUI PARTIREMMO</small>
@@ -255,7 +404,12 @@
 <footer>
   <div class="shell footer-main">
     <div><img src="assets/impresax-logo-reverse.svg" alt="ImpresaX"><p>Moltiplichiamo il potenziale della tua impresa.</p></div>
-    <nav><a href="#partenza">Da dove partiamo</a><a href="#insieme">Cosa facciamo</a><a href="#metodo">Come lavoriamo</a><a href="#analisi">Parliamone</a></nav>
+    <nav>
+      <a href="#partenza">Da dove partiamo</a>
+      <a href="#insieme">Cosa facciamo</a>
+      <a href="#metodo">Come lavoriamo</a>
+      <a href="#analisi">Parliamone</a>
+    </nav>
   </div>
   <div class="shell footer-bottom"><span>© 2026 IMPRESAX</span><span>CATANZARO → ITALIA</span></div>
 </footer>
