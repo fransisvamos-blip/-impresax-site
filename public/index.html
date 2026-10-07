@@ -20,6 +20,14 @@
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
   <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="5"/><rect x="15" y="15" width="6" height="5"/><path d="M9 6.5h4a4 4 0 0 1 4 4V15M15 17.5H9a4 4 0 0 1-4-4V9"/></symbol>
   <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V5M4 20h16"/><path d="m7 16 4-5 3 2 5-7"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.7-4 2.6-6 5.5-6s4.8 2 5.5 6M18 7v6M15 10h6"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13.5 2-8 12h6L10.5 22l8-12h-6l1-8Z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z"/><circle cx="12" cy="12" r="2.2"/></symbol>
+  <symbol id="i-listen" viewBox="0 0 24 24"><path d="M5 12a7 7 0 0 1 14 0v4a3 3 0 0 1-3 3h-2"/><path d="M5 16h2v-6H5zM17 16h2v-6h-2z"/></symbol>
+  <symbol id="i-diagnose" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5M8 10.5h5M10.5 8v5"/></symbol>
+  <symbol id="i-build" viewBox="0 0 24 24"><path d="m4 18 7-7 2 2 7-7"/><path d="M15 6h5v5"/></symbol>
+  <symbol id="i-measure" viewBox="0 0 24 24"><path d="M4 19V9M9 19V5M14 19v-7M19 19V3"/></symbol>
 </svg>
 
 <header class="site-header">
@@ -70,6 +78,15 @@
 
   <figure class="hero-image reveal">
     <img src="https://images.unsplash.com/photo-1758598497635-48cbbb1f6555?auto=format&fit=crop&fm=jpg&q=80&w=2200" alt="Professionista al lavoro in un ambiente contemporaneo">
+    <div class="hero-x-system" aria-hidden="true">
+      <span class="x-tag xt-clienti">CLIENTI</span>
+      <span class="x-tag xt-processi">PROCESSI</span>
+      <span class="x-tag xt-controllo">CONTROLLO</span>
+      <span class="x-tag xt-crescita">CRESCITA</span>
+      <div class="x-line xl-a"></div>
+      <div class="x-line xl-b"></div>
+      <img src="assets/impresax-symbol-reverse.svg" alt="">
+    </div>
     <figcaption>
       <span>IMPRESA×</span>
       <p>Il digitale deve aiutare il business reale.</p>
@@ -95,6 +112,7 @@
   <div class="needs-list">
     <article class="need reveal">
       <span class="need-no">01</span>
+      <div class="need-icon"><svg><use href="#i-user"/></svg></div>
       <h3>Vorrei più clienti.</h3>
       <p>Visibilità, Google, SEO, campagne, presenza locale e offerta.</p>
       <b>→</b>
@@ -102,6 +120,7 @@
 
     <article class="need reveal">
       <span class="need-no">02</span>
+      <div class="need-icon"><svg><use href="#i-message"/></svg></div>
       <h3>I contatti arrivano, ma si perdono.</h3>
       <p>Sito, conversione, CRM, WhatsApp, appuntamenti e follow-up.</p>
       <b>→</b>
@@ -109,6 +128,7 @@
 
     <article class="need reveal">
       <span class="need-no">03</span>
+      <div class="need-icon"><svg><use href="#i-bolt"/></svg></div>
       <h3>Facciamo troppe cose a mano.</h3>
       <p>Processi, automazioni e AI applicata solo dove porta valore.</p>
       <b>→</b>
@@ -116,6 +136,7 @@
 
     <article class="need reveal">
       <span class="need-no">04</span>
+      <div class="need-icon"><svg><use href="#i-eye"/></svg></div>
       <h3>Non so cosa sta funzionando.</h3>
       <p>Tracking, KPI, pipeline e dati che aiutano davvero a decidere.</p>
       <b>→</b>
@@ -160,6 +181,9 @@
         <p>Tracking, KPI, analytics e decisioni.</p>
       </article>
     </div>
+    <div class="solution-rail reveal" aria-hidden="true">
+      <span>ATTENZIONE</span><i></i><span>INTENTO</span><i></i><span>AZIONE</span><i></i><span>CONTROLLO</span>
+    </div>
   </div>
 </section>
 
@@ -190,6 +214,7 @@
 
   <div class="method-grid">
     <article class="method-step reveal">
+      <div class="method-icon"><svg><use href="#i-listen"/></svg></div>
       <span>01</span>
       <small>ASCOLTO</small>
       <h3>Ci racconti dove vuoi arrivare.</h3>
@@ -197,6 +222,7 @@
     </article>
 
     <article class="method-step reveal">
+      <div class="method-icon"><svg><use href="#i-diagnose"/></svg></div>
       <span>02</span>
       <small>DIAGNOSI</small>
       <h3>Troviamo il collo di bottiglia.</h3>
@@ -204,6 +230,7 @@
     </article>
 
     <article class="method-step reveal">
+      <div class="method-icon"><svg><use href="#i-build"/></svg></div>
       <span>03</span>
       <small>ESECUZIONE</small>
       <h3>Costruiamo ciò che serve.</h3>
@@ -211,6 +238,7 @@
     </article>
 
     <article class="method-step reveal">
+      <div class="method-icon"><svg><use href="#i-measure"/></svg></div>
       <span>04</span>
       <small>MISURA</small>
       <h3>Vediamo se funziona.</h3>
