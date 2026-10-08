@@ -71,15 +71,15 @@ UTM_KEYS.forEach(key=>{
 const diagnosisMap={
   clienti:{
     label:"Trovare più clienti",
-    title:"Partiremmo dalla domanda che oggi non stai intercettando.",
-    text:"Prima di aumentare la spesa, controlleremmo visibilità, qualità della domanda, messaggio e percorso verso il contatto.",
-    flow:"VISIBILITÀ → DOMANDA → MESSAGGIO → CONVERSIONE → TRACKING"
+    title:"Partiremmo da ciò che oggi non stai intercettando.",
+    text:"Controlleremmo visibilità, messaggio e percorso verso il contatto.",
+    flow:"VISIBILITÀ → MESSAGGIO → CONVERSIONE → TRACKING"
   },
   conversione:{
     label:"Convertire più contatti",
-    title:"Partiremmo dal punto in cui l’interesse smette di avanzare.",
-    text:"Offerta, pagina, frizione, qualificazione e follow-up vanno letti come un unico percorso, non come pezzi separati.",
-    flow:"OFFERTA → PAGINA → FRIZIONE → QUALIFICA → FOLLOW-UP"
+    title:"Partiremmo dal punto in cui l’interesse si ferma.",
+    text:"Controlleremmo offerta, pagina, frizione e follow-up.",
+    flow:"OFFERTA → PAGINA → FRIZIONE → FOLLOW-UP"
   },
   relazione:{
     label:"Gestire clienti e lead",
@@ -89,27 +89,27 @@ const diagnosisMap={
   },
   processi:{
     label:"Organizzare i processi",
-    title:"Partiremmo dal lavoro che assorbe tempo senza creare abbastanza valore.",
-    text:"Mappiamo passaggi, responsabilità e strumenti per capire cosa semplificare prima ancora di automatizzare.",
-    flow:"MAPPA → ATTRITO → RESPONSABILITÀ → STANDARD → CONTROLLO"
+    title:"Partiremmo dal lavoro che assorbe tempo inutilmente.",
+    text:"Mappiamo i passaggi e togliamo attrito prima di automatizzare.",
+    flow:"MAPPA → ATTRITO → SEMPLIFICA → CONTROLLO"
   },
   automazione:{
     label:"Automatizzare il lavoro",
-    title:"Partiremmo dalle attività ripetitive che hanno regole abbastanza chiare.",
-    text:"L’automazione viene dopo la semplificazione: prima togliamo passaggi inutili, poi colleghiamo ciò che resta.",
-    flow:"SEMPLIFICA → STANDARDIZZA → INTEGRA → AUTOMATIZZA → MISURA"
+    title:"Partiremmo dalle attività ripetitive più chiare.",
+    text:"Prima semplifichiamo. Poi colleghiamo e automatizziamo.",
+    flow:"SEMPLIFICA → INTEGRA → AUTOMATIZZA → MISURA"
   },
   dati:{
     label:"Capire meglio i dati",
-    title:"Partiremmo dalle decisioni che oggi stai prendendo con poca visibilità.",
-    text:"Non servono più dashboard: servono pochi segnali collegati a clienti, margine, efficienza e priorità.",
-    flow:"DOMANDA → KPI → TRACKING → LETTURA → DECISIONE"
+    title:"Partiremmo dalle decisioni che oggi prendi con poca visibilità.",
+    text:"Cercheremmo pochi segnali utili, non più dashboard.",
+    flow:"KPI → TRACKING → LETTURA → DECISIONE"
   },
   incerto:{
     label:"Non lo so ancora",
-    title:"Va bene: partiremo proprio dalla diagnosi.",
-    text:"Quando il problema non è chiaro, il primo valore è capire dove guardare e cosa non merita attenzione.",
-    flow:"CONTESTO → EVIDENZE → COLLO DI BOTTIGLIA → PRIORITÀ → PIANO"
+    title:"Va bene. Partiremmo proprio dalla diagnosi.",
+    text:"Il primo valore è capire dove guardare e cosa ignorare.",
+    flow:"CONTESTO → EVIDENZE → PRIORITÀ → PIANO"
   }
 };
 
@@ -153,17 +153,17 @@ const thinkingCases={
   traffico:{
     title:"Non partiremmo dall’ADV.",
     text:"Prima controlleremmo dove si rompe il percorso tra interesse e contatto.",
-    steps:["Offerta","Messaggio","Pagina","Frizione","Tracking","Follow-up"]
+    steps:["Offerta","Messaggio","Pagina","Follow-up"]
   },
   lead:{
     title:"Non partiremmo da più lead.",
-    text:"Prima capiremo perché quelli che già arrivano non diventano abbastanza appuntamenti.",
-    steps:["Fonte","Qualifica","Tempo di risposta","Follow-up","Booking","CRM"]
+    text:"Prima capiremo perché quelli che arrivano non diventano appuntamenti.",
+    steps:["Qualifica","Risposta","Follow-up","Booking"]
   },
   processi:{
     title:"Non partiremmo dall’automazione.",
-    text:"Prima toglieremmo complessità e renderemmo il processo abbastanza chiaro da poter essere automatizzato bene.",
-    steps:["Mappa","Passaggi","Responsabilità","Standard","Integrazioni","Automazione"]
+    text:"Prima toglieremmo complessità. Solo dopo automatizzeremmo.",
+    steps:["Mappa","Semplifica","Standard","Automazione"]
   }
 };
 
