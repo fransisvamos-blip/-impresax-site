@@ -3358,3 +3358,85 @@ body.v19 .footer-meta{font-size:8px}
     transition:none!important;
   }
 }
+
+
+/* =========================================================
+   V20 — NO MORE POLITENESS
+   Aggressive copy, calm design.
+   ========================================================= */
+body.v20 .v19-hero-copy h1{
+  max-width:780px;
+  text-wrap:balance;
+}
+body.v20 .v19-hero-copy>p{
+  max-width:570px;
+}
+body.v20 .v20-value-message{
+  margin-top:22px;
+  padding-top:20px;
+  border-top:1px solid var(--v19-line);
+  display:grid;
+  gap:6px;
+}
+body.v20 .v20-value-message strong{
+  max-width:700px;
+  color:var(--ink);
+  font-size:20px;
+  line-height:1.15;
+  letter-spacing:-.035em;
+}
+body.v20 .v20-value-message span{
+  color:var(--v19-muted);
+  font-size:12px;
+  line-height:1.5;
+}
+body.v20 .v19-value-output .v19-delta{
+  background:rgba(255,90,54,.035);
+}
+body.v20 .v19-value-output .v19-delta strong{
+  font-weight:750;
+}
+body.v20 .v19-promise-copy small{
+  max-width:720px;
+}
+body.v20 .v19-analysis .privacy-note{
+  max-width:620px;
+  line-height:1.55;
+}
+
+@media(max-width:767px){
+  body.v20 .v19-check .diagnosis-options button{
+    font-size:14px;
+    line-height:1.25;
+  }
+  body.v20 .v19-check .diagnosis-options button>b{
+    padding-block:8px;
+  }
+  body.v20 .v19-value-output>div{
+    align-items:flex-end;
+  }
+  body.v20 .v19-value-output small{
+    max-width:145px;
+  }
+}
+@media(max-width:389px){
+  body.v20 .v19-hero-copy h1{font-size:43px}
+  body.v20 .v20-value-message strong{font-size:18px}
+}
+@media(min-width:390px) and (max-width:429px){
+  body.v20 .v19-hero-copy h1{font-size:46px}
+  body.v20 .v20-value-message strong{font-size:19px}
+}
+@media(min-width:430px) and (max-width:767px){
+  body.v20 .v19-hero-copy h1{font-size:49px}
+}
+@media(min-width:768px){
+  body.v20 .v20-value-message strong{font-size:23px}
+}
+@media(min-width:1440px){
+  body.v20 .v19-hero-copy h1{
+    max-width:810px;
+    font-size:88px;
+  }
+  body.v20 .v20-value-message strong{font-size:27px}
+}
