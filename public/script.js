@@ -137,6 +137,7 @@ const diagnosisMap={
   },
   relazione:{
     label:"Gestire meglio i contatti",
+    formValue:"Altro",
     title:"Partiremmo da come oggi gestisci richieste, risposte e follow-up.",
     text:"Meno contatti lasciati per strada.",
     flow:"CONTATTO → RISPOSTA → FOLLOW-UP"
