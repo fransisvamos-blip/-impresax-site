@@ -125,40 +125,40 @@ UTM_KEYS.forEach(key=>{
 const diagnosisMap={
   clienti:{
     label:"Più clienti",
-    title:"Partiremmo da come oggi le persone ti trovano e arrivano fino al contatto.",
-    text:"Un punto semplice da capire.",
+    title:"Controlleremo come oggi le persone ti trovano e arrivano fino al contatto.",
+    text:"",
     flow:"VISIBILITÀ → INTERESSE → CONTATTO"
   },
   conversione:{
     label:"Più vendite",
-    title:"Partiremmo da dove le opportunità smettono di diventare clienti.",
-    text:"Cerchiamo il passaggio che frena.",
-    flow:"INTERESSE → DECISIONE → VENDITA"
+    title:"Controlleremo dove le persone smettono di avanzare verso la vendita.",
+    text:"",
+    flow:"MESSAGGIO → CONTATTO → FOLLOW-UP → CLIENTE"
   },
   relazione:{
-    label:"Gestire meglio i contatti",
+    label:"Perdere meno opportunità",
     formValue:"Altro",
-    title:"Partiremmo da come oggi gestisci richieste, risposte e follow-up.",
-    text:"Meno contatti lasciati per strada.",
-    flow:"CONTATTO → RISPOSTA → FOLLOW-UP"
+    title:"Controlleremo dove richieste e clienti si perdono dopo il primo contatto.",
+    text:"",
+    flow:"CONTATTO → RISPOSTA → FOLLOW-UP → CLIENTE"
   },
   processi:{
     label:"Meno lavoro manuale",
-    title:"Partiremmo dalle attività che oggi ti fanno perdere più tempo.",
-    text:"Prima semplifichiamo. Poi automatizziamo.",
+    title:"Controlleremo quali attività possono essere semplificate o automatizzate.",
+    text:"",
     flow:"ATTIVITÀ → SEMPLIFICA → AUTOMATIZZA"
   },
   dati:{
     label:"Più controllo",
-    title:"Partiremmo dai numeri che oggi ti servono per decidere meglio.",
-    text:"Pochi segnali, più chiarezza.",
+    title:"Controlleremo quali numeri ti servono per capire cosa funziona davvero.",
+    text:"",
     flow:"DATI → LETTURA → DECISIONE"
   },
   incerto:{
-    label:"Non lo so ancora",
+    label:"Non so da dove partire",
     formValue:"Altro",
-    title:"Va bene. Partiremmo proprio dal capire cosa merita attenzione.",
-    text:"Non devi sapere già cosa ti serve.",
+    title:"Partiremo dal capire quale punto merita davvero attenzione.",
+    text:"",
     flow:"CONTESTO → PRIORITÀ → AZIONE"
   }
 };
@@ -180,7 +180,7 @@ function applyDiagnosis(key, emit=false){
   diagnosisText.textContent=data.text;
   diagnosisFlow.textContent=data.flow;
   if(analysisContext){
-    analysisContext.textContent="Business Check: "+data.label+". Porteremo questa priorità nella richiesta.";
+    analysisContext.textContent="Priorità scelta: "+data.label+".";
     analysisContext.classList.add("active");
   }
   const radioValue=data.formValue||data.label;
