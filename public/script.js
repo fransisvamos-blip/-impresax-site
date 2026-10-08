@@ -61,12 +61,11 @@ document.querySelectorAll(".hero .cta-primary").forEach(el=>{
 document.querySelector("[data-money-leak-cta]")?.addEventListener("click",()=>track("money_leak_cta_click"));
 
 const valueLeads=document.getElementById("valueLeads");
-const valueConversion=document.getElementById("valueConversion");
+const valueClients=document.getElementById("valueClients");
 const valueAverage=document.getElementById("valueAverage");
 const valueCurrent=document.getElementById("valueCurrent");
 const valueScenario=document.getElementById("valueScenario");
 const valueDelta=document.getElementById("valueDelta");
-const valueMessage=document.getElementById("valueMessage");
 const valueCheckCta=document.querySelector("[data-value-check-cta]");
 let valueCheckStarted=false;
 let valueCheckCompleted=false;
@@ -76,33 +75,31 @@ function formatEuro(value){
 }
 
 function updateValueCheck(fromUser=false){
-  if(!valueLeads||!valueConversion||!valueAverage) return;
+  if(!valueLeads||!valueClients||!valueAverage) return;
   const leads=Math.max(0,Number(valueLeads.value)||0);
-  const conversion=Math.max(0,Math.min(99,Number(valueConversion.value)||0));
+  const clients=Math.max(0,Number(valueClients.value)||0);
   const average=Math.max(0,Number(valueAverage.value)||0);
-  const current=leads*(conversion/100)*average;
-  const scenarioRate=Math.min(100,conversion+2);
-  const scenario=leads*(scenarioRate/100)*average;
+  const usableClients=leads>0?Math.min(clients,leads):clients;
+  const improvedClients=leads>0?Math.min(leads,usableClients+1):usableClients+1;
+  const current=usableClients*average;
+  const scenario=improvedClients*average;
   const delta=Math.max(0,scenario-current);
 
   if(valueCurrent) valueCurrent.textContent=formatEuro(current);
   if(valueScenario) valueScenario.textContent=formatEuro(scenario);
   if(valueDelta) valueDelta.textContent="+"+formatEuro(delta)+" / mese";
-  if(valueMessage){
-    valueMessage.textContent=formatEuro(delta)+" in più non richiedono necessariamente più traffico.";
-  }
 
   if(fromUser && !valueCheckStarted){
     valueCheckStarted=true;
     track("value_check_start");
   }
-  if(fromUser && leads>0 && conversion>0 && average>0 && !valueCheckCompleted){
+  if(fromUser && leads>0 && average>0 && !valueCheckCompleted){
     valueCheckCompleted=true;
     track("value_check_complete");
   }
 }
 
-[valueLeads,valueConversion,valueAverage].forEach(input=>{
+[valueLeads,valueClients,valueAverage].forEach(input=>{
   input?.addEventListener("focus",()=>{
     if(!valueCheckStarted){
       valueCheckStarted=true;
@@ -128,39 +125,41 @@ UTM_KEYS.forEach(key=>{
 const diagnosisMap={
   clienti:{
     label:"Più clienti",
-    title:"Da qui controlleremo quanta domanda utile non stai intercettando.",
-    text:"Guardiamo quante persone ti cercano, quante ti trovano e quante diventano una vera opportunità.",
-    flow:"DOMANDA → VISIBILITÀ → MESSAGGIO → CONTATTO"
+    title:"Partiremmo da come oggi le persone ti trovano e arrivano fino al contatto.",
+    text:"Un punto semplice da capire.",
+    flow:"VISIBILITÀ → INTERESSE → CONTATTO"
   },
   conversione:{
-    label:"Più conversione",
-    title:"Da qui controlleremo perché i lead arrivano ma non comprano.",
-    text:"Offerta, messaggio, pagina, follow-up e vendita devono far avanzare più opportunità.",
-    flow:"OFFERTA → MESSAGGIO → PAGINA → FOLLOW-UP → VENDITA"
+    label:"Più vendite",
+    title:"Partiremmo da dove le opportunità smettono di diventare clienti.",
+    text:"Cerchiamo il passaggio che frena.",
+    flow:"INTERESSE → DECISIONE → VENDITA"
   },
   relazione:{
-    label:"Meno lead persi",
-    title:"Da qui controlleremo quanti contatti stai lasciando raffreddare.",
-    text:"Tempi di risposta, responsabilità e follow-up devono impedire che un lead valido sparisca.",
-    flow:"CONTATTO → RISPOSTA → CRM → FOLLOW-UP"
+    label:"Gestire meglio i contatti",
+    formValue:"Altro",
+    title:"Partiremmo da come oggi gestisci richieste, risposte e follow-up.",
+    text:"Meno contatti lasciati per strada.",
+    flow:"CONTATTO → RISPOSTA → FOLLOW-UP"
   },
   processi:{
     label:"Meno lavoro manuale",
-    title:"Da qui controlleremo quante ore stai buttando in passaggi evitabili.",
-    text:"Ogni attività manuale che non crea valore assorbe tempo, margine e capacità di crescere.",
-    flow:"MAPPA → SPRECO → SEMPLIFICA → AUTOMATIZZA"
+    title:"Partiremmo dalle attività che oggi ti fanno perdere più tempo.",
+    text:"Prima semplifichiamo. Poi automatizziamo.",
+    flow:"ATTIVITÀ → SEMPLIFICA → AUTOMATIZZA"
   },
   dati:{
     label:"Più controllo",
-    title:"Da qui controlleremo dove stai spendendo senza sapere cosa rende.",
-    text:"Pochi numeri utili devono dirti dove investire, cosa fermare e cosa migliorare.",
-    flow:"KPI → TRACKING → LETTURA → DECISIONE"
+    title:"Partiremmo dai numeri che oggi ti servono per decidere meglio.",
+    text:"Pochi segnali, più chiarezza.",
+    flow:"DATI → LETTURA → DECISIONE"
   },
   incerto:{
     label:"Non lo so ancora",
-    title:"Va bene. Partiamo proprio da qui.",
-    text:"Troviamo il punto in cui clienti, tempo o margine si stanno disperdendo prima di proporti qualsiasi cosa.",
-    flow:"CONTESTO → PERDITA → PRIORITÀ → INTERVENTO"
+    formValue:"Altro",
+    title:"Va bene. Partiremmo proprio dal capire cosa merita attenzione.",
+    text:"Non devi sapere già cosa ti serve.",
+    flow:"CONTESTO → PRIORITÀ → AZIONE"
   }
 };
 
@@ -184,8 +183,9 @@ function applyDiagnosis(key, emit=false){
     analysisContext.textContent="Business Check: "+data.label+". Porteremo questa priorità nella richiesta.";
     analysisContext.classList.add("active");
   }
+  const radioValue=data.formValue||data.label;
   const radio=[...document.querySelectorAll('input[name="improvement_area"]')]
-    .find(input=>input.value===data.label);
+    .find(input=>input.value===radioValue);
   if(radio) radio.checked=true;
   if(emit) track("diagnostic_complete",{diagnostic_area:data.label});
 }
