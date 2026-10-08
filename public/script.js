@@ -200,45 +200,6 @@ diagnosisButtons.forEach(btn=>{
 if(selectedDiagnosis) applyDiagnosis(selectedDiagnosis,false);
 
 /* Thinking cases */
-const thinkingCases={
-  traffico:{
-    title:"Perché chi arriva non compra?",
-    text:"Prima di comprare altro traffico, guardiamo quanta parte di quello che hai già si perde prima del contatto.",
-    steps:["Offerta","Messaggio","Pagina","Follow-up"]
-  },
-  lead:{
-    title:"Perché gli altri lead non diventano clienti?",
-    text:"Prima di generare altri lead, guardiamo qualità, risposta, follow-up e percorso di vendita.",
-    steps:["Qualità lead","Risposta","Follow-up","Vendita"]
-  },
-  processi:{
-    title:"Quanto ti costa il lavoro manuale?",
-    text:"Prima di comprare software, misuriamo tempo sprecato, passaggi inutili e attività ripetitive.",
-    steps:["Tempo","Passaggi","Standard","Automazione"]
-  }
-};
-
-const thinkingTabs=[...document.querySelectorAll("[data-case]")];
-const thinkingTitle=document.getElementById("thinkingTitle");
-const thinkingText=document.getElementById("thinkingText");
-const thinkingSteps=document.getElementById("thinkingSteps");
-
-function setThinkingCase(key){
-  const data=thinkingCases[key];
-  if(!data) return;
-  thinkingTabs.forEach(tab=>{
-    const active=tab.dataset.case===key;
-    tab.classList.toggle("active",active);
-    tab.setAttribute("aria-selected",active?"true":"false");
-  });
-  thinkingTitle.textContent=data.title;
-  thinkingText.textContent=data.text;
-  thinkingSteps.innerHTML=data.steps.map((step,index)=>
-    '<li><span>'+String(index+1).padStart(2,"0")+'</span>'+step+'</li>'
-  ).join("");
-}
-thinkingTabs.forEach(tab=>tab.addEventListener("click",()=>setThinkingCase(tab.dataset.case)));
-
 /* Sticky CTA */
 const sticky=document.getElementById("stickyAnalysis");
 const analysisSection=document.getElementById("analisi");
