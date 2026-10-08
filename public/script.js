@@ -57,6 +57,59 @@ document.querySelectorAll(".hero .cta-primary").forEach(el=>{
   el.addEventListener("click",()=>track("hero_cta_click"));
 });
 
+/* Money layer CRO */
+document.querySelector("[data-money-leak-cta]")?.addEventListener("click",()=>track("money_leak_cta_click"));
+
+const valueLeads=document.getElementById("valueLeads");
+const valueConversion=document.getElementById("valueConversion");
+const valueAverage=document.getElementById("valueAverage");
+const valueCurrent=document.getElementById("valueCurrent");
+const valueScenario=document.getElementById("valueScenario");
+const valueDelta=document.getElementById("valueDelta");
+const valueCheckCta=document.querySelector("[data-value-check-cta]");
+let valueCheckStarted=false;
+let valueCheckCompleted=false;
+
+function formatEuro(value){
+  return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(value);
+}
+
+function updateValueCheck(fromUser=false){
+  if(!valueLeads||!valueConversion||!valueAverage) return;
+  const leads=Math.max(0,Number(valueLeads.value)||0);
+  const conversion=Math.max(0,Math.min(99,Number(valueConversion.value)||0));
+  const average=Math.max(0,Number(valueAverage.value)||0);
+  const current=leads*(conversion/100)*average;
+  const scenarioRate=Math.min(100,conversion+2);
+  const scenario=leads*(scenarioRate/100)*average;
+  const delta=Math.max(0,scenario-current);
+
+  if(valueCurrent) valueCurrent.textContent=formatEuro(current);
+  if(valueScenario) valueScenario.textContent=formatEuro(scenario);
+  if(valueDelta) valueDelta.textContent="+"+formatEuro(delta)+" / mese";
+
+  if(fromUser && !valueCheckStarted){
+    valueCheckStarted=true;
+    track("value_check_start");
+  }
+  if(fromUser && leads>0 && conversion>0 && average>0 && !valueCheckCompleted){
+    valueCheckCompleted=true;
+    track("value_check_complete");
+  }
+}
+
+[valueLeads,valueConversion,valueAverage].forEach(input=>{
+  input?.addEventListener("focus",()=>{
+    if(!valueCheckStarted){
+      valueCheckStarted=true;
+      track("value_check_start");
+    }
+  });
+  input?.addEventListener("input",()=>updateValueCheck(true));
+});
+valueCheckCta?.addEventListener("click",()=>track("value_check_cta_click"));
+updateValueCheck(false);
+
 /* UTM persistence */
 const UTM_KEYS=["utm_source","utm_medium","utm_campaign","utm_content","utm_term"];
 const currentParams=new URLSearchParams(window.location.search);
@@ -70,45 +123,39 @@ UTM_KEYS.forEach(key=>{
 /* Business check */
 const diagnosisMap={
   clienti:{
-    label:"Trovare più clienti",
-    title:"Partiremmo da ciò che oggi non stai intercettando.",
-    text:"Controlleremmo visibilità, messaggio e percorso verso il contatto.",
-    flow:"VISIBILITÀ → MESSAGGIO → CONVERSIONE → TRACKING"
+    label:"Più clienti",
+    title:"Qui controlleremmo quanta domanda utile stai lasciando fuori.",
+    text:"Guarderemmo quanta domanda esiste, quanto ne intercetti e quanto del traffico diventa una vera opportunità.",
+    flow:"DOMANDA → VISIBILITÀ → MESSAGGIO → CONVERSIONE"
   },
   conversione:{
-    label:"Convertire più contatti",
-    title:"Partiremmo dal punto in cui l’interesse si ferma.",
-    text:"Controlleremmo offerta, pagina, frizione e follow-up.",
+    label:"Più conversione",
+    title:"Qui guarderemmo quanto valore si ferma prima della vendita.",
+    text:"Offerta, pagina, frizione e follow-up devono far avanzare più interesse verso una decisione.",
     flow:"OFFERTA → PAGINA → FRIZIONE → FOLLOW-UP"
   },
   relazione:{
-    label:"Gestire clienti e lead",
-    title:"Partiremmo da ciò che oggi si perde tra un contatto e l’altro.",
-    text:"Canali, responsabilità, CRM e follow-up devono rendere ogni opportunità visibile e gestibile.",
-    flow:"INGRESSO → CRM → ASSEGNAZIONE → FOLLOW-UP → REPORTING"
+    label:"Meno lead persi",
+    title:"Qui guarderemmo quante opportunità si raffreddano dopo il primo contatto.",
+    text:"Tempi di risposta, responsabilità, CRM e follow-up devono impedire che un lead valido sparisca.",
+    flow:"CONTATTO → RISPOSTA → CRM → FOLLOW-UP"
   },
   processi:{
-    label:"Organizzare i processi",
-    title:"Partiremmo dal lavoro che assorbe tempo inutilmente.",
-    text:"Mappiamo i passaggi e togliamo attrito prima di automatizzare.",
-    flow:"MAPPA → ATTRITO → SEMPLIFICA → CONTROLLO"
-  },
-  automazione:{
-    label:"Automatizzare il lavoro",
-    title:"Partiremmo dalle attività ripetitive più chiare.",
-    text:"Prima semplifichiamo. Poi colleghiamo e automatizziamo.",
-    flow:"SEMPLIFICA → INTEGRA → AUTOMATIZZA → MISURA"
+    label:"Meno lavoro manuale",
+    title:"Qui cercheremmo il lavoro che assorbe tempo senza creare abbastanza valore.",
+    text:"Prima semplifichiamo i passaggi. Poi automatizziamo ciò che ha davvero senso automatizzare.",
+    flow:"MAPPA → ATTRITO → SEMPLIFICA → AUTOMATIZZA"
   },
   dati:{
-    label:"Capire meglio i dati",
-    title:"Partiremmo dalle decisioni che oggi prendi con poca visibilità.",
-    text:"Cercheremmo pochi segnali utili, non più dashboard.",
+    label:"Più controllo",
+    title:"Qui partiremo dalle decisioni che oggi prendi con poca visibilità.",
+    text:"Cercheremmo pochi numeri utili per capire dove investire, cosa fermare e cosa migliorare.",
     flow:"KPI → TRACKING → LETTURA → DECISIONE"
   },
   incerto:{
     label:"Non lo so ancora",
-    title:"Va bene. Partiremmo proprio dalla diagnosi.",
-    text:"Il primo valore è capire dove guardare e cosa ignorare.",
+    title:"Va bene. Il primo valore è capire dove guardare.",
+    text:"Partiremmo dal contesto per trovare il punto in cui clienti, tempo o margine si stanno disperdendo.",
     flow:"CONTESTO → EVIDENZE → PRIORITÀ → PIANO"
   }
 };
@@ -151,18 +198,18 @@ if(selectedDiagnosis) applyDiagnosis(selectedDiagnosis,false);
 /* Thinking cases */
 const thinkingCases={
   traffico:{
-    title:"Non partiremmo dall’ADV.",
-    text:"Prima controlleremmo dove si rompe il percorso tra interesse e contatto.",
+    title:"Non partiremmo da più traffico.",
+    text:"Prima cercheremmo quanta domanda stai già intercettando e dove il valore si perde prima del contatto.",
     steps:["Offerta","Messaggio","Pagina","Follow-up"]
   },
   lead:{
     title:"Non partiremmo da più lead.",
-    text:"Prima capiremo perché quelli che arrivano non diventano appuntamenti.",
+    text:"Prima guarderemmo quanto valore stai già perdendo nei contatti che hai.",
     steps:["Qualifica","Risposta","Follow-up","Booking"]
   },
   processi:{
-    title:"Non partiremmo dall’automazione.",
-    text:"Prima toglieremmo complessità. Solo dopo automatizzeremmo.",
+    title:"Non partiremmo da più software.",
+    text:"Prima capiremo quanto tempo e costo operativo vengono assorbiti da passaggi manuali evitabili.",
     steps:["Mappa","Semplifica","Standard","Automazione"]
   }
 };
