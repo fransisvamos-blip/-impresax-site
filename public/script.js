@@ -66,6 +66,7 @@ const valueAverage=document.getElementById("valueAverage");
 const valueCurrent=document.getElementById("valueCurrent");
 const valueScenario=document.getElementById("valueScenario");
 const valueDelta=document.getElementById("valueDelta");
+const valueMessage=document.getElementById("valueMessage");
 const valueCheckCta=document.querySelector("[data-value-check-cta]");
 let valueCheckStarted=false;
 let valueCheckCompleted=false;
@@ -87,6 +88,9 @@ function updateValueCheck(fromUser=false){
   if(valueCurrent) valueCurrent.textContent=formatEuro(current);
   if(valueScenario) valueScenario.textContent=formatEuro(scenario);
   if(valueDelta) valueDelta.textContent="+"+formatEuro(delta)+" / mese";
+  if(valueMessage){
+    valueMessage.textContent=formatEuro(delta)+" in più non richiedono necessariamente più traffico.";
+  }
 
   if(fromUser && !valueCheckStarted){
     valueCheckStarted=true;
@@ -124,39 +128,39 @@ UTM_KEYS.forEach(key=>{
 const diagnosisMap={
   clienti:{
     label:"Più clienti",
-    title:"Qui controlleremmo quanta domanda utile stai lasciando fuori.",
-    text:"Guarderemmo quanta domanda esiste, quanto ne intercetti e quanto del traffico diventa una vera opportunità.",
-    flow:"DOMANDA → VISIBILITÀ → MESSAGGIO → CONVERSIONE"
+    title:"Da qui controlleremo quanta domanda utile non stai intercettando.",
+    text:"Guardiamo quante persone ti cercano, quante ti trovano e quante diventano una vera opportunità.",
+    flow:"DOMANDA → VISIBILITÀ → MESSAGGIO → CONTATTO"
   },
   conversione:{
     label:"Più conversione",
-    title:"Qui guarderemmo quanto valore si ferma prima della vendita.",
-    text:"Offerta, pagina, frizione e follow-up devono far avanzare più interesse verso una decisione.",
-    flow:"OFFERTA → PAGINA → FRIZIONE → FOLLOW-UP"
+    title:"Da qui controlleremo perché i lead arrivano ma non comprano.",
+    text:"Offerta, messaggio, pagina, follow-up e vendita devono far avanzare più opportunità.",
+    flow:"OFFERTA → MESSAGGIO → PAGINA → FOLLOW-UP → VENDITA"
   },
   relazione:{
     label:"Meno lead persi",
-    title:"Qui guarderemmo quante opportunità si raffreddano dopo il primo contatto.",
-    text:"Tempi di risposta, responsabilità, CRM e follow-up devono impedire che un lead valido sparisca.",
+    title:"Da qui controlleremo quanti contatti stai lasciando raffreddare.",
+    text:"Tempi di risposta, responsabilità e follow-up devono impedire che un lead valido sparisca.",
     flow:"CONTATTO → RISPOSTA → CRM → FOLLOW-UP"
   },
   processi:{
     label:"Meno lavoro manuale",
-    title:"Qui cercheremmo il lavoro che assorbe tempo senza creare abbastanza valore.",
-    text:"Prima semplifichiamo i passaggi. Poi automatizziamo ciò che ha davvero senso automatizzare.",
-    flow:"MAPPA → ATTRITO → SEMPLIFICA → AUTOMATIZZA"
+    title:"Da qui controlleremo quante ore stai buttando in passaggi evitabili.",
+    text:"Ogni attività manuale che non crea valore assorbe tempo, margine e capacità di crescere.",
+    flow:"MAPPA → SPRECO → SEMPLIFICA → AUTOMATIZZA"
   },
   dati:{
     label:"Più controllo",
-    title:"Qui partiremo dalle decisioni che oggi prendi con poca visibilità.",
-    text:"Cercheremmo pochi numeri utili per capire dove investire, cosa fermare e cosa migliorare.",
+    title:"Da qui controlleremo dove stai spendendo senza sapere cosa rende.",
+    text:"Pochi numeri utili devono dirti dove investire, cosa fermare e cosa migliorare.",
     flow:"KPI → TRACKING → LETTURA → DECISIONE"
   },
   incerto:{
     label:"Non lo so ancora",
-    title:"Va bene. Il primo valore è capire dove guardare.",
-    text:"Partiremmo dal contesto per trovare il punto in cui clienti, tempo o margine si stanno disperdendo.",
-    flow:"CONTESTO → EVIDENZE → PRIORITÀ → PIANO"
+    title:"Va bene. Partiamo proprio da qui.",
+    text:"Troviamo il punto in cui clienti, tempo o margine si stanno disperdendo prima di proporti qualsiasi cosa.",
+    flow:"CONTESTO → PERDITA → PRIORITÀ → INTERVENTO"
   }
 };
 
@@ -198,19 +202,19 @@ if(selectedDiagnosis) applyDiagnosis(selectedDiagnosis,false);
 /* Thinking cases */
 const thinkingCases={
   traffico:{
-    title:"Non partiremmo da più traffico.",
-    text:"Prima cercheremmo quanta domanda stai già intercettando e dove il valore si perde prima del contatto.",
+    title:"Perché chi arriva non compra?",
+    text:"Prima di comprare altro traffico, guardiamo quanta parte di quello che hai già si perde prima del contatto.",
     steps:["Offerta","Messaggio","Pagina","Follow-up"]
   },
   lead:{
-    title:"Non partiremmo da più lead.",
-    text:"Prima guarderemmo quanto valore stai già perdendo nei contatti che hai.",
-    steps:["Qualifica","Risposta","Follow-up","Booking"]
+    title:"Perché gli altri lead non diventano clienti?",
+    text:"Prima di generare altri lead, guardiamo qualità, risposta, follow-up e percorso di vendita.",
+    steps:["Qualità lead","Risposta","Follow-up","Vendita"]
   },
   processi:{
-    title:"Non partiremmo da più software.",
-    text:"Prima capiremo quanto tempo e costo operativo vengono assorbiti da passaggi manuali evitabili.",
-    steps:["Mappa","Semplifica","Standard","Automazione"]
+    title:"Quanto ti costa il lavoro manuale?",
+    text:"Prima di comprare software, misuriamo tempo sprecato, passaggi inutili e attività ripetitive.",
+    steps:["Tempo","Passaggi","Standard","Automazione"]
   }
 };
 
