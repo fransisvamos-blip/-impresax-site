@@ -1469,3 +1469,267 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   .final-section,.final-grid{min-height:265px}
   .final-copy h2{font-size:39px}
 }
+
+
+/* =========================================================
+   DESKTOP GEOMETRY POLISH
+   Desktop-only spacing / proportions. Mobile intentionally
+   unchanged. Keeps the approved visual direction intact.
+   ========================================================= */
+@media (min-width:1024px){
+  :root{
+    --shell:min(calc(100% - 80px),1500px);
+  }
+
+  .master-nav{
+    gap:28px;
+  }
+  .master-desktop-nav{
+    gap:34px;
+  }
+
+  .hero-copy{
+    width:min(500px,45vw);
+  }
+  .hero-copy h1{
+    max-width:500px;
+  }
+  .hero-copy>p{
+    max-width:390px;
+  }
+  .hero-side-message{
+    right:3.25%;
+  }
+
+  .category-rail{
+    justify-content:space-between;
+    gap:18px;
+  }
+
+  .problem-copy{
+    max-width:380px;
+  }
+  .problem-grid{
+    grid-template-columns:minmax(390px,.9fr) 170px;
+  }
+  .problem-labels{
+    width:166px;
+  }
+
+  .check-heading{
+    max-width:520px;
+  }
+  .check-options,
+  .check-result{
+    width:min(100%,900px);
+  }
+
+  .value-grid{
+    grid-template-columns:.96fr 1.42fr .76fr;
+    gap:30px;
+  }
+  .value-copy{
+    max-width:430px;
+  }
+  .value-scenarios{
+    gap:12px;
+  }
+  .value-aside{
+    padding-left:22px;
+  }
+
+  .solution-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .solution-copy{
+    padding-right:48px;
+  }
+  .solution-copy>p{
+    max-width:470px;
+  }
+  .solution-outcomes{
+    gap:14px;
+  }
+
+  .approach-grid{
+    grid-template-columns:1.18fr .54fr .28fr;
+    gap:34px;
+  }
+  .approach-copy{
+    max-width:620px;
+  }
+  .approach-quote{
+    max-width:250px;
+  }
+
+  .scenarios-row{
+    grid-template-columns:220px 1fr;
+    gap:28px;
+  }
+  .scenario-cards{
+    gap:9px;
+  }
+
+  .final-grid{
+    grid-template-columns:1.03fr .97fr 150px;
+    gap:38px;
+  }
+  .final-copy{
+    max-width:520px;
+  }
+  .progress-form{
+    max-width:520px;
+    width:100%;
+  }
+}
+
+@media (min-width:1280px) and (max-width:1439px){
+  :root{
+    --shell:min(calc(100% - 112px),1500px);
+  }
+  .hero-copy{
+    width:min(510px,43vw);
+  }
+  .solution-copy{
+    padding-right:54px;
+  }
+}
+
+@media (min-width:1440px) and (max-width:1799px){
+  :root{
+    --shell:min(calc(100% - 144px),1500px);
+  }
+
+  .master-brand img{
+    width:146px;
+  }
+  .master-desktop-nav{
+    gap:40px;
+  }
+
+  .hero-copy{
+    width:520px;
+  }
+  .hero-copy h1{
+    max-width:520px;
+    font-size:63px;
+    line-height:.91;
+  }
+  .hero-copy>p{
+    max-width:405px;
+    font-size:17px;
+  }
+  .hero-copy .master-cta{
+    padding-inline:23px;
+  }
+
+  .problem-copy h2{
+    font-size:42px;
+  }
+
+  .check-content{
+    padding-top:22px;
+    padding-bottom:20px;
+  }
+  .check-heading h2{
+    font-size:40px;
+  }
+  .check-options{
+    width:min(100%,920px);
+  }
+  .check-options button{
+    min-height:78px;
+  }
+
+  .value-section{
+    padding-top:29px;
+    padding-bottom:20px;
+  }
+  .value-grid{
+    gap:36px;
+  }
+  .value-copy h2{
+    font-size:35px;
+  }
+  .value-scenarios article{
+    min-height:132px;
+  }
+
+  .solution-copy{
+    padding-right:62px;
+  }
+  .solution-copy h2{
+    font-size:40px;
+  }
+  .solution-outcomes{
+    margin-top:20px;
+  }
+
+  .approach-grid{
+    gap:40px;
+  }
+  .approach-copy h2{
+    font-size:33px;
+  }
+
+  .scenarios-section{
+    padding-top:18px;
+    padding-bottom:18px;
+  }
+  .scenarios-row{
+    grid-template-columns:235px 1fr;
+    gap:32px;
+  }
+  .scenario-card{
+    min-height:100px;
+    padding-top:48px;
+  }
+
+  .final-grid{
+    grid-template-columns:1.03fr .97fr 155px;
+    gap:42px;
+  }
+  .final-copy h2{
+    font-size:40px;
+  }
+}
+
+@media (min-width:1800px){
+  :root{
+    --shell:min(calc(100% - 200px),1560px);
+  }
+
+  .master-nav{
+    max-width:1560px;
+  }
+  .hero-copy{
+    width:550px;
+  }
+  .hero-copy h1{
+    max-width:550px;
+    font-size:68px;
+  }
+  .hero-copy>p{
+    max-width:430px;
+    font-size:18px;
+  }
+
+  .check-options,
+  .check-result{
+    width:min(100%,980px);
+  }
+
+  .value-grid{
+    gap:42px;
+  }
+  .solution-copy{
+    padding-right:72px;
+  }
+  .scenarios-row{
+    grid-template-columns:250px 1fr;
+    gap:36px;
+  }
+  .final-grid{
+    gap:48px;
+  }
+}
