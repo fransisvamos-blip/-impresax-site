@@ -1353,3 +1353,119 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   html{scroll-behavior:auto}
   .reveal,.master-cta,.master-header-cta,.form-next,.form-submit,.sticky-analysis a{transition:none!important}
 }
+
+
+/* =========================================================
+   MASTER REFERENCE DENSITY PASS
+   Compress desktop vertical rhythm to approved reference.
+   ========================================================= */
+@media(min-width:1024px){
+  .master-header,.master-nav{height:64px}
+  .master-header{height:64px}
+  .master-brand img{width:142px}
+  .master-desktop-nav{gap:38px}
+  .master-header-cta{min-height:38px}
+
+  .master-hero,
+  .hero-content{min-height:470px}
+  .hero-content{padding-top:62px}
+  .hero-copy h1{font-size:61px}
+  .hero-copy>p{margin-top:14px;font-size:17px}
+  .hero-copy .master-cta{margin-top:18px;min-height:48px}
+  .hero-proof{margin-top:14px}
+  .hero-x{width:205px;height:205px;top:28%}
+  .hero-x span{width:205px;height:16px}
+  .hero-metric-panel{top:35%;width:142px}
+
+  .category-rail{min-height:48px}
+
+  .problem-section,
+  .problem-grid{min-height:270px}
+  .problem-copy h2{font-size:40px}
+  .problem-copy>p{margin-top:10px;font-size:11px}
+  .problem-labels{gap:18px}
+  .problem-block{height:96px;width:82px}
+
+  .business-check-section{min-height:272px}
+  .check-content{padding-top:20px;padding-bottom:18px}
+  .check-heading h2{font-size:38px}
+  .check-options{margin-top:10px}
+  .check-options button{min-height:72px}
+  .check-result{min-height:22px;margin-top:5px}
+
+  .value-section{padding:25px 0 16px}
+  .value-copy h2{font-size:32px}
+  .value-inputs{margin-top:12px;gap:6px}
+  .value-inputs input{height:29px}
+  .value-scenarios article{min-height:125px;padding:12px 10px}
+  .value-scenarios strong{font-size:22px}
+  .value-aside p{margin-bottom:11px;font-size:9px}
+  .value-disclaimer{margin-top:7px}
+
+  .solution-section,
+  .solution-grid{min-height:270px}
+  .solution-copy{padding-top:22px;padding-bottom:20px}
+  .solution-copy h2{font-size:38px}
+  .solution-copy>p{margin-top:9px;font-size:10px}
+  .solution-outcomes{margin-top:17px}
+  .system-stage{min-height:270px}
+  .system-tower{top:16%;width:165px}
+  .system-tower>div{height:31px}
+  .system-core{top:25%;width:108px;height:124px}
+
+  .approach-section,
+  .approach-grid{min-height:190px}
+  .approach-copy h2{font-size:30px}
+  .approach-copy>p{margin-top:8px;font-size:9px}
+  .approach-quote{font-size:17px}
+  .approach-photo{height:100%}
+
+  .scenarios-section{padding:16px 0}
+  .scenarios-row{grid-template-columns:205px 1fr;gap:22px}
+  .scenarios-title h2{font-size:27px}
+  .scenario-card{min-height:88px;padding-top:42px}
+  .scenario-card span{font-size:13px}
+
+  .final-section,
+  .final-grid{min-height:250px}
+  .final-copy h2{font-size:36px}
+  .final-copy>p{margin-top:8px;font-size:10px}
+  .progress-form{padding:14px 0 10px}
+  .form-progress{margin-bottom:9px}
+  .choice-grid{margin-top:7px}
+  .choice-grid span{min-height:32px}
+  .field{margin-top:7px}
+  .field input{height:27px}
+  .form-next,.form-submit{min-height:38px;margin-top:9px}
+  .final-x{width:150px;height:150px}
+  .final-x span{width:165px;height:42px}
+
+  .footer-inner{min-height:52px}
+}
+
+@media(min-width:1440px){
+  :root{--shell:min(100% - 110px,1380px)}
+  .master-header,.master-nav{height:68px}
+  .master-hero,.hero-content{min-height:500px}
+  .hero-content{padding-top:66px}
+  .hero-copy h1{font-size:65px}
+  .hero-copy>p{font-size:18px}
+  .hero-x{width:220px;height:220px}
+  .hero-x span{width:220px;height:18px}
+  .category-rail{min-height:50px}
+  .problem-section,.problem-grid{min-height:282px}
+  .problem-copy h2{font-size:43px}
+  .business-check-section{min-height:286px}
+  .check-heading h2{font-size:41px}
+  .check-options button{min-height:76px}
+  .value-copy h2{font-size:34px}
+  .value-scenarios strong{font-size:24px}
+  .solution-section,.solution-grid{min-height:285px}
+  .solution-copy h2{font-size:41px}
+  .system-stage{min-height:285px}
+  .approach-section,.approach-grid{min-height:200px}
+  .approach-copy h2{font-size:32px}
+  .scenario-card{min-height:92px}
+  .final-section,.final-grid{min-height:265px}
+  .final-copy h2{font-size:39px}
+}
