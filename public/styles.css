@@ -1733,3 +1733,486 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     gap:48px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP MICRO CALIBRATION V2
+   Reference-proportion pass at 100% zoom.
+   Mobile remains untouched.
+   ========================================================= */
+@media (min-width:1024px){
+  :root{
+    --shell:min(calc(100% - 72px),1500px);
+  }
+
+  .master-header,
+  .master-nav{
+    height:62px;
+  }
+  .master-brand img{width:138px}
+  .master-desktop-nav{gap:34px}
+  .master-desktop-nav a{font-size:11px}
+  .master-header-cta{
+    min-height:36px;
+    padding-inline:16px;
+    font-size:10px;
+  }
+
+  .master-hero,
+  .hero-content{
+    min-height:430px;
+  }
+  .hero-content{
+    padding-top:58px;
+  }
+  .hero-copy{
+    width:min(485px,44vw);
+  }
+  .hero-kicker{
+    margin-bottom:9px;
+    font-size:8px;
+  }
+  .hero-copy h1{
+    max-width:485px;
+    font-size:56px;
+    line-height:.90;
+  }
+  .hero-copy>p{
+    max-width:380px;
+    margin-top:12px;
+    font-size:16px;
+    line-height:1.2;
+  }
+  .hero-copy .master-cta{
+    min-height:44px;
+    margin-top:16px;
+    padding-inline:20px;
+  }
+  .hero-proof{margin-top:11px}
+  .proof-orbs i{width:26px;height:26px}
+  .hero-x{
+    width:190px;
+    height:190px;
+    top:27%;
+    right:8%;
+  }
+  .hero-x span{
+    width:190px;
+    height:15px;
+  }
+  .hero-metric-panel{
+    top:34%;
+    right:29%;
+    width:132px;
+    padding:10px 11px;
+  }
+  .hero-side-message{
+    right:2.7%;
+    bottom:26px;
+  }
+
+  .category-rail{
+    min-height:43px;
+    gap:16px;
+  }
+  .category-intro,
+  .category-item{
+    font-size:9px;
+  }
+
+  .problem-section,
+  .problem-grid{
+    min-height:225px;
+  }
+  .problem-copy{
+    max-width:360px;
+  }
+  .problem-copy h2{
+    margin-top:7px;
+    font-size:37px;
+    line-height:.91;
+  }
+  .problem-copy>p{
+    margin-top:8px;
+    font-size:10px;
+    line-height:1.32;
+  }
+  .problem-copy>a{margin-top:10px;font-size:11px}
+  .problem-grid{
+    grid-template-columns:minmax(360px,.92fr) 155px;
+  }
+  .problem-labels{
+    width:155px;
+    gap:14px;
+  }
+  .problem-labels p{font-size:7px}
+  .problem-block{
+    width:74px;
+    height:84px;
+  }
+
+  .business-check-section{
+    min-height:232px;
+  }
+  .check-content{
+    padding-top:16px;
+    padding-bottom:14px;
+  }
+  .business-check-section .section-index{margin-bottom:4px}
+  .check-heading h2{
+    font-size:36px;
+    line-height:.91;
+  }
+  .check-heading p{
+    margin-top:5px;
+    font-size:9px;
+  }
+  .check-options{
+    width:min(100%,880px);
+    margin-top:8px;
+  }
+  .check-options button{
+    min-height:64px;
+  }
+  .check-options button span{font-size:9px}
+  .check-result{
+    min-height:18px;
+    margin-top:4px;
+  }
+
+  .value-section{
+    padding:21px 0 14px;
+  }
+  .value-grid{
+    grid-template-columns:.95fr 1.43fr .72fr;
+    gap:27px;
+  }
+  .value-copy h2{
+    margin-top:6px;
+    font-size:30px;
+    line-height:.92;
+  }
+  .value-inputs{
+    margin-top:10px;
+    gap:5px;
+  }
+  .value-inputs input{
+    height:27px;
+  }
+  .value-scenarios{
+    gap:9px;
+  }
+  .value-scenarios article{
+    min-height:112px;
+    padding:10px 9px;
+  }
+  .value-scenarios strong{
+    font-size:20px;
+  }
+  .value-aside{
+    padding-left:18px;
+  }
+  .value-aside p{
+    margin-bottom:9px;
+    font-size:8px;
+  }
+  .value-disclaimer{
+    margin-top:5px;
+    font-size:6px;
+  }
+
+  .solution-section,
+  .solution-grid{
+    min-height:228px;
+  }
+  .solution-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .solution-copy{
+    padding:18px 48px 17px 0;
+  }
+  .solution-copy h2{
+    margin-top:6px;
+    font-size:36px;
+    line-height:.92;
+  }
+  .solution-copy>p{
+    margin-top:7px;
+    font-size:9px;
+  }
+  .solution-outcomes{
+    margin-top:13px;
+    gap:10px;
+  }
+  .solution-outcomes svg{
+    width:18px;
+    height:18px;
+  }
+  .solution-outcomes span{
+    font-size:6px;
+  }
+  .system-stage{
+    min-height:228px;
+  }
+  .system-tower{
+    top:13%;
+    width:150px;
+  }
+  .system-tower>div{
+    height:28px;
+  }
+  .system-core{
+    top:22%;
+    width:96px;
+    height:112px;
+  }
+
+  .approach-section,
+  .approach-grid{
+    min-height:165px;
+  }
+  .approach-grid{
+    grid-template-columns:1.18fr .54fr .28fr;
+    gap:30px;
+  }
+  .approach-copy h2{
+    margin-top:5px;
+    font-size:28px;
+    line-height:.93;
+  }
+  .approach-copy>p{
+    margin-top:6px;
+    font-size:8px;
+  }
+  .approach-quote{
+    padding-left:14px;
+    font-size:15px;
+  }
+  .approach-side{
+    font-size:7px;
+  }
+
+  .scenarios-section{
+    padding:11px 0;
+  }
+  .scenarios-row{
+    grid-template-columns:198px 1fr;
+    gap:20px;
+  }
+  .scenarios-title h2{
+    margin-top:4px;
+    font-size:24px;
+  }
+  .scenario-cards{
+    gap:7px;
+  }
+  .scenario-card{
+    min-height:77px;
+    padding:35px 9px 8px;
+  }
+  .scenario-card span{
+    font-size:12px;
+  }
+  .scenario-card p{
+    font-size:6px;
+  }
+
+  .final-section,
+  .final-grid{
+    min-height:220px;
+  }
+  .final-grid{
+    grid-template-columns:1.04fr .96fr 138px;
+    gap:30px;
+  }
+  .final-copy h2{
+    margin-top:6px;
+    font-size:34px;
+    line-height:.92;
+  }
+  .final-copy>p{
+    margin-top:6px;
+    font-size:9px;
+  }
+  .analysis-context{
+    margin-top:8px;
+    font-size:8px;
+  }
+  .progress-form{
+    max-width:500px;
+    padding:10px 0 8px;
+  }
+  .form-progress{margin-bottom:7px}
+  .form-progress span{
+    width:20px;
+    height:20px;
+  }
+  .form-step-head h3{
+    margin-top:3px;
+    font-size:16px;
+  }
+  .choice-grid{
+    margin-top:5px;
+  }
+  .choice-grid span{
+    min-height:29px;
+    font-size:8px;
+  }
+  .field{
+    margin-top:5px;
+  }
+  .field input{
+    height:25px;
+  }
+  .form-next,
+  .form-submit{
+    min-height:34px;
+    margin-top:7px;
+  }
+  .final-x{
+    width:135px;
+    height:135px;
+  }
+  .final-x span{
+    width:150px;
+    height:38px;
+  }
+  .footer-inner{
+    min-height:46px;
+  }
+}
+
+@media (min-width:1280px) and (max-width:1439px){
+  :root{
+    --shell:min(calc(100% - 104px),1500px);
+  }
+  .hero-copy{
+    width:495px;
+  }
+  .hero-copy h1{
+    max-width:495px;
+    font-size:58px;
+  }
+  .check-options{
+    width:min(100%,900px);
+  }
+}
+
+@media (min-width:1440px) and (max-width:1799px){
+  :root{
+    --shell:min(calc(100% - 128px),1500px);
+  }
+
+  .master-header,
+  .master-nav{
+    height:64px;
+  }
+
+  .master-hero,
+  .hero-content{
+    min-height:445px;
+  }
+  .hero-content{
+    padding-top:60px;
+  }
+  .hero-copy{
+    width:505px;
+  }
+  .hero-copy h1{
+    max-width:505px;
+    font-size:60px;
+  }
+  .hero-copy>p{
+    font-size:16px;
+  }
+
+  .problem-section,
+  .problem-grid{
+    min-height:232px;
+  }
+  .problem-copy h2{
+    font-size:38px;
+  }
+
+  .business-check-section{
+    min-height:240px;
+  }
+  .check-heading h2{
+    font-size:37px;
+  }
+  .check-options button{
+    min-height:66px;
+  }
+
+  .value-section{
+    padding-top:22px;
+    padding-bottom:15px;
+  }
+  .value-copy h2{
+    font-size:31px;
+  }
+  .value-scenarios article{
+    min-height:116px;
+  }
+
+  .solution-section,
+  .solution-grid{
+    min-height:235px;
+  }
+  .solution-copy h2{
+    font-size:37px;
+  }
+  .system-stage{
+    min-height:235px;
+  }
+
+  .approach-section,
+  .approach-grid{
+    min-height:170px;
+  }
+  .approach-copy h2{
+    font-size:29px;
+  }
+
+  .scenarios-section{
+    padding:12px 0;
+  }
+  .scenarios-row{
+    grid-template-columns:205px 1fr;
+    gap:22px;
+  }
+  .scenario-card{
+    min-height:80px;
+  }
+
+  .final-section,
+  .final-grid{
+    min-height:228px;
+  }
+  .final-copy h2{
+    font-size:35px;
+  }
+}
+
+@media (min-width:1800px){
+  :root{
+    --shell:min(calc(100% - 176px),1580px);
+  }
+  .master-hero,
+  .hero-content{
+    min-height:470px;
+  }
+  .hero-copy{
+    width:530px;
+  }
+  .hero-copy h1{
+    max-width:530px;
+    font-size:63px;
+  }
+  .check-options{
+    width:min(100%,940px);
+  }
+  .final-grid{
+    grid-template-columns:1.06fr .94fr 145px;
+  }
+}
