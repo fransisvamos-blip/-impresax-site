@@ -811,7 +811,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   color:#fff;
   background:
     linear-gradient(180deg,rgba(17,17,17,.05),rgba(17,17,17,.85)),
-    var(--bg) center/cover no-repeat;
+    var(--bg) var(--pos,center)/cover no-repeat;
 }
 .scenario-card:after{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.08);pointer-events:none}
 .scenario-card span{position:relative;z-index:1;font-family:var(--serif);font-size:15px}
