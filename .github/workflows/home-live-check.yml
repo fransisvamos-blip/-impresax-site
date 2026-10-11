@@ -56,33 +56,35 @@ jobs:
           grep -q 'DESKTOP NAV REFINEMENT V2 + FINAL FORM TYPOGRAPHY V2' /tmp/styles
           grep -q 'transform:translateY(-16px)' /tmp/styles
 
-      - name: Verify Block 06 premium scenario assets
+      - name: Verify Block 06 real premium photography
         shell: bash
         run: |
           set -euo pipefail
           home="https://impresax.org/"
-          curl -L -sS --connect-timeout 8 --max-time 15 "$home" -o /tmp/block06-home
-          grep -q 'assets/scenarios/scenario-ristorazione.webp?v=20261011-hq-v2' /tmp/block06-home
-          grep -q 'assets/scenarios/scenario-retail.webp?v=20261011-hq-v2' /tmp/block06-home
-          grep -q 'assets/scenarios/scenario-servizi.webp?v=20261011-hq-v2' /tmp/block06-home
-          grep -q 'assets/scenarios/scenario-studio-professionale.webp?v=20261011-hq-v2' /tmp/block06-home
-          grep -q 'assets/scenarios/scenario-produzione.webp?v=20261011-hq-v2' /tmp/block06-home
-          grep -q 'w=3200&q=95' /tmp/block06-home
-          grep -q 'w=2600&q=95' /tmp/block06-home
-          for asset in \
-            scenario-ristorazione.webp \
-            scenario-retail.webp \
-            scenario-servizi.webp \
-            scenario-studio-professionale.webp \
-            scenario-produzione.webp
-          do
-            code=$(curl -L -sS -o /tmp/"$asset" -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://impresax.org/assets/scenarios/$asset?v=20261011-hq-v2" || true)
-            echo "$asset => $code"
+          curl -L -sS --connect-timeout 8 --max-time 20 "$home" -o /tmp/block06-home
+
+          grep -q 'photos/3951656/pexels-photo-3951656.jpeg' /tmp/block06-home
+          grep -q 'photos/15319245/pexels-photo-15319245.jpeg' /tmp/block06-home
+          grep -q 'photos/5816285/pexels-photo-5816285.jpeg' /tmp/block06-home
+          grep -q 'photos/8111889/pexels-photo-8111889.jpeg' /tmp/block06-home
+          grep -q 'photos/29945075/pexels-photo-29945075.jpeg' /tmp/block06-home
+          grep -q 'w=1800&q=92' /tmp/block06-home
+
+          urls=(
+            "https://images.pexels.com/photos/3951656/pexels-photo-3951656.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
+            "https://images.pexels.com/photos/15319245/pexels-photo-15319245.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
+            "https://images.pexels.com/photos/5816285/pexels-photo-5816285.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
+            "https://images.pexels.com/photos/8111889/pexels-photo-8111889.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
+            "https://images.pexels.com/photos/29945075/pexels-photo-29945075.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
+          )
+
+          i=0
+          for url in "${urls[@]}"; do
+            i=$((i+1))
+            code=$(curl -L -sS -o /tmp/block06-real-$i.jpg -w "%{http_code}" --connect-timeout 8 --max-time 30 "$url" || true)
+            echo "photo $i => $code"
             test "$code" = "200"
-            test -s /tmp/"$asset"
-            bytes=$(wc -c < /tmp/"$asset")
-            echo "$asset bytes=$bytes"
-            test "$bytes" -gt 150000
+            test -s /tmp/block06-real-$i.jpg
           done
 
       - name: Verify Business Check to Analysis handoff
