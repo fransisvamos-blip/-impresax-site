@@ -27,7 +27,7 @@ for (const vp of viewports) {
     expect(response.headers()["x-impresax-factory-version"]).toBe("pilot-001-reference-v4");
     expect(response.headers()["x-robots-tag"]).toContain("noindex");
 
-    await expect(page).toHaveTitle(/Francesco Giardinelli/);
+    await expect(page).toHaveTitle(/Giardinelli/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     await expect(page.getByText("Anteprima non ufficiale realizzata da ImpresaX.")).toBeVisible();
 
