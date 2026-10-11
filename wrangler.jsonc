@@ -36,5 +36,8 @@
         "info@impresax.org"
       ]
     }
-  ]
+  ],
+  "browser": {
+    "binding": "BROWSER"
+  }
 }
