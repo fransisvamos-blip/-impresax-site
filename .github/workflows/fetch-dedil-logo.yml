@@ -24,16 +24,18 @@ jobs:
             -o ops/render-packs/CZ-063/v2/dedil-logo-official.png
           test -s ops/render-packs/CZ-063/v2/dedil-logo-official.png
           file ops/render-packs/CZ-063/v2/dedil-logo-official.png
+          base64 -w0 ops/render-packs/CZ-063/v2/dedil-logo-official.png \
+            > ops/render-packs/CZ-063/v2/dedil-logo-official.png.b64
       - name: Commit exact asset
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "ImpresaX Rendering Studio"
           git config user.email "actions@users.noreply.github.com"
-          git add ops/render-packs/CZ-063/v2/dedil-logo-official.png
+          git add ops/render-packs/CZ-063/v2/dedil-logo-official.png ops/render-packs/CZ-063/v2/dedil-logo-official.png.b64
           if git diff --cached --quiet; then
             echo "No asset change"
             exit 0
           fi
-          git commit -m "Store exact DEDIL official logo asset"
+          git commit -m "Store exact DEDIL official logo asset and base64"
           git push
