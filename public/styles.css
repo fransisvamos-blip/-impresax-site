@@ -5331,3 +5331,63 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     margin-inline:auto;
   }
 }
+
+
+/* =========================================================
+   BLOCK 03 HARD FRAME RESET V1
+   Deterministic desktop gutters live on the section itself.
+   This removes Value Check from the accumulated shell/grid
+   override cascade that caused edge-to-edge text.
+   ========================================================= */
+@media (min-width:1024px){
+  .value-section{
+    padding-left:58px;
+    padding-right:58px;
+  }
+
+  .value-section > .value-grid,
+  .value-section > .value-disclaimer{
+    width:100%;
+    max-width:1290px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  .value-section > .value-grid{
+    grid-template-columns:.88fr 1.22fr .64fr;
+    gap:40px;
+  }
+
+  .value-section .value-copy{
+    justify-self:stretch;
+    width:100%;
+    max-width:460px;
+    margin:0;
+  }
+
+  .value-section .value-copy .section-index,
+  .value-section .value-copy h2,
+  .value-section .value-inputs{
+    margin-left:0;
+    margin-right:0;
+  }
+}
+
+@media (min-width:1280px) and (max-width:1599px){
+  .value-section{
+    padding-left:6.5vw;
+    padding-right:6.5vw;
+  }
+}
+
+@media (min-width:1600px){
+  .value-section{
+    padding-left:max(155px,calc((100vw - 1290px)/2));
+    padding-right:max(155px,calc((100vw - 1290px)/2));
+  }
+
+  .value-section > .value-grid,
+  .value-section > .value-disclaimer{
+    max-width:1290px;
+  }
+}
