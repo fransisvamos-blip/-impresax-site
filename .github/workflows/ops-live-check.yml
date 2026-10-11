@@ -1,0 +1,58 @@
+name: ImpresaX Ops Live Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/ops.js"
+      - "src/index.js"
+      - "public/admin/**"
+      - "package.json"
+      - "wrangler.jsonc"
+      - ".github/workflows/ops-live-check.yml"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Wait for Cloudflare production deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          health="https://admin.impresax.org/ops/healthz"
+          for i in {1..30}; do
+            code=$(curl -L -sS -o /tmp/health.json -w "%{http_code}" --connect-timeout 8 --max-time 15 "$health" || true)
+            echo "attempt=$i code=$code body=$(cat /tmp/health.json 2>/dev/null || true)"
+            if [ "$code" = "200" ] && grep -q '"database_connected":true' /tmp/health.json; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "ImpresaX Ops health check did not become healthy."
+          exit 1
+
+      - name: Verify Control Room remains private
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/admin-body -D /tmp/admin-headers -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://admin.impresax.org/" || true)
+          echo "admin_code=$code"
+          cat /tmp/admin-headers
+          test "$code" = "401"
+          grep -qi "WWW-Authenticate: Basic" /tmp/admin-headers
+          grep -qi "X-Robots-Tag: noindex" /tmp/admin-headers
+
+      - name: Verify public production has no regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=$(curl -L -sS -o /tmp/root -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://impresax.org/")
+          pilot=$(curl -L -sS -o /tmp/pilot -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://studiodentisticogiardinelli.impresax.org/")
+          echo "root=$root pilot=$pilot"
+          test "$root" = "200"
+          test "$pilot" = "200"
+          grep -qi "ImpresaX" /tmp/root
+          grep -qi "Giardinelli" /tmp/pilot
+          grep -qi "noindex" /tmp/pilot
