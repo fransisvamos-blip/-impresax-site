@@ -41,14 +41,14 @@ for (const vp of viewports) {
 
     await expect(page).toHaveTitle(/Francesco Giardinelli/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-    const primaryPhone = vp.width <= 620
-      ? page.locator('.mobile-contact a[href="tel:+393932227446"]')
-      : page.locator('.header-call[href="tel:+393932227446"]');
+    const primaryPhone = vp.width <= 700
+      ? page.locator('.mobile-actionbar a[href="tel:+393932227446"]')
+      : page.locator('.nav-cta[href="tel:+393932227446"]');
     await expect(primaryPhone).toBeVisible();
     await expect(page.getByText("Anteprima non ufficiale realizzata da ImpresaX.")).toBeVisible();
-    await expect(page.locator('.arrival h1')).toContainText("Giardinelli");
-    await expect(page.locator('.arrival-message h2')).toContainText("Precisione");
-    await expect(page.locator('#servizi')).toBeAttached();
+    await expect(page.locator('.hero h1')).toContainText("Un sorriso");
+    await expect(page.locator('.studio-section h2')).toContainText("Uno spazio pensato");
+    await expect(page.locator('#trattamenti')).toBeAttached();
     await expect(page.locator('#studio')).toBeAttached();
     await expect(page.locator('#dottore')).toBeAttached();
     await expect(page.locator('#contatti')).toBeAttached();
