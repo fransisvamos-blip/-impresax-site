@@ -39,7 +39,7 @@ for (const vp of viewports) {
     page.on("requestfailed", r => failures.push(r.url()));
     await page.goto(url, { waitUntil: "networkidle" });
 
-    await expect(page).toHaveTitle(/Francesco Giardinelli/);
+    await expect(page).toHaveTitle(/Studio Dentistico Giardinelli/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     const primaryPhone = vp.width <= 700
       ? page.locator('.mobile-actionbar a[href="tel:+393932227446"]')
