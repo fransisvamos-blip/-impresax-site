@@ -39,7 +39,8 @@ const statusLabels={
  APPROVED:"Approvato",
  GENERATED:"Generato",
  READY:"Pronto",
- PENDING:"In attesa"
+ PENDING:"In attesa",
+ REVERIFY_REQUIRED:"Riverifica necessaria"
 };
 
 const actionLabels={
@@ -58,7 +59,9 @@ const actionLabels={
  TRACK_SALES:"Segui la trattativa",
  CONVERT_CLIENT:"Converti in cliente",
  ARCHIVE:"Archivia",
- HOLD:"Mantieni in pausa"
+ HOLD:"Mantieni in pausa",
+ REVERIFY:"Riverifica i dati",
+ MONITOR:"Monitora"
 };
 
 const eventLabels={
@@ -126,7 +129,56 @@ const fieldLabels={
  branch:"Ramo",
  commit_sha:"Commit",
  deploy_id:"ID distribuzione",
- live_url:"URL online"
+ live_url:"URL online",
+ id_prospect:"ID prospect",
+ global_priority_rank:"Posizione priorità globale",
+ global_priority_score:"Punteggio priorità globale",
+ production_order:"Ordine di produzione",
+ priority_tier:"Fascia di priorità",
+ current_site:"Sito attuale",
+ site_status:"Stato del sito",
+ website_confidence:"Affidabilità del sito",
+ logo_source:"Fonte del logo",
+ logo_source_status:"Stato della fonte logo",
+ verified_services:"Servizi verificati",
+ verified_contacts:"Contatti verificati",
+ verified_trust:"Elementi di fiducia verificati",
+ contact_data_state:"Stato dei dati di contatto",
+ confidence:"Affidabilità dei dati",
+ last_verified:"Ultima verifica",
+ data_quality_status:"Qualità dei dati",
+ source_references:"Fonti di verifica",
+ warm_strategic:"Relazione strategica",
+ warm_reason:"Motivo della relazione strategica",
+ primary_digital_gap:"Gap digitale principale",
+ primary_marketing_gap:"Gap marketing principale",
+ commercial_goal:"Obiettivo commerciale",
+ demo_angle:"Angolo della demo",
+ primary_cta:"CTA primaria",
+ secondary_cta:"CTA secondaria",
+ outreach_policy:"Regola di contatto",
+ desired_ops_status:"Stato Ops desiderato",
+ master_version:"Versione master"
+};
+
+const valueLabels={
+ ALTA:"Alta",
+ MEDIA:"Media",
+ VERIFICATO:"Verificato",
+ DATO_DA_FONTE_TERZA:"Dato da fonte terza",
+ CORRETTO:"Corretto",
+ "DA CONTROLLARE":"Da controllare",
+ NON_DISPONIBILE:"Non disponibile",
+ SOURCE_CANDIDATE_NOT_ASSET_VERIFIED:"Fonte candidata · risorsa non ancora verificata",
+ NO_OUTREACH_UNTIL_SALES_READY:"Nessun contatto prima dello stato Pronto per il Reparto Vendite",
+ NESSUN_SITO_VERIFICATO:"Nessun sito verificato",
+ SITO_ACCETTABILE:"Sito accettabile",
+ SITO_BUONO:"Sito buono",
+ SITO_FORTE:"Sito forte",
+ SITO_MOLTO_DEBOLE:"Sito molto debole",
+ SITO_NON_FUNZIONANTE:"Sito non funzionante",
+ SITO_OBSOLETO:"Sito obsoleto",
+ SITO_PROVVISORIO:"Sito provvisorio"
 };
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
@@ -139,6 +191,7 @@ function tEvent(v){return eventLabels[v]||v||"—";}
 function tVertical(v){return verticalLabels[v]||String(v||"—").replaceAll("_"," ");}
 function tField(v){return fieldLabels[v]||String(v||"").replaceAll("_"," ");}
 function localizedObject(value){
+  if(typeof value==="boolean") return value?"Sì":"No";
   if(Array.isArray(value)) return value.map(localizedObject);
   if(value&&typeof value==="object"){
     return Object.fromEntries(Object.entries(value).map(([k,v])=>[tField(k),localizedObject(v)]));
@@ -148,6 +201,7 @@ function localizedObject(value){
     if(actionLabels[value]) return actionLabels[value];
     if(eventLabels[value]) return eventLabels[value];
     if(verticalLabels[value]) return verticalLabels[value];
+    if(valueLabels[value]) return valueLabels[value];
   }
   return value;
 }
