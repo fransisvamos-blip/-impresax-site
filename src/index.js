@@ -1,10 +1,11 @@
+import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 
 const ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
 const DOMAIN_SUFFIX = ".impresax.org";
 const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-const FACTORY_VERSION = "pilot-001-reference-v4";
+const FACTORY_VERSION = "ops-foundation-v1+pilot-001-reference-v4";
 
 export default {
   async fetch(request, env) {
@@ -23,6 +24,16 @@ export default {
           "Cache-Control": "public, max-age=3600",
         },
       });
+    }
+
+    // Private ImpresaX Ops / Control Room.
+    if (isOpsHost(host)) {
+      if (url.protocol !== "https:") {
+        const target = new URL(request.url);
+        target.protocol = "https:";
+        return Response.redirect(target.toString(), 301);
+      }
+      return handleOpsRequest(request, env);
     }
 
     // Keep the existing workers.dev endpoint as a technical fallback.
@@ -69,6 +80,10 @@ export default {
     }
 
     return serveTenant(request, env, tenant);
+  },
+
+  async scheduled(_controller, env, ctx) {
+    ctx.waitUntil(runOrchestrator(env, "cloudflare-cron"));
   },
 };
 
