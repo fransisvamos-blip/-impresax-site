@@ -375,13 +375,17 @@ export async function handleOpsRequest(request, env) {
         current_database() as database,
         (select count(*)::int from prospects) as prospects,
         now() as checked_at`;
+      const adminAssetUrl = new URL("/admin/", request.url);
+      const adminAsset = await env.ASSETS.fetch(new Request(adminAssetUrl));
       return json({
         ok: true,
         service: "impresax-ops",
         database: rows[0]?.database || "unknown",
         database_connected: true,
+        control_room_asset: adminAsset.ok,
+        control_room_asset_status: adminAsset.status,
         checked_at: rows[0]?.checked_at || new Date().toISOString()
-      }, 200, {
+      }, adminAsset.ok ? 200 : 503, {
         "X-Robots-Tag": "noindex, nofollow, noarchive"
       });
     } catch (error) {
@@ -402,9 +406,21 @@ export async function handleOpsRequest(request, env) {
   }
 
   const assetUrl = new URL(request.url);
-  assetUrl.hostname = "impresax.org";
-  assetUrl.pathname = url.pathname === "/" ? "/admin/index.html" : `/admin${url.pathname}`;
-  const response = await env.ASSETS.fetch(new Request(assetUrl, request));
+  // Static Assets canonicalizes index.html to the directory URL.
+  // Serve the admin directory itself for "/" so the browser never gets
+  // redirected into a path that would be prefixed with /admin twice.
+  if (url.pathname === "/" || url.pathname === "/admin" || url.pathname === "/admin/") {
+    assetUrl.pathname = "/admin/";
+  } else if (url.pathname.startsWith("/admin/")) {
+    assetUrl.pathname = url.pathname;
+  } else {
+    assetUrl.pathname = `/admin${url.pathname}`;
+  }
+  const assetRequest = new Request(assetUrl, {
+    method: "GET",
+    headers: request.headers,
+  });
+  const response = await env.ASSETS.fetch(assetRequest);
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", "no-store");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
