@@ -75,24 +75,61 @@ async function emailDnsQa() {
 }
 
 async function cloudflareZoneId(env) {
-  if (!env.EMAIL_API_TOKEN) return null;
+  if (!env.EMAIL_API_TOKEN) {
+    return { zone_id:null, status:"UNAVAILABLE", reason:"EMAIL_API_TOKEN_NOT_CONFIGURED" };
+  }
   try {
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/zones?name=" + encodeURIComponent(EMAIL_DOMAIN) + "&status=active&per_page=1",
       { headers: { Authorization: "Bearer " + env.EMAIL_API_TOKEN } }
     );
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data?.success && data?.result?.[0]?.id ? data.result[0].id : null;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.success) {
+      return {
+        zone_id:null,
+        status: response.status === 401 || response.status === 403 ? "UNAVAILABLE" : "ERROR",
+        reason: response.status === 401 || response.status === 403
+          ? "TOKEN_CANNOT_RESOLVE_ZONE"
+          : "ZONE_LOOKUP_FAILED"
+      };
+    }
+    const zoneId = data?.result?.[0]?.id || null;
+    return zoneId
+      ? { zone_id:zoneId, status:"PENDING", reason:null }
+      : { zone_id:null, status:"ERROR", reason:"ZONE_NOT_FOUND" };
   } catch {
-    return null;
+    return { zone_id:null, status:"ERROR", reason:"ZONE_LOOKUP_ERROR" };
   }
 }
 
 async function cloudflareDeliveryEvent(env, providerMessageId) {
-  if (!env.EMAIL_API_TOKEN || !providerMessageId) return null;
-  const zoneTag = await cloudflareZoneId(env);
-  if (!zoneTag) return null;
+  if (!providerMessageId) {
+    return { event:null, tracking:{ status:"PENDING", reason:"NO_MESSAGE_TO_TRACK", required_permission:null } };
+  }
+  if (!env.EMAIL_API_TOKEN) {
+    return {
+      event:null,
+      tracking:{
+        status:"UNAVAILABLE",
+        reason:"EMAIL_API_TOKEN_NOT_CONFIGURED",
+        required_permission:"Zone → Analytics Read"
+      }
+    };
+  }
+
+  const zone = await cloudflareZoneId(env);
+  if (!zone.zone_id) {
+    return {
+      event:null,
+      tracking:{
+        status:zone.status,
+        reason:zone.reason,
+        required_permission: zone.reason === "TOKEN_CANNOT_RESOLVE_ZONE"
+          ? "Zone → Zone Read (per risolvere lo Zone ID) e Zone → Analytics Read"
+          : "Zone → Analytics Read"
+      }
+    };
+  }
 
   const end = new Date();
   const start = new Date(end.getTime() - 36 * 60 * 60 * 1000);
@@ -126,35 +163,58 @@ async function cloudflareDeliveryEvent(env, providerMessageId) {
       body: JSON.stringify({
         query,
         variables: {
-          zoneTag,
+          zoneTag: zone.zone_id,
           start: start.toISOString(),
           end: end.toISOString(),
         },
       }),
     });
-    if (!response.ok) return null;
-    const data = await response.json();
-    if (data?.errors?.length) return null;
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401 || response.status === 403) {
+      return { event:null, tracking:{ status:"UNAVAILABLE", reason:"ANALYTICS_PERMISSION_DENIED", required_permission:"Zone → Analytics Read" } };
+    }
+    if (!response.ok) {
+      return { event:null, tracking:{ status:"ERROR", reason:"ANALYTICS_HTTP_" + response.status, required_permission:"Zone → Analytics Read" } };
+    }
+    if (data?.errors?.length) {
+      const message = String(data.errors[0]?.message || "");
+      const denied = /permission|access|auth|forbidden|not authorized/i.test(message);
+      return {
+        event:null,
+        tracking:{
+          status:denied ? "UNAVAILABLE" : "ERROR",
+          reason:denied ? "ANALYTICS_PERMISSION_DENIED" : "ANALYTICS_QUERY_ERROR",
+          required_permission:"Zone → Analytics Read"
+        }
+      };
+    }
     const events = data?.data?.viewer?.zones?.[0]?.emailSendingAdaptive || [];
-    return events.find(event => String(event.messageId || "") === String(providerMessageId)) || null;
+    const event = events.find(item => String(item.messageId || "") === String(providerMessageId)) || null;
+    return {
+      event,
+      tracking:{ status:event ? "ACTIVE" : "PENDING", reason:event ? null : "EVENT_NOT_AVAILABLE_YET", required_permission:null }
+    };
   } catch {
-    return null;
+    return { event:null, tracking:{ status:"ERROR", reason:"ANALYTICS_REQUEST_ERROR", required_permission:"Zone → Analytics Read" } };
   }
 }
 
+
 async function refreshEmailDelivery(sql, env, logRow) {
   if (!logRow?.provider_message_id || !["SENT","DELIVERED","DELIVERY_FAILED"].includes(logRow.status)) {
-    return logRow || null;
+    return { row:logRow || null, tracking:{ status:"PENDING", reason:"NO_MESSAGE_TO_TRACK", required_permission:null } };
   }
-  const event = await cloudflareDeliveryEvent(env, logRow.provider_message_id);
-  if (!event) return logRow;
+
+  const lookup = await cloudflareDeliveryEvent(env, logRow.provider_message_id);
+  const event = lookup.event;
+  if (!event) return { row:logRow, tracking:lookup.tracking };
 
   if (event.status === "delivered" && logRow.status !== "DELIVERED") {
     const rows = await sql`update email_logs
       set status='DELIVERED', error=null
       where id=${logRow.id}
       returning *`;
-    return rows[0] || logRow;
+    return { row:rows[0] || logRow, tracking:lookup.tracking };
   }
 
   if (event.status === "deliveryFailed" && logRow.status !== "DELIVERY_FAILED") {
@@ -163,10 +223,11 @@ async function refreshEmailDelivery(sql, env, logRow) {
       set status='DELIVERY_FAILED', error=${providerError}
       where id=${logRow.id}
       returning *`;
-    return rows[0] || logRow;
+    return { row:rows[0] || logRow, tracking:lookup.tracking };
   }
-  return logRow;
+  return { row:logRow, tracking:lookup.tracking };
 }
+
 
 export async function sendSystemEmail(env, {
   emailType = "SYSTEM",
@@ -238,48 +299,59 @@ export async function sendSystemEmail(env, {
 }
 
 async function emailSystemStatus(sql, env) {
-  const [lastTestRows, lastSendRows, lastErrorRows, dns] = await Promise.all([
+  const [lastTestRows, lastSendRows, lastErrorRows, lastDeliveryRows, dns] = await Promise.all([
     sql`select * from email_logs where email_type='TEST' order by created_at desc limit 1`,
     sql`select * from email_logs where status in ('SENT','DELIVERED') order by created_at desc limit 1`,
     sql`select * from email_logs where status in ('FAILED','DELIVERY_FAILED') order by created_at desc limit 1`,
+    sql`select * from email_logs where status='DELIVERED' order by created_at desc limit 1`,
     emailDnsQa(),
   ]);
 
   let lastTest = lastTestRows[0] || null;
-  if (lastTest) lastTest = await refreshEmailDelivery(sql, env, lastTest);
+  let deliveryTracking = { status:"PENDING", reason:"NO_TEST_SEND", required_permission:null };
+  if (lastTest) {
+    const refreshed = await refreshEmailDelivery(sql, env, lastTest);
+    lastTest = refreshed.row;
+    deliveryTracking = refreshed.tracking;
+  }
 
   let lastSend = lastSendRows[0] || null;
   if (lastSend && lastTest && lastSend.id === lastTest.id) lastSend = lastTest;
 
+  let lastDelivery = lastDeliveryRows[0] || null;
+  if (lastTest?.status === "DELIVERED") lastDelivery = lastTest;
+
   const bindingReady = Boolean(env.EMAIL && typeof env.EMAIL.send === "function");
   const fromAddress = String(env.EMAIL_FROM || EMAIL_FROM_ADDRESS).trim().toLowerCase();
-  const fromDomainReady = fromAddress === EMAIL_FROM_ADDRESS && dns.spf && dns.dkim;
+  const spfPass = Boolean(dns.spf);
+  const dkimPass = Boolean(dns.dkim);
+  const fromDomainReady = fromAddress === EMAIL_FROM_ADDRESS && spfPass && dkimPass;
+  const testSendPass = Boolean(lastTest && ["SENT","DELIVERED"].includes(lastTest.status) && !lastTest.error);
+  const noSendErrorPass = Boolean(lastTest && !lastTest.error && !["FAILED","DELIVERY_FAILED"].includes(lastTest.status));
 
-  const testSend = lastTest && ["SENT","DELIVERED"].includes(lastTest.status) ? "PASS"
-    : lastTest?.status === "FAILED" ? "FAIL" : "PENDING";
-  const delivery = lastTest?.status === "DELIVERED" ? "PASS"
-    : ["FAILED","DELIVERY_FAILED"].includes(lastTest?.status) ? "FAIL" : "PENDING";
-
-  const qa = {
+  const readinessQa = {
     email_service_connection: bindingReady ? "PASS" : "FAIL",
     from_domain: fromDomainReady ? "PASS" : "FAIL",
-    test_send: testSend,
-    delivery,
-    dkim: dns.dkim ? "PASS" : "FAIL",
-    spf: dns.spf ? "PASS" : "FAIL",
-    control_room: "PASS",
+    spf: spfPass ? "PASS" : "FAIL",
+    dkim: dkimPass ? "PASS" : "FAIL",
+    test_send: testSendPass ? "PASS" : "FAIL",
+    no_send_error: noSendErrorPass ? "PASS" : "FAIL",
   };
-  const overallReady = Object.values(qa).every(value => value === "PASS");
+  const overallReady = Object.values(readinessQa).every(value => value === "PASS");
 
   return {
     status: overallReady ? "IMPRESAX_EMAIL_READY" : "EMAIL_SYSTEM_NOT_READY",
+    sending: testSendPass && noSendErrorPass ? "PASS" : "FAIL",
     from_address: fromAddress,
     last_test: lastTest,
     last_send: lastSend,
+    last_delivery: lastDelivery,
     last_error: lastErrorRows[0] || null,
-    qa,
+    qa: readinessQa,
+    delivery_tracking: deliveryTracking,
   };
 }
+
 
 function basicAuthValid(request, env) {
   if (!env.OPS_ADMIN_PASSWORD) return false;
