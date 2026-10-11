@@ -42,10 +42,20 @@ for (const vp of viewports) {
     await expect(page).toHaveTitle(/Francesco Giardinelli/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     const primaryPhone = vp.width <= 620
-      ? page.locator('.mobile-cta a[href="tel:+393932227446"]')
-      : page.locator('.header-call[href="tel:+393932227446"]');
+      ? page.locator('.mobile-actionbar .mobile-call[href="tel:+393932227446"]')
+      : page.locator('.topbar-cta[href="tel:+393932227446"]');
     await expect(primaryPhone).toBeVisible();
     await expect(page.getByText("Anteprima non ufficiale realizzata da ImpresaX.")).toBeVisible();
+    await expect(page.locator('.hero h1')).toContainText("La cura inizia");
+    await expect(page.locator('#servizi')).toBeAttached();
+    await expect(page.locator('#dottore')).toBeAttached();
+    await expect(page.locator('#contatti')).toBeAttached();
+    await expect(page.locator('a[href="mailto:studiodentisticogiardinelli@gmail.com"]').first()).toBeAttached();
+
+    const imageLoadState = await page.locator('img').evaluateAll(imgs =>
+      imgs.map(img => ({ complete: img.complete, width: img.naturalWidth, src: img.currentSrc || img.src }))
+    );
+    expect(imageLoadState.every(x => x.complete && x.width > 0)).toBeTruthy();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
