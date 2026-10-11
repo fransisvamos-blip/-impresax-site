@@ -27,6 +27,30 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run Pilot 001 viewport QA
         run: npx playwright test tests/pilot-001.spec.mjs --reporter=line
+      - name: Live tenant smoke test
+        run: |
+          set -euo pipefail
+          tenant="https://studiodentisticogiardinelli.impresax.org/"
+          root="https://impresax.org/"
+          unknown="https://factory-unknown-test.impresax.org/"
+          ok=0
+          for i in $(seq 1 18); do
+            code=$(curl -sS -o /tmp/tenant-body -D /tmp/tenant-headers -w "%{http_code}" "$tenant" || true)
+            if [ "$code" = "200" ] && grep -qi "X-ImpresaX-Tenant: studiodentisticogiardinelli" /tmp/tenant-headers; then
+              ok=1
+              break
+            fi
+            echo "Tenant not live yet (attempt $i/18, HTTP $code); retrying..."
+            sleep 10
+          done
+          test "$ok" = "1"
+          grep -qi "X-Robots-Tag: noindex" /tmp/tenant-headers
+          grep -q "Studio Dentistico Dott. Francesco Giardinelli" /tmp/tenant-body
+          root_code=$(curl -sS -o /tmp/root-body -w "%{http_code}" "$root")
+          test "$root_code" = "200"
+          unknown_code=$(curl -sS -o /dev/null -D /tmp/unknown-headers -w "%{http_code}" "$unknown")
+          test "$unknown_code" = "302"
+          grep -qi "Location: https://impresax.org/" /tmp/unknown-headers
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
