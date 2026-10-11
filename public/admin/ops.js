@@ -2,20 +2,155 @@ const $=s=>document.querySelector(s);
 let state={prospects:[],selected:null};
 
 const labels={
- total_prospects:"Total prospects",
- ready_for_rendering:"Ready for rendering",
- rendering:"Rendering",
- approved_reference:"Approved reference",
- building:"Building",
- qa:"QA",
- demo_ready:"Demo ready",
- escalation_required:"Escalation"
+ total_prospects:"Aziende totali",
+ ready_for_rendering:"Pronte per il rendering",
+ rendering:"Rendering in corso",
+ approved_reference:"Riferimento approvato",
+ building:"Costruzione",
+ qa:"Controllo qualità",
+ demo_ready:"Demo pronte",
+ escalation_required:"Intervento richiesto"
+};
+
+const statusLabels={
+ READY_FOR_RENDERING:"Pronto per il rendering",
+ RENDERING:"Rendering in corso",
+ RENDER_REWORK:"Rendering da rifare",
+ APPROVED_REFERENCE:"Riferimento approvato",
+ READY_FOR_BUILD:"Pronto per la costruzione",
+ BUILDING:"Costruzione in corso",
+ BUILD_REWORK:"Costruzione da rifare",
+ QA_RUNNING:"Controllo qualità in corso",
+ QA_FAILED:"Controllo qualità fallito",
+ ESCALATION_REQUIRED:"Intervento Cabina richiesto",
+ DEMO_READY:"Demo pronta",
+ SALES_READY:"Pronto per il Reparto Vendite",
+ CONTACTED:"Contattato",
+ WON:"Cliente acquisito",
+ LOST:"Perso",
+ HOLD:"In pausa",
+ QUEUED:"In coda",
+ RUNNING:"In corso",
+ COMPLETED:"Completato",
+ FAILED:"Fallito",
+ CANCELLED:"Annullato",
+ PASS:"Superato",
+ FAIL:"Fallito",
+ APPROVED:"Approvato",
+ GENERATED:"Generato",
+ READY:"Pronto",
+ PENDING:"In attesa"
+};
+
+const actionLabels={
+ START_RENDERING:"Avvia il rendering",
+ WAIT_RENDER:"Attendi il rendering",
+ RETRY_RENDER:"Ripeti il rendering",
+ PREPARE_BUILD:"Prepara la costruzione",
+ START_BUILD:"Avvia la costruzione",
+ WAIT_BUILD:"Attendi la costruzione",
+ RETRY_BUILD:"Ripeti la costruzione",
+ RUN_QA:"Avvia il controllo qualità",
+ QA_REWORK:"Correggi dopo il controllo qualità",
+ CABINA_REVIEW:"Revisione della Cabina",
+ CREATE_SALES_HANDOFF:"Prepara il passaggio al Reparto Vendite",
+ WAIT_SALES_ENGINE:"Attendi il Reparto Vendite",
+ TRACK_SALES:"Segui la trattativa",
+ CONVERT_CLIENT:"Converti in cliente",
+ ARCHIVE:"Archivia",
+ HOLD:"Mantieni in pausa"
+};
+
+const eventLabels={
+ RENDER_STARTED:"Rendering avviato",
+ RENDER_FAILED:"Rendering fallito",
+ RENDER_COMPLETED:"Rendering completato",
+ RENDER_STATE_ADVANCED:"Rendering avanzato alla fase successiva",
+ READY_FOR_BUILD:"Pronto per la costruzione",
+ BUILD_STARTED:"Costruzione avviata",
+ BUILD_FAILED:"Costruzione fallita",
+ BUILD_COMPLETED:"Costruzione completata",
+ BUILD_STATE_ADVANCED:"Costruzione avanzata alla fase successiva",
+ QA_FAILED:"Controllo qualità fallito",
+ QA_PASSED:"Controllo qualità superato",
+ QA_REWORK_ROUTED:"Correzione QA inoltrata alla costruzione",
+ SALES_HANDOFF_CREATED:"Passaggio al Reparto Vendite creato",
+ STATUS_CHANGED:"Stato modificato",
+ PROSPECTS_INSERT:"Azienda inserita",
+ PROSPECTS_UPDATE:"Azienda aggiornata",
+ RENDER_JOBS_INSERT:"Lavoro di rendering creato",
+ RENDER_JOBS_UPDATE:"Lavoro di rendering aggiornato",
+ RENDER_JOBS_DELETE:"Lavoro di rendering eliminato",
+ RENDER_PACKS_INSERT:"Pacchetto di rendering creato",
+ RENDER_PACKS_UPDATE:"Pacchetto di rendering aggiornato",
+ RENDER_PACKS_DELETE:"Pacchetto di rendering eliminato",
+ RENDER_ASSETS_INSERT:"Risorsa di rendering aggiunta",
+ RENDER_ASSETS_UPDATE:"Risorsa di rendering aggiornata",
+ RENDER_ASSETS_DELETE:"Risorsa di rendering eliminata",
+ SITE_BUILDS_INSERT:"Costruzione sito creata",
+ SITE_BUILDS_UPDATE:"Costruzione sito aggiornata",
+ SITE_BUILDS_DELETE:"Costruzione sito eliminata",
+ QA_RUNS_INSERT:"Controllo qualità creato",
+ QA_RUNS_UPDATE:"Controllo qualità aggiornato",
+ QA_RUNS_DELETE:"Controllo qualità eliminato",
+ SALES_HANDOFFS_INSERT:"Passaggio vendite creato",
+ SALES_HANDOFFS_UPDATE:"Passaggio vendite aggiornato",
+ SALES_HANDOFFS_DELETE:"Passaggio vendite eliminato",
+ ORCHESTRATOR_QUEUE_INSERT:"Attività orchestratore aggiunta",
+ ORCHESTRATOR_QUEUE_UPDATE:"Attività orchestratore aggiornata",
+ ORCHESTRATOR_QUEUE_DELETE:"Attività orchestratore eliminata"
+};
+
+const verticalLabels={
+ DENTAL_MEDICAL:"Dentale / Medicale",
+ BEAUTY:"Bellezza / Estetica",
+ RESTAURANT_HOSPITALITY:"Ristorazione / Ospitalità",
+ PROFESSIONAL_SERVICES:"Servizi professionali",
+ HOME_SERVICES_CONSTRUCTION:"Servizi casa / Edilizia"
+};
+
+const fieldLabels={
+ pilot_id:"ID pilot",
+ address:"Indirizzo",
+ ops_import:"Importazione Ops",
+ commercial_angle:"Angolo commerciale",
+ outreach_hook:"Aggancio commerciale",
+ source:"Fonte",
+ operation:"Operazione",
+ row:"Record",
+ desktop_render_url:"Rendering desktop",
+ mobile_render_url:"Rendering mobile",
+ brand_dna:"DNA del brand",
+ reference_score:"Punteggio riferimento",
+ repository:"Repository",
+ branch:"Ramo",
+ commit_sha:"Commit",
+ deploy_id:"ID distribuzione",
+ live_url:"URL online"
 };
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
 function smallId(id){return id?String(id).slice(0,8)+"…":"—";}
 function fmtDate(v){if(!v)return"—";try{return new Intl.DateTimeFormat("it-IT",{dateStyle:"short",timeStyle:"short"}).format(new Date(v))}catch{return v}}
-function statusClass(v){return v==="ESCALATION_REQUIRED"?"status escalation":(v==="DEMO_READY"||v==="SALES_READY"||v==="WON"?"status ready":"status")}
+function statusClass(v){return v==="ESCALATION_REQUIRED"?"status escalation":(v==="DEMO_READY"||v==="SALES_READY"||v==="WON"||v==="PASS"||v==="APPROVED"?"status ready":"status")}
+function tStatus(v){return statusLabels[v]||v||"—";}
+function tAction(v){return actionLabels[v]||v||"—";}
+function tEvent(v){return eventLabels[v]||v||"—";}
+function tVertical(v){return verticalLabels[v]||String(v||"—").replaceAll("_"," ");}
+function tField(v){return fieldLabels[v]||String(v||"").replaceAll("_"," ");}
+function localizedObject(value){
+  if(Array.isArray(value)) return value.map(localizedObject);
+  if(value&&typeof value==="object"){
+    return Object.fromEntries(Object.entries(value).map(([k,v])=>[tField(k),localizedObject(v)]));
+  }
+  if(typeof value==="string"){
+    if(statusLabels[value]) return statusLabels[value];
+    if(actionLabels[value]) return actionLabels[value];
+    if(eventLabels[value]) return eventLabels[value];
+    if(verticalLabels[value]) return verticalLabels[value];
+  }
+  return value;
+}
 
 async function api(path,options){const r=await fetch(path,options);if(!r.ok)throw new Error(await r.text());return r.json();}
 
@@ -24,28 +159,30 @@ function renderMetrics(counts){
 }
 function renderRows(){
   const q=$("#search").value.trim().toLowerCase();
-  const rows=state.prospects.filter(p=>!q||[p.azienda,p.id_prospect,p.vertical,p.current_step].some(v=>String(v||"").toLowerCase().includes(q)));
+  const rows=state.prospects.filter(p=>!q||[
+    p.azienda,p.id_prospect,p.vertical,tVertical(p.vertical),p.current_step,tStatus(p.current_step),p.pipeline_status,tStatus(p.pipeline_status),p.next_action,tAction(p.next_action)
+  ].some(v=>String(v||"").toLowerCase().includes(q)));
   $("#rows").innerHTML=rows.map(p=>`<tr data-id="${esc(p.id_prospect)}" class="${state.selected===p.id_prospect?"selected":""}">
     <td>${esc(p.rank??"—")}</td>
     <td class="id" title="${esc(p.id_prospect)}">${esc(smallId(p.id_prospect))}</td>
     <td><strong>${esc(p.azienda)}</strong></td>
-    <td>${esc(p.vertical)}</td>
-    <td>${esc(p.render_status||"—")}</td>
-    <td>${esc(p.build_status||"—")}</td>
-    <td>${esc(p.qa_status||"—")}</td>
-    <td>${p.live_url?`<a class="live" href="${esc(p.live_url)}" target="_blank" rel="noopener">LIVE ↗</a>`:"—"}</td>
-    <td><span class="${statusClass(p.pipeline_status)}">${esc(p.current_step)}</span></td>
-    <td>${esc(p.last_event||"—")}<br><span class="id">${esc(fmtDate(p.last_event_at))}</span></td>
+    <td>${esc(tVertical(p.vertical))}</td>
+    <td>${esc(tStatus(p.render_status))}</td>
+    <td>${esc(tStatus(p.build_status))}</td>
+    <td>${esc(tStatus(p.qa_status))}</td>
+    <td>${p.live_url?`<a class="live" href="${esc(p.live_url)}" target="_blank" rel="noopener">ONLINE ↗</a>`:"—"}</td>
+    <td><span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.current_step))}</span></td>
+    <td>${esc(tEvent(p.last_event))}<br><span class="id">${esc(fmtDate(p.last_event_at))}</span></td>
     <td class="${p.error?"error":""}">${esc(p.error||"—")}</td>
-    <td>${esc(p.next_action||"—")}</td>
+    <td>${esc(tAction(p.next_action))}</td>
   </tr>`).join("");
   document.querySelectorAll("tr[data-id]").forEach(tr=>tr.addEventListener("click",()=>selectProspect(tr.dataset.id)));
 }
 function renderEvents(events){
   $("#events").innerHTML=(events||[]).map(e=>`<div class="event-row">
     <time>${esc(fmtDate(e.created_at))}</time>
-    <strong>${esc(e.event_type)}</strong>
-    <span>${esc(e.prospect_id?smallId(e.prospect_id):e.entity_type||"system")}</span>
+    <strong>${esc(tEvent(e.event_type))}</strong>
+    <span>${esc(e.prospect_id?smallId(e.prospect_id):e.entity_type||"sistema")}</span>
   </div>`).join("");
 }
 function listBlock(title,items,formatter){
@@ -53,48 +190,72 @@ function listBlock(title,items,formatter){
 }
 function jsonBlock(title,value){
   const empty=value==null||(typeof value==="object"&&Object.keys(value).length===0);
-  return `<section class="detail-section"><h4>${esc(title)}</h4>${empty?'<span class="id">Nessun dato</span>':`<pre class="json">${esc(JSON.stringify(value,null,2))}</pre>`}</section>`;
+  const translated=localizedObject(value);
+  return `<section class="detail-section"><h4>${esc(title)}</h4>${empty?'<span class="id">Nessun dato</span>':`<pre class="json">${esc(JSON.stringify(translated,null,2))}</pre>`}</section>`;
 }
 function linkMaybe(url,label){
   return url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label||url)} ↗</a>`:"—";
 }
 async function selectProspect(id){
   state.selected=id;renderRows();
-  $("#detail").innerHTML='<div class="empty">Loading…</div>';
-  const d=await api("/ops/api/prospects/"+encodeURIComponent(id));
-  const p=d.prospect;
-  $("#detail").innerHTML=`
-    <div class="detail-head"><span class="kicker">${esc(p.pipeline_status)}</span><h3>${esc(p.business_name)}</h3>
-      <div class="id">${esc(p.id)}</div>${p.live_url?`<p><a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a></p>`:""}</div>
-    <section class="detail-section"><h4>Prospect</h4><dl class="kv">
-      <dt>Rank</dt><dd>${esc(p.rank??"—")}</dd><dt>Verticale</dt><dd>${esc(p.vertical)}</dd>
-      <dt>Sito attuale</dt><dd>${linkMaybe(p.website_url,p.website_url)}</dd>
-      <dt>Demo URL</dt><dd>${linkMaybe(p.live_url,p.live_url)}</dd>
-      <dt>Current step</dt><dd>${esc(p.current_step)}</dd><dt>Next action</dt><dd>${esc(p.next_action)}</dd>
-      <dt>Error</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
-    </dl></section>
-    ${jsonBlock("Dati prospect / fonti",p.source_data)}
-    ${jsonBlock("Logo",p.logo)}
-    ${jsonBlock("Brand DNA",p.brand_dna)}
-    ${listBlock("Render jobs",d.render_jobs,x=>`<article class="timeline"><strong>${esc(x.status)} · attempt ${esc(x.attempt)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("Render packs",d.render_packs,x=>`<article class="timeline"><strong>v${esc(x.version)} · ${esc(x.status)}</strong><div class="asset-links">${linkMaybe(x.desktop_render_url,"Desktop render")} · ${linkMaybe(x.mobile_render_url,"Mobile render")}</div><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("Assets",d.render_assets,x=>`<article class="timeline"><strong>${esc(x.asset_type)}</strong><div class="asset-links">${linkMaybe(x.asset_url,"Apri asset")}</div><time>${esc(x.rights_status||x.source_type||"")}</time></article>`)}
-    ${listBlock("Build",d.site_builds,x=>`<article class="timeline"><strong>${esc(x.status)} · ${esc(x.commit_sha||"no commit")}</strong><div class="asset-links">${linkMaybe(x.live_url,"Live build")}</div><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("QA + screenshots",d.qa_runs,x=>`<article class="timeline"><strong>${esc(x.status)} · attempt ${esc(x.attempt)}</strong><pre class="json compact">${esc(JSON.stringify(x.screenshots||{},null,2))}</pre><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("Sales handoff",d.sales_handoffs,x=>`<article class="timeline"><strong>${esc(x.status)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("Timeline",d.events,x=>`<article class="timeline"><strong>${esc(x.event_type)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-  `;
+  $("#detail").innerHTML='<div class="empty">Caricamento…</div>';
+  try{
+    const d=await api("/ops/api/prospects/"+encodeURIComponent(id));
+    const p=d.prospect;
+    $("#detail").innerHTML=`
+      <div class="detail-head"><span class="kicker">${esc(tStatus(p.pipeline_status))}</span><h3>${esc(p.business_name)}</h3>
+        <div class="id">${esc(p.id)}</div>${p.live_url?`<p><a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a></p>`:""}</div>
+      <section class="detail-section"><h4>Azienda</h4><dl class="kv">
+        <dt>Posizione</dt><dd>${esc(p.rank??"—")}</dd><dt>Verticale</dt><dd>${esc(tVertical(p.vertical))}</dd>
+        <dt>Sito attuale</dt><dd>${linkMaybe(p.website_url,p.website_url)}</dd>
+        <dt>URL demo</dt><dd>${linkMaybe(p.live_url,p.live_url)}</dd>
+        <dt>Fase attuale</dt><dd>${esc(tStatus(p.current_step))}</dd>
+        <dt>Prossima azione</dt><dd>${esc(tAction(p.next_action))}</dd>
+        <dt>Errore</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
+      </dl></section>
+      ${jsonBlock("Dati azienda / fonti",p.source_data)}
+      ${jsonBlock("Logo",p.logo)}
+      ${jsonBlock("DNA del brand",p.brand_dna)}
+      ${listBlock("Lavori di rendering",d.render_jobs,x=>`<article class="timeline"><strong>${esc(tStatus(x.status))} · tentativo ${esc(x.attempt)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+      ${listBlock("Pacchetti di rendering",d.render_packs,x=>`<article class="timeline"><strong>v${esc(x.version)} · ${esc(tStatus(x.status))}</strong><div class="asset-links">${linkMaybe(x.desktop_render_url,"Rendering desktop")} · ${linkMaybe(x.mobile_render_url,"Rendering mobile")}</div><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+      ${listBlock("Risorse",d.render_assets,x=>`<article class="timeline"><strong>${esc(tField(x.asset_type))}</strong><div class="asset-links">${linkMaybe(x.asset_url,"Apri risorsa")}</div><time>${esc(x.rights_status||x.source_type||"")}</time></article>`)}
+      ${listBlock("Costruzioni",d.site_builds,x=>`<article class="timeline"><strong>${esc(tStatus(x.status))} · ${esc(x.commit_sha||"nessun commit")}</strong><div class="asset-links">${linkMaybe(x.live_url,"Apri sito online")}</div><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+      ${listBlock("Controlli qualità e schermate",d.qa_runs,x=>`<article class="timeline"><strong>${esc(tStatus(x.status))} · tentativo ${esc(x.attempt)}</strong><pre class="json compact">${esc(JSON.stringify(localizedObject(x.screenshots||{}),null,2))}</pre><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+      ${listBlock("Passaggi al Reparto Vendite",d.sales_handoffs,x=>`<article class="timeline"><strong>${esc(tStatus(x.status))}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+      ${listBlock("Cronologia",d.events,x=>`<article class="timeline"><strong>${esc(tEvent(x.event_type))}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+    `;
+  }catch(e){
+    $("#detail").innerHTML='<div class="empty error">Impossibile caricare il dettaglio dell\'azienda.</div>';
+    console.error(e);
+  }
 }
 async function load(){
   try{
     const d=await api("/ops/api/dashboard");
     state.prospects=d.prospects||[];
     renderMetrics(d.counts||{});renderRows();renderEvents(d.recent_events||[]);
-    $("#updated").textContent="Updated "+fmtDate(d.generated_at);
-  }catch(e){$("#updated").textContent="ERROR";console.error(e)}
+    $("#updated").textContent="Aggiornato "+fmtDate(d.generated_at);
+  }catch(e){
+    $("#updated").textContent="ERRORE";
+    console.error(e);
+  }
 }
 $("#refresh").addEventListener("click",load);
-$("#run").addEventListener("click",async()=>{const b=$("#run");b.disabled=true;b.textContent="Running…";try{await api("/ops/api/orchestrator/run",{method:"POST"});await load()}finally{b.disabled=false;b.textContent="Run orchestrator"}});
+$("#run").addEventListener("click",async()=>{
+  const b=$("#run");
+  b.disabled=true;
+  b.textContent="Esecuzione…";
+  try{
+    await api("/ops/api/orchestrator/run",{method:"POST"});
+    await load();
+  }catch(e){
+    console.error(e);
+    alert("Errore durante l'esecuzione dell'orchestratore.");
+  }finally{
+    b.disabled=false;
+    b.textContent="Esegui orchestratore";
+  }
+});
 $("#search").addEventListener("input",renderRows);
 load();
 setInterval(load,30000);
