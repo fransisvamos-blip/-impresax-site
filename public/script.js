@@ -133,7 +133,38 @@ function applyDiagnosis(key,emit=false){
     track("diagnostic_complete",{diagnostic_area:data.label});
   }
 }
-diagnosisButtons.forEach(btn=>btn.addEventListener("click",()=>applyDiagnosis(btn.dataset.diagnosis,true)));
+function handoffDiagnosisToAnalysis(key){
+  const data=diagnosisMap[key];
+  if(!data)return;
+  applyDiagnosis(key,true);
+
+  // Always reopen the final form on the matching first step.
+  showStep(1,false);
+
+  const analysis=document.getElementById("analisi");
+  const formEl=document.getElementById("leadForm");
+  const radioValue=data.formValue||data.label;
+  const selectedRadio=[...document.querySelectorAll('input[name="improvement_area"]')].find(input=>input.value===radioValue);
+  const selectedChoice=selectedRadio?.closest("label");
+
+  formEl?.classList.remove("diagnosis-handoff");
+  selectedChoice?.classList.remove("diagnosis-handoff-choice");
+
+  requestAnimationFrame(()=>{
+    analysis?.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"start"});
+    formEl?.classList.add("diagnosis-handoff");
+    selectedChoice?.classList.add("diagnosis-handoff-choice");
+
+    window.setTimeout(()=>{
+      formEl?.classList.remove("diagnosis-handoff");
+      selectedChoice?.classList.remove("diagnosis-handoff-choice");
+    },1800);
+  });
+
+  track("diagnostic_to_analysis",{diagnostic_area:data.label});
+}
+
+diagnosisButtons.forEach(btn=>btn.addEventListener("click",()=>handoffDiagnosisToAnalysis(btn.dataset.diagnosis)));
 applyDiagnosis(selectedDiagnosis&&diagnosisMap[selectedDiagnosis]?selectedDiagnosis:"clienti",false);
 
 /* Value Check */
@@ -227,7 +258,7 @@ let currentStep=1;
 let formStarted=false;
 let leadSubmitted=false;
 
-function showStep(step){
+function showStep(step,shouldScroll=true){
   currentStep=step;
   steps.forEach(el=>{
     el.hidden=false;
@@ -240,7 +271,7 @@ function showStep(step){
   });
   if(step===2)track("form_step_2");
   if(step===3)track("form_step_3");
-  form?.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+  if(shouldScroll)form?.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
 }
 function markStarted(){
   if(formStarted)return;
