@@ -449,19 +449,19 @@ async function prospectDetail(sql, id) {
 
 async function queueComplete(sql, jobId, payload = {}) {
   await sql`update orchestrator_queue
-    set status='COMPLETED',locked_at=null,locked_by=null,error=null,payload=payload || ${JSON.stringify(payload)}::jsonb
+    set status='COMPLETED',locked_at=null,heartbeat_at=null,locked_by=null,error=null,payload=payload || ${JSON.stringify(payload)}::jsonb
     where id=${jobId}`;
 }
 
 async function queueRelease(sql, jobId, reason) {
   await sql`update orchestrator_queue
-    set status='QUEUED',locked_at=null,locked_by=null,error=${reason},available_at=now()+interval '5 minutes'
+    set status='QUEUED',locked_at=null,heartbeat_at=null,locked_by=null,error=${reason},available_at=now()+interval '5 minutes'
     where id=${jobId}`;
 }
 
 async function queueFail(sql, jobId, reason) {
   await sql`update orchestrator_queue
-    set status='FAILED',locked_at=null,locked_by=null,error=${reason}
+    set status='FAILED',locked_at=null,heartbeat_at=null,locked_by=null,error=${reason}
     where id=${jobId}`;
 }
 
@@ -602,13 +602,21 @@ async function processQa(sql, env, job, prospect) {
 
 async function processInternal(sql, job, prospect) {
   if (job.task_type === "PREPARE_BUILD") {
-    await transition(sql, prospect.id, "READY_FOR_BUILD", "READY_FOR_BUILD", { queue_id: job.id });
+    await transition(sql, prospect.id, "READY_FOR_BUILD", "READY_FOR_BUILD", {
+      queue_id: job.id,
+      render_pack_id: job.render_pack_id || null,
+      render_pack_version: job.render_pack_version || null
+    });
     await queueComplete(sql, job.id);
     return { outcome: "completed", task: job.task_type };
   }
 
   if (job.task_type === "QA_REWORK") {
-    await transition(sql, prospect.id, "BUILD_REWORK", "QA_REWORK_ROUTED", { queue_id: job.id });
+    await transition(sql, prospect.id, "BUILD_REWORK", "BUILD_REWORK", {
+      queue_id: job.id,
+      render_pack_id: job.render_pack_id || null,
+      render_pack_version: job.render_pack_version || null
+    });
     await queueComplete(sql, job.id);
     return { outcome: "completed", task: job.task_type };
   }
@@ -630,11 +638,24 @@ async function processInternal(sql, job, prospect) {
   return { outcome: "failed", task: job.task_type, error: "UNKNOWN_TASK" };
 }
 
-export async function runOrchestrator(env, workerId = "impresax-orchestrator") {
+export async function runOrchestrator(env, workerId = "impresax-orchestrator-v1") {
   const sql = db(env);
-  const jobs = await sql`select * from ops_claim_job(${workerId}, null)`;
+
+  const [recoveredRows, reconciledRows] = await Promise.all([
+    sql`select ops_recover_stale_jobs(interval '15 minutes') as recovered`,
+    sql`select ops_reconcile_orchestrator() as reconciled`
+  ]);
+
+  const supportedTasks = ["PREPARE_BUILD","BUILD","QA","QA_REWORK","SALES_HANDOFF"];
+  const jobs = await sql`select * from ops_claim_job(${workerId}, ${supportedTasks}::text[])`;
   const job = jobs[0];
-  if (!job || !job.id) return { outcome: "idle" };
+  if (!job || !job.id) {
+    return {
+      outcome: "idle",
+      recovered: Number(recoveredRows[0]?.recovered || 0),
+      reconciled: Number(reconciledRows[0]?.reconciled || 0)
+    };
+  }
 
   const prospects = await sql`select * from prospects where id=${job.prospect_id}::uuid limit 1`;
   const prospect = prospects[0];
@@ -651,7 +672,12 @@ export async function runOrchestrator(env, workerId = "impresax-orchestrator") {
   }
   if (job.task_type === "BUILD") {
     if (prospect.pipeline_status !== "BUILDING") {
-      await transition(sql, prospect.id, "BUILDING", "BUILD_STARTED", { queue_id: job.id, executor: "INTERNAL_SITE_FACTORY" });
+      await transition(sql, prospect.id, "BUILDING", "BUILD_STARTED", {
+        queue_id: job.id,
+        executor: "INTERNAL_SITE_FACTORY",
+        render_pack_id: job.render_pack_id || null,
+        render_pack_version: job.render_pack_version || null
+      });
     }
     try {
       const result = await buildApprovedReference(env, prospect.id);
@@ -668,6 +694,13 @@ export async function runOrchestrator(env, workerId = "impresax-orchestrator") {
   if (job.task_type === "QA") {
     try {
       const result = await qaApprovedReference(env, prospect.id);
+      if (result.pass) {
+        await logEvent(sql, prospect.id, "DEMO_READY", {
+          queue_id: job.id,
+          render_pack_id: job.render_pack_id || null,
+          render_pack_version: job.render_pack_version || null
+        });
+      }
       await queueComplete(sql, job.id, result);
       return { outcome: result.pass ? "completed" : "rework", task:"QA", prospect_id:prospect.id, result };
     } catch (error) {
