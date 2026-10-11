@@ -5613,3 +5613,173 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     transform:translateY(-1px);
   }
 }
+
+
+/* =========================================================
+   MOBILE COPY CENTERING + FINAL FORM EMPHASIS V1
+   01/02 centered copy, clearer selected state, stronger CTA.
+   Mobile only.
+   ========================================================= */
+@media (max-width:767px){
+
+  /* 01 / IL PROBLEMA — center the main narrative */
+  .problem-copy{
+    text-align:center;
+    align-items:center;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .problem-copy .section-index,
+  .problem-copy h2,
+  .problem-copy>p{
+    text-align:center;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .problem-copy>a{
+    width:max-content;
+    margin-left:auto;
+    margin-right:auto;
+    justify-content:center;
+  }
+
+  /* 02 / BUSINESS CHECK — center the main copy only */
+  .check-heading{
+    text-align:center;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .check-heading h2,
+  .check-heading p{
+    text-align:center;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  /* 07 / FINAL FORM — stronger card without scaling */
+  .final-section .progress-form{
+    margin-left:-8px;
+    margin-right:-8px;
+    padding:26px 18px 18px;
+    border:1px solid rgba(17,17,17,.10);
+    border-top:3px solid var(--orange);
+    border-radius:16px;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.98),rgba(250,249,247,.98));
+    box-shadow:
+      0 22px 52px rgba(17,17,17,.13),
+      0 4px 14px rgba(17,17,17,.06),
+      0 0 0 1px rgba(255,255,255,.78) inset;
+  }
+
+  .final-section .form-progress{
+    margin-bottom:20px;
+  }
+
+  .final-section .form-step-head h3{
+    font-size:23px;
+    line-height:1.12;
+  }
+
+  .final-section .choice-grid{
+    margin-top:14px;
+    border:1px solid rgba(17,17,17,.09);
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .final-section .choice-grid span{
+    min-height:52px;
+    padding:0 42px 0 13px;
+  }
+
+  /* Selected = positive confirmation, never an error X */
+  .final-section .choice-grid input:checked+span{
+    color:var(--ink);
+    background:rgba(42,157,91,.055);
+    font-weight:700;
+  }
+  .final-section .choice-grid input:checked+span:after{
+    content:"✓";
+    position:absolute;
+    right:11px;
+    top:50%;
+    display:grid;
+    place-items:center;
+    width:22px;
+    height:22px;
+    transform:translateY(-50%);
+    border-radius:50%;
+    background:#2a9d5b;
+    color:#fff;
+    font-size:13px;
+    font-weight:900;
+    line-height:1;
+    box-shadow:0 5px 12px rgba(42,157,91,.22);
+  }
+
+  /* Handoff highlight keeps the same positive language */
+  .final-section .choice-grid label.diagnosis-handoff-choice span{
+    background:rgba(42,157,91,.09);
+    color:var(--ink);
+    border-color:rgba(42,157,91,.20);
+    box-shadow:
+      0 0 0 2px rgba(42,157,91,.10),
+      0 8px 18px rgba(42,157,91,.08);
+  }
+
+  /* Continue = unmistakable next action */
+  .final-section .form-next{
+    min-height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 14px 0 18px;
+    border:1px solid rgba(255,90,54,.28);
+    border-radius:10px;
+    background:
+      linear-gradient(135deg,#ff6847 0%,var(--orange) 58%,#ed4928 100%);
+    color:#fff;
+    font-size:14px;
+    font-weight:850;
+    letter-spacing:.005em;
+    box-shadow:
+      0 14px 28px rgba(255,90,54,.22),
+      0 2px 0 rgba(255,255,255,.18) inset;
+  }
+  .final-section .form-next>span{
+    display:grid;
+    place-items:center;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:rgba(255,255,255,.16);
+    font-size:17px;
+    line-height:1;
+    transition:transform .18s ease,background .18s ease;
+  }
+  .final-section .form-next:active{
+    transform:translateY(1px);
+  }
+  .final-section .form-next:active>span{
+    transform:translateX(2px);
+    background:rgba(255,255,255,.24);
+  }
+
+  .final-section .form-next.diagnosis-handoff-continue{
+    box-shadow:
+      0 0 0 4px rgba(255,90,54,.12),
+      0 17px 34px rgba(255,90,54,.30),
+      0 2px 0 rgba(255,255,255,.18) inset;
+  }
+}
+
+@media (max-width:389px){
+  .final-section .progress-form{
+    margin-left:-4px;
+    margin-right:-4px;
+    padding-left:16px;
+    padding-right:16px;
+  }
+}
