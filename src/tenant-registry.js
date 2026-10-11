@@ -24,6 +24,7 @@ export const BUILTIN_TENANTS = Object.freeze({
     cabina_approval_required: true,
     old_demo_status: "V1_REJECTED_VISUAL / V2_REJECTED_VISUAL / V3_REJECTED_VISUAL",
     reference_lock_live_at: "2026-10-11T07:02:00+02:00",
+    reference_locked_live_at: "2026-10-11T06:34:00+02:00",
     recovery_metrics: {
       rebuild_started_at: "2026-10-11T05:33:08+02:00",
       first_v2_viewport_pass_at: "2026-10-11T05:34:35+02:00",
@@ -66,7 +67,7 @@ export const BUILTIN_TENANTS = Object.freeze({
       "Nessuna recensione, rating, numero pazienti o dato prestazionale inventato."
     ],
     created_at: "2026-10-11T05:05:00+02:00",
-    updated_at: "2026-10-11T06:12:00+02:00"
+    updated_at: "2026-10-11T06:34:00+02:00"
   })
 });
 
