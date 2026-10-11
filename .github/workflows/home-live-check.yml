@@ -92,4 +92,4 @@ jobs:
           grep -q 'diagnostic_to_analysis' /tmp/script
 
 
-# BLOCK06_ASSET_CHECK_V1
+# BLOCK06_ASSET_CHECK_V1_RECHECK
