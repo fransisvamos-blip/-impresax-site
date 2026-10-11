@@ -63,19 +63,19 @@ jobs:
           home="https://impresax.org/"
           curl -L -sS --connect-timeout 8 --max-time 20 "$home" -o /tmp/block06-home
 
-          grep -q 'photos/3951656/pexels-photo-3951656.jpeg' /tmp/block06-home
-          grep -q 'photos/15319245/pexels-photo-15319245.jpeg' /tmp/block06-home
-          grep -q 'photos/5816285/pexels-photo-5816285.jpeg' /tmp/block06-home
-          grep -q 'photos/8111889/pexels-photo-8111889.jpeg' /tmp/block06-home
-          grep -q 'photos/29945075/pexels-photo-29945075.jpeg' /tmp/block06-home
-          grep -q 'w=1800&q=92' /tmp/block06-home
+          grep -q 'photos/37307284/pexels-photo-37307284.jpeg' /tmp/block06-home
+          grep -q 'photos/5904464/pexels-photo-5904464.jpeg' /tmp/block06-home
+          grep -q 'photos/4342498/pexels-photo-4342498.jpeg' /tmp/block06-home
+          grep -q 'photos/8112111/pexels-photo-8112111.jpeg' /tmp/block06-home
+          grep -q 'photos/4452606/pexels-photo-4452606.jpeg' /tmp/block06-home
+          grep -q 'w=2400&q=95' /tmp/block06-home
 
           urls=(
-            "https://images.pexels.com/photos/3951656/pexels-photo-3951656.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
-            "https://images.pexels.com/photos/15319245/pexels-photo-15319245.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
-            "https://images.pexels.com/photos/5816285/pexels-photo-5816285.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
-            "https://images.pexels.com/photos/8111889/pexels-photo-8111889.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
-            "https://images.pexels.com/photos/29945075/pexels-photo-29945075.jpeg?auto=compress&cs=tinysrgb&w=1800&q=92"
+            "https://images.pexels.com/photos/37307284/pexels-photo-37307284.jpeg?auto=compress&cs=tinysrgb&w=2400&q=95"
+            "https://images.pexels.com/photos/5904464/pexels-photo-5904464.jpeg?auto=compress&cs=tinysrgb&w=2400&q=95"
+            "https://images.pexels.com/photos/4342498/pexels-photo-4342498.jpeg?auto=compress&cs=tinysrgb&w=2400&q=95"
+            "https://images.pexels.com/photos/8112111/pexels-photo-8112111.jpeg?auto=compress&cs=tinysrgb&w=2400&q=95"
+            "https://images.pexels.com/photos/4452606/pexels-photo-4452606.jpeg?auto=compress&cs=tinysrgb&w=2400&q=95"
           )
 
           i=0
