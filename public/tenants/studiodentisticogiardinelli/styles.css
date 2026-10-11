@@ -199,4 +199,4 @@ p,h1,h2,figure,blockquote{margin:0}
 }
 
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-\n.studio-media figcaption,.doctor-media figcaption,.location-media figcaption{display:none}\n
+\n.studio-media figcaption,.doctor-media figcaption,.location-media figcaption{display:none}\n\n@media (min-width:761px){.hero-location{display:none}}\n
