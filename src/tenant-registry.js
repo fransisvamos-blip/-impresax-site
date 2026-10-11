@@ -10,7 +10,7 @@ export const BUILTIN_TENANTS = Object.freeze({
     public_preview: true,
     noindex: true,
     disclaimer_enabled: true,
-    asset_path: "/tenants/studiodentisticogiardinelli/index.html",
+    asset_path: "/tenants/studiodentisticogiardinelli/",
     primary_problem:
       "Il sito esistente contiene molte informazioni utili ma le presenta con gerarchia debole, navigazione profonda e forte densità di testo, rendendo più faticoso il percorso mobile verso contatto e appuntamento.",
     what_we_changed: [
