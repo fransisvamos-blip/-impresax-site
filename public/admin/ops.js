@@ -40,6 +40,9 @@ const statusLabels={
  GENERATED:"Generato",
  READY:"Pronto",
  PENDING:"In attesa",
+ SENT:"Inviata",
+ DELIVERED:"Consegnata",
+ DELIVERY_FAILED:"Consegna fallita",
  REVERIFY_REQUIRED:"Riverifica necessaria"
 };
 
@@ -387,4 +390,3 @@ $("#run").addEventListener("click",async()=>{
 $("#search").addEventListener("input",renderRows);
 load();
 setInterval(load,30000);
-setInterval(loadEmailSystem,30000);
