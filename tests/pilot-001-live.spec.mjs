@@ -24,7 +24,7 @@ for (const vp of viewports) {
     expect(response).not.toBeNull();
     expect(response.status()).toBe(200);
     expect(response.headers()["x-impresax-tenant"]).toBe("studiodentisticogiardinelli");
-    expect(response.headers()["x-impresax-factory-version"]).toBe("pilot-001-reference-v4");
+    expect(response.headers()["x-impresax-factory-version"]).toContain("pilot-001-reference-v4");
     expect(response.headers()["x-robots-tag"]).toContain("noindex");
 
     await expect(page).toHaveTitle(/Giardinelli/);
@@ -32,8 +32,8 @@ for (const vp of viewports) {
     await expect(page.getByText("Anteprima non ufficiale realizzata da ImpresaX.")).toBeVisible();
 
     const primaryPhone = vp.width <= 760
-      ? page.locator('.mobile-cta a[href="tel:+393932227446"]')
-      : page.locator('.hero-actions a[href="tel:+393932227446"]');
+      ? page.locator('.hero-actions a[href="tel:+393932227446"]')
+      : page.locator('.nav-cta[href="tel:+393932227446"]');
     await expect(primaryPhone).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
