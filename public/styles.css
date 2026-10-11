@@ -5391,3 +5391,48 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     max-width:1290px;
   }
 }
+
+
+/* =========================================================
+   BLOCK 03 STRUCTURAL FRAME V2
+   HTML-level value-frame is the single desktop alignment
+   authority. This supersedes prior Value Check shell fixes.
+   ========================================================= */
+@media (min-width:1024px){
+  .value-section{
+    padding-left:0;
+    padding-right:0;
+  }
+
+  .value-section > .value-frame{
+    width:var(--shell);
+    max-width:1290px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  .value-section > .value-frame > .value-grid,
+  .value-section > .value-frame > .value-disclaimer{
+    width:100%;
+    max-width:none;
+    margin-left:0;
+    margin-right:0;
+  }
+
+  .value-section > .value-frame > .value-grid{
+    grid-template-columns:.88fr 1.22fr .64fr;
+    gap:40px;
+  }
+
+  .value-section .value-copy{
+    justify-self:stretch;
+    width:100%;
+    max-width:460px;
+  }
+
+  .value-section .value-scenarios,
+  .value-section .value-aside{
+    width:100%;
+    max-width:none;
+  }
+}
