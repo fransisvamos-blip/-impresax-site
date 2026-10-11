@@ -8,6 +8,20 @@ export default {
     const url = new URL(request.url);
     const host = normalizeHostname(url.hostname);
 
+    // Enforce the official HTTPS origin before serving the public domain.
+    if ((host === ROOT_HOST || host === WWW_HOST) && url.protocol !== "https:") {
+      const target = new URL(request.url);
+      target.protocol = "https:";
+      target.hostname = ROOT_HOST;
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: target.toString(),
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
+    }
+
     // Keep the existing workers.dev endpoint as a technical fallback.
     if (host.endsWith(".workers.dev")) {
       return serveMainSite(request, env);
