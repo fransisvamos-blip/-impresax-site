@@ -1,3 +1,4 @@
+// Home asset deployment refresh 2026-10-11
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "quiet-salad-5340",
