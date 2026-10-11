@@ -1,0 +1,27 @@
+name: ImpresaX Ops Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ops-diagnostic.yml"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live Ops health once
+        shell: bash
+        run: |
+          set +e
+          echo "=== OPS HEALTH ==="
+          code=$(curl -sS -o /tmp/body -D /tmp/headers -w "%{http_code}" --connect-timeout 8 --max-time 20 "https://admin.impresax.org/ops/healthz")
+          echo "HTTP_CODE=$code"
+          echo "--- headers ---"
+          cat /tmp/headers || true
+          echo "--- body ---"
+          cat /tmp/body || true
+          echo
+          echo "=== END ==="
+          exit 0
