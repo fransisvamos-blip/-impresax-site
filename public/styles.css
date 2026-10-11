@@ -6366,3 +6366,50 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     transform:translateX(-50%) translateY(0);
   }
 }
+
+
+/* =========================================================
+   DESKTOP NAV REFINEMENT V6
+   Put the small index inline after each label.
+   ========================================================= */
+@media (min-width:1024px){
+  .master-desktop-nav a{
+    display:inline-flex;
+    align-items:center;
+  }
+
+  .master-desktop-nav a:before{
+    position:static;
+    order:1;
+    display:inline-block;
+    width:auto;
+    height:auto;
+    margin-left:6px;
+    margin-right:0;
+    color:rgba(255,255,255,.46);
+    font-size:7.5px;
+    font-weight:800;
+    letter-spacing:.08em;
+    line-height:1;
+    opacity:1;
+    transform:translateY(1px);
+    background:none;
+    box-shadow:none;
+  }
+
+  .master-desktop-nav a:nth-child(1):before{content:"01"}
+  .master-desktop-nav a:nth-child(2):before{content:"02"}
+  .master-desktop-nav a:nth-child(3):before{content:"03"}
+  .master-desktop-nav a:nth-child(4):before{content:"04"}
+
+  .master-desktop-nav a:after{
+    order:2;
+  }
+
+  .master-desktop-nav a:hover:before,
+  .master-desktop-nav a:focus-visible:before{
+    color:var(--orange);
+    opacity:1;
+    transform:translateY(1px);
+  }
+}
