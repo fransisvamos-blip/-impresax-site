@@ -9,7 +9,7 @@
   "palette": {"signal_red":"#B42027","near_black":"#111111","warm_off_white":"#F4F1EB","white":"#FFFFFF"},
   "image_sources": [
     {"role":"hero","page":"https://unsplash.com/photos/metal-bars-stacked-neatly-in-a-warehouse-IR93Hx_ybg8","author":"Zoshua Colah","license":"Unsplash License"},
-    {"role":"materials","page":"https://unsplash.com/photos/stacks-of-concrete-pavers-outside-a-building-hFBPsiRu0Gc","author":"Sergej Karpow","license":"Unsplash License"},
+    {"role":"materials","page":"https://unsplash.com/photos/stacks-of-gray-concrete-curbs-on-wooden-pallets-nEeAcammeoE","author":"Sergej Karpow","license":"Unsplash License"},
     {"role":"steel","page":"https://unsplash.com/photos/metal-rods-stacked-on-industrial-shelving-units-6EwTQwXneuE","author":"Zoshua Colah","license":"Unsplash License"},
     {"role":"yard","page":"https://unsplash.com/photos/concrete-forms-stacked-on-wooden-pallets-outdoors-xh5o861CEF8","author":"Sergej Karpow","license":"Unsplash License"}
   ],
