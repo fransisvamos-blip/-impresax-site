@@ -26,9 +26,9 @@ p,h1,h2,figure,blockquote{margin:0}
 .dark-link{color:#25201b;border-color:#594d43}.light-link{color:#fff;border-color:rgba(255,255,255,.65)}
 
 /* HERO */
-.hero{position:relative;height:500px;color:#fff;overflow:hidden;background:#241912}
+.hero{position:relative;height:472px;color:#fff;overflow:hidden;background:#241912}
 .hero-picture{position:absolute;inset:0;margin:0}
-.hero-picture img{object-position:58% 48%;filter:saturate(.78) sepia(.22) contrast(1.02) brightness(.76)}
+.hero-picture img{object-position:center center;filter:saturate(.92) sepia(.12) contrast(1.02) brightness(.82)}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(19,12,8,.92) 0%,rgba(25,15,10,.76) 31%,rgba(25,15,10,.30) 55%,rgba(18,12,9,.14) 76%,rgba(14,10,8,.36) 100%)}
 .hero-nav{position:absolute;z-index:4;top:0;left:0;right:0;height:76px;display:grid;grid-template-columns:250px 1fr 220px;align-items:center;padding:0 70px}
 .brand{display:flex;flex-direction:column;text-decoration:none;width:max-content}
@@ -38,9 +38,9 @@ p,h1,h2,figure,blockquote{margin:0}
 .nav-links a{font-size:10px;text-decoration:none;color:rgba(255,255,255,.88)}
 .nav-cta{justify-self:end;min-width:172px;min-height:43px}
 .mobile-menu{display:none}
-.hero-copy{position:absolute;z-index:3;left:76px;top:118px;width:490px}
+.hero-copy{position:absolute;z-index:3;left:76px;top:108px;width:490px}
 .hero-copy .overline{margin-bottom:10px}
-.hero-copy h1{font:500 66px/.82 var(--serif);letter-spacing:-.04em;margin-bottom:22px}
+.hero-copy h1{font:500 64px/.84 var(--serif);letter-spacing:-.04em;margin-bottom:22px}
 .hero-lead{font-size:13px;line-height:1.35;color:rgba(255,255,255,.92);max-width:390px}
 .hero-actions{display:flex;align-items:center;gap:28px;margin-top:20px}
 .hero-location{position:absolute;z-index:3;right:72px;bottom:40px;padding-left:20px;border-left:1px solid rgba(255,255,255,.58);display:flex;flex-direction:column;gap:5px;text-transform:uppercase;letter-spacing:.18em}
@@ -55,26 +55,26 @@ p,h1,h2,figure,blockquote{margin:0}
 .trust-strip strong{display:block;font-size:12px;margin-bottom:6px}.trust-strip p{font-size:10px;line-height:1.45;color:#6d655e}
 
 /* STUDIO */
-.studio-section{height:275px;display:grid;grid-template-columns:42% 58%;background:var(--paper)}
+.studio-section{height:258px;display:grid;grid-template-columns:42% 58%;background:var(--paper)}
 .studio-copy{padding:28px 52px 22px 76px;display:flex;flex-direction:column;justify-content:center}
 .studio-copy .overline{margin-bottom:8px}
 .studio-copy h2{font:500 48px/.88 var(--serif);letter-spacing:-.04em;margin-bottom:14px}
 .studio-copy>p:not(.overline){font-size:11px;line-height:1.45;color:#655d56;max-width:420px;margin-bottom:13px}
 .studio-copy .underlink{width:max-content}
 .studio-media{position:relative;overflow:hidden}
-.studio-media img{object-position:center 56%;filter:saturate(.80) sepia(.08) brightness(1.04)}
+.studio-media img{object-position:center center;filter:none}
 .studio-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,247,236,.28),transparent 34%,rgba(45,28,18,.04))}
 .studio-media figcaption{position:absolute;z-index:2;left:12px;bottom:8px;font-size:7px;color:rgba(40,29,20,.52)}
 .studio-manifesto{position:absolute;z-index:2;right:38px;top:60px;font-size:9px;line-height:1.8;text-transform:uppercase;letter-spacing:.17em;color:#47392f}
 
 /* TREATMENTS */
-.treatments-section{position:relative;height:260px;display:grid;grid-template-columns:36% 30% 34%;background:#1d1611;color:#fff;overflow:hidden}
+.treatments-section{position:relative;height:244px;display:grid;grid-template-columns:36% 30% 34%;background:#1d1611;color:#fff;overflow:hidden}
 .treatments-copy{position:relative;z-index:3;padding:28px 30px 24px 76px;background:linear-gradient(90deg,#211710 0%,#211710 70%,rgba(33,23,16,.86) 100%);display:flex;flex-direction:column;justify-content:center}
 .treatments-copy .overline{margin-bottom:8px}
 .treatments-copy h2{font:500 46px/.88 var(--serif);letter-spacing:-.04em;margin-bottom:12px}
 .treatments-copy>p:not(.overline){font-size:10px;line-height:1.45;color:rgba(255,255,255,.78);max-width:380px;margin-bottom:10px}
 .treatments-copy .underlink{width:max-content}
-.treatments-texture{background-image:linear-gradient(90deg,rgba(28,19,13,.38),rgba(28,19,13,.08)),url("https://images.unsplash.com/photo-1642844744022-d76a9af3711a?auto=format&fit=crop&q=76&w=1000");background-size:cover;background-position:65% center;filter:saturate(.45) sepia(.38) brightness(.58)}
+.treatments-texture{background-image:linear-gradient(90deg,rgba(28,19,13,.34),rgba(28,19,13,.05)),url("/tenants/studiodentisticogiardinelli/assets/treatments.webp");background-size:cover;background-position:65% center;filter:saturate(.45) sepia(.38) brightness(.58)}
 .treatment-list{position:relative;z-index:2;list-style:none;margin:0;padding:28px 62px 22px 28px;background:linear-gradient(90deg,rgba(28,20,15,.88),#1b1511)}
 .treatment-list li{height:34px;display:grid;grid-template-columns:40px 1fr 22px;align-items:center;border-bottom:1px solid rgba(255,255,255,.18);font-size:10px}
 .treatment-list li span{color:#a99585}.treatment-list li strong{font-weight:500}.treatment-list li i{font-style:normal;justify-self:end;font-size:16px}
@@ -87,7 +87,7 @@ p,h1,h2,figure,blockquote{margin:0}
 .doctor-copy>p:not(.overline){font-size:9px;line-height:1.42;color:#6c625b;max-width:390px;margin-bottom:6px}
 .doctor-copy .underlink{width:max-content;font-size:10px}
 .doctor-media{position:relative;overflow:hidden;background:#d9cbbd}
-.doctor-media img{object-position:50% 24%;filter:saturate(.74) sepia(.08) contrast(1.02)}
+.doctor-media img{object-position:center center;filter:none}
 .doctor-media figcaption{position:absolute;left:8px;bottom:6px;font-size:6px;color:rgba(255,255,255,.7);background:rgba(0,0,0,.25);padding:3px 5px}
 .doctor-section blockquote{padding:28px 48px 20px 45px;display:flex;flex-direction:column;justify-content:center;background:#f4eee6}
 .doctor-section blockquote>span{font:600 52px/.5 var(--serif);color:#7c6d61}
@@ -95,9 +95,9 @@ p,h1,h2,figure,blockquote{margin:0}
 .doctor-section blockquote cite{font:italic 17px/1 var(--serif);align-self:flex-end;color:#54483f}
 
 /* LOCATION */
-.location-section{height:128px;display:grid;grid-template-columns:58% 25% 17%;align-items:stretch;background:#eee5da}
+.location-section{height:108px;display:grid;grid-template-columns:58% 25% 17%;align-items:stretch;background:#eee5da}
 .location-media{position:relative;overflow:hidden}
-.location-media img{filter:saturate(.83) sepia(.10) brightness(.98);object-position:center 55%}
+.location-media img{filter:none;object-position:center center}
 .location-media figcaption{position:absolute;left:8px;bottom:5px;font-size:6px;color:rgba(255,255,255,.72)}
 .location-copy{padding:20px 18px 15px 30px;display:flex;flex-direction:column;justify-content:center}
 .location-copy .overline{font-size:7px;margin-bottom:3px}.location-copy h2{font:500 27px/.96 var(--serif);letter-spacing:-.03em}.location-copy>p:not(.overline){font-size:8px;margin-top:5px}
@@ -151,7 +151,7 @@ p,h1,h2,figure,blockquote{margin:0}
   .studio-manifesto{display:none}
   .studio-media figcaption{font-size:5px;bottom:4px}
 
-  .treatments-section{height:306px;display:block;padding:0;background-image:linear-gradient(rgba(22,14,9,.62),rgba(18,12,8,.86)),url("https://images.unsplash.com/photo-1642844744022-d76a9af3711a?auto=format&fit=crop&q=76&w=800");background-size:cover;background-position:center}
+  .treatments-section{height:306px;display:block;padding:0;background-image:linear-gradient(rgba(22,14,9,.54),rgba(18,12,8,.82)),url("/tenants/studiodentisticogiardinelli/assets/treatments.webp");background-size:cover;background-position:center}
   .treatments-copy{height:118px;padding:12px 18px 6px;background:transparent;display:block}
   .treatments-copy .overline{font-size:7px;margin-bottom:4px}
   .treatments-copy h2{font-size:34px;line-height:.86;margin-bottom:5px}
@@ -194,3 +194,4 @@ p,h1,h2,figure,blockquote{margin:0}
 }
 
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+\n.studio-media figcaption,.doctor-media figcaption,.location-media figcaption{display:none}\n
