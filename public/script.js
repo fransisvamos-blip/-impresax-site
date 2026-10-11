@@ -225,6 +225,7 @@ const steps=[...document.querySelectorAll(".form-step")];
 const progress=[...document.querySelectorAll("[data-progress]")];
 let currentStep=1;
 let formStarted=false;
+let leadSubmitted=false;
 
 function showStep(step){
   currentStep=step;
@@ -306,6 +307,7 @@ const LEAD_ENDPOINT="https://bvkeurkithmvodyjmnqi.supabase.co/functions/v1/impre
 
 form?.addEventListener("submit",async event=>{
   event.preventDefault();
+  if(leadSubmitted)return;
   if(!validateStep(3))return;
   const improvement=form.querySelector('input[name="improvement_area"]:checked');
   if(!improvement){
@@ -347,6 +349,7 @@ form?.addEventListener("submit",async event=>{
       if(response.status===422)throw new Error("Controlla i dati inseriti e riprova.");
       throw new Error("Non siamo riusciti a salvare la richiesta. Riprova tra poco.");
     }
+    leadSubmitted=true;
     steps.forEach(el=>{
       el.classList.remove("active");
       el.hidden=true;
@@ -365,6 +368,6 @@ form?.addEventListener("submit",async event=>{
     status.className="form-status error";
     status.textContent=error?.message||"Errore temporaneo. Riprova.";
   }finally{
-    submit.disabled=false;
+    submit.disabled=leadSubmitted;
   }
 });
