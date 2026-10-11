@@ -28,5 +28,13 @@
       "* * * * *"
     ]
   },
-  "keep_vars": true
+  "keep_vars": true,
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": [
+        "info@impresax.org"
+      ]
+    }
+  ]
 }
