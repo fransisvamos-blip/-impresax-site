@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>ImpresaX Ops — Control Room</title>
+  <link rel="stylesheet" href="/ops.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <span class="kicker">IMPRESAX OPS</span>
+      <h1>Control Room</h1>
+    </div>
+    <div class="top-actions">
+      <span id="updated">—</span>
+      <button id="run">Run orchestrator</button>
+      <button id="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="metrics" id="metrics" aria-label="Pipeline metrics"></section>
+
+    <section class="workspace">
+      <div class="board">
+        <div class="section-head">
+          <div>
+            <span class="kicker">PIPELINE</span>
+            <h2>Prospects</h2>
+          </div>
+          <input id="search" type="search" placeholder="Cerca azienda, ID, verticale…">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th><th>ID</th><th>Azienda</th><th>Verticale</th>
+                <th>Render</th><th>Build</th><th>QA</th><th>Live</th>
+                <th>Current step</th><th>Last event</th><th>Error</th><th>Next action</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="detail" id="detail">
+        <div class="empty">
+          <span class="kicker">DETAIL</span>
+          <p>Seleziona un prospect per vedere dati, render, asset, build, QA, errori e timeline.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="events">
+      <div class="section-head">
+        <div>
+          <span class="kicker">EVENT LOG</span>
+          <h2>Ultimi eventi</h2>
+        </div>
+      </div>
+      <div id="events"></div>
+    </section>
+  </main>
+
+  <script src="/ops.js" defer></script>
+</body>
+</html>
