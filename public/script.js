@@ -347,11 +347,19 @@ form?.addEventListener("submit",async event=>{
       if(response.status===422)throw new Error("Controlla i dati inseriti e riprova.");
       throw new Error("Non siamo riusciti a salvare la richiesta. Riprova tra poco.");
     }
-    steps.forEach(el=>el.hidden=true);
+    steps.forEach(el=>{
+      el.classList.remove("active");
+      el.hidden=true;
+    });
     document.querySelector(".form-progress")?.setAttribute("hidden","");
     status.textContent="";
     status.className="form-status";
+    form.classList.add("is-success");
     success.hidden=false;
+    requestAnimationFrame(()=>{
+      success.focus({preventScroll:true});
+      success.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+    });
     track("lead_success",{improvement_area:improvement.value});
   }catch(error){
     status.className="form-status error";
