@@ -132,19 +132,25 @@ function isPublicTenant(tenant) {
     return (
       tenant.qa_status === "PASS" &&
       tenant.visual_quality_status === "APPROVED" &&
-      tenant.commercial_quality_status === "APPROVED"
+      tenant.commercial_quality_status === "APPROVED" &&
+      tenant.brand_quality_status === "APPROVED" &&
+      tenant.mobile_quality_status === "APPROVED" &&
+      tenant.art_direction_quality_status === "APPROVED"
     );
   }
 
   if (tenant.status === "QA_READY" && tenant.public_preview === true) {
-    const visualReady =
-      tenant.visual_quality_status === "READY_FOR_CABINA" ||
-      tenant.visual_quality_status === "APPROVED";
-    const commercialReady =
-      tenant.commercial_quality_status === "READY_FOR_CABINA" ||
-      tenant.commercial_quality_status === "APPROVED";
+    const isCabinaReady = (value) =>
+      value === "READY_FOR_CABINA" || value === "APPROVED";
 
-    return tenant.qa_status === "PASS" && visualReady && commercialReady;
+    return (
+      tenant.qa_status === "PASS" &&
+      isCabinaReady(tenant.visual_quality_status) &&
+      isCabinaReady(tenant.commercial_quality_status) &&
+      isCabinaReady(tenant.brand_quality_status) &&
+      isCabinaReady(tenant.mobile_quality_status) &&
+      isCabinaReady(tenant.art_direction_quality_status)
+    );
   }
 
   return false;
