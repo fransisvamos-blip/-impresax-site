@@ -1,0 +1,146 @@
+name: Render DEDIL V2 references
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ops/render-packs/CZ-063/v2/reference.html"
+      - "ops/render-packs/CZ-063/v2/directions.html"
+      - ".github/workflows/render-dedil-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch licensed real photography
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="ops/render-packs/CZ-063/v2"
+          curl -fL --retry 3 "https://images.unsplash.com/photo-1763926062529-1edf8664c366?auto=format&fit=crop&w=2200&q=85" -o "$dir/hero.jpg"
+          curl -fL --retry 3 "https://images.unsplash.com/photo-1762608675399-96b4a6de8828?auto=format&fit=crop&w=2200&q=85" -o "$dir/materials.jpg"
+          curl -fL --retry 3 "https://images.unsplash.com/photo-1763926025678-95d196d0ab28?auto=format&fit=crop&w=2200&q=85" -o "$dir/steel.jpg"
+          curl -fL --retry 3 "https://images.unsplash.com/photo-1776493929304-dfe4d50ae96b?auto=format&fit=crop&w=2200&q=85" -o "$dir/yard.jpg"
+          test -s "$dir/dedil-logo-official.png"
+          file "$dir/dedil-logo-official.png" "$dir/hero.jpg" "$dir/materials.jpg" "$dir/steel.jpg" "$dir/yard.jpg"
+
+      - name: Render real desktop, mobile and direction previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$PWD/ops/render-packs/CZ-063/v2"
+          CHROME="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          echo "Chrome=$CHROME"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+            --window-size=1440,5000 --screenshot="$dir/desktop-raw.png" "file://$dir/reference.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+            --window-size=390,6500 --screenshot="$dir/mobile-raw.png" "file://$dir/reference.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+            --window-size=1440,2700 --screenshot="$dir/directions-raw.png" "file://$dir/directions.html"
+
+      - name: Crop render canvases and split directions
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          d=Path("ops/render-packs/CZ-063/v2")
+          def crop_bottom(src,dst,bg=(244,241,235)):
+              im=Image.open(src).convert("RGB")
+              last=im.height-1
+              for y in range(im.height-1,-1,-1):
+                  hit=False
+                  for x in range(0,im.width,max(1,im.width//100)):
+                      p=im.getpixel((x,y))
+                      if any(abs(p[i]-bg[i])>5 for i in range(3)):
+                          hit=True; break
+                  if hit:
+                      last=y; break
+              im.crop((0,0,im.width,min(im.height,last+2))).save(dst,quality=95)
+          crop_bottom(d/"desktop-raw.png",d/"DEDIL-CZ063-V2-desktop.png")
+          crop_bottom(d/"mobile-raw.png",d/"DEDIL-CZ063-V2-mobile.png")
+          raw=Image.open(d/"directions-raw.png").convert("RGB")
+          raw.crop((0,0,1440,900)).save(d/"direction-A-editorial.png",quality=95)
+          raw.crop((0,900,1440,1800)).save(d/"direction-B-cinematic.png",quality=95)
+          raw.crop((0,1800,1440,2700)).save(d/"direction-C-local-trust.png",quality=95)
+          PY
+          rm -f "$dir/desktop-raw.png" "$dir/mobile-raw.png" "$dir/directions-raw.png" "$dir/hero.jpg" "$dir/materials.jpg" "$dir/steel.jpg" "$dir/yard.jpg"
+
+      - name: Write render manifest
+        shell: bash
+        run: |
+          cat > ops/render-packs/CZ-063/v2/manifest.json <<'JSON'
+          {
+            "render_version": "DEDIL-CZ063-V2",
+            "selected_direction": "A — Industrial Editorial Authority",
+            "official_logo_url": "https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato-300x70.png",
+            "official_logo_repo_path": "ops/render-packs/CZ-063/v2/dedil-logo-official.png",
+            "desktop_width": 1440,
+            "mobile_width": 390,
+            "typography": {
+              "display": "Cormorant Garamond",
+              "ui": "DM Sans"
+            },
+            "palette": {
+              "signal_red": "#B42027",
+              "near_black": "#111111",
+              "warm_off_white": "#F4F1EB",
+              "white": "#FFFFFF"
+            },
+            "image_sources": [
+              {
+                "role": "hero",
+                "page": "https://unsplash.com/photos/metal-bars-stacked-neatly-in-a-warehouse-IR93Hx_ybg8",
+                "author": "Zoshua Colah",
+                "license": "Unsplash License"
+              },
+              {
+                "role": "materials",
+                "page": "https://unsplash.com/photos/stacks-of-concrete-pavers-outside-a-building-hFBPsiRu0Gc",
+                "author": "Sergej Karpow",
+                "license": "Unsplash License"
+              },
+              {
+                "role": "steel",
+                "page": "https://unsplash.com/photos/metal-rods-stacked-on-industrial-shelving-units-6EwTQwXneuE",
+                "author": "Zoshua Colah",
+                "license": "Unsplash License"
+              },
+              {
+                "role": "yard",
+                "page": "https://unsplash.com/photos/forklift-and-van-at-a-construction-supply-yard-W_5mHEY4asI",
+                "author": "Ryan Liu",
+                "license": "Unsplash License"
+              }
+            ],
+            "truth_sources": [
+              "https://dedildonato.it/",
+              "https://u-power.ai/it-it/trova-rivenditore/tutti-i-rivenditori",
+              "https://www.virtualsmallbusiness.it/dedil-donato-s-r-l"
+            ],
+            "footer_complete": true,
+            "generated_brand_marks": false,
+            "template_output": false
+          }
+          JSON
+
+      - name: Commit render pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Studio"
+          git config user.email "actions@users.noreply.github.com"
+          git add ops/render-packs/CZ-063/v2/DEDIL-CZ063-V2-desktop.png \
+                  ops/render-packs/CZ-063/v2/DEDIL-CZ063-V2-mobile.png \
+                  ops/render-packs/CZ-063/v2/direction-A-editorial.png \
+                  ops/render-packs/CZ-063/v2/direction-B-cinematic.png \
+                  ops/render-packs/CZ-063/v2/direction-C-local-trust.png \
+                  ops/render-packs/CZ-063/v2/manifest.json
+          git commit -m "Render DEDIL-CZ063-V2 premium reference pack"
+          git push
