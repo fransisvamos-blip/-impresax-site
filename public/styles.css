@@ -3583,3 +3583,75 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     padding-top:124px;
   }
 }
+
+
+/* =========================================================
+   FORM SUCCESS STATE — confirmation must read as success,
+   and must replace the completed form instead of stacking.
+   ========================================================= */
+.form-step[hidden],
+.form-progress[hidden]{
+  display:none !important;
+}
+
+.form-success:focus{
+  outline:none;
+}
+
+.form-success .success-mark{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  margin:0 0 14px;
+  border-radius:50%;
+  background:var(--orange);
+  color:#fff;
+  font-family:var(--sans);
+  font-size:23px;
+  font-weight:800;
+  line-height:1;
+  box-shadow:0 10px 24px rgba(255,90,54,.18);
+}
+
+@media (max-width:767px){
+  .progress-form.is-success{
+    padding-top:30px;
+    padding-bottom:32px;
+  }
+  .progress-form.is-success .form-status{
+    display:none;
+  }
+  .progress-form.is-success .form-success{
+    padding:0;
+    border-top:0;
+  }
+  .progress-form.is-success .form-success .success-mark{
+    width:46px;
+    height:46px;
+    margin-bottom:16px;
+    font-size:25px;
+  }
+  .progress-form.is-success .form-success small{
+    display:block;
+    margin-bottom:8px;
+    color:#8b867e;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.13em;
+  }
+  .progress-form.is-success .form-success h3{
+    max-width:360px;
+    margin:0;
+    color:var(--ink);
+    font-size:31px;
+    line-height:1.02;
+  }
+  .progress-form.is-success .form-success p{
+    max-width:380px;
+    margin-top:12px;
+    color:#625d56;
+    font-size:14px;
+    line-height:1.5;
+  }
+}
