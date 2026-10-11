@@ -5,20 +5,22 @@ export const BUILTIN_TENANTS = Object.freeze({
     slug: "studiodentisticogiardinelli",
     business_name: "Studio Dentistico Dott. Francesco Giardinelli",
     vertical: "DENTAL_MEDICAL",
-    dental_master_version: "V3_CANDIDATE",
-    dental_master_status: "NOT_FROZEN",
+    dental_master_version: "V4_REFERENCE_LOCK",
+    dental_master_status: "REFERENCE_LOCK_IMPLEMENTATION",
     status: "QA_READY",
-    pilot_status: "REJECTED_VISUAL_V3",
-    implementation_mode: "WAITING_FOR_APPROVED_VISUAL_REFERENCE",
+    pilot_status: "V4_REFERENCE_LOCK_IN_PROGRESS",
+    implementation_mode: "REFERENCE_LOCK_IMPLEMENTATION",
     reference_lock_required: true,
+    approved_visual_reference: true,
+    direct_go_live_authorized: true,
     outreach_forbidden: true,
     demo_ready: false,
     qa_status: "PASS",
-    visual_quality_status: "FAIL",
-    commercial_quality_status: "READY_FOR_CABINA",
-    brand_quality_status: "FAIL",
-    mobile_quality_status: "FAIL",
-    art_direction_quality_status: "FAIL",
+    visual_quality_status: "REWORK",
+    commercial_quality_status: "REWORK",
+    brand_quality_status: "REWORK",
+    mobile_quality_status: "REWORK",
+    art_direction_quality_status: "REWORK",
     cabina_approval_required: true,
     old_demo_status: "V1_REJECTED_VISUAL / V2_REJECTED_VISUAL / V3_REJECTED_VISUAL",
     recovery_metrics: {
@@ -63,7 +65,7 @@ export const BUILTIN_TENANTS = Object.freeze({
       "Nessuna recensione, rating, numero pazienti o dato prestazionale inventato."
     ],
     created_at: "2026-10-11T05:05:00+02:00",
-    updated_at: "2026-10-11T06:05:00+02:00"
+    updated_at: "2026-10-11T06:12:00+02:00"
   })
 });
 
