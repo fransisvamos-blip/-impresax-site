@@ -726,7 +726,7 @@ h1,h2,h3,p,dl,dd{margin-top:0}
   }
 
   .precision-image{min-height:520px}
-  .precision-image img{object-position:57% center}
+  .precision-image img{object-position:76% center;transform:scale(1.16)}
   .precision-content{padding:78px 18px 84px}
   .precision-content h2{
     font-size:55px;
