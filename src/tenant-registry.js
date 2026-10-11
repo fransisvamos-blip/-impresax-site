@@ -7,6 +7,10 @@ export const BUILTIN_TENANTS = Object.freeze({
     vertical: "DENTAL_MEDICAL",
     status: "QA_READY",
     qa_status: "PASS",
+    visual_quality_status: "READY_FOR_CABINA",
+    commercial_quality_status: "READY_FOR_CABINA",
+    cabina_approval_required: true,
+    old_demo_status: "REJECTED_VISUAL",
     public_preview: true,
     noindex: true,
     disclaimer_enabled: true,
@@ -35,7 +39,7 @@ export const BUILTIN_TENANTS = Object.freeze({
       "Nessuna recensione, rating, numero pazienti o dato prestazionale inventato."
     ],
     created_at: "2026-10-11T05:05:00+02:00",
-    updated_at: "2026-10-11T05:05:00+02:00"
+    updated_at: "2026-10-11T05:31:00+02:00"
   })
 });
 
