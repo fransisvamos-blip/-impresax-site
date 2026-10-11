@@ -8,7 +8,8 @@ on:
       - "src/index.js"
       - "src/tenant-registry.js"
       - ".github/workflows/pilot-001-qa.yml"
-      - "tests/pilot-001.spec.mjs"\n      - "tests/pilot-001-live.spec.mjs"
+      - "tests/pilot-001.spec.mjs"
+      - "tests/pilot-001-live.spec.mjs"
       - "tests/serve-static.mjs"
   workflow_dispatch:
 
