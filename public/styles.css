@@ -5309,3 +5309,25 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     font-size:13.5px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP BLOCK 03 FRAME FIX V1
+   Ensure Value Check respects the same centered master frame
+   at every desktop width. No other section is changed.
+   ========================================================= */
+@media (min-width:1024px){
+  .value-section .value-grid{
+    width:var(--shell);
+    max-width:1190px;
+    margin-inline:auto;
+  }
+}
+
+@media (min-width:1024px) and (max-width:1199px){
+  .value-section .value-grid{
+    width:var(--shell);
+    max-width:none;
+    margin-inline:auto;
+  }
+}
