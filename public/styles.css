@@ -6320,3 +6320,49 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     margin-left:5px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP NAV REFINEMENT V5
+   Give the small hover index more breathing room below text.
+   Keep inline orange × unchanged.
+   ========================================================= */
+@media (min-width:1024px){
+  .master-desktop-nav a:before{
+    position:absolute;
+    left:50%;
+    bottom:-2px;
+    width:auto;
+    height:auto;
+    margin:0;
+    border-radius:0;
+    background:none;
+    box-shadow:none;
+    color:rgba(255,255,255,.42);
+    font-size:7px;
+    font-weight:800;
+    letter-spacing:.10em;
+    line-height:1;
+    opacity:0;
+    transform:translateX(-50%) translateY(1px);
+    transform-origin:center;
+    transition:
+      opacity .18s ease,
+      color .18s ease,
+      transform .18s ease;
+  }
+
+  .master-desktop-nav a:nth-child(1):before{content:"01"}
+  .master-desktop-nav a:nth-child(2):before{content:"02"}
+  .master-desktop-nav a:nth-child(3):before{content:"03"}
+  .master-desktop-nav a:nth-child(4):before{content:"04"}
+
+  .master-desktop-nav a:hover:before,
+  .master-desktop-nav a:focus-visible:before{
+    opacity:1;
+    color:var(--orange);
+    background:none;
+    box-shadow:none;
+    transform:translateX(-50%) translateY(0);
+  }
+}
