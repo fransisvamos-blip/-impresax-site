@@ -149,16 +149,16 @@ END
 $$;
 
 CREATE OR REPLACE FUNCTION public.ops_touch_job_heartbeat(p_job_id bigint,p_worker text)
-RETURNS boolean LANGUAGE plpgsql AS $$
-DECLARE touched boolean;
+RETURNS boolean LANGUAGE plpgsql AS $
+DECLARE touched_rows integer;
 BEGIN
   UPDATE orchestrator_queue
   SET heartbeat_at=now(),updated_at=now()
   WHERE id=p_job_id AND status='RUNNING' AND locked_by=p_worker;
-  GET DIAGNOSTICS touched=ROW_COUNT;
-  RETURN touched;
+  GET DIAGNOSTICS touched_rows=ROW_COUNT;
+  RETURN touched_rows>0;
 END
-$$;
+$;
 
 CREATE OR REPLACE FUNCTION public.ops_recover_stale_jobs(p_stale_after interval DEFAULT interval '15 minutes')
 RETURNS integer LANGUAGE plpgsql AS $$
