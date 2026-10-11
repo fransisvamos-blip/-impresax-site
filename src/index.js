@@ -122,17 +122,32 @@ async function resolveTenant(env, slug) {
 }
 
 function isPublicTenant(tenant) {
-  return (
-    tenant &&
-    typeof tenant.slug === "string" &&
-    VALID_SLUG.test(tenant.slug) &&
-    (
-      tenant.status === "DEMO_READY" ||
-      tenant.status === "CONVERTED_CLIENT" ||
-      (tenant.status === "QA_READY" && tenant.qa_status === "PASS" && tenant.public_preview === true)
-    ) &&
-    (tenant.qa_status === "PASS" || tenant.status === "CONVERTED_CLIENT")
-  );
+  if (!tenant || typeof tenant.slug !== "string" || !VALID_SLUG.test(tenant.slug)) {
+    return false;
+  }
+
+  if (tenant.status === "CONVERTED_CLIENT") return true;
+
+  if (tenant.status === "DEMO_READY") {
+    return (
+      tenant.qa_status === "PASS" &&
+      tenant.visual_quality_status === "APPROVED" &&
+      tenant.commercial_quality_status === "APPROVED"
+    );
+  }
+
+  if (tenant.status === "QA_READY" && tenant.public_preview === true) {
+    const visualReady =
+      tenant.visual_quality_status === "READY_FOR_CABINA" ||
+      tenant.visual_quality_status === "APPROVED";
+    const commercialReady =
+      tenant.commercial_quality_status === "READY_FOR_CABINA" ||
+      tenant.commercial_quality_status === "APPROVED";
+
+    return tenant.qa_status === "PASS" && visualReady && commercialReady;
+  }
+
+  return false;
 }
 
 async function serveTenant(request, env, tenant) {
