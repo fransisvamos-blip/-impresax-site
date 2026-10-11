@@ -209,6 +209,48 @@ function localizedObject(value){
 
 async function api(path,options){const r=await fetch(path,options);if(!r.ok)throw new Error(await r.text());return r.json();}
 
+function emailLogSummary(row){
+  if(!row)return"—";
+  return [tStatus(row.status),row.recipient,fmtDate(row.created_at)].filter(Boolean).join(" · ");
+}
+function renderEmailSystem(email){
+  const ready=email?.status==="IMPRESAX_EMAIL_READY";
+  $("#email-status").textContent=ready?"PRONTO":"NON PRONTO";
+  $("#email-status").className="email-overall status "+(ready?"ready":"");
+  $("#email-status-text").textContent=email?.status||"—";
+  $("#email-from").textContent=email?.from_address||"—";
+  $("#email-last-test").textContent=emailLogSummary(email?.last_test);
+  $("#email-last-send").textContent=emailLogSummary(email?.last_send);
+  $("#email-last-error").textContent=email?.last_error
+    ? [tStatus(email.last_error.status),email.last_error.error||"",fmtDate(email.last_error.created_at)].filter(Boolean).join(" · ")
+    : "—";
+  const qaLabels={
+    email_service_connection:"Email service connection",
+    from_domain:"From domain",
+    test_send:"Test send",
+    delivery:"Delivery",
+    dkim:"DKIM",
+    spf:"SPF",
+    control_room:"Control Room"
+  };
+  $("#email-qa").innerHTML=Object.entries(qaLabels).map(([key,label])=>{
+    const value=email?.qa?.[key]||"PENDING";
+    const cls=value==="PASS"?"pass":value==="FAIL"?"fail":"pending";
+    return `<div class="email-qa-item"><span>${esc(label)}</span><strong class="${cls}">${esc(value)}</strong></div>`;
+  }).join("");
+}
+async function loadEmailSystem(){
+  try{
+    const d=await api("/ops/api/email/status");
+    renderEmailSystem(d.email||{});
+  }catch(e){
+    $("#email-status").textContent="ERRORE";
+    $("#email-status").className="email-overall status escalation";
+    $("#email-status-text").textContent="EMAIL_SYSTEM_ERROR";
+    console.error(e);
+  }
+}
+
 function renderMetrics(counts){
   $("#metrics").innerHTML=Object.entries(labels).map(([k,l])=>`<article class="metric"><span>${esc(l)}</span><strong>${Number(counts[k]||0)}</strong></article>`).join("");
 }
@@ -290,12 +332,43 @@ async function load(){
     state.prospects=d.prospects||[];
     renderMetrics(d.counts||{});renderRows();renderEvents(d.recent_events||[]);
     $("#updated").textContent="Aggiornato "+fmtDate(d.generated_at);
+    await loadEmailSystem();
   }catch(e){
     $("#updated").textContent="ERRORE";
     console.error(e);
   }
 }
 $("#refresh").addEventListener("click",load);
+$("#email-test-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const input=$("#email-recipient");
+  const button=$("#email-test-button");
+  const feedback=$("#email-feedback");
+  const recipient=input.value.trim();
+  button.disabled=true;
+  button.textContent="Invio…";
+  feedback.textContent="Invio test in corso…";
+  feedback.className="email-feedback";
+  try{
+    await api("/ops/api/email/test",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({recipient})
+    });
+    feedback.textContent="Invio accettato da Cloudflare. Verifica consegna in corso.";
+    feedback.className="email-feedback success";
+    await loadEmailSystem();
+  }catch(e){
+    feedback.textContent="Test email fallito. Controlla LAST ERROR.";
+    feedback.className="email-feedback error";
+    await loadEmailSystem();
+    console.error(e);
+  }finally{
+    button.disabled=false;
+    button.textContent="Invia email di test";
+  }
+});
+
 $("#run").addEventListener("click",async()=>{
   const b=$("#run");
   b.disabled=true;
@@ -314,3 +387,4 @@ $("#run").addEventListener("click",async()=>{
 $("#search").addEventListener("input",renderRows);
 load();
 setInterval(load,30000);
+setInterval(loadEmailSystem,30000);
