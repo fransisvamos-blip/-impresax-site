@@ -4732,3 +4732,380 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     font-size:12.5px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP BLOCK 02 / 03 / CTA CLIMAX V1
+   02 rebuilt around a centered interaction.
+   03 realigned to the global content grid.
+   07 conversion panel gains deliberate visual depth.
+   Desktop only — mobile remains frozen.
+   ========================================================= */
+@media (min-width:1024px){
+
+  /* ---------------------------------------------------------
+     02 / BUSINESS CHECK — centered rebuild
+     --------------------------------------------------------- */
+  .business-check-section{
+    min-height:680px;
+    isolation:isolate;
+    background:#171716;
+  }
+
+  .check-photo{
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+  }
+  .check-photo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    object-position:center 46%;
+    filter:saturate(.58) contrast(1.04) brightness(.56);
+    transform:scale(1.025);
+  }
+  .check-photo-grade{
+    background:
+      radial-gradient(circle at 50% 48%,rgba(247,246,242,.96) 0%,rgba(247,246,242,.92) 22%,rgba(247,246,242,.72) 40%,rgba(247,246,242,.25) 62%,rgba(15,15,15,.32) 100%),
+      linear-gradient(90deg,rgba(15,15,15,.28),transparent 24%,transparent 76%,rgba(15,15,15,.28));
+  }
+  .business-check-section:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.02),transparent 20%,transparent 80%,rgba(0,0,0,.10)),
+      repeating-linear-gradient(90deg,rgba(17,17,17,.022) 0 1px,transparent 1px 96px);
+    mix-blend-mode:multiply;
+  }
+
+  .check-content{
+    position:relative;
+    z-index:2;
+    min-height:680px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:76px 0 72px;
+    text-align:center;
+  }
+  .business-check-section .section-index{
+    margin:0 0 10px;
+    color:rgba(17,17,17,.48);
+  }
+  .check-heading,
+  .check-options,
+  .check-result{
+    margin-left:0;
+    margin-right:0;
+  }
+  .check-heading{
+    width:min(100%,760px);
+    max-width:none;
+  }
+  .check-heading h2{
+    font-size:clamp(54px,3.75vw,66px);
+    line-height:.93;
+  }
+  .check-heading p{
+    max-width:610px;
+    margin:16px auto 0;
+    font-size:15px;
+    line-height:1.5;
+    color:#5f5a53;
+  }
+  .check-options{
+    width:min(100%,780px);
+    margin:32px auto 0;
+    grid-template-columns:repeat(3,1fr);
+    border:1px solid rgba(17,17,17,.13);
+    border-radius:14px;
+    overflow:hidden;
+    background:rgba(247,246,242,.90);
+    box-shadow:
+      0 28px 70px rgba(17,17,17,.16),
+      0 2px 0 rgba(255,255,255,.6) inset;
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+  }
+  .check-options button{
+    min-height:108px;
+    padding:14px 12px;
+    background:rgba(247,246,242,.82);
+  }
+  .check-options button:hover{
+    background:#fff;
+  }
+  .check-options button.active{
+    background:#111212;
+    color:#fff;
+  }
+  .check-options button svg{
+    width:25px;
+    height:25px;
+  }
+  .check-options button span{
+    font-size:12px;
+    line-height:1.18;
+  }
+  .check-options button b{
+    top:10px;
+    right:10px;
+    font-size:8px;
+  }
+  .check-result{
+    width:min(100%,780px);
+    min-height:46px;
+    margin:14px auto 0;
+    justify-content:center;
+    text-align:left;
+    padding:0 8px;
+  }
+  .check-result>span{
+    font-size:8px;
+  }
+  .check-result>strong{
+    font-size:12px;
+  }
+  .check-result>em{
+    margin-left:18px;
+    font-size:8px;
+  }
+
+  /* ---------------------------------------------------------
+     03 / VALUE CHECK — align its outer axis with all sections
+     --------------------------------------------------------- */
+  .value-grid{
+    width:100%;
+    max-width:none;
+    margin-inline:auto;
+    grid-template-columns:.92fr 1.22fr .66fr;
+    gap:42px;
+  }
+  .value-copy{
+    justify-self:stretch;
+    width:100%;
+    max-width:470px;
+  }
+  .value-copy .section-index,
+  .value-copy h2,
+  .value-inputs{
+    margin-left:0;
+  }
+  .value-scenarios{
+    justify-self:center;
+    width:100%;
+    max-width:620px;
+  }
+  .value-aside{
+    justify-self:end;
+    width:100%;
+    max-width:265px;
+  }
+
+  /* ---------------------------------------------------------
+     07 / ANALYSIS — make the CTA panel break the page plane
+     --------------------------------------------------------- */
+  .final-section{
+    min-height:760px;
+    overflow:visible;
+    isolation:isolate;
+    z-index:3;
+  }
+  .final-section:before{
+    content:"";
+    position:absolute;
+    z-index:2;
+    left:50%;
+    top:50%;
+    width:min(42vw,720px);
+    height:min(42vw,720px);
+    transform:translate(-10%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(255,90,54,.22) 0%,rgba(255,90,54,.08) 34%,transparent 70%);
+    filter:blur(6px);
+    pointer-events:none;
+  }
+  .final-grid{
+    position:relative;
+    z-index:4;
+    width:min(100%,1220px);
+    min-height:760px;
+    grid-template-columns:.82fr .92fr;
+    gap:74px;
+    overflow:visible;
+  }
+  .final-copy{
+    justify-self:end;
+    max-width:530px;
+  }
+  .final-copy h2{
+    font-size:clamp(56px,3.9vw,68px);
+  }
+  .final-copy>p{
+    font-size:17px;
+  }
+  .analysis-context{
+    font-size:12.5px;
+  }
+
+  .progress-form{
+    position:relative;
+    z-index:8;
+    justify-self:start;
+    width:min(100%,620px);
+    max-width:620px;
+    padding:40px 40px 38px;
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;
+    background:
+      linear-gradient(180deg,rgba(23,23,23,.92),rgba(12,13,13,.90));
+    box-shadow:
+      0 52px 110px rgba(0,0,0,.52),
+      0 18px 38px rgba(0,0,0,.32),
+      0 0 0 1px rgba(255,255,255,.025) inset,
+      0 0 70px rgba(255,90,54,.11);
+    backdrop-filter:blur(18px) saturate(115%);
+    -webkit-backdrop-filter:blur(18px) saturate(115%);
+    transform:
+      perspective(1200px)
+      translateY(-18px)
+      translateZ(72px)
+      scale(1.045);
+    transform-origin:center;
+  }
+  .progress-form:before{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    inset:-18px -18px -22px;
+    border-radius:28px;
+    background:linear-gradient(135deg,rgba(255,90,54,.20),transparent 34%,rgba(255,255,255,.05) 72%,transparent);
+    filter:blur(18px);
+    opacity:.85;
+    pointer-events:none;
+  }
+  .progress-form:after{
+    content:"";
+    position:absolute;
+    left:28px;
+    right:28px;
+    top:-1px;
+    height:2px;
+    background:linear-gradient(90deg,transparent,rgba(255,90,54,.95),rgba(255,255,255,.45),transparent);
+    box-shadow:0 0 22px rgba(255,90,54,.42);
+    pointer-events:none;
+  }
+
+  .form-progress{
+    margin-bottom:28px;
+  }
+  .form-progress span{
+    width:34px;
+    height:34px;
+    font-size:9px;
+  }
+  .form-progress i{
+    width:46px;
+  }
+  .form-step-head small{
+    font-size:9px;
+    letter-spacing:.13em;
+  }
+  .form-step-head h3{
+    font-size:27px;
+    line-height:1.12;
+  }
+  .choice-grid{
+    margin-top:18px;
+  }
+  .choice-grid span{
+    min-height:58px;
+    font-size:13px;
+  }
+  .field{
+    margin-top:17px;
+  }
+  .field>span{
+    font-size:11px;
+  }
+  .field input{
+    height:49px;
+  }
+  .field input,
+  .field textarea{
+    font-size:16px;
+  }
+  .field textarea{
+    min-height:88px;
+  }
+  .form-next,
+  .form-submit{
+    min-height:62px;
+    margin-top:19px;
+    border-radius:10px;
+    font-size:14.5px;
+    box-shadow:
+      0 16px 30px rgba(255,90,54,.26),
+      0 2px 0 rgba(255,255,255,.16) inset;
+  }
+  .form-next:hover,
+  .form-submit:hover{
+    transform:translateY(-2px) scale(1.01);
+  }
+}
+
+/* Compact desktop safeguards */
+@media (min-width:1024px) and (max-width:1199px){
+  .business-check-section,
+  .check-content{
+    min-height:620px;
+  }
+  .check-heading h2{
+    font-size:52px;
+  }
+  .check-options{
+    width:min(100%,720px);
+  }
+  .check-options button{
+    min-height:96px;
+  }
+
+  .value-grid{
+    gap:28px;
+  }
+
+  .final-section,
+  .final-grid{
+    min-height:700px;
+  }
+  .final-grid{
+    gap:38px;
+  }
+  .final-copy h2{
+    font-size:52px;
+  }
+  .progress-form{
+    width:100%;
+    max-width:540px;
+    padding:32px 30px 30px;
+    transform:perspective(1000px) translateY(-10px) translateZ(38px) scale(1.02);
+  }
+  .form-step-head h3{
+    font-size:23px;
+  }
+  .choice-grid span{
+    min-height:51px;
+    font-size:11.5px;
+  }
+  .form-next,
+  .form-submit{
+    min-height:56px;
+    font-size:13px;
+  }
+}
