@@ -105,7 +105,14 @@ const eventLabels={
  ORCHESTRATOR_QUEUE_INSERT:"Attività orchestratore aggiunta",
  ORCHESTRATOR_QUEUE_UPDATE:"Attività orchestratore aggiornata",
  ORCHESTRATOR_QUEUE_DELETE:"Attività orchestratore eliminata",
- OPS_GUARDRAIL_RESTORED:"Protezione operativa ripristinata"
+ OPS_GUARDRAIL_RESTORED:"Protezione operativa ripristinata",
+ BUILD_JOB_CREATED:"Lavoro di costruzione creato",
+ BUILD_CLAIMED:"Costruzione presa in carico",
+ QA_STARTED:"Controllo qualità avviato",
+ BUILD_REWORK:"Costruzione da correggere",
+ DEMO_READY:"Demo pronta",
+ ESCALATION_REQUIRED:"Intervento Cabina richiesto",
+ JOB_STALE_RECOVERED:"Lavoro bloccato recuperato"
 };
 
 const verticalLabels={
