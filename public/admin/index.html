@@ -23,6 +23,36 @@
   <main>
     <section class="metrics" id="metrics" aria-label="Metriche del flusso operativo"></section>
 
+    <section class="email-system" id="email-system">
+      <div class="section-head">
+        <div>
+          <span class="kicker">EMAIL SYSTEM</span>
+          <h2>Invio email ImpresaX</h2>
+        </div>
+        <span class="email-overall status" id="email-status">Verifica…</span>
+      </div>
+
+      <div class="email-summary">
+        <article><span>Status</span><strong id="email-status-text">—</strong></article>
+        <article><span>From address</span><strong id="email-from">—</strong></article>
+        <article><span>Last test</span><strong id="email-last-test">—</strong></article>
+        <article><span>Last send</span><strong id="email-last-send">—</strong></article>
+        <article><span>Last error</span><strong id="email-last-error">—</strong></article>
+      </div>
+
+      <div class="email-actions">
+        <form id="email-test-form">
+          <label for="email-recipient">Destinatario test</label>
+          <div class="email-test-row">
+            <input id="email-recipient" name="recipient" type="email" inputmode="email" autocomplete="email" placeholder="nome@dominio.it" required>
+            <button id="email-test-button" type="submit">Invia email di test</button>
+          </div>
+          <span class="email-feedback" id="email-feedback">FROM: info@impresax.org</span>
+        </form>
+        <div class="email-qa" id="email-qa" aria-label="Controlli qualità email"></div>
+      </div>
+    </section>
+
     <section class="workspace">
       <div class="board">
         <div class="section-head">
