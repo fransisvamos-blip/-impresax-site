@@ -101,7 +101,8 @@ const eventLabels={
  SALES_HANDOFFS_DELETE:"Passaggio vendite eliminato",
  ORCHESTRATOR_QUEUE_INSERT:"Attività orchestratore aggiunta",
  ORCHESTRATOR_QUEUE_UPDATE:"Attività orchestratore aggiornata",
- ORCHESTRATOR_QUEUE_DELETE:"Attività orchestratore eliminata"
+ ORCHESTRATOR_QUEUE_DELETE:"Attività orchestratore eliminata",
+ OPS_GUARDRAIL_RESTORED:"Protezione operativa ripristinata"
 };
 
 const verticalLabels={
@@ -265,7 +266,7 @@ async function selectProspect(id){
         <dt>URL demo</dt><dd>${linkMaybe(p.live_url,p.live_url)}</dd>
         <dt>Fase attuale</dt><dd>${esc(tStatus(p.current_step))}</dd>
         <dt>Prossima azione</dt><dd>${esc(tAction(p.next_action))}</dd>
-        <dt>Errore</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
+        <dt>Motivo pausa</dt><dd>${esc(p.hold_reason||"—")}</dd>\n        <dt>Errore</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
       </dl></section>
       ${jsonBlock("Dati azienda / fonti",p.source_data)}
       ${jsonBlock("Logo",p.logo)}
