@@ -59,10 +59,14 @@ jobs:
           unknown_code=$(curl -sS -o /dev/null -D /tmp/unknown-headers -w "%{http_code}" "$unknown")
           test "$unknown_code" = "302"
           grep -qi "Location: https://impresax.org/" /tmp/unknown-headers
+      - name: Run real post-live viewport QA
+        run: npx playwright test tests/pilot-001-live.spec.mjs --reporter=line
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pilot-001-qa-screenshots
-          path: test-results/screenshots
+          path: |
+            test-results/screenshots
+            test-results/live-screenshots
           if-no-files-found: ignore
