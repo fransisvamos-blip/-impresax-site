@@ -1,0 +1,36 @@
+name: Pilot 001 QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/tenants/studiodentisticogiardinelli/**"
+      - "src/index.js"
+      - "src/tenant-registry.js"
+      - ".github/workflows/pilot-001-qa.yml"
+      - "tests/pilot-001.spec.mjs"
+      - "tests/serve-static.mjs"
+  workflow_dispatch:
+
+jobs:
+  visual-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Playwright
+        run: npm install --no-save @playwright/test
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Pilot 001 viewport QA
+        run: npx playwright test tests/pilot-001.spec.mjs --reporter=line
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pilot-001-qa-screenshots
+          path: test-results/screenshots
+          if-no-files-found: ignore
