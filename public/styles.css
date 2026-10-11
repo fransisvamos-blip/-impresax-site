@@ -6280,3 +6280,43 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     font-size:10px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP NAV REFINEMENT V4
+   White labels + inline brand × on the right.
+   ========================================================= */
+@media (min-width:1024px){
+  .master-desktop-nav a{
+    color:#fff;
+  }
+
+  .master-desktop-nav a:after{
+    position:static;
+    display:inline-block;
+    margin-left:7px;
+    color:var(--orange);
+    opacity:0;
+    transform:translateX(-3px);
+    transition:
+      opacity .18s ease,
+      transform .18s ease;
+  }
+
+  .master-desktop-nav a:hover,
+  .master-desktop-nav a:focus-visible{
+    color:#fff;
+  }
+
+  .master-desktop-nav a:hover:after,
+  .master-desktop-nav a:focus-visible:after{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
+@media (min-width:1024px) and (max-width:1199px){
+  .master-desktop-nav a:after{
+    margin-left:5px;
+  }
+}
