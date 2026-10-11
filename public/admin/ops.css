@@ -15,3 +15,10 @@
 .email-qa-item span{color:var(--muted)}.email-qa-item strong.pass{color:var(--good)}.email-qa-item strong.fail{color:var(--bad)}.email-qa-item strong.pending{color:var(--warn)}
 @media(max-width:1100px){.email-summary{grid-template-columns:repeat(2,1fr)}.email-summary article{border-bottom:1px solid var(--line)}.email-actions{grid-template-columns:1fr}#email-test-form{border-right:0;border-bottom:1px solid var(--line)}}
 @media(max-width:620px){.email-summary{grid-template-columns:1fr}.email-summary article{min-height:auto;border-right:0}.email-actions{display:block}.email-test-row{flex-direction:column}.email-qa{grid-template-columns:1fr}.email-qa-item{border-right:0}}
+
+.email-summary{grid-template-columns:repeat(6,minmax(0,1fr))}
+.email-meta{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:9px}
+.email-meta>span:first-child{color:var(--muted);letter-spacing:.08em}.email-meta strong{font-size:10px}.email-meta #email-delivery-note{margin-left:auto;color:var(--muted);text-align:right}
+#email-delivery-tracking.pass{color:var(--good)}#email-delivery-tracking.fail{color:var(--bad)}#email-delivery-tracking.pending{color:var(--warn)}
+@media(max-width:1100px){.email-summary{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.email-summary{grid-template-columns:1fr}.email-meta{align-items:flex-start;flex-direction:column}.email-meta #email-delivery-note{margin-left:0;text-align:left}}
