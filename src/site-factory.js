@@ -308,6 +308,36 @@ async function compareImagesInPage(page, screenshotBytes, referenceUrl) {
   },{a,b});
 }
 
+function expectedPackLock(pack) {
+  const sections=asArray(pack.section_map).map(section => {
+    const spec=typeof section === "string" ? {id:section} : (section || {});
+    return String(pick(spec,["id","key","section"],"section")).trim();
+  });
+  const images=[];
+  const ctas=[];
+  for(const section of asArray(pack.section_map)) {
+    const spec=typeof section === "string" ? {id:section} : (section || {});
+    const id=String(pick(spec,["id","key","section"],"section")).trim();
+    const content=pack.content_map?.[id] || spec.content || {};
+    const imageKey=pick(spec,["image","image_key","asset"],pick(content,["image","image_key"],id));
+    const image=assetUrl(pack.image_asset_map || {},imageKey);
+    if(image) images.push(image);
+    const ctaKey=pick(spec,["cta","cta_key"],id);
+    const cta=pack.cta_map?.[ctaKey] || content.cta || null;
+    const href=cta && typeof cta === "object" ? safeUrl(pick(cta,["href","url"])) : "";
+    if(href) ctas.push(href);
+  }
+  const logo=safeUrl(pick(pack.official_logo,["url","asset_url","src"]));
+  const bodyFont=String(pick(pack.typography || {},["body","text"],"")).split(",")[0].replace(/['"]/g,"").trim().toLowerCase();
+  return {
+    sections,
+    images:[...new Set(images)],
+    ctas:[...new Set(ctas)],
+    logo,
+    body_font:bodyFont
+  };
+}
+
 async function runViewportQa(browser,liveUrl,pack,viewport) {
   const page=await browser.newPage();
   const consoleErrors=[];
@@ -324,14 +354,18 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
       const logo=document.querySelector("[data-ix-official-logo]");
       const images=[...document.images];
       const ctas=[...document.querySelectorAll("[data-ix-cta]")];
+      const sections=[...document.querySelectorAll("[data-section]")];
       return {
         title:document.title,
         robots,
         logo_present:Boolean(logo),
         logo_src:logo?.getAttribute("src") || null,
         images_total:images.length,
+        image_srcs:images.map(img=>img.currentSrc || img.src),
         images_broken:images.filter(img=>!img.complete || img.naturalWidth===0).map(img=>img.src),
         cta_count:ctas.length,
+        cta_hrefs:ctas.map(a=>a.href),
+        section_ids:sections.map(s=>s.getAttribute("data-section")),
         body_font:getComputedStyle(document.body).fontFamily,
         disclaimer_present:Boolean(document.querySelector("[data-impresax-demo-notice]")),
       };
@@ -339,6 +373,18 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
     const screenshot=await page.screenshot({type:"png",fullPage:true});
     const referenceUrl=viewport.reference==="desktop" ? pack.desktop_render_url : pack.mobile_render_url;
     const visual=await compareImagesInPage(page,new Uint8Array(screenshot),referenceUrl);
+    const expected=expectedPackLock(pack);
+    const normalize=u=>{ try{return new URL(u,liveUrl).href;}catch{return String(u||"");} };
+    const actualImages=new Set((technical.image_srcs||[]).map(normalize));
+    const actualCtas=new Set((technical.cta_hrefs||[]).map(normalize));
+    const lockChecks={
+      logo: Boolean(expected.logo) && normalize(technical.logo_src)===normalize(expected.logo),
+      images: expected.images.every(url=>actualImages.has(normalize(url))),
+      ctas: expected.ctas.every(url=>actualCtas.has(normalize(url))),
+      section_order: JSON.stringify(technical.section_ids||[])===JSON.stringify(expected.sections),
+      typography: !expected.body_font || String(technical.body_font||"").toLowerCase().includes(expected.body_font),
+    };
+    const referenceLockPass=Object.values(lockChecks).every(Boolean);
     const pass=Boolean(
       response && response.ok() &&
       new URL(page.url()).protocol==="https:" &&
@@ -349,13 +395,15 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
       technical.disclaimer_present &&
       consoleErrors.length===0 &&
       brokenAssets.length===0 &&
+      referenceLockPass &&
       visual.diff<=MAX_VISUAL_DIFF
     );
     return {
       width:viewport.width,height:viewport.height,pass,
       http_status:response?.status() || null,
       final_url:page.url(),
-      technical,console_errors:consoleErrors,broken_assets:[...new Set(brokenAssets)].slice(0,30),
+      technical:{...technical,reference_lock:lockChecks,reference_lock_pass:referenceLockPass},
+      console_errors:consoleErrors,broken_assets:[...new Set(brokenAssets)].slice(0,30),
       visual:{...visual,threshold:MAX_VISUAL_DIFF,pass:visual.diff<=MAX_VISUAL_DIFF}
     };
   } finally {
@@ -391,10 +439,11 @@ export async function qaApprovedReference(env, prospectId) {
     viewports:Object.fromEntries(results.map(r=>[String(r.width),r.visual]))
   };
   const technicalResults={
-    pass:results.every(r=>r.http_status>=200&&r.http_status<300&&r.technical.logo_present&&r.technical.images_broken.length===0&&r.technical.disclaimer_present&&r.console_errors.length===0&&r.broken_assets.length===0),
+    pass:results.every(r=>r.http_status>=200&&r.http_status<300&&r.technical.logo_present&&r.technical.reference_lock_pass&&r.technical.images_broken.length===0&&r.technical.disclaimer_present&&r.console_errors.length===0&&r.broken_assets.length===0),
     checks:Object.fromEntries(results.map(r=>[String(r.width),{
       http_status:r.http_status,final_url:r.final_url,robots:r.technical.robots,logo_present:r.technical.logo_present,
       cta_count:r.technical.cta_count,body_font:r.technical.body_font,images_broken:r.technical.images_broken,
+      reference_lock:r.technical.reference_lock,reference_lock_pass:r.technical.reference_lock_pass,
       disclaimer_present:r.technical.disclaimer_present,console_errors:r.console_errors,broken_assets:r.broken_assets
     }]))
   };
