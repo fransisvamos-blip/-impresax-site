@@ -2216,3 +2216,631 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     grid-template-columns:1.06fr .94fr 145px;
   }
 }
+
+
+/* =========================================================
+   MOBILE VISUAL + CRO CALIBRATION
+   375 / 390 / 430 only. Desktop intentionally unchanged.
+   ========================================================= */
+@media (max-width:767px){
+  :root{
+    --shell:calc(100% - 40px);
+  }
+
+  .master-home{
+    text-size-adjust:100%;
+    -webkit-text-size-adjust:100%;
+  }
+
+  .section-index{
+    font-size:9px;
+    letter-spacing:.16em;
+  }
+
+  a,button,label{
+    touch-action:manipulation;
+  }
+
+  .master-header{
+    height:60px;
+  }
+  .master-nav{
+    height:60px;
+    gap:12px;
+  }
+  .master-brand img{
+    width:124px;
+  }
+  .menu-toggle{
+    width:40px;
+    height:40px;
+    padding:10px;
+  }
+  .menu-toggle span{
+    width:19px;
+  }
+  .mobile-menu{
+    top:60px;
+    padding:18px 20px 22px;
+  }
+  .mobile-menu a{
+    min-height:48px;
+    display:flex;
+    align-items:center;
+    padding:0;
+    font-size:14px;
+  }
+  .mobile-menu-cta{
+    min-height:48px;
+    justify-content:center;
+    padding:0 18px!important;
+  }
+
+  .master-hero,
+  .hero-content{
+    min-height:640px;
+  }
+  .master-hero-media picture img{
+    object-position:59% 49%;
+  }
+  .hero-darken{
+    background:
+      linear-gradient(180deg,rgba(10,11,11,.30) 0%,rgba(10,11,11,.04) 30%,rgba(10,11,11,.12) 50%,rgba(10,11,11,.90) 75%,#0d0e0e 100%);
+  }
+  .hero-content{
+    padding-top:60px;
+    padding-bottom:32px;
+  }
+  .hero-kicker{
+    margin-bottom:8px;
+    font-size:8px;
+    letter-spacing:.21em;
+  }
+  .hero-copy h1{
+    max-width:350px;
+    font-size:44px;
+    line-height:.92;
+    letter-spacing:-.03em;
+  }
+  .hero-copy>p{
+    max-width:330px;
+    margin-top:12px;
+    font-size:15px;
+    line-height:1.28;
+  }
+  .hero-copy .master-cta{
+    min-height:48px;
+    margin-top:16px;
+    padding-inline:19px;
+    gap:22px;
+    font-size:12px;
+  }
+  .hero-proof{
+    margin-top:14px;
+    gap:10px;
+  }
+  .proof-orbs i{
+    width:23px;
+    height:23px;
+  }
+  .hero-proof p{
+    font-size:9px;
+  }
+  .hero-x{
+    width:132px;
+    height:132px;
+    right:2%;
+    top:25%;
+    opacity:.77;
+  }
+  .hero-x span{
+    width:132px;
+    height:11px;
+  }
+  .hero-metric-panel{
+    top:26%;
+    left:5%;
+    width:106px;
+    padding:8px 9px;
+    transform:none;
+  }
+  .hero-metric-panel small{
+    font-size:5.5px;
+  }
+
+  .category-rail{
+    min-height:48px;
+    padding-inline:20px;
+    gap:20px;
+  }
+  .category-item{
+    gap:6px;
+    font-size:9px;
+  }
+  .category-item svg{
+    width:15px;
+    height:15px;
+  }
+
+  .problem-section,
+  .problem-grid{
+    min-height:520px;
+  }
+  .problem-grid{
+    padding-top:24px;
+  }
+  .problem-copy h2{
+    margin-top:8px;
+    font-size:36px;
+    line-height:.94;
+  }
+  .problem-copy>p{
+    margin-top:10px;
+    font-size:13px;
+    line-height:1.4;
+  }
+  .problem-copy>a{
+    margin-top:12px;
+    font-size:11px;
+  }
+  .problem-media{
+    top:180px;
+    height:340px;
+  }
+  .problem-floor{
+    left:-9%;
+    width:118%;
+  }
+  .problem-block{
+    width:72px;
+    height:88px;
+  }
+  .problem-labels{
+    left:20px;
+    right:20px;
+    bottom:15px;
+    gap:8px 16px;
+  }
+  .problem-labels p{
+    padding-left:22px;
+    font-size:7px;
+    line-height:1.3;
+  }
+
+  .business-check-section{
+    min-height:548px;
+  }
+  .check-photo{
+    height:208px;
+  }
+  .check-content{
+    padding-top:218px;
+    padding-bottom:24px;
+  }
+  .check-heading h2{
+    max-width:330px;
+    font-size:36px;
+    line-height:.94;
+  }
+  .check-heading p{
+    max-width:320px;
+    margin-top:7px;
+    font-size:12px;
+    line-height:1.4;
+  }
+  .check-options{
+    margin-top:12px;
+    border-radius:0;
+  }
+  .check-options button{
+    min-height:62px;
+    padding:7px 5px;
+  }
+  .check-options button svg{
+    width:18px;
+    height:18px;
+  }
+  .check-options button span{
+    font-size:9.5px;
+    line-height:1.12;
+  }
+  .check-result{
+    margin-top:10px;
+    gap:5px 9px;
+  }
+  .check-result>span{
+    font-size:6.5px;
+  }
+  .check-result>strong{
+    font-size:10px;
+    line-height:1.3;
+  }
+  .check-result>em{
+    font-size:6.5px;
+  }
+
+  .value-section{
+    padding:26px 0 22px;
+  }
+  .value-grid{
+    gap:18px;
+  }
+  .value-copy h2{
+    max-width:350px;
+    font-size:35px;
+    line-height:.95;
+  }
+  .value-inputs{
+    margin-top:15px;
+    gap:10px;
+  }
+  .value-inputs label>span{
+    margin-bottom:5px;
+    font-size:10px;
+  }
+  .value-inputs input{
+    height:44px;
+    padding-inline:12px;
+    font-size:15px;
+  }
+  .money-input i{
+    top:13px;
+    font-size:14px;
+  }
+  .money-input input{
+    padding-left:30px;
+  }
+  .value-scenarios{
+    gap:8px;
+  }
+  .value-scenarios article{
+    min-height:82px;
+    grid-template-columns:30px 1fr auto;
+    padding:11px 12px;
+  }
+  .value-scenarios svg{
+    width:20px;
+    height:20px;
+  }
+  .value-scenarios span{
+    font-size:9px;
+  }
+  .value-scenarios strong{
+    font-size:21px;
+  }
+  .value-scenarios small{
+    font-size:7px;
+  }
+  .value-aside{
+    padding-top:14px;
+  }
+  .value-aside p{
+    margin-bottom:12px;
+    font-size:11px;
+    line-height:1.45;
+  }
+  .value-disclaimer{
+    margin-top:9px;
+    font-size:7px;
+    line-height:1.35;
+  }
+
+  .solution-section,
+  .solution-grid{
+    min-height:566px;
+  }
+  .solution-copy{
+    padding-top:25px;
+  }
+  .solution-copy h2{
+    max-width:355px;
+    font-size:36px;
+    line-height:.94;
+  }
+  .solution-copy>p{
+    max-width:340px;
+    margin-top:10px;
+    font-size:12px;
+    line-height:1.4;
+  }
+  .solution-outcomes{
+    margin-top:20px;
+    gap:15px 10px;
+  }
+  .solution-outcomes svg{
+    width:19px;
+    height:19px;
+  }
+  .solution-outcomes span{
+    font-size:7.5px;
+    line-height:1.2;
+  }
+  .system-stage{
+    min-height:304px;
+    margin-top:10px;
+    width:calc(100% + 40px);
+    margin-left:-20px;
+  }
+  .system-tower{
+    left:10%;
+    top:15%;
+    width:142px;
+  }
+  .system-tower>div{
+    height:30px;
+  }
+  .system-core{
+    left:55%;
+    top:28%;
+    width:94px;
+    height:112px;
+  }
+  .system-core img{
+    width:48px;
+  }
+  .system-side{
+    right:5%;
+    top:72%;
+    font-size:6.5px;
+  }
+
+  .approach-section,
+  .approach-grid{
+    min-height:526px;
+  }
+  .approach-photo{
+    height:242px;
+  }
+  .approach-grid{
+    gap:15px;
+    padding-bottom:24px;
+  }
+  .approach-copy h2{
+    max-width:350px;
+    font-size:33px;
+    line-height:.96;
+  }
+  .approach-copy>p{
+    max-width:345px;
+    margin-top:9px;
+    font-size:11.5px;
+    line-height:1.45;
+  }
+  .approach-quote{
+    max-width:310px;
+    padding-left:13px;
+    font-size:18px;
+    line-height:1.1;
+  }
+  .approach-side{
+    padding-top:12px;
+    font-size:7.5px;
+  }
+
+  .scenarios-section{
+    padding:25px 0 30px;
+  }
+  .scenarios-row{
+    gap:15px;
+  }
+  .scenarios-title h2{
+    max-width:330px;
+    font-size:32px;
+    line-height:.96;
+  }
+  .scenario-cards{
+    gap:8px;
+    margin-right:-20px;
+    padding-right:20px;
+    scroll-snap-type:x proximity;
+  }
+  .scenario-card{
+    flex-basis:220px;
+    min-height:118px;
+    padding:64px 11px 10px;
+    scroll-snap-align:start;
+  }
+  .scenario-card span{
+    font-size:16px;
+  }
+  .scenario-card p{
+    font-size:8px;
+    line-height:1.3;
+  }
+
+  .final-section,
+  .final-grid{
+    min-height:710px;
+  }
+  .final-media img{
+    object-position:45% 45%;
+  }
+  .final-x{
+    left:64%;
+    top:25%;
+    width:120px;
+    height:120px;
+  }
+  .final-x span{
+    width:134px;
+    height:34px;
+  }
+  .final-grid{
+    gap:15px;
+    padding-top:220px;
+    padding-bottom:24px;
+  }
+  .final-copy h2{
+    max-width:355px;
+    font-size:35px;
+    line-height:.95;
+  }
+  .final-copy>p{
+    margin-top:9px;
+    font-size:13px;
+    line-height:1.35;
+  }
+  .analysis-context{
+    margin-top:9px;
+    font-size:9px;
+  }
+  .progress-form{
+    padding-top:14px;
+  }
+  .form-progress{
+    margin-bottom:12px;
+  }
+  .form-progress span{
+    width:25px;
+    height:25px;
+    font-size:7px;
+  }
+  .form-step-head h3{
+    font-size:18px;
+    line-height:1.2;
+  }
+  .choice-grid{
+    margin-top:9px;
+  }
+  .choice-grid span{
+    min-height:44px;
+    padding:0 22px 0 10px;
+    font-size:10px;
+    line-height:1.2;
+  }
+  .field{
+    margin-top:11px;
+  }
+  .field>span{
+    margin-bottom:4px;
+    font-size:9px;
+  }
+  .field input{
+    height:44px;
+    font-size:14px;
+  }
+  .field textarea{
+    min-height:72px;
+    font-size:14px;
+  }
+  .form-next,
+  .form-submit{
+    min-height:48px;
+    margin-top:12px;
+    font-size:11px;
+  }
+  .form-back{
+    min-height:44px;
+    padding:0 6px;
+    font-size:10px;
+  }
+  .privacy-note{
+    margin-top:9px;
+    font-size:7.5px;
+    line-height:1.35;
+  }
+
+  .sticky-analysis{
+    left:12px;
+    right:12px;
+    bottom:max(12px,env(safe-area-inset-bottom));
+  }
+  .sticky-analysis a{
+    min-height:50px;
+    gap:15px;
+    font-size:11px;
+  }
+  .master-footer{
+    padding-bottom:calc(68px + env(safe-area-inset-bottom));
+  }
+  .footer-inner{
+    min-height:58px;
+  }
+
+  #problemi,
+  #diagnosi,
+  #value-check,
+  #soluzione,
+  #approccio,
+  #scenari,
+  #analisi{
+    scroll-margin-top:60px;
+  }
+}
+
+@media (max-width:389px){
+  :root{
+    --shell:calc(100% - 32px);
+  }
+  .hero-copy h1{
+    max-width:330px;
+    font-size:41px;
+  }
+  .master-hero,
+  .hero-content{
+    min-height:620px;
+  }
+  .problem-copy h2,
+  .check-heading h2,
+  .solution-copy h2{
+    font-size:34px;
+  }
+  .value-copy h2{
+    font-size:33px;
+  }
+  .approach-copy h2{
+    font-size:31px;
+  }
+  .final-copy h2{
+    font-size:33px;
+  }
+  .system-stage{
+    width:calc(100% + 32px);
+    margin-left:-16px;
+  }
+  .scenario-cards{
+    margin-right:-16px;
+    padding-right:16px;
+  }
+  .scenario-card{
+    flex-basis:210px;
+  }
+}
+
+@media (min-width:430px) and (max-width:767px){
+  :root{
+    --shell:calc(100% - 44px);
+  }
+  .hero-copy h1{
+    max-width:380px;
+    font-size:47px;
+  }
+  .hero-copy>p{
+    font-size:15.5px;
+  }
+  .problem-copy h2,
+  .check-heading h2,
+  .solution-copy h2{
+    font-size:38px;
+  }
+  .value-copy h2{
+    font-size:37px;
+  }
+  .approach-copy h2{
+    font-size:35px;
+  }
+  .final-copy h2{
+    font-size:37px;
+  }
+  .system-stage{
+    width:calc(100% + 44px);
+    margin-left:-22px;
+  }
+  .scenario-cards{
+    margin-right:-22px;
+    padding-right:22px;
+  }
+  .scenario-card{
+    flex-basis:232px;
+  }
+}
