@@ -33,5 +33,6 @@
       "OPS_DATABASE_URL",
       "OPS_ADMIN_PASSWORD"
     ]
-  }
+  },
+  "keep_vars": true
 }
