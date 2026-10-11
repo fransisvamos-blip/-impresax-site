@@ -4424,3 +4424,81 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     display:none;
   }
 }
+
+
+/* =========================================================
+   DESKTOP CONTENT FRAME CALIBRATION V1
+   Keep all section backgrounds full-bleed; concentrate only
+   the inner content slightly toward the center.
+   Mobile/tablet below 1024 remains untouched.
+   ========================================================= */
+@media (min-width:1024px){
+  :root{
+    --shell:min(calc(100% - clamp(88px,9vw,180px)),1420px);
+  }
+
+  .master-nav,
+  .hero-content,
+  .problem-grid,
+  .check-content,
+  .value-grid,
+  .solution-grid,
+  .approach-grid,
+  .scenarios-row,
+  .final-grid,
+  .footer-inner{
+    margin-inline:auto;
+  }
+
+  .hero-copy{
+    width:min(650px,49vw);
+  }
+  .problem-copy{
+    max-width:535px;
+  }
+  .check-heading{
+    max-width:610px;
+  }
+  .value-copy{
+    max-width:460px;
+  }
+  .solution-copy{
+    padding-right:64px;
+  }
+  .approach-copy{
+    max-width:630px;
+  }
+  .scenarios-row{
+    grid-template-columns:270px 1fr;
+    gap:38px;
+  }
+  .final-grid{
+    grid-template-columns:.88fr .72fr 135px;
+    gap:46px;
+  }
+}
+
+@media (min-width:1280px){
+  :root{
+    --shell:min(calc(100% - clamp(120px,10vw,190px)),1400px);
+  }
+
+  .master-desktop-nav{
+    gap:38px;
+  }
+  .hero-copy{
+    width:min(640px,47vw);
+  }
+  .value-grid{
+    gap:46px;
+  }
+  .approach-grid{
+    gap:46px;
+  }
+}
+
+@media (min-width:1600px){
+  :root{
+    --shell:1380px;
+  }
+}
