@@ -2844,3 +2844,228 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     flex-basis:232px;
   }
 }
+
+
+/* =========================================================
+   MOBILE LEGIBILITY V2
+   Raise only commercially important secondary elements.
+   Decorative micro-labels remain intentionally small.
+   ========================================================= */
+@media (max-width:767px){
+  .section-index{
+    font-size:10px;
+    letter-spacing:.145em;
+  }
+
+  .master-brand img{
+    width:132px;
+  }
+
+  .hero-kicker{
+    font-size:9px;
+  }
+  .hero-copy>p{
+    font-size:16px;
+    line-height:1.32;
+  }
+  .hero-copy .master-cta{
+    min-height:50px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .hero-proof p{
+    font-size:10px;
+    line-height:1.3;
+  }
+
+  .category-rail{
+    min-height:52px;
+  }
+  .category-item{
+    font-size:11px;
+    font-weight:600;
+  }
+  .category-item svg{
+    width:17px;
+    height:17px;
+  }
+
+  .problem-copy>p{
+    font-size:13.5px;
+  }
+  .problem-copy>a{
+    font-size:12px;
+    font-weight:700;
+  }
+  .problem-labels p{
+    font-size:9px;
+    line-height:1.35;
+    font-weight:700;
+  }
+
+  .business-check-section{
+    min-height:566px;
+  }
+  .check-heading p{
+    font-size:12.5px;
+  }
+  .check-options button{
+    min-height:68px;
+  }
+  .check-options button svg{
+    width:20px;
+    height:20px;
+  }
+  .check-options button span{
+    font-size:11px;
+    line-height:1.15;
+    font-weight:700;
+  }
+  .check-result>span{
+    font-size:8px;
+  }
+  .check-result>strong{
+    font-size:11.5px;
+    line-height:1.35;
+  }
+  .check-result>em{
+    font-size:8px;
+    line-height:1.3;
+  }
+
+  .value-inputs label>span{
+    font-size:11px;
+  }
+  .value-inputs input{
+    font-size:16px;
+  }
+  .value-scenarios span{
+    font-size:10.5px;
+    line-height:1.25;
+  }
+  .value-scenarios strong{
+    font-size:23px;
+  }
+  .value-scenarios small{
+    font-size:8.5px;
+  }
+  .value-aside p{
+    font-size:12px;
+  }
+  .value-disclaimer{
+    font-size:8.5px;
+    line-height:1.4;
+  }
+
+  .solution-copy>p{
+    font-size:12.5px;
+  }
+  .solution-outcomes span{
+    font-size:9.5px;
+    line-height:1.22;
+    font-weight:800;
+  }
+  .solution-outcomes svg{
+    width:21px;
+    height:21px;
+  }
+  .system-side{
+    font-size:8.5px;
+    line-height:1.35;
+  }
+
+  .approach-copy>p{
+    font-size:12px;
+  }
+  .approach-side{
+    font-size:9px;
+    line-height:1.4;
+  }
+
+  .scenario-card span{
+    font-size:17px;
+  }
+  .scenario-card p{
+    font-size:9.5px;
+    line-height:1.35;
+  }
+
+  .final-copy>p{
+    font-size:13.5px;
+  }
+  .analysis-context{
+    font-size:10px;
+    line-height:1.35;
+  }
+  .form-step-head small{
+    font-size:8px;
+  }
+  .form-step-head h3{
+    font-size:19px;
+  }
+  .choice-grid span{
+    min-height:46px;
+    font-size:11.5px;
+  }
+  .field>span{
+    font-size:10.5px;
+    font-weight:600;
+  }
+  .field input,
+  .field textarea{
+    font-size:16px;
+  }
+  .form-next,
+  .form-submit{
+    min-height:50px;
+    font-size:12.5px;
+  }
+  .form-back{
+    font-size:11px;
+  }
+  .privacy-note{
+    font-size:8.5px;
+    line-height:1.45;
+  }
+  .sticky-analysis a{
+    min-height:52px;
+    font-size:12.5px;
+    font-weight:700;
+  }
+}
+
+@media (max-width:389px){
+  .category-item{
+    font-size:10.5px;
+  }
+  .problem-labels p{
+    font-size:8.5px;
+  }
+  .check-options button span{
+    font-size:10.5px;
+  }
+  .value-scenarios strong{
+    font-size:22px;
+  }
+  .solution-outcomes span{
+    font-size:9px;
+  }
+}
+
+@media (min-width:430px) and (max-width:767px){
+  .category-item{
+    font-size:11.5px;
+  }
+  .problem-labels p{
+    font-size:9.5px;
+  }
+  .check-options button span{
+    font-size:11.5px;
+  }
+  .value-scenarios strong{
+    font-size:24px;
+  }
+  .solution-outcomes span{
+    font-size:10px;
+  }
+}
