@@ -52,6 +52,8 @@ jobs:
           grep -q 'FINAL ANALYSIS DEPTH TUNING + DIAGNOSIS HANDOFF V1' /tmp/styles
           grep -q 'translateZ(74px)' /tmp/styles
           grep -q 'scale(1.04)' /tmp/styles
+          grep -q 'FINAL ANALYSIS CRISP RENDER V1' /tmp/styles
+          grep -q 'transform:translateY(-16px)' /tmp/styles
 
       - name: Verify Business Check to Analysis handoff
         shell: bash
