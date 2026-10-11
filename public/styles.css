@@ -5515,3 +5515,67 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 }
 
 /* RELEASE: diagnosis-handoff-v1 + final-depth-tuning-v1 */
+
+
+/* =========================================================
+   FINAL ANALYSIS CRISP RENDER V1
+   Keep 07 visually elevated without scaling/raster blur.
+   Real-size form, optical depth only.
+   ========================================================= */
+@media (min-width:1024px){
+  .final-section .progress-form{
+    transform:translateY(-16px);
+    transform-style:flat;
+    backface-visibility:visible;
+    will-change:auto;
+    filter:none;
+    box-shadow:
+      0 58px 118px rgba(0,0,0,.58),
+      0 24px 54px rgba(0,0,0,.40),
+      0 8px 18px rgba(0,0,0,.22),
+      0 0 0 1px rgba(255,255,255,.045) inset,
+      0 0 92px rgba(255,90,54,.16);
+  }
+
+  .final-section .progress-form:hover{
+    transform:translateY(-18px);
+  }
+
+  .final-section .progress-form:before{
+    inset:-20px -20px -28px;
+    border-radius:34px;
+    background:
+      radial-gradient(circle at 50% 12%,rgba(255,90,54,.28),transparent 34%),
+      linear-gradient(135deg,rgba(255,90,54,.18),transparent 40%,rgba(255,255,255,.055) 76%,transparent);
+    filter:blur(22px);
+    opacity:.92;
+  }
+
+  .final-section .progress-form:after{
+    left:34px;
+    right:34px;
+    height:2px;
+    box-shadow:
+      0 0 22px rgba(255,90,54,.64),
+      0 0 54px rgba(255,90,54,.20);
+  }
+
+  .final-section .progress-form input,
+  .final-section .progress-form textarea,
+  .final-section .progress-form button,
+  .final-section .progress-form .choice-grid span,
+  .final-section .progress-form h3{
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+}
+
+@media (min-width:1024px) and (max-width:1199px){
+  .final-section .progress-form{
+    transform:translateY(-8px);
+  }
+
+  .final-section .progress-form:hover{
+    transform:translateY(-10px);
+  }
+}
