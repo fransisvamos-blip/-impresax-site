@@ -49,3 +49,17 @@ jobs:
           cat /tmp/css-headers || true
           test "$code" = "200"
           grep -q 'BLOCK 03 STRUCTURAL FRAME V2' /tmp/styles
+          grep -q 'FINAL ANALYSIS DEPTH TUNING + DIAGNOSIS HANDOFF V1' /tmp/styles
+          grep -q 'translateZ(74px)' /tmp/styles
+          grep -q 'scale(1.04)' /tmp/styles
+
+      - name: Verify Business Check to Analysis handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -L -sS -o /tmp/script -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://impresax.org/script.js" || true)
+          echo "script_code=$code"
+          test "$code" = "200"
+          grep -q 'function handoffDiagnosisToAnalysis' /tmp/script
+          grep -q 'showStep(1,false)' /tmp/script
+          grep -q 'diagnostic_to_analysis' /tmp/script
