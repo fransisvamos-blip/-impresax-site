@@ -3,7 +3,8 @@ import { getBuiltinTenant } from "./tenant-registry.js";
 const ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
 const DOMAIN_SUFFIX = ".impresax.org";
-const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;\nconst FACTORY_VERSION = "pilot-001-v1";
+const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+const FACTORY_VERSION = "pilot-001-v1";
 
 export default {
   async fetch(request, env) {
