@@ -6,6 +6,7 @@ on:
     paths:
       - "public/index.html"
       - "public/styles.css"
+      - "wrangler.jsonc"
       - ".github/workflows/home-live-check.yml"
   workflow_dispatch:
 
