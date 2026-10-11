@@ -3416,3 +3416,151 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 }
 
 /* DEPLOY TRIGGER MOBILE INTERACTION V3 */
+
+
+/* =========================================================
+   FINAL MOBILE CORRECTION
+   Restore Value Check dark. Keep only Analysis/Form light.
+   Keep all analysis copy fully inside the dark image area.
+   ========================================================= */
+@media (max-width:767px){
+
+  /* Restore VALUE CHECK to approved dark treatment */
+  .value-section{
+    background:
+      radial-gradient(circle at 44% 55%,rgba(255,90,54,.08),transparent 34%),
+      linear-gradient(180deg,#101111,#111212);
+    color:#fff;
+    border-top:0;
+    border-bottom:0;
+  }
+  .value-section .section-index{
+    color:rgba(255,255,255,.45);
+  }
+  .value-copy h2{
+    color:#fff;
+  }
+  .value-inputs label>span{
+    color:rgba(255,255,255,.62);
+  }
+  .value-inputs input{
+    background:#202121;
+    color:#fff;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:none;
+  }
+  .value-inputs input:focus{
+    border-color:rgba(255,90,54,.72);
+    box-shadow:0 0 0 3px rgba(255,90,54,.07);
+  }
+  .money-input i{
+    color:#fff;
+  }
+  .value-scenarios article{
+    background:rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.07);
+    box-shadow:none;
+  }
+  .value-scenarios span{
+    color:rgba(255,255,255,.82);
+  }
+  .value-scenarios strong{
+    color:var(--orange);
+  }
+  .value-scenarios small{
+    color:rgba(255,255,255,.54);
+  }
+  .value-aside{
+    border-top-color:rgba(255,255,255,.24);
+  }
+  .value-aside p{
+    color:rgba(255,255,255,.78);
+  }
+  .low-value-message{
+    border-top-color:rgba(255,90,54,.45);
+    color:#fff;
+  }
+  .value-disclaimer{
+    color:rgba(255,255,255,.42);
+  }
+
+  /* ANALYSIS: photo/copy as one dark climax, form only becomes light */
+  .final-section{
+    background:var(--paper);
+    color:var(--ink);
+    min-height:800px;
+  }
+  .final-media{
+    height:400px;
+    bottom:auto;
+  }
+  .final-media img{
+    object-position:46% 45%;
+    filter:saturate(.80) contrast(1.04) brightness(.72);
+  }
+  .final-grade{
+    background:
+      linear-gradient(180deg,
+        rgba(15,15,15,.14) 0%,
+        rgba(15,15,15,.22) 35%,
+        rgba(15,15,15,.54) 70%,
+        rgba(15,15,15,.82) 100%);
+  }
+
+  .final-grid{
+    min-height:800px;
+    padding-top:0;
+    padding-bottom:28px;
+    gap:0;
+    align-content:start;
+  }
+  .final-copy{
+    min-height:400px;
+    padding-top:118px;
+    padding-bottom:22px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    color:#fff;
+    text-shadow:0 1px 16px rgba(0,0,0,.18);
+  }
+  .final-section .final-copy .section-index{
+    color:rgba(255,255,255,.68);
+  }
+  .final-copy h2{
+    color:#fff;
+  }
+  .final-copy>p{
+    color:rgba(255,255,255,.92);
+  }
+  .analysis-context,
+  .analysis-context.active{
+    color:rgba(255,255,255,.90);
+  }
+
+  .progress-form{
+    margin-top:0;
+    background:var(--paper);
+    border-top:1px solid rgba(17,17,17,.09);
+  }
+}
+
+@media (max-width:389px){
+  .final-media{
+    height:386px;
+  }
+  .final-copy{
+    min-height:386px;
+    padding-top:112px;
+  }
+}
+
+@media (min-width:430px) and (max-width:767px){
+  .final-media{
+    height:414px;
+  }
+  .final-copy{
+    min-height:414px;
+    padding-top:124px;
+  }
+}
