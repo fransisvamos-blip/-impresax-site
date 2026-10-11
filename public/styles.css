@@ -4525,3 +4525,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     --shell:1320px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP CONTENT FRAME CALIBRATION V3
+   Final micro-centering pass. Full-bleed visuals unchanged.
+   ========================================================= */
+@media (min-width:1024px){
+  :root{
+    --shell:min(calc(100% - clamp(116px,10.8vw,208px)),1360px);
+  }
+}
+
+@media (min-width:1280px){
+  :root{
+    --shell:min(calc(100% - clamp(168px,13vw,236px)),1330px);
+  }
+}
+
+@media (min-width:1600px){
+  :root{
+    --shell:1290px;
+  }
+}
