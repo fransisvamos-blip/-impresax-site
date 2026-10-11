@@ -1,7 +1,7 @@
 import { getBuiltinTenant } from "./tenant-registry.js";\n\nconst ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
 const DOMAIN_SUFFIX = ".impresax.org";
-const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;\nconst FACTORY_VERSION = "pilot-001-v1";
 
 export default {
   async fetch(request, env) {
@@ -75,7 +75,14 @@ function normalizeHostname(hostname) {
 
 async function serveMainSite(request, env) {
   const response = await env.ASSETS.fetch(request);
-  return withSecurityHeaders(response, false);
+  const secured = withSecurityHeaders(response, false);
+  const headers = new Headers(secured.headers);
+  headers.set("X-ImpresaX-Factory-Version", FACTORY_VERSION);
+  return new Response(secured.body, {
+    status: secured.status,
+    statusText: secured.statusText,
+    headers,
+  });
 }
 
 async function resolveTenant(env, slug) {
@@ -167,6 +174,7 @@ async function serveTenant(request, env, tenant) {
       "X-ImpresaX-Site-Factory": "tenant",
       "X-ImpresaX-Tenant": tenant.slug,
       "X-ImpresaX-Tenant-Status": tenant.status,
+      "X-ImpresaX-Factory-Version": FACTORY_VERSION,
     }),
   });
 }
@@ -236,6 +244,7 @@ function redirectToRoot(reason) {
       "Cache-Control": "no-store",
       "X-ImpresaX-Site-Factory": "fallback",
       "X-ImpresaX-Fallback": reason,
+      "X-ImpresaX-Factory-Version": FACTORY_VERSION,
     }),
   });
 }
