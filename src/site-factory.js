@@ -403,7 +403,7 @@ export async function qaApprovedReference(env, prospectId) {
     prospect_id,site_build_id,status,attempt,viewport_results,technical_results,visual_results,screenshots,error,started_at,completed_at
   ) values(
     ${prospectId}::uuid,${build.id}::uuid,${pass?"PASS":"FAIL"},${attempt},
-    ${JSON.stringify(Object.fromEntries(results.map(r=>[String(r.width),{pass:r.pass,width:r.width,height:r.height}]))}::jsonb,
+    ${JSON.stringify(Object.fromEntries(results.map(r=>[String(r.width),{pass:r.pass,width:r.width,height:r.height}]))) }::jsonb,
     ${JSON.stringify(technicalResults)}::jsonb,
     ${JSON.stringify(visualResults)}::jsonb,
     ${JSON.stringify({captured:true,stored:false,viewports:VIEWPORTS.map(v=>v.width)})}::jsonb,
