@@ -1,0 +1,49 @@
+name: ImpresaX Home Live Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/index.html"
+      - "public/styles.css"
+      - ".github/workflows/home-live-check.yml"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify current Home reaches production
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://impresax.org/"
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -L -sS -o /tmp/home -D /tmp/home-headers -w "%{http_code}" --connect-timeout 8 --max-time 15 "$url" || true)
+            echo "attempt=$i code=$code"
+            if [ "$code" = "200" ]               && grep -q 'class="value-frame"' /tmp/home               && grep -q 'id="value-frame-lock"' /tmp/home               && grep -q 'styles.css?v=20261011-value-frame-lock' /tmp/home; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          echo "=== RESPONSE HEADERS ==="
+          cat /tmp/home-headers || true
+          echo "=== VALUE CHECK MARKERS ==="
+          grep -o 'class="value-frame"' /tmp/home || true
+          grep -o 'id="value-frame-lock"' /tmp/home || true
+          grep -o 'styles.css?v=20261011-value-frame-lock' /tmp/home || true
+          test "$ok" = "1"
+
+      - name: Verify stylesheet contains structural frame
+        shell: bash
+        run: |
+          set -euo pipefail
+          css="https://impresax.org/styles.css?v=20261011-value-frame-lock"
+          code=$(curl -L -sS -o /tmp/styles -D /tmp/css-headers -w "%{http_code}" --connect-timeout 8 --max-time 15 "$css" || true)
+          echo "css_code=$code"
+          cat /tmp/css-headers || true
+          test "$code" = "200"
+          grep -q 'BLOCK 03 STRUCTURAL FRAME V2' /tmp/styles
