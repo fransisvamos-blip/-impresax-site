@@ -43,7 +43,7 @@ p,h1,h2,figure,blockquote{margin:0}
 .hero-copy h1{font:500 64px/.84 var(--serif);letter-spacing:-.04em;margin-bottom:22px}
 .hero-lead{font-size:13px;line-height:1.35;color:rgba(255,255,255,.92);max-width:390px}
 .hero-actions{display:flex;align-items:center;gap:28px;margin-top:20px}
-.hero-location{position:absolute;z-index:3;right:72px;bottom:34px;padding-left:20px;border-left:1px solid rgba(255,255,255,.58);display:flex;flex-direction:column;gap:5px;text-transform:uppercase;letter-spacing:.18em}
+.hero-location{position:absolute;z-index:3;right:72px;bottom:40px;padding-left:20px;border-left:1px solid rgba(255,255,255,.58);display:flex;flex-direction:column;gap:5px;text-transform:uppercase;letter-spacing:.18em}
 .hero-location span{font-size:9px}.hero-location strong{font-size:9px;font-weight:600}
 .asset-note{position:absolute;right:12px;top:82px;z-index:2;font-size:7px;color:rgba(255,255,255,.42)}
 
@@ -58,7 +58,7 @@ p,h1,h2,figure,blockquote{margin:0}
 .studio-section{height:258px;display:grid;grid-template-columns:42% 58%;background:var(--paper)}
 .studio-copy{padding:28px 52px 22px 76px;display:flex;flex-direction:column;justify-content:center}
 .studio-copy .overline{margin-bottom:8px}
-.studio-copy h2{font:500 46px/.9 var(--serif);letter-spacing:-.04em;margin-bottom:14px}
+.studio-copy h2{font:500 48px/.88 var(--serif);letter-spacing:-.04em;margin-bottom:14px}
 .studio-copy>p:not(.overline){font-size:11px;line-height:1.45;color:#655d56;max-width:420px;margin-bottom:13px}
 .studio-copy .underlink{width:max-content}
 .studio-media{position:relative;overflow:hidden}
@@ -71,19 +71,19 @@ p,h1,h2,figure,blockquote{margin:0}
 .treatments-section{position:relative;height:244px;display:grid;grid-template-columns:36% 30% 34%;background:#1d1611;color:#fff;overflow:hidden}
 .treatments-copy{position:relative;z-index:3;padding:28px 30px 24px 76px;background:linear-gradient(90deg,#211710 0%,#211710 70%,rgba(33,23,16,.86) 100%);display:flex;flex-direction:column;justify-content:center}
 .treatments-copy .overline{margin-bottom:8px}
-.treatments-copy h2{font:500 44px/.9 var(--serif);letter-spacing:-.04em;margin-bottom:12px}
+.treatments-copy h2{font:500 46px/.88 var(--serif);letter-spacing:-.04em;margin-bottom:12px}
 .treatments-copy>p:not(.overline){font-size:10px;line-height:1.45;color:rgba(255,255,255,.78);max-width:380px;margin-bottom:10px}
 .treatments-copy .underlink{width:max-content}
-.treatments-texture{background-image:linear-gradient(90deg,rgba(28,19,13,.34),rgba(28,19,13,.05)),url("/tenants/studiodentisticogiardinelli/assets/treatments.webp");background-size:cover;background-position:center;filter:saturate(.88) sepia(.08) brightness(.82)}
+.treatments-texture{background-image:linear-gradient(90deg,rgba(28,19,13,.34),rgba(28,19,13,.05)),url("/tenants/studiodentisticogiardinelli/assets/treatments.webp");background-size:cover;background-position:65% center;filter:saturate(.45) sepia(.38) brightness(.58)}
 .treatment-list{position:relative;z-index:2;list-style:none;margin:0;padding:28px 62px 22px 28px;background:linear-gradient(90deg,rgba(28,20,15,.88),#1b1511)}
 .treatment-list li{height:34px;display:grid;grid-template-columns:40px 1fr 22px;align-items:center;border-bottom:1px solid rgba(255,255,255,.18);font-size:10px}
 .treatment-list li span{color:#a99585}.treatment-list li strong{font-weight:500}.treatment-list li i{font-style:normal;justify-self:end;font-size:16px}
 
 /* DOCTOR */
-.doctor-section{height:190px;display:grid;grid-template-columns:38% 35% 27%;background:var(--paper)}
+.doctor-section{height:205px;display:grid;grid-template-columns:38% 35% 27%;background:var(--paper)}
 .doctor-copy{padding:24px 32px 20px 76px;display:flex;flex-direction:column;justify-content:center}
 .doctor-copy .overline{margin-bottom:6px}
-.doctor-copy h2{font:500 36px/.9 var(--serif);letter-spacing:-.035em;margin-bottom:8px}
+.doctor-copy h2{font:500 38px/.88 var(--serif);letter-spacing:-.035em;margin-bottom:8px}
 .doctor-copy>p:not(.overline){font-size:9px;line-height:1.42;color:#6c625b;max-width:390px;margin-bottom:6px}
 .doctor-copy .underlink{width:max-content;font-size:10px}
 .doctor-media{position:relative;overflow:hidden;background:#d9cbbd}
@@ -103,7 +103,7 @@ p,h1,h2,figure,blockquote{margin:0}
 .location-copy .overline{font-size:7px;margin-bottom:3px}.location-copy h2{font:500 27px/.96 var(--serif);letter-spacing:-.03em}.location-copy>p:not(.overline){font-size:8px;margin-top:5px}
 .location-cta{display:grid;place-items:center;padding-right:28px}
 .location-cta .pill{min-width:190px}
-.demo-footer{min-height:30px;background:#17130f;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:6px 38px;font-size:8px}
+.demo-footer{min-height:46px;background:#17130f;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:9px 38px;font-size:8px}
 .demo-footer>div{display:flex;gap:18px;align-items:center}.demo-footer a{text-decoration:none;color:rgba(255,255,255,.72)}.demo-footer p{color:rgba(255,255,255,.62)}
 .mobile-actionbar{display:none}
 
@@ -112,74 +112,74 @@ p,h1,h2,figure,blockquote{margin:0}
   body{background:#d5cec4}
   .reference-site{width:calc(100% - 14px);margin:6px auto 0;border-radius:8px 8px 0 0}
   .desktop-only{display:none}
-  .hero{height:420px}
+  .hero{height:566px}
   .hero-picture img{object-position:61% center;filter:saturate(.80) sepia(.23) brightness(.70)}
   .hero-overlay{background:linear-gradient(180deg,rgba(18,12,8,.25) 0%,rgba(20,13,9,.28) 28%,rgba(16,10,7,.80) 72%,rgba(12,8,6,.92) 100%)}
   .hero-nav{height:70px;grid-template-columns:1fr auto;padding:0 18px}
   .brand span{font-size:7px}.brand strong{font-size:21px}
   .nav-links,.nav-cta{display:none}
   .mobile-menu{display:block;justify-self:end;position:relative}
-  .mobile-menu summary{list-style:none;width:38px;height:38px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px;cursor:pointer}
+  .mobile-menu summary{list-style:none;width:42px;height:42px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px;cursor:pointer}
   .mobile-menu summary::-webkit-details-marker{display:none}
   .mobile-menu summary span{height:1px;background:#fff;width:24px;display:block}
   .mobile-menu-panel{position:absolute;right:0;top:46px;width:190px;background:#17130f;padding:12px 16px;display:grid;gap:0;box-shadow:0 18px 45px rgba(0,0,0,.24)}
   .mobile-menu-panel a{padding:11px 2px;border-bottom:1px solid rgba(255,255,255,.13);font-size:10px;text-decoration:none}
-  .hero-copy{left:18px;right:18px;top:126px;width:auto}
+  .hero-copy{left:18px;right:18px;top:160px;width:auto}
   .hero-copy .overline{font-size:9px;line-height:1.4;margin-bottom:8px}
-  .hero-copy h1{font-size:42px;line-height:.84;margin-bottom:10px;max-width:330px}
+  .hero-copy h1{font-size:46px;line-height:.84;margin-bottom:10px;max-width:330px}
   .hero-lead{font-size:10px;line-height:1.38;max-width:330px}
   .hero-actions{display:block;margin-top:14px}
   .hero-actions .pill{min-width:185px;min-height:44px;font-size:10px}
   .hero-actions .underlink{display:none}
-  .hero-location{right:18px;bottom:14px;padding-left:14px}.hero-location span,.hero-location strong{font-size:7px}
+  .hero-location{right:18px;bottom:20px;padding-left:14px}.hero-location span,.hero-location strong{font-size:7px}
   .asset-note{display:none}
 
   .trust-strip{height:auto;grid-template-columns:1fr;padding:12px 18px 14px}
-  .trust-strip article{height:61px;grid-template-columns:48px 1fr;gap:12px;padding:0;border-right:0;border-bottom:1px solid rgba(25,18,13,.08)}
+  .trust-strip article{height:74px;grid-template-columns:52px 1fr;gap:12px;padding:0;border-right:0;border-bottom:1px solid rgba(25,18,13,.08)}
   .trust-strip article:first-child{padding-left:0}.trust-strip article:last-child{padding-right:0;border-bottom:0}
-  .trust-strip svg{width:38px;height:38px}
+  .trust-strip svg{width:42px;height:42px}
   .trust-strip strong{font-size:10px;margin-bottom:3px}.trust-strip p{font-size:9px;line-height:1.35}
 
   .studio-section{height:auto;display:block}
-  .studio-copy{height:154px;padding:14px 18px 8px}
+  .studio-copy{height:186px;padding:18px 18px 10px}
   .studio-copy .overline{font-size:8px;margin-bottom:5px}
-  .studio-copy h2{font-size:31px;line-height:.88;margin-bottom:8px}
+  .studio-copy h2{font-size:40px;line-height:.84;margin-bottom:8px}
   .studio-copy>p:not(.overline){font-size:9px;line-height:1.3;max-width:340px;margin-bottom:7px}
   .studio-copy .underlink{font-size:9px;min-height:22px}
-  .studio-media{height:86px}
+  .studio-media{height:130px}
   .studio-media img{object-position:center 55%}
   .studio-manifesto{display:none}
   .studio-media figcaption{font-size:5px;bottom:4px}
 
   .treatments-section{height:306px;display:block;padding:0;background-image:linear-gradient(rgba(22,14,9,.54),rgba(18,12,8,.82)),url("/tenants/studiodentisticogiardinelli/assets/treatments.webp");background-size:cover;background-position:center}
-  .treatments-copy{height:80px;padding:10px 18px 4px;background:transparent;display:block}
+  .treatments-copy{height:118px;padding:12px 18px 6px;background:transparent;display:block}
   .treatments-copy .overline{font-size:7px;margin-bottom:4px}
-  .treatments-copy h2{font-size:31px;line-height:.88;margin-bottom:5px}
+  .treatments-copy h2{font-size:34px;line-height:.86;margin-bottom:5px}
   .treatments-copy>p:not(.overline),.treatments-copy .underlink{display:none}
   .treatments-texture{display:none}
-  .treatment-list{height:170px;padding:0 18px 6px;background:transparent}
-  .treatment-list li{height:27px;grid-template-columns:28px 1fr 20px;font-size:9px}
+  .treatment-list{height:188px;padding:0 18px 8px;background:transparent}
+  .treatment-list li{height:30px;grid-template-columns:30px 1fr 22px;font-size:9px}
   .treatment-list li i{width:18px;height:18px;border:1px solid rgba(255,255,255,.7);border-radius:50%;display:grid;place-items:center;font-size:10px}
 
-  .doctor-section{height:100px;grid-template-columns:68% 32%}
-  .doctor-copy{padding:9px 10px 6px 18px}
+  .doctor-section{height:142px;grid-template-columns:68% 32%}
+  .doctor-copy{padding:12px 10px 8px 18px}
   .doctor-copy .overline{font-size:7px;margin-bottom:4px}
-  .doctor-copy h2{font-size:25px;line-height:.88;margin-bottom:6px}
+  .doctor-copy h2{font-size:28px;line-height:.86;margin-bottom:6px}
   .doctor-copy>p:not(.overline){display:none}
   .doctor-copy .underlink{font-size:8px;min-height:20px;gap:12px}
   .doctor-media img{object-position:50% 24%}
   .doctor-media figcaption{font-size:5px}
   .doctor-section blockquote{display:none}
 
-  .location-section{height:98px;position:relative;display:block;background:#d5b083;overflow:hidden}
+  .location-section{height:132px;position:relative;display:block;background:#d5b083;overflow:hidden}
   .location-media{position:absolute;inset:0}.location-media img{object-position:center 53%;filter:saturate(.82) sepia(.12) brightness(.92)}
   .location-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(247,237,222,.88) 0%,rgba(247,237,222,.55) 56%,rgba(247,237,222,.10) 100%)}
-  .location-copy{position:absolute;z-index:2;left:18px;top:8px;padding:0}
-  .location-copy .overline{font-size:6px}.location-copy h2{font-size:23px}.location-copy>p:not(.overline){font-size:7px}
-  .location-cta{position:absolute;z-index:2;left:18px;right:18px;bottom:6px;padding:0}
-  .location-cta .pill{width:100%;min-width:0;min-height:30px;font-size:8px}
+  .location-copy{position:absolute;z-index:2;left:18px;top:12px;padding:0}
+  .location-copy .overline{font-size:6px}.location-copy h2{font-size:25px}.location-copy>p:not(.overline){font-size:7px}
+  .location-cta{position:absolute;z-index:2;left:18px;right:18px;bottom:8px;padding:0}
+  .location-cta .pill{width:100%;min-width:0;min-height:34px;font-size:8px}
 
-  .demo-footer{min-height:30px;display:block;padding:7px 12px 64px;font-size:6px}
+  .demo-footer{min-height:58px;display:block;padding:8px 12px 76px;font-size:6px}
   .demo-footer>div{display:none}.demo-footer p{text-align:center}
   .mobile-actionbar{position:fixed;z-index:100;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:1.35fr .65fr;gap:1px;background:#17130f;border-radius:999px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.26)}
   .mobile-actionbar a{min-height:48px;display:grid;place-items:center;text-decoration:none;font-size:9px;font-weight:700;color:#fff}
