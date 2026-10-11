@@ -1,0 +1,52 @@
+{
+  "render_version": "DEDIL-CZ063-V2",
+  "selected_direction": "A — Industrial Editorial Authority",
+  "official_logo_url": "https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato-300x70.png",
+  "official_logo_repo_path": "ops/render-packs/CZ-063/v2/dedil-logo-official.png",
+  "desktop_width": 1440,
+  "mobile_width": 390,
+  "typography": {
+    "display": "Cormorant Garamond",
+    "ui": "DM Sans"
+  },
+  "palette": {
+    "signal_red": "#B42027",
+    "near_black": "#111111",
+    "warm_off_white": "#F4F1EB",
+    "white": "#FFFFFF"
+  },
+  "image_sources": [
+    {
+      "role": "hero",
+      "page": "https://unsplash.com/photos/metal-bars-stacked-neatly-in-a-warehouse-IR93Hx_ybg8",
+      "author": "Zoshua Colah",
+      "license": "Unsplash License"
+    },
+    {
+      "role": "materials",
+      "page": "https://unsplash.com/photos/stacks-of-concrete-pavers-outside-a-building-hFBPsiRu0Gc",
+      "author": "Sergej Karpow",
+      "license": "Unsplash License"
+    },
+    {
+      "role": "steel",
+      "page": "https://unsplash.com/photos/metal-rods-stacked-on-industrial-shelving-units-6EwTQwXneuE",
+      "author": "Zoshua Colah",
+      "license": "Unsplash License"
+    },
+    {
+      "role": "yard",
+      "page": "https://unsplash.com/photos/forklift-and-van-at-a-construction-supply-yard-W_5mHEY4asI",
+      "author": "Ryan Liu",
+      "license": "Unsplash License"
+    }
+  ],
+  "truth_sources": [
+    "https://dedildonato.it/",
+    "https://u-power.ai/it-it/trova-rivenditore/tutti-i-rivenditori",
+    "https://www.virtualsmallbusiness.it/dedil-donato-s-r-l"
+  ],
+  "footer_complete": true,
+  "generated_brand_marks": false,
+  "template_output": false
+}
