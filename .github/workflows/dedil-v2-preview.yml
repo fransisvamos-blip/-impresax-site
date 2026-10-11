@@ -1,0 +1,66 @@
+name: DEDIL V2 Preview QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/dedil-v2-preview.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pillow
+
+      - name: Build QA previews
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+
+          base = Path("ops/render-packs/CZ-063/v2")
+          out = base / "previews"
+          out.mkdir(exist_ok=True)
+
+          files = [
+              ("DEDIL-CZ063-V2-desktop.png", "desktop-preview.jpg", 900),
+              ("DEDIL-CZ063-V2-mobile.png", "mobile-preview.jpg", 390),
+              ("direction-A-editorial.png", "direction-A-preview.jpg", 900),
+              ("direction-B-cinematic.png", "direction-B-preview.jpg", 900),
+              ("direction-C-local-trust.png", "direction-C-preview.jpg", 900),
+          ]
+
+          for src_name, dst_name, width in files:
+              src = base / src_name
+              if not src.exists():
+                  continue
+              with Image.open(src) as im:
+                  im = im.convert("RGB")
+                  h = round(im.height * width / im.width)
+                  im = im.resize((width, h), Image.Resampling.LANCZOS)
+                  im.save(out / dst_name, "JPEG", quality=82, optimize=True, progressive=True)
+                  print(src_name, "->", dst_name, im.size)
+          PY
+
+      - name: Commit QA previews
+        run: |
+          git config user.name "impresax-render-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add ops/render-packs/CZ-063/v2/previews
+          if git diff --cached --quiet; then
+            echo "No preview changes"
+            exit 0
+          fi
+          git commit -m "Add DEDIL V2 QA previews"
+          git push
