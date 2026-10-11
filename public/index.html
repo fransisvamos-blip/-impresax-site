@@ -14,7 +14,29 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="https://images.pexels.com/photos/30065445/pexels-photo-30065445.jpeg?auto=compress&cs=tinysrgb&w=1600" imagesrcset="https://images.pexels.com/photos/30065445/pexels-photo-30065445.jpeg?auto=compress&cs=tinysrgb&w=640 640w, https://images.pexels.com/photos/30065445/pexels-photo-30065445.jpeg?auto=compress&cs=tinysrgb&w=800 800w, https://images.pexels.com/photos/30065445/pexels-photo-30065445.jpeg?auto=compress&cs=tinysrgb&w=1200 1200w, https://images.pexels.com/photos/30065445/pexels-photo-30065445.jpeg?auto=compress&cs=tinysrgb&w=1600 1600w, https://images.pexels.com/photos/30065445/pexels-photo-30065445.jpeg?auto=compress&cs=tinysrgb&w=2200 2200w" imagesizes="100vw">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20261011-value-frame-lock">
+<style id="value-frame-lock">
+@media (min-width:1024px){
+  #value-check .value-frame{
+    width:min(calc(100% - 13vw),1290px)!important;
+    max-width:1290px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  #value-check .value-frame > .value-grid,
+  #value-check .value-frame > .value-disclaimer{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+}
+@media (min-width:1600px){
+  #value-check .value-frame{
+    width:1290px!important;
+  }
+}
+</style>
 </head>
 <body class="master-home">
 
