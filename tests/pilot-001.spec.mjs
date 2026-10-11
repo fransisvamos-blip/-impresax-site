@@ -36,13 +36,17 @@ for (const vp of viewports) {
     const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
     const page = await context.newPage();
     const failures = [];
+    const consoleErrors = [];
+    const pageErrors = [];
     page.on("requestfailed", r => failures.push(r.url()));
+    page.on("console", m => { if (m.type() === "error") consoleErrors.push(m.text()); });
+    page.on("pageerror", e => pageErrors.push(String(e)));
     await page.goto(url, { waitUntil: "networkidle" });
 
     await expect(page).toHaveTitle(/Studio Dentistico Giardinelli/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     const primaryPhone = vp.width <= 700
-      ? page.locator('.mobile-actionbar a[href="tel:+393932227446"]')
+      ? page.locator('.hero-actions a[href="tel:+393932227446"]')
       : page.locator('.nav-cta[href="tel:+393932227446"]');
     await expect(primaryPhone).toBeVisible();
     await expect(page.getByText("Anteprima non ufficiale realizzata da ImpresaX.")).toBeVisible();
@@ -62,6 +66,18 @@ for (const vp of viewports) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     expect(failures).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+
+    const perf = await page.evaluate(() => {
+      const nav = performance.getEntriesByType("navigation")[0];
+      return nav ? {
+        domContentLoaded: Math.round(nav.domContentLoadedEventEnd),
+        load: Math.round(nav.loadEventEnd)
+      } : null;
+    });
+    expect(perf).not.toBeNull();
+    expect(perf.load).toBeLessThan(5000);
 
     fs.mkdirSync("test-results/screenshots", { recursive: true });
     await page.screenshot({
