@@ -5,6 +5,7 @@ export const BUILTIN_TENANTS = Object.freeze({
     slug: "studiodentisticogiardinelli",
     business_name: "Studio Dentistico Dott. Francesco Giardinelli",
     vertical: "DENTAL_MEDICAL",
+    dental_master_version: "V2",
     status: "QA_READY",
     qa_status: "PASS",
     visual_quality_status: "READY_FOR_CABINA",
