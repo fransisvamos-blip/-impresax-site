@@ -22,5 +22,10 @@
     "directory": "./public",
     "binding": "ASSETS",
     "run_worker_first": true
+  },
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
   }
 }
