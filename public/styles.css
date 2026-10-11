@@ -3532,16 +3532,35 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   }
   .final-copy>p{
     color:rgba(255,255,255,.92);
+    font-size:15px;
+    line-height:1.42;
   }
   .analysis-context,
   .analysis-context.active{
     color:rgba(255,255,255,.90);
+    font-size:12.5px;
+    line-height:1.38;
   }
 
   .progress-form{
     margin-top:0;
     background:var(--paper);
     border-top:1px solid rgba(17,17,17,.09);
+  }
+  .progress-form .form-step-head h3{
+    font-size:22px;
+    line-height:1.15;
+  }
+  .progress-form .choice-grid span{
+    font-size:13px;
+    line-height:1.22;
+  }
+  .progress-form .field>span{
+    font-size:11.5px;
+  }
+  .progress-form .form-next,
+  .progress-form .form-submit{
+    font-size:13.5px;
   }
 }
 
