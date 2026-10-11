@@ -51,6 +51,13 @@ function renderEvents(events){
 function listBlock(title,items,formatter){
   return `<section class="detail-section"><h4>${esc(title)} · ${items?.length||0}</h4>${(items&&items.length)?items.slice(0,20).map(formatter).join(""):'<span class="id">Nessun record</span>'}</section>`;
 }
+function jsonBlock(title,value){
+  const empty=value==null||(typeof value==="object"&&Object.keys(value).length===0);
+  return `<section class="detail-section"><h4>${esc(title)}</h4>${empty?'<span class="id">Nessun dato</span>':`<pre class="json">${esc(JSON.stringify(value,null,2))}</pre>`}</section>`;
+}
+function linkMaybe(url,label){
+  return url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label||url)} ↗</a>`:"—";
+}
 async function selectProspect(id){
   state.selected=id;renderRows();
   $("#detail").innerHTML='<div class="empty">Loading…</div>';
@@ -61,15 +68,20 @@ async function selectProspect(id){
       <div class="id">${esc(p.id)}</div>${p.live_url?`<p><a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a></p>`:""}</div>
     <section class="detail-section"><h4>Prospect</h4><dl class="kv">
       <dt>Rank</dt><dd>${esc(p.rank??"—")}</dd><dt>Verticale</dt><dd>${esc(p.vertical)}</dd>
-      <dt>Sito attuale</dt><dd>${p.website_url?`<a href="${esc(p.website_url)}" target="_blank" rel="noopener">${esc(p.website_url)}</a>`:"—"}</dd>
+      <dt>Sito attuale</dt><dd>${linkMaybe(p.website_url,p.website_url)}</dd>
+      <dt>Demo URL</dt><dd>${linkMaybe(p.live_url,p.live_url)}</dd>
       <dt>Current step</dt><dd>${esc(p.current_step)}</dd><dt>Next action</dt><dd>${esc(p.next_action)}</dd>
       <dt>Error</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
     </dl></section>
+    ${jsonBlock("Dati prospect / fonti",p.source_data)}
+    ${jsonBlock("Logo",p.logo)}
+    ${jsonBlock("Brand DNA",p.brand_dna)}
     ${listBlock("Render jobs",d.render_jobs,x=>`<article class="timeline"><strong>${esc(x.status)} · attempt ${esc(x.attempt)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("Render packs",d.render_packs,x=>`<article class="timeline"><strong>v${esc(x.version)} · ${esc(x.status)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("Assets",d.render_assets,x=>`<article class="timeline"><strong>${esc(x.asset_type)}</strong><time>${esc(x.asset_url)}</time></article>`)}
-    ${listBlock("Build",d.site_builds,x=>`<article class="timeline"><strong>${esc(x.status)} · ${esc(x.commit_sha||"no commit")}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
-    ${listBlock("QA",d.qa_runs,x=>`<article class="timeline"><strong>${esc(x.status)} · attempt ${esc(x.attempt)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+    ${listBlock("Render packs",d.render_packs,x=>`<article class="timeline"><strong>v${esc(x.version)} · ${esc(x.status)}</strong><div class="asset-links">${linkMaybe(x.desktop_render_url,"Desktop render")} · ${linkMaybe(x.mobile_render_url,"Mobile render")}</div><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+    ${listBlock("Assets",d.render_assets,x=>`<article class="timeline"><strong>${esc(x.asset_type)}</strong><div class="asset-links">${linkMaybe(x.asset_url,"Apri asset")}</div><time>${esc(x.rights_status||x.source_type||"")}</time></article>`)}
+    ${listBlock("Build",d.site_builds,x=>`<article class="timeline"><strong>${esc(x.status)} · ${esc(x.commit_sha||"no commit")}</strong><div class="asset-links">${linkMaybe(x.live_url,"Live build")}</div><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+    ${listBlock("QA + screenshots",d.qa_runs,x=>`<article class="timeline"><strong>${esc(x.status)} · attempt ${esc(x.attempt)}</strong><pre class="json compact">${esc(JSON.stringify(x.screenshots||{},null,2))}</pre><time>${esc(fmtDate(x.created_at))}</time></article>`)}
+    ${listBlock("Sales handoff",d.sales_handoffs,x=>`<article class="timeline"><strong>${esc(x.status)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
     ${listBlock("Timeline",d.events,x=>`<article class="timeline"><strong>${esc(x.event_type)}</strong><time>${esc(fmtDate(x.created_at))}</time></article>`)}
   `;
 }
