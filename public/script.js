@@ -151,9 +151,21 @@ function handoffDiagnosisToAnalysis(key){
   selectedChoice?.classList.remove("diagnosis-handoff-choice");
 
   requestAnimationFrame(()=>{
-    analysis?.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"start"});
+    const isMobile=window.innerWidth<768;
+    const scrollTarget=isMobile?formEl:analysis;
+    scrollTarget?.scrollIntoView({
+      behavior:reduceMotion?"auto":"smooth",
+      block:isMobile?"start":"start"
+    });
+
     formEl?.classList.add("diagnosis-handoff");
     selectedChoice?.classList.add("diagnosis-handoff-choice");
+
+    if(isMobile){
+      const continueBtn=formEl?.querySelector('.form-step[data-step="1"] .form-next');
+      continueBtn?.classList.add("diagnosis-handoff-continue");
+      window.setTimeout(()=>continueBtn?.classList.remove("diagnosis-handoff-continue"),1800);
+    }
 
     window.setTimeout(()=>{
       formEl?.classList.remove("diagnosis-handoff");
