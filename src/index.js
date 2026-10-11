@@ -1,11 +1,12 @@
 import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
+import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 
 const ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
 const DOMAIN_SUFFIX = ".impresax.org";
 const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-const FACTORY_VERSION = "ops-foundation-v1+pilot-001-reference-v4";
+const FACTORY_VERSION = "autonomous-site-factory-v1+pilot-001-reference-v4";
 
 export default {
   async fetch(request, env) {
@@ -130,6 +131,9 @@ async function resolveTenant(env, slug) {
     }
   }
 
+  const factoryTenant = await resolveFactoryTenant(env, slug);
+  if (factoryTenant) return factoryTenant;
+
   const builtin = getBuiltinTenant(slug);
   if (builtin) return builtin;
 
@@ -142,6 +146,14 @@ function isPublicTenant(tenant) {
   }
 
   if (tenant.status === "CONVERTED_CLIENT") return true;
+
+  if (tenant.autonomous_factory === true && ["QA_RUNNING","QA_FAILED","BUILD_REWORK"].includes(tenant.status) && tenant.public_preview === true) {
+    return true;
+  }
+
+  if (tenant.autonomous_factory === true && tenant.status === "DEMO_READY" && tenant.qa_status === "PASS") {
+    return true;
+  }
 
   if (tenant.status === "DEMO_READY") {
     return (
