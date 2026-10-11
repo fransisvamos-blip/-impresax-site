@@ -365,9 +365,38 @@ export function isOpsHost(hostname) {
 }
 
 export async function handleOpsRequest(request, env) {
-  if (!authorized(request, env)) return authResponse(env);
-
   const url = new URL(request.url);
+
+  // Public, non-sensitive health endpoint used only to verify Worker + Neon wiring.
+  if (url.pathname === "/ops/healthz") {
+    try {
+      const sql = db(env);
+      const rows = await sql`select
+        current_database() as database,
+        (select count(*)::int from prospects) as prospects,
+        now() as checked_at`;
+      return json({
+        ok: true,
+        service: "impresax-ops",
+        database: rows[0]?.database || "unknown",
+        database_connected: true,
+        checked_at: rows[0]?.checked_at || new Date().toISOString()
+      }, 200, {
+        "X-Robots-Tag": "noindex, nofollow, noarchive"
+      });
+    } catch (error) {
+      return json({
+        ok: false,
+        service: "impresax-ops",
+        database_connected: false,
+        error: error.code || error.message
+      }, 503, {
+        "X-Robots-Tag": "noindex, nofollow, noarchive"
+      });
+    }
+  }
+
+  if (!authorized(request, env)) return authResponse(env);
   if (url.pathname.startsWith("/ops/api/")) {
     return api(request, env, url.pathname);
   }
