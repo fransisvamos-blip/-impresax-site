@@ -41,7 +41,10 @@ for (const vp of viewports) {
 
     await expect(page).toHaveTitle(/Francesco Giardinelli/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-    await expect(page.locator('a[href="tel:+393932227446"]').first()).toBeVisible();
+    const primaryPhone = vp.width <= 620
+      ? page.locator('.mobile-cta a[href="tel:+393932227446"]')
+      : page.locator('.header-call[href="tel:+393932227446"]');
+    await expect(primaryPhone).toBeVisible();
     await expect(page.getByText("Anteprima non ufficiale realizzata da ImpresaX.")).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
