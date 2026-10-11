@@ -46,6 +46,10 @@ jobs:
           test "$ok" = "1"
           grep -qi "X-Robots-Tag: noindex" /tmp/tenant-headers
           grep -q "Studio Dentistico Dott. Francesco Giardinelli" /tmp/tenant-body
+          css_code=$(curl -sS -o /tmp/tenant-css -D /tmp/css-headers -w "%{http_code}" "https://studiodentisticogiardinelli.impresax.org/tenants/studiodentisticogiardinelli/styles.css")
+          test "$css_code" = "200"
+          grep -qi "Content-Type: text/css" /tmp/css-headers
+          grep -q -- "--ink:#17372f" /tmp/tenant-css
           root_code=$(curl -sS -o /tmp/root-body -w "%{http_code}" "$root")
           test "$root_code" = "200"
           unknown_code=$(curl -sS -o /dev/null -D /tmp/unknown-headers -w "%{http_code}" "$unknown")
