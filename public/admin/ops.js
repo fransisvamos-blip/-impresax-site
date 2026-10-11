@@ -218,23 +218,36 @@ function emailLogSummary(row){
 }
 function renderEmailSystem(email){
   const ready=email?.status==="IMPRESAX_EMAIL_READY";
-  $("#email-status").textContent=ready?"PRONTO":"NON PRONTO";
+  $("#email-status").textContent=ready?"READY":"NON READY";
   $("#email-status").className="email-overall status "+(ready?"ready":"");
   $("#email-status-text").textContent=email?.status||"—";
+  $("#email-sending").textContent=email?.sending||"—";
+
+  const tracking=email?.delivery_tracking||{};
+  $("#email-delivery-tracking").textContent=tracking.status||"PENDING";
+  $("#email-delivery-tracking").className=tracking.status==="ACTIVE"?"pass":tracking.status==="ERROR"?"fail":"pending";
+
   $("#email-from").textContent=email?.from_address||"—";
-  $("#email-last-test").textContent=emailLogSummary(email?.last_test);
   $("#email-last-send").textContent=emailLogSummary(email?.last_send);
+  $("#email-last-delivery").textContent=emailLogSummary(email?.last_delivery);
   $("#email-last-error").textContent=email?.last_error
     ? [tStatus(email.last_error.status),email.last_error.error||"",fmtDate(email.last_error.created_at)].filter(Boolean).join(" · ")
     : "—";
+
+  const permission=tracking.required_permission;
+  $("#email-delivery-note").textContent=permission
+    ? "Delivery analytics: serve permesso "+permission
+    : tracking.reason
+      ? "Delivery analytics: "+tracking.reason.replaceAll("_"," ")
+      : "";
+
   const qaLabels={
     email_service_connection:"Email service connection",
     from_domain:"From domain",
-    test_send:"Test send",
-    delivery:"Delivery",
-    dkim:"DKIM",
     spf:"SPF",
-    control_room:"Control Room"
+    dkim:"DKIM",
+    test_send:"Test send",
+    no_send_error:"No send error"
   };
   $("#email-qa").innerHTML=Object.entries(qaLabels).map(([key,label])=>{
     const value=email?.qa?.[key]||"PENDING";
@@ -242,6 +255,7 @@ function renderEmailSystem(email){
     return `<div class="email-qa-item"><span>${esc(label)}</span><strong class="${cls}">${esc(value)}</strong></div>`;
   }).join("");
 }
+
 async function loadEmailSystem(){
   try{
     const d=await api("/ops/api/email/status");
@@ -358,7 +372,7 @@ $("#email-test-form").addEventListener("submit",async e=>{
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({recipient})
     });
-    feedback.textContent="Invio accettato da Cloudflare. Verifica consegna in corso.";
+    feedback.textContent="Invio accettato da Cloudflare. Email sending operativo; delivery tracking separato.";
     feedback.className="email-feedback success";
     await loadEmailSystem();
   }catch(e){
