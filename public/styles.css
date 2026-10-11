@@ -4502,3 +4502,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     --shell:1380px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP CONTENT FRAME CALIBRATION V2
+   Slight additional centering only. Full-bleed visuals stay.
+   ========================================================= */
+@media (min-width:1024px){
+  :root{
+    --shell:min(calc(100% - clamp(104px,10vw,196px)),1380px);
+  }
+}
+
+@media (min-width:1280px){
+  :root{
+    --shell:min(calc(100% - clamp(150px,12vw,220px)),1360px);
+  }
+}
+
+@media (min-width:1600px){
+  :root{
+    --shell:1320px;
+  }
+}
