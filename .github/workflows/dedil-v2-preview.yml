@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/dedil-v2-preview.yml"
+      - "ops/render-packs/CZ-063/v2/DEDIL-CZ063-V2-desktop.png"
+      - "ops/render-packs/CZ-063/v2/DEDIL-CZ063-V2-mobile.png"
+      - "ops/render-packs/CZ-063/v2/direction-*.png"
 
 permissions:
   contents: write
