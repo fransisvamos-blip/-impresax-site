@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           if grep -q 'visual_quality_status: "REWORK"' src/tenant-registry.js; then
-            echo "V3 is in REWORK; live Cabina preview intentionally gated. Skipping live smoke until internal visual review passes."
+            echo "Reference-lock V4 is in internal REWORK; live tenant intentionally gated until visual QA passes."
             exit 0
           fi
           tenant="https://studiodentisticogiardinelli.impresax.org/"
@@ -53,7 +53,7 @@ jobs:
           css_code=$(curl -sS -o /tmp/tenant-css -D /tmp/css-headers -w "%{http_code}" "https://studiodentisticogiardinelli.impresax.org/tenants/studiodentisticogiardinelli/styles.css")
           test "$css_code" = "200"
           grep -qi "Content-Type: text/css" /tmp/css-headers
-          grep -q -- "--bone:#f2efe8" /tmp/tenant-css
+          grep -q -- "--cream:#f3eee6" /tmp/tenant-css
           root_code=$(curl -sS -o /tmp/root-body -w "%{http_code}" "$root")
           test "$root_code" = "200"
           unknown_code=$(curl -sS -o /dev/null -D /tmp/unknown-headers -w "%{http_code}" "$unknown")
