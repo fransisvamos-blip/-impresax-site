@@ -5947,3 +5947,203 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     margin-right:6px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP NAV REFINEMENT V2 + FINAL FORM TYPOGRAPHY V2
+   Cleaner editorial navigation, white desktop choices,
+   balanced mobile Step 01 spacing and stronger type.
+   ========================================================= */
+
+/* ---------- DESKTOP ---------- */
+@media (min-width:1024px){
+
+  /* Header navigation: editorial, not pill-based */
+  .master-desktop-nav{
+    display:flex;
+    align-items:center;
+    justify-self:center;
+    gap:0;
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+
+  .master-desktop-nav a{
+    position:relative;
+    display:grid;
+    grid-template-columns:auto auto;
+    align-items:center;
+    column-gap:8px;
+    min-height:44px;
+    padding:0 21px;
+    border-radius:0;
+    color:rgba(255,255,255,.90);
+    font-size:12px;
+    font-weight:680;
+    letter-spacing:.012em;
+    background:transparent;
+    box-shadow:none;
+    transform:none;
+    transition:
+      color .20s ease,
+      opacity .20s ease;
+  }
+
+  .master-desktop-nav a + a{
+    border-left:1px solid rgba(255,255,255,.12);
+  }
+
+  .master-desktop-nav a:before{
+    width:auto;
+    height:auto;
+    margin:0;
+    border-radius:0;
+    background:none;
+    box-shadow:none;
+    color:rgba(255,255,255,.34);
+    font-size:7.5px;
+    font-weight:800;
+    letter-spacing:.12em;
+    line-height:1;
+    transform:none;
+    transition:color .20s ease;
+  }
+  .master-desktop-nav a:nth-child(1):before{content:"01"}
+  .master-desktop-nav a:nth-child(2):before{content:"02"}
+  .master-desktop-nav a:nth-child(3):before{content:"03"}
+  .master-desktop-nav a:nth-child(4):before{content:"04"}
+
+  .master-desktop-nav a:after{
+    content:"";
+    position:absolute;
+    left:21px;
+    right:21px;
+    bottom:5px;
+    height:2px;
+    border-radius:2px;
+    background:linear-gradient(90deg,var(--orange),rgba(255,90,54,.30));
+    opacity:0;
+    transform:scaleX(.28);
+    transform-origin:left center;
+    transition:
+      opacity .20s ease,
+      transform .22s ease;
+  }
+
+  .master-desktop-nav a:hover,
+  .master-desktop-nav a:focus-visible{
+    color:#fff;
+    background:transparent;
+    box-shadow:none;
+    transform:none;
+  }
+
+  .master-desktop-nav a:hover:before,
+  .master-desktop-nav a:focus-visible:before{
+    color:var(--orange);
+    background:none;
+    box-shadow:none;
+    transform:none;
+  }
+
+  .master-desktop-nav a:hover:after,
+  .master-desktop-nav a:focus-visible:after{
+    opacity:1;
+    transform:scaleX(1);
+  }
+
+  /* 07 / all choice labels fully white */
+  .final-section .choice-grid span{
+    color:#fff;
+    font-weight:680;
+    letter-spacing:.006em;
+  }
+
+  .final-section .choice-grid input:checked+span,
+  .final-section .choice-grid label.diagnosis-handoff-choice span{
+    color:#fff;
+  }
+}
+
+@media (min-width:1024px) and (max-width:1199px){
+  .master-desktop-nav a{
+    padding:0 13px;
+    font-size:10.75px;
+    column-gap:6px;
+  }
+  .master-desktop-nav a:after{
+    left:13px;
+    right:13px;
+  }
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:767px){
+
+  /* 07 / Step 01 gets equal breathing room above and below */
+  .final-section .form-step[data-step="1"]{
+    padding-top:18px;
+    padding-bottom:18px;
+  }
+
+  .final-section .form-step[data-step="1"] .form-step-head{
+    margin:0 0 16px;
+  }
+
+  .final-section .form-step[data-step="1"] .form-step-head small{
+    display:block;
+    margin-bottom:6px;
+    color:var(--orange);
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+  }
+
+  .final-section .form-step[data-step="1"] .form-step-head h3{
+    margin:0;
+    color:var(--ink);
+    font-size:24px;
+    font-weight:760;
+    line-height:1.08;
+    letter-spacing:-.018em;
+  }
+
+  .final-section .form-step[data-step="1"] .choice-grid{
+    margin-top:0;
+  }
+
+  .final-section .form-step[data-step="1"] .choice-grid span{
+    min-height:54px;
+    color:#242321;
+    font-size:13.25px;
+    font-weight:680;
+    line-height:1.18;
+    letter-spacing:.002em;
+  }
+
+  .final-section .form-step[data-step="1"] .form-next{
+    margin-top:18px;
+  }
+}
+
+@media (max-width:389px){
+  .final-section .form-step[data-step="1"]{
+    padding-top:16px;
+    padding-bottom:16px;
+  }
+
+  .final-section .form-step[data-step="1"] .form-step-head h3{
+    font-size:22px;
+  }
+
+  .final-section .form-step[data-step="1"] .choice-grid span{
+    min-height:52px;
+    font-size:12.75px;
+  }
+}
