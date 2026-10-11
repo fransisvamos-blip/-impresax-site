@@ -4,42 +4,42 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>ImpresaX Ops — Control Room</title>
+  <title>ImpresaX Ops — Cabina Operativa</title>
   <link rel="stylesheet" href="/ops.css">
 </head>
 <body>
   <header class="top">
     <div>
       <span class="kicker">IMPRESAX OPS</span>
-      <h1>Control Room</h1>
+      <h1>Cabina Operativa</h1>
     </div>
     <div class="top-actions">
       <span id="updated">—</span>
-      <button id="run">Run orchestrator</button>
-      <button id="refresh">Refresh</button>
+      <button id="run">Esegui orchestratore</button>
+      <button id="refresh">Aggiorna</button>
     </div>
   </header>
 
   <main>
-    <section class="metrics" id="metrics" aria-label="Pipeline metrics"></section>
+    <section class="metrics" id="metrics" aria-label="Metriche del flusso operativo"></section>
 
     <section class="workspace">
       <div class="board">
         <div class="section-head">
           <div>
-            <span class="kicker">PIPELINE</span>
-            <h2>Prospects</h2>
+            <span class="kicker">FLUSSO OPERATIVO</span>
+            <h2>Aziende</h2>
           </div>
-          <input id="search" type="search" placeholder="Cerca azienda, ID, verticale…">
+          <input id="search" type="search" placeholder="Cerca azienda, ID, verticale, stato…">
         </div>
 
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Rank</th><th>ID</th><th>Azienda</th><th>Verticale</th>
-                <th>Render</th><th>Build</th><th>QA</th><th>Live</th>
-                <th>Current step</th><th>Last event</th><th>Error</th><th>Next action</th>
+                <th>Pos.</th><th>ID</th><th>Azienda</th><th>Verticale</th>
+                <th>Rendering</th><th>Costruzione</th><th>Controllo qualità</th><th>Online</th>
+                <th>Fase attuale</th><th>Ultimo evento</th><th>Errore</th><th>Prossima azione</th>
               </tr>
             </thead>
             <tbody id="rows"></tbody>
@@ -49,8 +49,8 @@
 
       <aside class="detail" id="detail">
         <div class="empty">
-          <span class="kicker">DETAIL</span>
-          <p>Seleziona un prospect per vedere dati, render, asset, build, QA, errori e timeline.</p>
+          <span class="kicker">DETTAGLIO</span>
+          <p>Seleziona un'azienda per vedere dati, rendering, risorse, costruzione, controlli qualità, errori e cronologia completa.</p>
         </div>
       </aside>
     </section>
@@ -58,7 +58,7 @@
     <section class="events">
       <div class="section-head">
         <div>
-          <span class="kicker">EVENT LOG</span>
+          <span class="kicker">REGISTRO EVENTI</span>
           <h2>Ultimi eventi</h2>
         </div>
       </div>
