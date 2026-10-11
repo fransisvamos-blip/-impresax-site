@@ -5783,3 +5783,167 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     padding-right:16px;
   }
 }
+
+
+/* =========================================================
+   DESKTOP NAV + FINAL CHOICE POLISH V1
+   Stronger navigation identity and positive form selection.
+   Desktop only.
+   ========================================================= */
+@media (min-width:1024px){
+
+  /* HEADER NAV — premium capsule, clearer hierarchy */
+  .master-desktop-nav{
+    display:flex;
+    align-items:center;
+    justify-self:center;
+    gap:4px;
+    padding:5px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:999px;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.025));
+    box-shadow:
+      0 10px 30px rgba(0,0,0,.14),
+      0 1px 0 rgba(255,255,255,.06) inset;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+
+  .master-desktop-nav a{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:36px;
+    padding:0 15px;
+    border-radius:999px;
+    color:rgba(255,255,255,.78);
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.018em;
+    transition:
+      color .20s ease,
+      background .20s ease,
+      transform .20s ease,
+      box-shadow .20s ease;
+  }
+
+  .master-desktop-nav a:before{
+    content:"";
+    width:5px;
+    height:5px;
+    margin-right:8px;
+    border-radius:50%;
+    background:rgba(255,255,255,.20);
+    box-shadow:none;
+    transition:
+      background .20s ease,
+      box-shadow .20s ease,
+      transform .20s ease;
+  }
+
+  .master-desktop-nav a:after{
+    content:"";
+    position:absolute;
+    left:18px;
+    right:18px;
+    bottom:5px;
+    height:1px;
+    border-radius:1px;
+    background:var(--orange);
+    opacity:0;
+    transform:scaleX(.45);
+    transform-origin:center;
+    transition:
+      opacity .20s ease,
+      transform .20s ease;
+  }
+
+  .master-desktop-nav a:hover,
+  .master-desktop-nav a:focus-visible{
+    color:#fff;
+    background:rgba(255,255,255,.075);
+    box-shadow:0 5px 14px rgba(0,0,0,.10);
+    transform:translateY(-1px);
+  }
+
+  .master-desktop-nav a:hover:before,
+  .master-desktop-nav a:focus-visible:before{
+    background:var(--orange);
+    box-shadow:0 0 10px rgba(255,90,54,.58);
+    transform:scale(1.08);
+  }
+
+  .master-desktop-nav a:hover:after,
+  .master-desktop-nav a:focus-visible:after{
+    opacity:1;
+    transform:scaleX(1);
+  }
+
+  /* 07 / OPTIONS — stronger text and positive selected state */
+  .final-section .choice-grid span{
+    font-weight:650;
+    letter-spacing:.006em;
+  }
+
+  .final-section .choice-grid input:checked+span{
+    color:#fff;
+    background:rgba(42,157,91,.12);
+    border-color:rgba(42,157,91,.24);
+    font-weight:750;
+  }
+
+  .final-section .choice-grid input:checked+span:after{
+    content:"✓";
+    position:absolute;
+    right:11px;
+    top:50%;
+    display:grid;
+    place-items:center;
+    width:22px;
+    height:22px;
+    transform:translateY(-50%);
+    border-radius:50%;
+    background:#2a9d5b;
+    color:#fff;
+    font-size:13px;
+    font-weight:900;
+    line-height:1;
+    box-shadow:
+      0 5px 13px rgba(42,157,91,.24),
+      0 0 0 1px rgba(255,255,255,.08) inset;
+  }
+
+  .final-section .choice-grid label.diagnosis-handoff-choice span{
+    color:#fff;
+    background:rgba(42,157,91,.15);
+    border-color:rgba(42,157,91,.28);
+    box-shadow:
+      0 0 0 2px rgba(42,157,91,.08),
+      0 10px 24px rgba(42,157,91,.10);
+  }
+
+  .final-section .form-step-head h3{
+    font-weight:700;
+  }
+}
+
+@media (min-width:1024px) and (max-width:1199px){
+  .master-desktop-nav{
+    gap:2px;
+    padding:4px;
+  }
+
+  .master-desktop-nav a{
+    min-height:34px;
+    padding:0 10px;
+    font-size:10.5px;
+  }
+
+  .master-desktop-nav a:before{
+    width:4px;
+    height:4px;
+    margin-right:6px;
+  }
+}
