@@ -1,4 +1,4 @@
-const ROOT_HOST = "impresax.org";
+import { getBuiltinTenant } from "./tenant-registry.js";\n\nconst ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
 const DOMAIN_SUFFIX = ".impresax.org";
 const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -65,7 +65,7 @@ export default {
       return redirectToRoot("tenant-not-found");
     }
 
-    return serveTenant(tenant);
+    return serveTenant(request, env, tenant);
   },
 };
 
@@ -105,6 +105,9 @@ async function resolveTenant(env, slug) {
     }
   }
 
+  const builtin = getBuiltinTenant(slug);
+  if (builtin) return builtin;
+
   return null;
 }
 
@@ -113,19 +116,34 @@ function isPublicTenant(tenant) {
     tenant &&
     typeof tenant.slug === "string" &&
     VALID_SLUG.test(tenant.slug) &&
-    (tenant.status === "DEMO_READY" || tenant.status === "CONVERTED_CLIENT") &&
+    (
+      tenant.status === "DEMO_READY" ||
+      tenant.status === "CONVERTED_CLIENT" ||
+      (tenant.status === "QA_READY" && tenant.qa_status === "PASS" && tenant.public_preview === true)
+    ) &&
     (tenant.qa_status === "PASS" || tenant.status === "CONVERTED_CLIENT")
   );
 }
 
-function serveTenant(tenant) {
-  // Domain foundation only: a demo is served only after QA and only when
-  // the Site Factory has produced final rendered HTML.
-  if (typeof tenant.rendered_html !== "string" || !tenant.rendered_html.trim()) {
+async function serveTenant(request, env, tenant) {
+  let html = "";
+
+  if (typeof tenant.rendered_html === "string" && tenant.rendered_html.trim()) {
+    html = tenant.rendered_html;
+  } else if (
+    typeof tenant.asset_path === "string" &&
+    tenant.asset_path.startsWith("/tenants/") &&
+    !tenant.asset_path.includes("..")
+  ) {
+    const assetUrl = new URL(tenant.asset_path, request.url);
+    const assetResponse = await env.ASSETS.fetch(new Request(assetUrl, request));
+    if (!assetResponse.ok) return brandedUnavailable();
+    html = await assetResponse.text();
+  } else {
     return brandedUnavailable();
   }
 
-  const html = enforceDemoGuards(tenant.rendered_html);
+  html = enforceDemoGuards(html);
 
   return new Response(html, {
     status: 200,
@@ -133,6 +151,8 @@ function serveTenant(tenant) {
       "Content-Type": "text/html; charset=UTF-8",
       "Cache-Control": "private, no-store",
       "X-ImpresaX-Site-Factory": "tenant",
+      "X-ImpresaX-Tenant": tenant.slug,
+      "X-ImpresaX-Tenant-Status": tenant.status,
     }),
   });
 }
