@@ -24,7 +24,7 @@ export default {
       target.protocol = "https:";
       target.hostname = ROOT_HOST;
       return new Response(null, {
-        status: 308,
+        status: 301,
         headers: {
           Location: target.toString(),
           "Cache-Control": "public, max-age=3600",
