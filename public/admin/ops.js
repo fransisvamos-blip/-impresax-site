@@ -284,6 +284,7 @@ function renderRows(){
     <td>${esc(tStatus(p.render_status))}</td>
     <td>${esc(tStatus(p.build_status))}</td>
     <td>${esc(tStatus(p.qa_status))}</td>
+    <td>${esc(p.attempt??0)}</td>
     <td>${p.live_url?`<a class="live" href="${esc(p.live_url)}" target="_blank" rel="noopener">ONLINE ↗</a>`:"—"}</td>
     <td><span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.current_step))}</span></td>
     <td>${esc(tEvent(p.last_event))}<br><span class="id">${esc(fmtDate(p.last_event_at))}</span></td>
