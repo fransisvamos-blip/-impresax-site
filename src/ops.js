@@ -26,6 +26,261 @@ function db(env) {
   return neon(env.OPS_DATABASE_URL);
 }
 
+const EMAIL_FROM_ADDRESS = "info@impresax.org";
+const EMAIL_DOMAIN = "impresax.org";
+const EMAIL_TEST_SUBJECT = "ImpresaX — Email System Test";
+const EMAIL_TEST_BODY = "Sistema email ImpresaX operativo.";
+
+function emailAddressValid(value) {
+  const email = String(value || "").trim().toLowerCase();
+  if (email.length < 3 || email.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function sanitizeEmailError(error, env) {
+  let message = String(error?.message || error || "EMAIL_SEND_FAILED");
+  const token = String(env?.EMAIL_API_TOKEN || "");
+  if (token) message = message.split(token).join("[REDACTED]");
+  message = message.replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [REDACTED]");
+  const code = String(error?.code || "EMAIL_SEND_FAILED").replace(/[^A-Z0-9_-]/gi, "").slice(0, 80);
+  return (code + (message && message !== code ? ": " + message : "")).slice(0, 600);
+}
+
+async function dnsTxt(name) {
+  try {
+    const response = await fetch(
+      "https://cloudflare-dns.com/dns-query?name=" + encodeURIComponent(name) + "&type=TXT",
+      { headers: { Accept: "application/dns-json" } }
+    );
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.Answer || [])
+      .filter(row => Number(row.type) === 16)
+      .map(row => String(row.data || "").replace(/^"|"$/g, "").replace(/"\s+"/g, ""));
+  } catch {
+    return [];
+  }
+}
+
+async function emailDnsQa() {
+  const [spfRows, dkimRows] = await Promise.all([
+    dnsTxt("cf-bounce." + EMAIL_DOMAIN),
+    dnsTxt("cf-bounce._domainkey." + EMAIL_DOMAIN),
+  ]);
+  const spf = spfRows.some(value =>
+    /v=spf1/i.test(value) && /include:_spf\.mx\.cloudflare\.net/i.test(value)
+  );
+  const dkim = dkimRows.some(value => /v=DKIM1/i.test(value) && /\bp=/i.test(value));
+  return { spf, dkim };
+}
+
+async function cloudflareZoneId(env) {
+  if (!env.EMAIL_API_TOKEN) return null;
+  try {
+    const response = await fetch(
+      "https://api.cloudflare.com/client/v4/zones?name=" + encodeURIComponent(EMAIL_DOMAIN) + "&status=active&per_page=1",
+      { headers: { Authorization: "Bearer " + env.EMAIL_API_TOKEN } }
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data?.success && data?.result?.[0]?.id ? data.result[0].id : null;
+  } catch {
+    return null;
+  }
+}
+
+async function cloudflareDeliveryEvent(env, providerMessageId) {
+  if (!env.EMAIL_API_TOKEN || !providerMessageId) return null;
+  const zoneTag = await cloudflareZoneId(env);
+  if (!zoneTag) return null;
+
+  const end = new Date();
+  const start = new Date(end.getTime() - 36 * 60 * 60 * 1000);
+  const query = `query RecentEmailEvents($zoneTag: string!, $start: Time!, $end: Time!) {
+    viewer {
+      zones(filter: { zoneTag: $zoneTag }) {
+        emailSendingAdaptive(
+          filter: { datetime_geq: $start, datetime_leq: $end }
+          limit: 100
+          orderBy: [datetime_DESC]
+        ) {
+          datetime
+          status
+          messageId
+          errorCause
+          errorDetail
+          dkim
+          spf
+        }
+      }
+    }
+  }`;
+
+  try {
+    const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + env.EMAIL_API_TOKEN,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables: {
+          zoneTag,
+          start: start.toISOString(),
+          end: end.toISOString(),
+        },
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data?.errors?.length) return null;
+    const events = data?.data?.viewer?.zones?.[0]?.emailSendingAdaptive || [];
+    return events.find(event => String(event.messageId || "") === String(providerMessageId)) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshEmailDelivery(sql, env, logRow) {
+  if (!logRow?.provider_message_id || !["SENT","DELIVERED","DELIVERY_FAILED"].includes(logRow.status)) {
+    return logRow || null;
+  }
+  const event = await cloudflareDeliveryEvent(env, logRow.provider_message_id);
+  if (!event) return logRow;
+
+  if (event.status === "delivered" && logRow.status !== "DELIVERED") {
+    const rows = await sql`update email_logs
+      set status='DELIVERED', error=null
+      where id=${logRow.id}
+      returning *`;
+    return rows[0] || logRow;
+  }
+
+  if (event.status === "deliveryFailed" && logRow.status !== "DELIVERY_FAILED") {
+    const providerError = [event.errorCause, event.errorDetail].filter(Boolean).join(": ").slice(0, 600) || "DELIVERY_FAILED";
+    const rows = await sql`update email_logs
+      set status='DELIVERY_FAILED', error=${providerError}
+      where id=${logRow.id}
+      returning *`;
+    return rows[0] || logRow;
+  }
+  return logRow;
+}
+
+export async function sendSystemEmail(env, {
+  emailType = "SYSTEM",
+  recipient,
+  subject,
+  text,
+  html,
+} = {}) {
+  const sql = db(env);
+  const to = String(recipient || "").trim().toLowerCase();
+  const from = String(env.EMAIL_FROM || EMAIL_FROM_ADDRESS).trim().toLowerCase();
+  const normalizedSubject = String(subject || "").trim().slice(0, 300);
+  const normalizedType = String(emailType || "SYSTEM").trim().toUpperCase().slice(0, 80);
+
+  if (!emailAddressValid(to)) {
+    const error = new Error("INVALID_RECIPIENT");
+    error.code = "INVALID_RECIPIENT";
+    throw error;
+  }
+  if (from !== EMAIL_FROM_ADDRESS) {
+    const error = new Error("EMAIL_FROM_MUST_BE_" + EMAIL_FROM_ADDRESS);
+    error.code = "EMAIL_FROM_INVALID";
+    throw error;
+  }
+  if (!normalizedSubject) {
+    const error = new Error("EMAIL_SUBJECT_REQUIRED");
+    error.code = "EMAIL_SUBJECT_REQUIRED";
+    throw error;
+  }
+  if (!text && !html) {
+    const error = new Error("EMAIL_BODY_REQUIRED");
+    error.code = "EMAIL_BODY_REQUIRED";
+    throw error;
+  }
+
+  const inserted = await sql`insert into email_logs(email_type,recipient,subject,status)
+    values(${normalizedType},${to},${normalizedSubject},'PENDING')
+    returning *`;
+  const logRow = inserted[0];
+
+  if (!env.EMAIL || typeof env.EMAIL.send !== "function") {
+    const safeError = "EMAIL_BINDING_NOT_CONFIGURED";
+    await sql`update email_logs set status='FAILED',error=${safeError} where id=${logRow.id}`;
+    const error = new Error(safeError);
+    error.code = safeError;
+    throw error;
+  }
+
+  try {
+    const result = await env.EMAIL.send({
+      to,
+      from,
+      subject: normalizedSubject,
+      ...(html ? { html: String(html) } : {}),
+      ...(text ? { text: String(text) } : {}),
+    });
+    const messageId = String(result?.messageId || "").slice(0, 300) || null;
+    await sql`update email_logs
+      set status='SENT',provider_message_id=${messageId},error=null
+      where id=${logRow.id}`;
+    return { status: "SENT", provider_message_id: messageId, recipient: to, subject: normalizedSubject };
+  } catch (error) {
+    const safeError = sanitizeEmailError(error, env);
+    await sql`update email_logs set status='FAILED',error=${safeError} where id=${logRow.id}`;
+    const outgoing = new Error(safeError);
+    outgoing.code = String(error?.code || "EMAIL_SEND_FAILED");
+    throw outgoing;
+  }
+}
+
+async function emailSystemStatus(sql, env) {
+  const [lastTestRows, lastSendRows, lastErrorRows, dns] = await Promise.all([
+    sql`select * from email_logs where email_type='TEST' order by created_at desc limit 1`,
+    sql`select * from email_logs where status in ('SENT','DELIVERED') order by created_at desc limit 1`,
+    sql`select * from email_logs where status in ('FAILED','DELIVERY_FAILED') order by created_at desc limit 1`,
+    emailDnsQa(),
+  ]);
+
+  let lastTest = lastTestRows[0] || null;
+  if (lastTest) lastTest = await refreshEmailDelivery(sql, env, lastTest);
+
+  let lastSend = lastSendRows[0] || null;
+  if (lastSend && lastTest && lastSend.id === lastTest.id) lastSend = lastTest;
+
+  const bindingReady = Boolean(env.EMAIL && typeof env.EMAIL.send === "function");
+  const fromAddress = String(env.EMAIL_FROM || EMAIL_FROM_ADDRESS).trim().toLowerCase();
+  const fromDomainReady = fromAddress === EMAIL_FROM_ADDRESS && dns.spf && dns.dkim;
+
+  const testSend = lastTest && ["SENT","DELIVERED"].includes(lastTest.status) ? "PASS"
+    : lastTest?.status === "FAILED" ? "FAIL" : "PENDING";
+  const delivery = lastTest?.status === "DELIVERED" ? "PASS"
+    : ["FAILED","DELIVERY_FAILED"].includes(lastTest?.status) ? "FAIL" : "PENDING";
+
+  const qa = {
+    email_service_connection: bindingReady ? "PASS" : "FAIL",
+    from_domain: fromDomainReady ? "PASS" : "FAIL",
+    test_send: testSend,
+    delivery,
+    dkim: dns.dkim ? "PASS" : "FAIL",
+    spf: dns.spf ? "PASS" : "FAIL",
+    control_room: "PASS",
+  };
+  const overallReady = Object.values(qa).every(value => value === "PASS");
+
+  return {
+    status: overallReady ? "IMPRESAX_EMAIL_READY" : "EMAIL_SYSTEM_NOT_READY",
+    from_address: fromAddress,
+    last_test: lastTest,
+    last_send: lastSend,
+    last_error: lastErrorRows[0] || null,
+    qa,
+  };
+}
+
 function basicAuthValid(request, env) {
   if (!env.OPS_ADMIN_PASSWORD) return false;
   const auth = request.headers.get("Authorization") || "";
@@ -339,6 +594,34 @@ async function api(request, env, pathname) {
 
   if (request.method === "GET" && pathname === "/ops/api/dashboard") {
     return json({ ok:true, ...(await dashboard(sql)) });
+  }
+
+  if (request.method === "GET" && pathname === "/ops/api/email/status") {
+    return json({ ok:true, email:await emailSystemStatus(sql, env) });
+  }
+
+  if (request.method === "POST" && pathname === "/ops/api/email/test") {
+    let payload;
+    try { payload = await request.json(); }
+    catch { return json({ ok:false, error:"INVALID_JSON" }, 400); }
+
+    const recipient = String(payload?.recipient || "").trim().toLowerCase();
+    if (!emailAddressValid(recipient)) {
+      return json({ ok:false, error:"INVALID_RECIPIENT" }, 400);
+    }
+
+    try {
+      const result = await sendSystemEmail(env, {
+        emailType: "TEST",
+        recipient,
+        subject: EMAIL_TEST_SUBJECT,
+        text: EMAIL_TEST_BODY,
+      });
+      return json({ ok:true, result });
+    } catch (error) {
+      const safeError = sanitizeEmailError(error, env);
+      return json({ ok:false, error:safeError }, error?.code === "INVALID_RECIPIENT" ? 400 : 503);
+    }
   }
 
   if (request.method === "GET" && pathname === "/ops/api/events") {
