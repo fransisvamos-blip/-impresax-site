@@ -23,7 +23,8 @@ export const BUILTIN_TENANTS = Object.freeze({
     art_direction_quality_status: "APPROVED",
     cabina_approval_required: true,
     old_demo_status: "V1_REJECTED_VISUAL / V2_REJECTED_VISUAL / V3_REJECTED_VISUAL",
-    reference_lock_live_at: "2026-10-11T07:02:00+02:00",\n    recovery_metrics: {
+    reference_lock_live_at: "2026-10-11T07:02:00+02:00",
+    recovery_metrics: {
       rebuild_started_at: "2026-10-11T05:33:08+02:00",
       first_v2_viewport_pass_at: "2026-10-11T05:34:35+02:00",
       final_v2_qa_pass_at: "2026-10-11T05:37:37+02:00",
