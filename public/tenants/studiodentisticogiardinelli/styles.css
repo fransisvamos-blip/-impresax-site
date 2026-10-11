@@ -146,8 +146,13 @@ p,h1,h2,figure,blockquote{margin:0}
   .studio-copy h2{font-size:40px;line-height:.84;margin-bottom:8px}
   .studio-copy>p:not(.overline){font-size:9px;line-height:1.3;max-width:340px;margin-bottom:7px}
   .studio-copy .underlink{font-size:9px;min-height:22px}
-  .studio-media{height:130px}
-  .studio-media img{object-position:center 55%}
+  .studio-media{
+    height:130px;
+    background-image:url("https://images.unsplash.com/photo-1758448500688-3ababa93fd67?auto=format&fit=crop&q=84&w=1000");
+    background-size:cover;
+    background-position:center 55%;
+  }
+  .studio-media img{opacity:0;object-position:center 55%}
   .studio-manifesto{display:none}
   .studio-media figcaption{font-size:5px;bottom:4px}
 
