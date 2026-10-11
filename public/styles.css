@@ -3069,3 +3069,348 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     font-size:10px;
   }
 }
+
+
+/* =========================================================
+   MOBILE INTERACTION LIGHT V3
+   Dark = narrative. Light = interaction and conversion.
+   Final analysis block enlarged without becoming oversized.
+   Desktop intentionally unchanged.
+   ========================================================= */
+@media (max-width:767px){
+
+  /* VALUE CHECK — interactive section becomes light */
+  .value-section{
+    background:
+      radial-gradient(circle at 82% 16%,rgba(255,90,54,.08),transparent 28%),
+      var(--paper);
+    color:var(--ink);
+    border-top:1px solid rgba(17,17,17,.08);
+    border-bottom:1px solid rgba(17,17,17,.08);
+  }
+  .value-section .section-index{
+    color:rgba(17,17,17,.48);
+  }
+  .value-copy h2{
+    color:var(--ink);
+  }
+  .value-inputs label>span{
+    color:#666159;
+  }
+  .value-inputs input{
+    background:#fff;
+    color:var(--ink);
+    border:1px solid rgba(17,17,17,.12);
+    box-shadow:0 7px 22px rgba(17,17,17,.035);
+  }
+  .value-inputs input:focus{
+    border-color:rgba(255,90,54,.75);
+    box-shadow:0 0 0 3px rgba(255,90,54,.08);
+  }
+  .money-input i{
+    color:var(--ink);
+  }
+  .value-scenarios article{
+    background:#fff;
+    border:1px solid rgba(17,17,17,.10);
+    box-shadow:0 9px 24px rgba(17,17,17,.04);
+  }
+  .value-scenarios span{
+    color:#5f5a53;
+  }
+  .value-scenarios strong{
+    color:var(--orange);
+  }
+  .value-scenarios small{
+    color:#8a857d;
+  }
+  .value-aside{
+    border-top-color:rgba(17,17,17,.16);
+  }
+  .value-aside p{
+    color:#5f5a53;
+  }
+  .low-value-message{
+    border-top-color:rgba(255,90,54,.45);
+    color:var(--ink);
+  }
+  .value-disclaimer{
+    color:#8d887f;
+  }
+
+  /* FINAL ANALYSIS — visual climax above, light form below */
+  .final-section{
+    min-height:790px;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .final-media{
+    height:340px;
+    bottom:auto;
+  }
+  .final-media img{
+    object-position:46% 46%;
+    filter:saturate(.80) contrast(1.02) brightness(.74);
+  }
+  .final-grade{
+    background:
+      linear-gradient(180deg,rgba(15,15,15,.12) 0%,rgba(15,15,15,.24) 44%,rgba(15,15,15,.58) 78%,rgba(15,15,15,.70) 100%);
+  }
+  .final-x{
+    left:65%;
+    top:27%;
+    width:126px;
+    height:126px;
+  }
+  .final-x span{
+    width:142px;
+    height:36px;
+  }
+
+  .final-grid{
+    min-height:790px;
+    padding-top:178px;
+    padding-bottom:28px;
+    align-content:start;
+    gap:0;
+  }
+  .final-copy{
+    min-height:178px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding-bottom:18px;
+    color:#fff;
+  }
+  .final-section .final-copy .section-index{
+    color:rgba(255,255,255,.62);
+  }
+  .final-copy h2{
+    max-width:365px;
+    font-size:37px;
+    line-height:.94;
+    color:#fff;
+  }
+  .final-copy>p{
+    font-size:14px;
+    color:rgba(255,255,255,.88);
+  }
+  .analysis-context{
+    margin-top:10px;
+    color:rgba(255,255,255,.72);
+    font-size:10.5px;
+  }
+  .analysis-context.active{
+    color:#fff;
+  }
+
+  .progress-form{
+    position:relative;
+    z-index:4;
+    margin:0 -20px;
+    padding:24px 20px 8px;
+    background:var(--paper);
+    border-top:1px solid rgba(17,17,17,.09);
+  }
+
+  .form-progress{
+    margin-bottom:18px;
+    gap:8px;
+  }
+  .form-progress span{
+    width:29px;
+    height:29px;
+    border-color:rgba(17,17,17,.18);
+    color:#87827a;
+    background:transparent;
+    font-size:8px;
+  }
+  .form-progress span.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .form-progress span.done{
+    background:var(--orange);
+    border-color:var(--orange);
+    color:#fff;
+  }
+  .form-progress i{
+    width:34px;
+    background:rgba(17,17,17,.13);
+  }
+
+  .form-step-head small{
+    color:#8b867e;
+    font-size:9px;
+  }
+  .form-step-head h3{
+    margin-top:5px;
+    color:var(--ink);
+    font-size:21px;
+    line-height:1.16;
+  }
+
+  .choice-grid{
+    margin-top:12px;
+    border-top:1px solid rgba(17,17,17,.12);
+    background:#fff;
+  }
+  .choice-grid span{
+    min-height:50px;
+    padding:0 24px 0 12px;
+    border-bottom-color:rgba(17,17,17,.10);
+    color:#4f4b45;
+    font-size:12px;
+    line-height:1.18;
+  }
+  .choice-grid label:nth-child(odd) span{
+    border-right-color:rgba(17,17,17,.10);
+  }
+  .choice-grid input:checked+span{
+    color:var(--orange);
+    background:rgba(255,90,54,.035);
+  }
+  .choice-grid input:checked+span:after{
+    color:var(--orange);
+  }
+
+  .field{
+    margin-top:13px;
+  }
+  .field>span{
+    color:#5c5750;
+    font-size:11px;
+    font-weight:700;
+  }
+  .field em{
+    color:#9b958c;
+  }
+  .field input,
+  .field textarea{
+    padding-inline:0;
+    color:var(--ink);
+    background:transparent;
+    border-bottom-color:rgba(17,17,17,.18);
+    font-size:16px;
+  }
+  .field input::placeholder,
+  .field textarea::placeholder{
+    color:#aaa49b;
+  }
+  .field input:focus,
+  .field textarea:focus{
+    border-color:var(--orange);
+  }
+
+  .form-inline-error{
+    color:#c84428;
+    font-size:9px;
+  }
+  .form-back{
+    color:#6f6a63;
+    font-size:11.5px;
+  }
+  .form-next,
+  .form-submit{
+    min-height:54px;
+    border-radius:8px;
+    background:var(--orange);
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+    box-shadow:0 9px 20px rgba(255,90,54,.15);
+  }
+  .form-next:active,
+  .form-submit:active{
+    transform:translateY(1px);
+  }
+  .privacy-note{
+    color:#847f77;
+    font-size:9px;
+    line-height:1.45;
+  }
+  .form-status{
+    color:#69645d;
+  }
+  .form-status.error{
+    color:#c84428;
+  }
+  .form-success{
+    border-top-color:rgba(17,17,17,.12);
+    color:var(--ink);
+  }
+  .form-success small{
+    color:#8b867e;
+  }
+  .form-success h3{
+    color:var(--ink);
+  }
+  .form-success p{
+    color:#6a655d;
+  }
+
+  /* Sticky CTA slightly stronger and visually separated */
+  .sticky-analysis a{
+    min-height:54px;
+    font-size:13px;
+    box-shadow:0 10px 26px rgba(17,17,17,.16);
+  }
+
+  /* Interactive blocks get a little more vertical room */
+  .business-check-section{
+    min-height:580px;
+  }
+  .check-options button{
+    min-height:72px;
+  }
+  .check-result{
+    margin-top:12px;
+  }
+}
+
+/* 375: keep the enlargement controlled */
+@media (max-width:389px){
+  .final-grid{
+    padding-top:170px;
+  }
+  .final-copy{
+    min-height:170px;
+  }
+  .final-copy h2{
+    font-size:35px;
+  }
+  .progress-form{
+    margin-left:-16px;
+    margin-right:-16px;
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .choice-grid span{
+    min-height:48px;
+    font-size:11.5px;
+  }
+}
+
+/* 430: use the extra width rather than oversized type */
+@media (min-width:430px) and (max-width:767px){
+  .final-grid{
+    padding-top:184px;
+  }
+  .final-copy{
+    min-height:184px;
+  }
+  .final-copy h2{
+    max-width:390px;
+    font-size:39px;
+  }
+  .progress-form{
+    margin-left:-22px;
+    margin-right:-22px;
+    padding-left:22px;
+    padding-right:22px;
+  }
+  .choice-grid span{
+    font-size:12.5px;
+  }
+}
