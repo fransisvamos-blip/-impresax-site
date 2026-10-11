@@ -1,7 +1,9 @@
 export const BUILTIN_TENANTS = Object.freeze({
   studiodentisticogiardinelli: Object.freeze({
     tenant_id: "tenant_000001",
-    prospect_id: "pilot_001",
+    prospect_id: "5a03a8d1-e080-4f53-bf38-214c24f67248",
+    legacy_prospect_id: "pilot_001",
+    ops_project_id: "wispy-morning-45609027",
     slug: "studiodentisticogiardinelli",
     business_name: "Studio Dentistico Dott. Francesco Giardinelli",
     vertical: "DENTAL_MEDICAL",
