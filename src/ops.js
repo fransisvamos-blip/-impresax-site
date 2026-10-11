@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { buildApprovedReference, qaApprovedReference } from "./site-factory.js";
 
 const ADMIN_HOST = "admin.impresax.org";
 
@@ -649,10 +650,33 @@ export async function runOrchestrator(env, workerId = "impresax-orchestrator") {
     return processExternal(sql, env, job, prospect, "RENDER", env.RENDER_EXECUTOR_URL, "RENDERING", "APPROVED_REFERENCE");
   }
   if (job.task_type === "BUILD") {
-    return processExternal(sql, env, job, prospect, "BUILD", env.BUILD_EXECUTOR_URL, "BUILDING", "QA_RUNNING");
+    if (prospect.pipeline_status !== "BUILDING") {
+      await transition(sql, prospect.id, "BUILDING", "BUILD_STARTED", { queue_id: job.id, executor: "INTERNAL_SITE_FACTORY" });
+    }
+    try {
+      const result = await buildApprovedReference(env, prospect.id);
+      await queueComplete(sql, job.id, result);
+      return { outcome: result.pass ? "completed" : "rework", task: "BUILD", prospect_id: prospect.id, result };
+    } catch (error) {
+      await queueComplete(sql, job.id, { error:error.message || String(error) });
+      await sql`select * from ops_register_factory_failure(
+        ${prospect.id}::uuid,'build',${error.message || String(error)},'{}'::jsonb
+      )`;
+      return { outcome:"rework",task:"BUILD",prospect_id:prospect.id,error:error.message };
+    }
   }
   if (job.task_type === "QA") {
-    return processQa(sql, env, job, prospect);
+    try {
+      const result = await qaApprovedReference(env, prospect.id);
+      await queueComplete(sql, job.id, result);
+      return { outcome: result.pass ? "completed" : "rework", task:"QA", prospect_id:prospect.id, result };
+    } catch (error) {
+      await queueComplete(sql, job.id, { error:error.message || String(error) });
+      await sql`select * from ops_register_factory_failure(
+        ${prospect.id}::uuid,'qa',${error.message || String(error)},'{}'::jsonb
+      )`;
+      return { outcome:"rework",task:"QA",prospect_id:prospect.id,error:error.message };
+    }
   }
   return processInternal(sql, job, prospect);
 }
