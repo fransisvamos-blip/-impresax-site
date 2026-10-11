@@ -12,6 +12,14 @@ export const BUILTIN_TENANTS = Object.freeze({
     commercial_quality_status: "READY_FOR_CABINA",
     cabina_approval_required: true,
     old_demo_status: "REJECTED_VISUAL",
+    recovery_metrics: {
+      rebuild_started_at: "2026-10-11T05:33:08+02:00",
+      first_v2_viewport_pass_at: "2026-10-11T05:34:35+02:00",
+      final_v2_qa_pass_at: "2026-10-11T05:37:37+02:00",
+      time_to_first_render_seconds: 87,
+      time_to_qa_seconds: 269,
+      time_to_demo_ready_seconds: null
+    },
     public_preview: true,
     noindex: true,
     disclaimer_enabled: true,
