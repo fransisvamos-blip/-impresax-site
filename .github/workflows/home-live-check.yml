@@ -56,6 +56,30 @@ jobs:
           grep -q 'DESKTOP NAV REFINEMENT V2 + FINAL FORM TYPOGRAPHY V2' /tmp/styles
           grep -q 'transform:translateY(-16px)' /tmp/styles
 
+      - name: Verify Block 06 premium scenario assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          home="https://impresax.org/"
+          curl -L -sS --connect-timeout 8 --max-time 15 "$home" -o /tmp/block06-home
+          grep -q 'assets/scenarios/scenario-ristorazione.webp?v=20261011-block06-v1' /tmp/block06-home
+          grep -q 'assets/scenarios/scenario-retail.webp?v=20261011-block06-v1' /tmp/block06-home
+          grep -q 'assets/scenarios/scenario-servizi.webp?v=20261011-block06-v1' /tmp/block06-home
+          grep -q 'assets/scenarios/scenario-studio-professionale.webp?v=20261011-block06-v1' /tmp/block06-home
+          grep -q 'assets/scenarios/scenario-produzione.webp?v=20261011-block06-v1' /tmp/block06-home
+          for asset in \
+            scenario-ristorazione.webp \
+            scenario-retail.webp \
+            scenario-servizi.webp \
+            scenario-studio-professionale.webp \
+            scenario-produzione.webp
+          do
+            code=$(curl -L -sS -o /tmp/"$asset" -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://impresax.org/assets/scenarios/$asset?v=20261011-block06-v1" || true)
+            echo "$asset => $code"
+            test "$code" = "200"
+            test -s /tmp/"$asset"
+          done
+
       - name: Verify Business Check to Analysis handoff
         shell: bash
         run: |
@@ -66,3 +90,6 @@ jobs:
           grep -q 'function handoffDiagnosisToAnalysis' /tmp/script
           grep -q 'showStep(1,false)' /tmp/script
           grep -q 'diagnostic_to_analysis' /tmp/script
+
+
+# BLOCK06_ASSET_CHECK_V1
