@@ -357,7 +357,7 @@ h1,h2,h3,p,dl,dd{margin-top:0}
   height:100%;
   object-fit:cover;
   object-position:58% center;
-  filter:saturate(.58) contrast(1.06) brightness(.72);
+  filter:saturate(.62) contrast(1.05) brightness(.84);
 }
 .precision-image:after{
   content:"";
