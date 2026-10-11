@@ -126,6 +126,20 @@ function isPublicTenant(tenant) {
 }
 
 async function serveTenant(request, env, tenant) {
+  const requestUrl = new URL(request.url);
+  const tenantAssetPrefix = `/tenants/${tenant.slug}/`;
+
+  // Serve only this tenant's own static assets. Never allow a tenant hostname
+  // to traverse into another tenant's asset directory.
+  if (
+    requestUrl.pathname !== "/" &&
+    requestUrl.pathname.startsWith(tenantAssetPrefix) &&
+    !requestUrl.pathname.includes("..")
+  ) {
+    const assetResponse = await env.ASSETS.fetch(request);
+    return withSecurityHeaders(assetResponse, true);
+  }
+
   let html = "";
 
   if (typeof tenant.rendered_html === "string" && tenant.rendered_html.trim()) {
