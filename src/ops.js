@@ -1,6 +1,5 @@
 import { neon } from "@neondatabase/serverless";
 import puppeteer from "@cloudflare/puppeteer";
-import { generateRenderVariants } from "./rendering-studio.js";
 import { buildApprovedReference, qaApprovedReference } from "./site-factory.js";
 
 const ADMIN_HOST = "admin.impresax.org";
@@ -917,191 +916,13 @@ export async function handlePublicRenderIngest(request, env) {
   }
 }
 
-
-function renderPriority(code, rank) {
-  const fixed={"CZ-063":1,"CZ-209":2,"CZ-031":3,"CZ-210":4,"CZ-058":5,"CZ-097":6,"CZ-001":7};
-  return fixed[code] ?? (1000 + Number(rank || 999));
-}
-
-async function generateNextCloudflareRender(sql, env) {
-  // Recover interrupted AI calls so one timed-out render can never freeze the queue.
-  await sql`update render_jobs
-    set status='FAILED',error='STALE_CLOUDFLARE_RENDER_RECOVERED',completed_at=now(),updated_at=now()
-    where worker='cloudflare-workers-ai' and status='RUNNING'
-      and started_at < now()-interval '4 minutes'`;
-  await sql`update render_packs rp
-    set status='ART_DIRECTION'
-    where rp.status='AI_RENDERING'
-      and exists(
-        select 1 from render_jobs rj
-        where rj.prospect_id=rp.prospect_id
-          and rj.worker='cloudflare-workers-ai'
-          and rj.status='FAILED'
-          and rj.error='STALE_CLOUDFLARE_RENDER_RECOVERED'
-          and rj.completed_at > now()-interval '2 minutes'
-      )`;
-  await sql`update prospects p
-    set current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',updated_at=now()
-    where p.pipeline_status='RENDERING'::pipeline_status
-      and exists(
-        select 1 from render_packs rp
-        where rp.prospect_id=p.id and rp.status='ART_DIRECTION' and rp.approved_reference=false
-      )
-      and p.current_step='AI_RENDERING'`;
-
-  const rows=await sql`select
-      p.id as prospect_id,p.rank,p.business_name,p.vertical,p.city,p.country,p.website_url,
-      p.logo,p.brand_dna,p.source_data,p.pipeline_status,
-      rp.id as render_pack_id,rp.version,rp.status as pack_status,
-      coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect') as prospect_code
-    from prospects p
-    join lateral (
-      select x.* from render_packs x
-      where x.prospect_id=p.id
-        and x.approved_reference=false
-        and upper(x.status) not like '%ARCHIVED%'
-        and upper(x.status) not like '%REJECT%'
-      order by x.version desc limit 1
-    ) rp on true
-    where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)
-      and rp.status='ART_DIRECTION'
-      and lower(p.business_name) not like '%giardinelli%'
-    limit 30`;
-
-  if (!rows.length) return {outcome:"idle"};
-  rows.sort((a,b)=>renderPriority(a.prospect_code,a.rank)-renderPriority(b.prospect_code,b.rank));
-  const row=rows[0];
-
-  const claimed=await sql`update render_packs
-    set status='AI_RENDERING'
-    where id=${row.render_pack_id}::uuid and status='ART_DIRECTION'
-    returning id`;
-  if (!claimed.length) return {outcome:"claimed_elsewhere",render_pack_id:row.render_pack_id};
-
-  const attempts=await sql`select coalesce(max(attempt),0)+1 as attempt
-    from render_jobs where prospect_id=${row.prospect_id}::uuid and worker='cloudflare-workers-ai'`;
-  const attempt=Number(attempts[0]?.attempt || 1);
-  const created=await sql`insert into render_jobs(
-      prospect_id,status,attempt,worker,input_data,started_at
-    ) values(
-      ${row.prospect_id}::uuid,'RUNNING',${attempt},'cloudflare-workers-ai',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code})}::jsonb,now()
-    ) returning id`;
-  const jobId=created[0].id;
-
-  await sql`update prospects set
-      pipeline_status='RENDERING'::pipeline_status,
-      render_status='RENDERING',
-      current_step='AI_RENDERING',
-      next_action='AUTO_RENDER_A_B_C',
-      error=null,updated_at=now()
-    where id=${row.prospect_id}::uuid`;
-
-  try {
-    // Remove partial/legacy sources for this active pack so A/B/C are always one coherent generation.
-    await sql`delete from render_staging_payloads where render_pack_id=${row.render_pack_id}::uuid`;
-    await sql`update render_variants set
-      status='IN_LAVORAZIONE',desktop_render_url=null,mobile_render_url=null,selected=false,updated_at=now()
-      where render_pack_id=${row.render_pack_id}::uuid`;
-
-    const source=row.source_data || {};
-    const prospect={
-      prospectCode:row.prospect_code,
-      businessName:row.business_name,
-      vertical:row.vertical || null,
-      city:row.city || null,
-      country:row.country || null,
-      website:row.website_url || null,
-      address:source.address || row.city || null,
-      logo:row.logo || {},
-      brandDna:row.brand_dna || {},
-      verifiedServices:source.verified_services || null,
-      verifiedContacts:source.verified_contacts || null,
-      verifiedTrust:source.verified_trust || null,
-      commercialGoal:source.commercial_goal || null,
-      primaryDigitalGap:source.primary_digital_gap || null,
-      sourceReferences:Array.isArray(source.source_references)?source.source_references:[],
-      sourceData:source
-    };
-
-    const generated=await generateRenderVariants(env,prospect);
-    for (const variant of generated.variants) {
-      const digest=await sha256Ops(variant.html);
-      const designNotes={
-        source:"CLOUDFLARE_WORKERS_AI",
-        model:generated.model,
-        master:generated.master,
-        master_commit:generated.master_commit,
-        direction:variant.direction,
-        quality_gate:variant.gate
-      };
-      const sourceRef="cloudflare-workers-ai:"+row.prospect_code+"/v"+row.version+"/"+variant.key;
-
-      await sql`insert into render_staging_payloads(
-          render_pack_id,variant_key,status,html_source,design_notes,source_render_ref,
-          source_comment_id,source_sha256,desktop_image_base64,mobile_image_base64,render_error,rendered_at,updated_at
-        ) values(
-          ${row.render_pack_id}::uuid,${variant.key},'STAGED_SOURCE',${variant.html},
-          ${JSON.stringify(designNotes)}::jsonb,${sourceRef},null,${digest},null,null,null,null,now()
-        ) on conflict(render_pack_id,variant_key) do update set
-          status='STAGED_SOURCE',html_source=excluded.html_source,design_notes=excluded.design_notes,
-          source_render_ref=excluded.source_render_ref,source_comment_id=null,source_sha256=excluded.source_sha256,
-          desktop_image_base64=null,mobile_image_base64=null,render_error=null,rendered_at=null,updated_at=now()`;
-
-      const contentMap={
-        implementation_html:variant.html,
-        implementation_contract_version:"CLOUDFLARE_AI_HTML_V1",
-        source_sha256:digest,
-        source_transport:"CLOUDFLARE_WORKERS_AI",
-        direction:variant.direction
-      };
-      await sql`insert into render_variants(
-          render_pack_id,variant_key,name,status,content_map,source_references
-        ) values(
-          ${row.render_pack_id}::uuid,${variant.key},${'Versione '+variant.key},'STAGED_SOURCE',
-          ${JSON.stringify(contentMap)}::jsonb,${JSON.stringify([sourceRef])}::jsonb
-        ) on conflict(render_pack_id,variant_key) do update set
-          name=excluded.name,status='STAGED_SOURCE',desktop_render_url=null,mobile_render_url=null,
-          selected=false,content_map=excluded.content_map,source_references=excluded.source_references,updated_at=now()`;
-    }
-
-    await sql`update render_jobs set
-      status='COMPLETED',output_data=${JSON.stringify({renderer:'cloudflare-workers-ai',variants:['A','B','C']})}::jsonb,
-      error=null,completed_at=now(),updated_at=now()
-      where id=${jobId}::uuid`;
-    await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
-    await sql`update prospects set
-      current_step='RENDER_INGEST',next_action='AUTO_RENDER_ASSETS',error=null,updated_at=now()
-      where id=${row.prospect_id}::uuid`;
-
-    return {outcome:"generated",prospect_id:row.prospect_id,prospect_code:row.prospect_code,render_pack_id:row.render_pack_id,version:row.version};
-  } catch (error) {
-    const message=String(error?.message || error).slice(0,600);
-    await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now() where id=${jobId}::uuid`;
-    await sql`update render_packs set status='ART_DIRECTION' where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
-    await sql`update prospects set
-      render_status='RENDERING',current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',error=${message},
-      retry_count=retry_count+1,updated_at=now()
-      where id=${row.prospect_id}::uuid`;
-    return {outcome:"error",prospect_id:row.prospect_id,prospect_code:row.prospect_code,error:message};
-  }
-}
-
 export async function runRenderIngest(env) {
   const sql=db(env);
-
-  // Finish any already-staged pack first; this is fast and avoids starving browser rendering.
-  const recovery=await renderNextStagedPack(sql,env);
-  if (recovery.outcome==="completed" || recovery.outcome==="error") return {recovery,generation:{outcome:"deferred"}};
-
-  // One prospect per minute, three variants generated in parallel.
-  // At steady state this targets roughly three companies in three minutes without race conditions.
-  const generation=await generateNextCloudflareRender(sql,env);
-
-  // If generation succeeded, render desktop/mobile immediately in the same cron execution.
-  let render={outcome:"idle"};
-  if (generation.outcome==="generated") render=await renderNextStagedPack(sql,env);
-  return {recovery,generation,render};
+  let ingest={ok:true,skipped_poll:true};
+  const minute=new Date().getUTCMinutes();
+  if (minute%2===0) ingest=await ingestRenderIssueComments(sql);
+  const render=await renderNextStagedPack(sql,env);
+  return {ingest,render};
 }
 
 async function dashboard(sql) {
@@ -1910,9 +1731,6 @@ export async function handleOpsRequest(request, env) {
       return json({
         ok: true,
         service: "impresax-ops",
-        render_pipeline: "CLOUDFLARE_NATIVE_V1",
-        render_model: "@cf/zai-org/glm-4.7-flash",
-        render_master: "RENDERING_STUDIO_V1_FROZEN",
         database: rows[0]?.database || "unknown",
         database_connected: true,
         control_room_asset: adminAsset.ok,
