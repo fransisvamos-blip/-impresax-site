@@ -11,7 +11,7 @@ function renderSyncStateLabel(variant){
 }
 
 function renderVariantCardV2(variant, pack, prospectId) {
-  const rejected = String(variant.status || "").includes("REJECT");
+  const rejected = /REJECT|ARCHIVED/i.test(String(variant.status || ""));
   const complete = Boolean(variant.desktop_render_url && variant.mobile_render_url);
   const selected = Boolean(variant.selected);
   let html = "";
@@ -20,7 +20,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
   html += '<span class="kicker">VERSIONE ' + esc(variant.variant_key) + '</span>';
   html += '<h3>' + esc(variant.name || ("Versione " + variant.variant_key)) + '</h3>';
   html += '</div><span class="' + statusClass(selected ? "APPROVED" : variant.status) + '">';
-  html += selected ? 'SELEZIONATA' : esc(tStatus(variant.status));
+  html += selected ? 'SCELTA · NON ANCORA IMPLEMENTATA' : esc(tStatus(variant.status));
   html += '</span></div>';
 
   html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390 · ' + renderSyncStateLabel(variant) + '</div>';
@@ -48,12 +48,17 @@ function renderVariantCardV2(variant, pack, prospectId) {
   if (variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Anteprima desktop ↗</a>';
   if (variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Anteprima mobile ↗</a>';
   html += '</div>';
+
   html += '<div class="render-pack-actions">';
   html += '<span class="id">' + (variant.reference_score != null ? 'Punteggio ' + esc(variant.reference_score) : 'Versione completa') + '</span>';
-  html += '<button class="select-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
-  if (!complete || rejected || selected) html += ' disabled';
-  html += '>' + (selected ? 'Versione scelta' : 'Implementa questa versione') + '</button>';
-  html += '</div></article>';
+  html += '<div class="render-decision-actions">';
+  html += '<button class="choose-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
+  if (!complete || rejected || selected || pack.approved_reference) html += ' disabled';
+  html += '>' + (selected ? 'Versione scelta' : 'Scegli questa versione') + '</button>';
+  html += '<button class="implement-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
+  if (!complete || rejected || !selected || pack.approved_reference) html += ' disabled';
+  html += '>' + (pack.approved_reference && selected ? 'Versione implementata' : 'Implementa questa versione') + '</button>';
+  html += '</div></div></article>';
   return html;
 }
 
@@ -83,9 +88,7 @@ function renderLegacyPackCardV2(pack) {
 
   html += '<div class="render-pack-actions"><span class="id">';
   html += pack.reference_score != null ? 'Punteggio ' + esc(pack.reference_score) : '';
-  html += '</span><button class="select-render" data-prospect-id="' + esc(pack.prospect_id) + '" data-pack-id="' + esc(pack.id) + '"';
-  if (!complete || rejected || pack.approved_reference) html += ' disabled';
-  html += '>' + (pack.approved_reference ? 'Progetto selezionato' : 'Implementa questo progetto') + '</button></div>';
+  html += '</span><button class="legacy-render-disabled" disabled>Formato precedente non selezionabile</button></div>';
   html += '</article>';
   return html;
 }
@@ -137,7 +140,7 @@ openRenderingProspect = async function(id) {
     let renderContent = "";
 
     if (variants.length) {
-      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Ogni versione deve mostrare tutta la home, sia desktop sia mobile. Puoi scegliere direttamente quale mandare alla costruzione.</span></div>';
+      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Prima scegli la versione. Solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
       variants.forEach(v => {
         const pack = packs.find(x => x.id === v.render_pack_id);
         if (pack) renderContent += renderVariantCardV2(v, pack, p.id);
@@ -151,7 +154,7 @@ openRenderingProspect = async function(id) {
 
     let head = '<div class="detail-head render-detail-head"><div>';
     head += '<span class="kicker">PROGETTAZIONE VISIVA</span><h3>' + esc(p.business_name) + '</h3>';
-    head += '<p class="reference-note">Scegli una delle versioni complete. La scelta viene inviata automaticamente al reparto Costruzione siti.</p></div>';
+    head += '<p class="reference-note">Scegli una versione completa. La scelta NON avvia la costruzione: la Site Factory parte solo premendo “Implementa questa versione”.</p></div>';
     if (p.live_url) {
       head += '<a class="preview-site prominent" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
     } else {
@@ -161,10 +164,16 @@ openRenderingProspect = async function(id) {
 
     $("#rendering-detail").innerHTML = head + '<div class="render-pack-stack">' + renderContent + '</div>';
 
-    document.querySelectorAll(".select-render").forEach(b => b.addEventListener("click", () => selectRender(
+    document.querySelectorAll(".choose-render").forEach(b => b.addEventListener("click", () => chooseRender(
       b.dataset.prospectId,
       b.dataset.packId,
-      b.dataset.variantId || "",
+      b.dataset.variantId,
+      b
+    )));
+    document.querySelectorAll(".implement-render").forEach(b => b.addEventListener("click", () => implementRender(
+      b.dataset.prospectId,
+      b.dataset.packId,
+      b.dataset.variantId,
       b
     )));
   } catch (e) {
@@ -173,10 +182,10 @@ openRenderingProspect = async function(id) {
   }
 };
 
-selectRender = async function(prospectId, packId, variantId, button) {
-  if (!confirm("Implementare questa versione e inviarla alla costruzione del sito?")) return;
+chooseRender = async function(prospectId, packId, variantId, button) {
+  if (!confirm("Scegliere questa versione? La Site Factory NON partirà ancora.")) return;
   button.disabled = true;
-  button.textContent = "Invio alla costruzione…";
+  button.textContent = "Salvataggio scelta…";
 
   try {
     await api("/ops/api/render/select", {
@@ -185,13 +194,38 @@ selectRender = async function(prospectId, packId, variantId, button) {
       body: JSON.stringify({
         prospect_id: prospectId,
         render_pack_id: packId,
-        render_variant_id: variantId || null
+        render_variant_id: variantId
       })
     });
     await load();
     await openRenderingProspect(prospectId);
   } catch (e) {
-    alert("Selezione della versione non riuscita.");
+    alert("Scelta della versione non riuscita.");
+    console.error(e);
+    button.disabled = false;
+    button.textContent = "Scegli questa versione";
+  }
+};
+
+implementRender = async function(prospectId, packId, variantId, button) {
+  if (!confirm("Confermi l'implementazione di questa versione? Solo ora verrà approvata e inviata alla Site Factory.")) return;
+  button.disabled = true;
+  button.textContent = "Invio alla Site Factory…";
+
+  try {
+    await api("/ops/api/render/implement", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prospect_id: prospectId,
+        render_pack_id: packId,
+        render_variant_id: variantId
+      })
+    });
+    await load();
+    await openRenderingProspect(prospectId);
+  } catch (e) {
+    alert("Implementazione della versione non riuscita.");
     console.error(e);
     button.disabled = false;
     button.textContent = "Implementa questa versione";
