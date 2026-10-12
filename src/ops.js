@@ -1733,13 +1733,22 @@ export async function handleOpsRequest(request, env) {
                  and p.pipeline_status='RENDERING'::pipeline_status
                  and p.current_step='AWAITING_RENDER_SELECTION'
                  and p.next_action='SELECT_RENDER_IN_GESTIONALE'
-                 and (select count(*) from render_variants rv
+                 and (select count(*)
+                        from render_variants rv
+                        join render_staging_payloads s
+                          on s.render_pack_id=rv.render_pack_id
+                         and s.variant_key=rv.variant_key
                        where rv.render_pack_id=rp.id
                          and rv.variant_key in ('A','B','C')
                          and rv.desktop_render_url is not null
                          and rv.mobile_render_url is not null
                          and upper(coalesce(rv.status,'')) not like '%REJECT%'
-                         and upper(coalesce(rv.status,'')) not like '%ARCHIVED%')=3
+                         and upper(coalesce(rv.status,'')) not like '%ARCHIVED%'
+                         and s.status='RENDERED'
+                         and s.desktop_image_base64 is not null
+                         and s.mobile_image_base64 is not null
+                         and s.image_mime='image/jpeg'
+                         and s.rendered_at is not null)=3
                  and (select count(distinct rv.variant_key) from render_variants rv
                        where rv.render_pack_id=rp.id and rv.variant_key in ('A','B','C'))=3
                  and (select count(*) from render_variants rv
