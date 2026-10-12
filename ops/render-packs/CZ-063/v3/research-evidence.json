@@ -1,0 +1,62 @@
+{
+  "render_version": "DEDIL-CZ063-V3",
+  "prospect": "DEDIL DONATO S.R.L.",
+  "official_identity": {
+    "logo_source": "https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato-300x70.png",
+    "website": "https://dedildonato.it/",
+    "phone": "+39 0961 754432",
+    "email": "info@dedildonato.it",
+    "address": "AREA PIP GERMANETO – LOC. MORELLO, 88100 CATANZARO"
+  },
+  "first_party_evidence": [
+    {
+      "source": "https://it.linkedin.com/in/angelo-donato-978997162",
+      "owner": "Angelo Donato / DEDIL DONATO srl",
+      "evidence": "Profilo associato a DEDIL DONATO srl; descrive l’attività come centro trasformazione acciaio per cls e vendita all’ingrosso materiale edile.",
+      "role": "brand_dna_and_business_specificity",
+      "real_business_asset": true
+    },
+    {
+      "source": "https://it.linkedin.com/in/angelo-donato-978997162",
+      "owner": "Angelo Donato / DEDIL DONATO srl",
+      "evidence": "Attività pubblica indicizzata: plinto per parco eolico, 125 ton acciaio B450C.",
+      "role": "project_proof_metric",
+      "real_business_asset": true
+    },
+    {
+      "source": "https://it.linkedin.com/in/angelo-donato-978997162",
+      "owner": "Angelo Donato / DEDIL DONATO srl",
+      "evidence": "Attività pubblica indicizzata: gabbie per pali grosso diametro 1500, lunghezza 47 m, lotto SS106 Sibari.",
+      "role": "project_proof_metric",
+      "real_business_asset": true
+    }
+  ],
+  "verified_network_trust": [
+    {
+      "source": "https://u-power.ai/it-it/trova-rivenditore/tutti-i-rivenditori",
+      "relationship": "Rivenditore U-Power",
+      "verified": true
+    },
+    {
+      "source": "https://www.cottocusimano.com/rivenditori-specializzati",
+      "relationship": "Rivenditore specializzato Cotto Cusimano",
+      "verified": true
+    },
+    {
+      "source": "https://partners.montolit.it/",
+      "relationship": "Presente nell’elenco partner Montolit",
+      "verified": true
+    }
+  ],
+  "company_registry_context": [
+    {
+      "source": "https://www.aziende.it/dedil-donato-s-r-l",
+      "evidence": "Fatturato 2024 €17.939.249; attività prevalente: commercio all’ingrosso di altri materiali da costruzione.",
+      "use_policy": "trust_context_only"
+    }
+  ],
+  "fallback_assets_policy": {
+    "rule": "Third-party licensed photography may illustrate material categories only. Never label it as DEDIL premises, fleet, team or real project.",
+    "real_business_asset": false
+  }
+}
