@@ -4,8 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/ops.js"
-      - "src/index.js"
+      - "src/**"
       - "public/admin/**"
       - "package.json"
       - "wrangler.jsonc"
