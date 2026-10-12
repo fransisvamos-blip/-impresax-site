@@ -1103,7 +1103,9 @@ export async function handleOpsRequest(request, env) {
                          and s.desktop_image_base64 is not null
                          and s.mobile_image_base64 is not null
                          and s.image_mime='image/jpeg'
-                         and s.rendered_at is not null)=3
+                         and s.rendered_at is not null
+                         and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
+                         and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b')=3
                  and (select count(distinct rv.variant_key) from render_variants rv
                        where rv.render_pack_id=rp.id and rv.variant_key in ('A','B','C'))=3
                  and (select count(*) from render_variants rv
@@ -1138,8 +1140,10 @@ export async function handleOpsRequest(request, env) {
         database_connected: true,
         render_pipeline: "CLOUDFLARE_NATIVE_V1",
         render_model: "@cf/zai-org/glm-4.7-flash",
-        render_engine_version: "CLOUDFLARE_NATIVE_V4",
+        render_engine_version: "CLOUDFLARE_NATIVE_V5_VISUAL_QA",
         render_owner: "CLOUDFLARE_NATIVE_ONLY",
+        visual_qa_required: true,
+        visual_qa_model: "@cf/qwen/qwen3.8-27b",
         render_selection_mode: "TWO_STEP_EXPLICIT",
         render_ui_two_step: renderUiTwoStep,
         legacy_render_transports: "DISABLED",
