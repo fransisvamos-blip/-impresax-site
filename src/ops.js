@@ -924,15 +924,6 @@ function renderPriority(code, rank) {
 }
 
 async function generateNextCloudflareRender(sql, env) {
-  // Retire any legacy external-render claims immediately. Cloudflare is the only renderer.
-  await sql`update render_jobs set status='FAILED',error='LEGACY_RENDER_WORKER_RETIRED',completed_at=now(),updated_at=now()
-    where worker='floot-ai-renderer' and status='RUNNING'`;
-  await sql`update render_packs rp set status='ART_DIRECTION'
-    where rp.status='AI_RENDERING' and exists(
-      select 1 from render_jobs rj where rj.prospect_id=rp.prospect_id
-        and rj.worker='floot-ai-renderer' and rj.status='FAILED'
-    )`;
-
   const rows=await sql`select
       p.id as prospect_id,p.rank,p.business_name,p.vertical,p.city,p.country,p.website_url,
       p.logo,p.brand_dna,p.source_data,p.pipeline_status,
