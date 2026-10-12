@@ -1,4 +1,4 @@
-import { handleOpsRequest, isOpsHost, runOrchestrator, runRenderIngest } from "./ops.js";
+import { handleOpsRequest, isOpsHost, runOrchestrator, runRenderIngest, handlePublicRenderIngest } from "./ops.js";
 import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 import { handlePublicRequest } from "./requests.js";
@@ -41,6 +41,11 @@ export default {
     // Public inbound request endpoint used by the ImpresaX website form.
     if ((host === ROOT_HOST || host === WWW_HOST || host.endsWith(".workers.dev")) && url.pathname === "/api/richieste") {
       return handlePublicRequest(request, env);
+    }
+
+    // Capability-token ingest used by the autonomous Render Queue.
+    if ((host === ROOT_HOST || host === WWW_HOST || host.endsWith(".workers.dev")) && url.pathname === "/api/render-ingest") {
+      return handlePublicRenderIngest(request, env);
     }
 
     // Keep the existing workers.dev endpoint as a technical fallback.
