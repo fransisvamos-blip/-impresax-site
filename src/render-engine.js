@@ -277,6 +277,35 @@ async function recoverStaleClaims(sql) {
         select 1 from render_packs rp
         where rp.prospect_id=p.id and rp.approved_reference=false and rp.status='ART_DIRECTION'
       )`;
+
+  await sql`update render_jobs
+    set status='FAILED',error='STALE_BROWSER_RENDER_CLAIM',completed_at=now(),updated_at=now()
+    where worker='cloudflare-browser-renderer'
+      and status='RUNNING'
+      and started_at < now()-interval '3 minutes'`;
+
+  await sql`update render_packs rp
+    set status='RENDERING'
+    where rp.approved_reference=false
+      and rp.status='RENDERING_ASSETS'
+      and not exists (
+        select 1 from render_jobs rj
+        where rj.worker='cloudflare-browser-renderer'
+          and rj.status='RUNNING'
+          and rj.started_at >= now()-interval '3 minutes'
+          and rj.input_data->>'render_pack_id'=rp.id::text
+      )`;
+
+  await sql`update prospects p
+    set current_step='RENDERING_ASSETS',next_action='RETRY_BROWSER_RENDER',updated_at=now()
+    where p.pipeline_status='RENDERING'::pipeline_status
+      and p.render_status='RENDERING'
+      and exists (
+        select 1 from render_packs rp
+        where rp.prospect_id=p.id and rp.approved_reference=false and rp.status='RENDERING'
+          and (select count(*) from render_staging_payloads s
+               where s.render_pack_id=rp.id and s.html_source is not null)=3
+      )`;
 }
 
 async function ensureActivePacks(sql) {
@@ -513,7 +542,21 @@ async function renderPack(sql, env, row) {
     where id=${row.render_pack_id}::uuid and status='RENDERING'
     returning id`;
   if (!claim.length) return {ok:false,pack_id:row.render_pack_id,error:"CLAIMED_ELSEWHERE"};
+
+  const attempts=await sql`select coalesce(max(attempt),0)+1 as attempt
+    from render_jobs where prospect_id=${row.prospect_id}::uuid and worker='cloudflare-browser-renderer'`;
+  const browserAttempt=Number(attempts[0]?.attempt || 1);
+  const browserJobs=await sql`insert into render_jobs(
+      prospect_id,status,attempt,worker,input_data,started_at
+    ) values(
+      ${row.prospect_id}::uuid,'RUNNING',${browserAttempt},'cloudflare-browser-renderer',
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version})}::jsonb,now()
+    ) returning id`;
+  const browserJobId=browserJobs[0].id;
+
   if (!env.BROWSER) {
+    await sql`update render_jobs set status='FAILED',error='BROWSER_BINDING_NOT_CONFIGURED',completed_at=now(),updated_at=now()
+      where id=${browserJobId}::uuid`;
     await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     return {ok:false,pack_id:row.render_pack_id,error:"BROWSER_BINDING_NOT_CONFIGURED"};
   }
@@ -559,6 +602,8 @@ async function renderPack(sql, env, row) {
     }
   } catch (error) {
     const message = String(error?.message || error || "BROWSER_RENDER_FAILED").slice(0, 600);
+    await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
+      where id=${browserJobId}::uuid`;
     await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     await sql`update prospects set current_step='RENDERING_ASSETS',next_action='RETRY_BROWSER_RENDER',error=${message},updated_at=now()
       where id=${row.prospect_id}::uuid`;
@@ -575,9 +620,15 @@ async function renderPack(sql, env, row) {
       and mobile_render_url is not null
       and status='RENDER_READY'`;
   if (Number(complete[0]?.n || 0) !== 3) {
+    await sql`update render_jobs set status='FAILED',error='RENDER_COMPLETION_CHECK_FAILED',completed_at=now(),updated_at=now()
+      where id=${browserJobId}::uuid`;
     await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     return {ok:false,pack_id:row.render_pack_id,error:"RENDER_COMPLETION_CHECK_FAILED"};
   }
+
+  await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({variants:["A","B","C"],desktop_mobile:true})}::jsonb,
+      error=null,completed_at=now(),updated_at=now()
+    where id=${browserJobId}::uuid`;
 
   await sql`update render_packs set status='RENDER_READY',approved_reference=false,approved_at=null
     where id=${row.render_pack_id}::uuid`;
