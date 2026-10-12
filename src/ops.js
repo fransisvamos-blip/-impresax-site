@@ -859,6 +859,26 @@ async function renderNextStagedPack(sql, env) {
   return {outcome:"completed",render_pack_id:candidate.render_pack_id,prospect_id:candidate.prospect_id,version:candidate.version};
 }
 
+export async function handlePublicRenderIngest(request, env) {
+  const url=new URL(request.url);
+  if (request.method!=="GET") return json({ok:false,error:"METHOD_NOT_ALLOWED"},405,{"X-Robots-Tag":"noindex, nofollow, noarchive"});
+  try {
+    const sql=db(env);
+    const result=await handleDirectRenderIngest(sql,env,url);
+    return json(result,result.status || (result.ok?200:400),{
+      "X-Robots-Tag":"noindex, nofollow, noarchive",
+      "Referrer-Policy":"no-referrer",
+      "Cache-Control":"no-store"
+    });
+  } catch (error) {
+    return json({ok:false,error:error.message || String(error)},503,{
+      "X-Robots-Tag":"noindex, nofollow, noarchive",
+      "Referrer-Policy":"no-referrer",
+      "Cache-Control":"no-store"
+    });
+  }
+}
+
 export async function runRenderIngest(env) {
   const sql=db(env);
   let ingest={ok:true,skipped_poll:true};
