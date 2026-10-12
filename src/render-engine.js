@@ -169,19 +169,20 @@ async function loadFrozenMaster() {
 }
 
 function attrValue(tag, name) {
-  const m = String(tag || "").match(new RegExp(name + "\\s*=\\s*[\\\"']([^\\\"']+)[\\\"']", "i"));
+  const pattern = name + "\\s*=\\s*[\\"']([^\\"']+)[\\"']";
+  const m = String(tag || "").match(new RegExp(pattern, "i"));
   return m ? m[1].trim() : "";
 }
 
 function visibleTextFromHtml(html) {
   return String(html || "")
-    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
-    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
-    .replace(/<svg[\\s\\S]*?<\\/svg>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;|&#160;/gi, " ")
     .replace(/&amp;/gi, "&")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim()
     .slice(0, 18000);
 }
@@ -197,13 +198,15 @@ async function discoverOfficialBrandEvidence(websiteUrl) {
     const html = (await res.text()).slice(0, 700000);
     const base = new URL(res.url || websiteUrl);
     const logoCandidates = [];
-    for (const m of html.matchAll(/<img\\b[^>]*>/gi)) {
+
+    for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
       const tag = m[0];
       const src = attrValue(tag,"src") || attrValue(tag,"data-src") || attrValue(tag,"data-lazy-src");
       if (!src || src.startsWith("data:") || src.startsWith("blob:")) continue;
       let url;
       try { url = new URL(src, base); } catch { continue; }
       if (url.protocol !== "https:") continue;
+
       const signal = [
         src,
         attrValue(tag,"alt"),
@@ -211,26 +214,35 @@ async function discoverOfficialBrandEvidence(websiteUrl) {
         attrValue(tag,"id"),
         attrValue(tag,"title")
       ].join(" ").toLowerCase();
+
       let score = 0;
-      if (/\\blogo\\b|site-logo|custom-logo|brand-logo|navbar-brand/.test(signal)) score += 10;
+      if (/\blogo\b|site-logo|custom-logo|brand-logo|navbar-brand/.test(signal)) score += 10;
       if (/header/.test(signal)) score += 2;
       if (/footer/.test(signal)) score -= 1;
       if (/icon|favicon|avatar|testimonial|partner|client/.test(signal)) score -= 5;
-      if (/\\.(svg|png|webp)(?:[?#]|$)/i.test(url.pathname)) score += 1;
-      if (url.hostname === base.hostname || url.hostname.endsWith("." + base.hostname.replace(/^www\\./,""))) score += 2;
+      if (/\.(svg|png|webp)(?:[?#]|$)/i.test(url.pathname)) score += 1;
+      if (url.hostname === base.hostname || url.hostname.endsWith("." + base.hostname.replace(/^www\./,""))) score += 2;
       logoCandidates.push({url:url.href,score,signal:signal.slice(0,400)});
     }
+
     logoCandidates.sort((a,b) => b.score-a.score);
     const bestLogo = logoCandidates.find(x => x.score >= 10) || null;
 
-    const title = (html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] || "").replace(/<[^>]+>/g," ").trim();
+    const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "")
+      .replace(/<[^>]+>/g," ")
+      .trim();
+
     const description =
-      attrValue(html.match(/<meta[^>]+name=[\\\"']description[\\\"'][^>]*>/i)?.[0] || "","content") ||
-      attrValue(html.match(/<meta[^>]+property=[\\\"']og:description[\\\"'][^>]*>/i)?.[0] || "","content");
-    const colors = [...html.matchAll(/#[0-9a-f]{6}\\b/gi)].map(x=>x[0].toUpperCase());
+      attrValue(html.match(/<meta[^>]+name=[\\"']description[\\"'][^>]*>/i)?.[0] || "","content") ||
+      attrValue(html.match(/<meta[^>]+property=[\\"']og:description[\\"'][^>]*>/i)?.[0] || "","content");
+
+    const colors = [...html.matchAll(/#[0-9a-f]{6}\b/gi)].map(x=>x[0].toUpperCase());
     const colorCounts = {};
     for (const color of colors) colorCounts[color]=(colorCounts[color]||0)+1;
-    const topColors = Object.entries(colorCounts).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([color,count])=>({color,count}));
+    const topColors = Object.entries(colorCounts)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,10)
+      .map(([color,count])=>({color,count}));
 
     return {
       official_url: base.href,
