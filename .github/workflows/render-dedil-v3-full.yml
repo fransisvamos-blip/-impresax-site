@@ -1,0 +1,150 @@
+name: Render DEDIL V3 full references
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ops/render-packs/CZ-063/v3/reference-v3-desktop.html"
+      - "ops/render-packs/CZ-063/v3/reference-v3-mobile.html"
+      - ".github/workflows/render-dedil-v3-full.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare assets with provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="ops/render-packs/CZ-063/v3"
+          test -s "$d/dedil-logo-official.png"
+          curl -fL --retry 3 "https://images.pexels.com/photos/10284048/pexels-photo-10284048.jpeg?auto=compress&dpr=1&h=1800&w=2400" -o "$d/materials.jpg"
+          curl -fL --retry 3 "https://images.unsplash.com/photo-1763926025678-95d196d0ab28?auto=format&fit=crop&w=2200&q=85" -o "$d/rebar.jpg"
+          file "$d/dedil-logo-official.png" "$d/materials.jpg" "$d/rebar.jpg"
+
+      - name: Render independent desktop and mobile pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$PWD/ops/render-packs/CZ-063/v3"
+          CHROME="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1             --window-size=1440,6200 --screenshot="$d/desktop-raw.png" "file://$d/reference-v3-desktop.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1             --window-size=390,6500 --screenshot="$d/mobile-raw.png" "file://$d/reference-v3-mobile.html"
+
+      - name: Crop full-page canvases and build QA previews
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          d=Path("ops/render-packs/CZ-063/v3")
+          def crop(src,dst,bg):
+              im=Image.open(src).convert("RGB")
+              last=im.height-1
+              for y in range(im.height-1,-1,-1):
+                  found=False
+                  for x in range(0,im.width,max(1,im.width//120)):
+                      p=im.getpixel((x,y))
+                      if any(abs(p[i]-bg[i])>5 for i in range(3)):
+                          found=True; break
+                  if found:
+                      last=y; break
+              out=im.crop((0,0,im.width,min(im.height,last+2)))
+              out.save(dst,"PNG",optimize=True)
+              return out
+          desk=crop(d/"desktop-raw.png",d/"DEDIL-CZ063-V3-desktop.png",(242,239,232))
+          mob=crop(d/"mobile-raw.png",d/"DEDIL-CZ063-V3-mobile.png",(242,239,232))
+          wd=900; hd=round(desk.height*wd/desk.width)
+          desk.resize((wd,hd),Image.Resampling.LANCZOS).save(d/"DEDIL-CZ063-V3-desktop-preview.jpg","JPEG",quality=83,optimize=True,progressive=True)
+          wm=390; hm=round(mob.height*wm/mob.width)
+          mob.resize((wm,hm),Image.Resampling.LANCZOS).save(d/"DEDIL-CZ063-V3-mobile-preview.jpg","JPEG",quality=83,optimize=True,progressive=True)
+          print("desktop",desk.size,"mobile",mob.size)
+          PY
+          rm -f "$d/desktop-raw.png" "$d/mobile-raw.png" "$d/materials.jpg" "$d/rebar.jpg"
+
+      - name: Write V3 asset provenance manifest
+        shell: bash
+        run: |
+          cat > ops/render-packs/CZ-063/v3/manifest-v3.json <<'JSON'
+          {
+            "render_version":"DEDIL-CZ063-V3",
+            "selected_direction":"A — Transformation Grid",
+            "official_logo":{
+              "source":"https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato-300x70.png",
+              "owner":"DEDIL DONATO S.R.L.",
+              "role":"official_logo",
+              "real_business_asset":true,
+              "lock":"IMMUTABLE"
+            },
+            "asset_provenance":[
+              {
+                "source":"https://images.pexels.com/photos/10284048/pexels-photo-10284048.jpeg",
+                "owner":"Pexels contributor / Pexels",
+                "license":"Pexels Free License",
+                "role":"materials_category_illustration",
+                "real_business_asset":false,
+                "representation_policy":"Never presented as DEDIL premises or inventory."
+              },
+              {
+                "source":"https://images.unsplash.com/photo-1763926025678-95d196d0ab28",
+                "owner":"Unsplash contributor / Unsplash",
+                "license":"Unsplash License",
+                "role":"rebar_category_illustration",
+                "real_business_asset":false,
+                "representation_policy":"Never presented as a DEDIL project or facility."
+              }
+            ],
+            "first_party_evidence":[
+              {
+                "source":"https://it.linkedin.com/in/angelo-donato-978997162",
+                "evidence":"Centro trasformazione acciaio per cls e vendita all’ingrosso materiale edile.",
+                "real_business_evidence":true
+              },
+              {
+                "source":"https://it.linkedin.com/in/angelo-donato-978997162",
+                "evidence":"Plinto per parco eolico: 125 ton acciaio B450C.",
+                "real_business_evidence":true
+              },
+              {
+                "source":"https://it.linkedin.com/in/angelo-donato-978997162",
+                "evidence":"Gabbie per pali diametro 1500, lunghezza 47 m, lotto SS106 Sibari.",
+                "real_business_evidence":true
+              }
+            ],
+            "verified_network_trust":[
+              {"name":"U-Power","source":"https://u-power.ai/it-it/trova-rivenditore/tutti-i-rivenditori"},
+              {"name":"Cotto Cusimano","source":"https://www.cottocusimano.com/rivenditori-specializzati"},
+              {"name":"Montolit","source":"https://partners.montolit.it/"}
+            ],
+            "cta_href_map":{
+              "call":"tel:+390961754432",
+              "email":"mailto:info@dedildonato.it",
+              "quote":"mailto:info@dedildonato.it?subject=Richiesta%20preventivo"
+            },
+            "desktop_width":1440,
+            "mobile_width":390,
+            "mobile_independent_source":true,
+            "footer_complete":true,
+            "generated_brand_marks":false
+          }
+          JSON
+
+      - name: Commit V3 render pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Studio"
+          git config user.email "actions@users.noreply.github.com"
+          git add ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop-preview.jpg                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile-preview.jpg                   ops/render-packs/CZ-063/v3/manifest-v3.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Render DEDIL-CZ063-V3 full desktop and mobile references"
+          git pull --rebase origin main
+          git push
