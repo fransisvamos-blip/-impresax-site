@@ -20,85 +20,196 @@
     </div>
   </header>
 
+  <nav class="ops-nav" aria-label="Menu ImpresaX Ops">
+    <button class="nav-item active" data-view="home">Home</button>
+    <button class="nav-item" data-view="prospects">Prospect</button>
+    <button class="nav-item" data-view="rendering">Rendering</button>
+    <button class="nav-item" data-view="factory">Site Factory</button>
+    <button class="nav-item" data-view="sales">Sales</button>
+    <button class="nav-item" data-view="system">Sistema</button>
+  </nav>
+
   <main>
-    <section class="metrics" id="metrics" aria-label="Metriche del flusso operativo"></section>
+    <section class="app-view active" data-view-panel="home">
+      <section class="metrics" id="metrics" aria-label="Metriche del flusso operativo"></section>
 
-    <section class="email-system" id="email-system">
-      <div class="section-head">
-        <div>
-          <span class="kicker">EMAIL SYSTEM</span>
-          <h2>Invio email ImpresaX</h2>
-        </div>
-        <span class="email-overall status" id="email-status">Verifica…</span>
-      </div>
+      <section class="home-grid">
+        <article class="panel-card">
+          <span class="kicker">OGGI</span>
+          <h2>Stato operativo</h2>
+          <div id="home-status" class="home-status"></div>
+        </article>
+        <article class="panel-card">
+          <span class="kicker">ATTENZIONE</span>
+          <h2>Interventi richiesti</h2>
+          <div id="home-escalations"></div>
+        </article>
+      </section>
 
-      <div class="email-summary">
-        <article><span>Email system</span><strong id="email-status-text">—</strong></article>
-        <article><span>Sending</span><strong id="email-sending">—</strong></article>
-        <article><span>Delivery tracking</span><strong id="email-delivery-tracking">—</strong></article>
-        <article><span>Last send</span><strong id="email-last-send">—</strong></article>
-        <article><span>Last delivery</span><strong id="email-last-delivery">—</strong></article>
-        <article><span>Last error</span><strong id="email-last-error">—</strong></article>
-      </div>
-      <div class="email-meta">
-        <span>FROM ADDRESS</span>
-        <strong id="email-from">—</strong>
-        <span id="email-delivery-note"></span>
-      </div>
-
-      <div class="email-actions">
-        <form id="email-test-form">
-          <label for="email-recipient">Destinatario test</label>
-          <div class="email-test-row">
-            <input id="email-recipient" name="recipient" type="email" inputmode="email" autocomplete="email" placeholder="nome@dominio.it" required>
-            <button id="email-test-button" type="submit">Invia email di test</button>
-          </div>
-          <span class="email-feedback" id="email-feedback">FROM: info@impresax.org</span>
-        </form>
-        <div class="email-qa" id="email-qa" aria-label="Controlli qualità email"></div>
-      </div>
-    </section>
-
-    <section class="workspace">
-      <div class="board">
+      <section class="events">
         <div class="section-head">
           <div>
-            <span class="kicker">FLUSSO OPERATIVO</span>
-            <h2>Aziende</h2>
+            <span class="kicker">REGISTRO EVENTI</span>
+            <h2>Ultimi eventi</h2>
           </div>
-          <input id="search" type="search" placeholder="Cerca azienda, ID, verticale, stato…">
         </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Pos.</th><th>ID</th><th>Azienda</th><th>Verticale</th>
-                <th>Rendering</th><th>Costruzione</th><th>Controllo qualità</th><th>Tentativo</th><th>Online</th>
-                <th>Fase attuale</th><th>Ultimo evento</th><th>Errore</th><th>Prossima azione</th>
-              </tr>
-            </thead>
-            <tbody id="rows"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <aside class="detail" id="detail">
-        <div class="empty">
-          <span class="kicker">DETTAGLIO</span>
-          <p>Seleziona un'azienda per vedere dati, rendering, risorse, costruzione, controlli qualità, errori e cronologia completa.</p>
-        </div>
-      </aside>
+        <div id="events"></div>
+      </section>
     </section>
 
-    <section class="events">
-      <div class="section-head">
+    <section class="app-view" data-view-panel="prospects">
+      <section class="workspace">
+        <div class="board">
+          <div class="section-head">
+            <div>
+              <span class="kicker">PROSPECT</span>
+              <h2>Tutte le aziende</h2>
+            </div>
+            <input id="search" type="search" placeholder="Cerca azienda, ID, verticale, stato…">
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pos.</th><th>ID</th><th>Azienda</th><th>Verticale</th>
+                  <th>Rendering</th><th>Costruzione</th><th>Controllo qualità</th><th>Tentativo</th><th>Online</th>
+                  <th>Fase attuale</th><th>Ultimo evento</th><th>Errore</th><th>Prossima azione</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="detail" id="detail">
+          <div class="empty">
+            <span class="kicker">DETTAGLIO</span>
+            <p>Seleziona un'azienda per vedere dati, rendering, risorse, costruzione, controlli qualità, errori e cronologia completa.</p>
+          </div>
+        </aside>
+      </section>
+    </section>
+
+    <section class="app-view" data-view-panel="rendering">
+      <div class="section-head standalone">
         <div>
-          <span class="kicker">REGISTRO EVENTI</span>
-          <h2>Ultimi eventi</h2>
+          <span class="kicker">RENDERING STUDIO</span>
+          <h2>Render pronti da valutare</h2>
+          <p>Apri un prospect, confronta desktop e mobile e scegli quale reference mandare alla Site Factory.</p>
         </div>
       </div>
-      <div id="events"></div>
+      <section class="two-pane">
+        <div class="panel-card">
+          <div id="rendering-list"></div>
+        </div>
+        <aside class="detail rendering-detail" id="rendering-detail">
+          <div class="empty">
+            <span class="kicker">SELEZIONE RENDER</span>
+            <p>Seleziona un prospect per vedere tutti i render disponibili.</p>
+          </div>
+        </aside>
+      </section>
+    </section>
+
+    <section class="app-view" data-view-panel="factory">
+      <div class="section-head standalone">
+        <div>
+          <span class="kicker">SITE FACTORY</span>
+          <h2>Build, QA e demo</h2>
+          <p>Qui vedi cosa sta costruendo la Factory, cosa è in QA e cosa richiede intervento.</p>
+        </div>
+      </div>
+      <section class="panel-card">
+        <div id="factory-list"></div>
+      </section>
+    </section>
+
+    <section class="app-view" data-view-panel="sales">
+      <div class="section-head standalone">
+        <div>
+          <span class="kicker">SALES ENGINE</span>
+          <h2>Outreach, contatti e trattative</h2>
+          <p>Email, WhatsApp, chiamate, follow-up, appuntamenti e stato commerciale dei prospect.</p>
+        </div>
+      </div>
+
+      <section class="sales-channels">
+        <article class="channel-card ready">
+          <span>Email</span>
+          <strong>OPERATIVO</strong>
+          <small>info@impresax.org</small>
+        </article>
+        <article class="channel-card pending">
+          <span>WhatsApp</span>
+          <strong>DA COLLEGARE</strong>
+          <small>Serve numero dedicato / Cloud API</small>
+        </article>
+        <article class="channel-card pending">
+          <span>Chiamate</span>
+          <strong>DA COLLEGARE</strong>
+          <small>Serve numero dedicato</small>
+        </article>
+      </section>
+
+      <section class="email-system" id="email-system">
+        <div class="section-head">
+          <div>
+            <span class="kicker">EMAIL SYSTEM</span>
+            <h2>Invio email ImpresaX</h2>
+          </div>
+          <span class="email-overall status" id="email-status">Verifica…</span>
+        </div>
+
+        <div class="email-summary">
+          <article><span>Email system</span><strong id="email-status-text">—</strong></article>
+          <article><span>Sending</span><strong id="email-sending">—</strong></article>
+          <article><span>Delivery tracking</span><strong id="email-delivery-tracking">—</strong></article>
+          <article><span>Last send</span><strong id="email-last-send">—</strong></article>
+          <article><span>Last delivery</span><strong id="email-last-delivery">—</strong></article>
+          <article><span>Last error</span><strong id="email-last-error">—</strong></article>
+        </div>
+        <div class="email-meta">
+          <span>FROM ADDRESS</span>
+          <strong id="email-from">—</strong>
+          <span id="email-delivery-note"></span>
+        </div>
+
+        <div class="email-actions">
+          <form id="email-test-form">
+            <label for="email-recipient">Destinatario test</label>
+            <div class="email-test-row">
+              <input id="email-recipient" name="recipient" type="email" inputmode="email" autocomplete="email" placeholder="nome@dominio.it" required>
+              <button id="email-test-button" type="submit">Invia email di test</button>
+            </div>
+            <span class="email-feedback" id="email-feedback">FROM: info@impresax.org</span>
+          </form>
+          <div class="email-qa" id="email-qa" aria-label="Controlli qualità email"></div>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="section-head compact-head">
+          <div>
+            <span class="kicker">PIPELINE SALES</span>
+            <h2>Prospect commerciali</h2>
+          </div>
+        </div>
+        <div id="sales-list"></div>
+      </section>
+    </section>
+
+    <section class="app-view" data-view-panel="system">
+      <div class="section-head standalone">
+        <div>
+          <span class="kicker">SISTEMA</span>
+          <h2>Orchestratore e coda lavori</h2>
+          <p>Controllo tecnico della pipeline, job attivi, errori e attività in attesa.</p>
+        </div>
+      </div>
+      <section class="panel-card">
+        <div id="system-queue"></div>
+      </section>
     </section>
   </main>
 
