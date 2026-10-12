@@ -28,9 +28,10 @@ jobs:
               && grep -q '"database_connected":true' /tmp/health.json \
               && grep -q '"render_pipeline":"CLOUDFLARE_NATIVE_V1"' /tmp/health.json \
               && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json \
-              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V6_BRAND_GATE_VISUAL_QA"' /tmp/health.json \
+              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V7_AUTO_BRAND_GATE_VISUAL_QA"' /tmp/health.json \
               && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
               && grep -q '"brand_gate_required":true' /tmp/health.json \
+              && grep -q '"brand_gate_auto_recovery":true' /tmp/health.json \
               && grep -q '"visual_qa_required":true' /tmp/health.json \
               && grep -q '"visual_qa_model":"@cf/qwen/qwen3.8-27b"' /tmp/health.json \
               && grep -q '"render_selection_mode":"TWO_STEP_EXPLICIT"' /tmp/health.json \
