@@ -1,5 +1,6 @@
-const PRIMARY_MODEL = "@cf/openai/gpt-oss-120b";
-const FALLBACK_MODEL = "@cf/openai/gpt-oss-20b";
+const ART_MODEL = "@cf/openai/gpt-oss-120b";
+const HTML_MODEL = "@cf/openai/gpt-oss-20b";
+const FALLBACK_MODEL = "@cf/openai/gpt-oss-120b";
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 
 const MASTER_FALLBACK = [
@@ -42,23 +43,23 @@ function aiText(result) {
   return "";
 }
 
-async function runModel(env, messages, maxTokens, temperature) {
+async function runModel(env, model, messages, maxTokens, temperature) {
   if (!env.AI || typeof env.AI.run !== "function") throw new Error("WORKERS_AI_BINDING_NOT_CONFIGURED");
   try {
-    return await env.AI.run(PRIMARY_MODEL, {
+    return await env.AI.run(model, {
       messages,
       max_tokens: maxTokens,
       temperature,
       top_p: 0.92
     });
   } catch (primaryError) {
-    const fallback = await env.AI.run(FALLBACK_MODEL, {
+    if (model === FALLBACK_MODEL) throw primaryError;
+    return await env.AI.run(FALLBACK_MODEL, {
       messages,
       max_tokens: maxTokens,
       temperature,
       top_p: 0.92
     });
-    return fallback;
   }
 }
 
@@ -141,10 +142,10 @@ async function deriveDirections(env, master, prospect) {
   ].join("\n");
 
   try {
-    const result = await runModel(env, [
+    const result = await runModel(env, ART_MODEL, [
       { role: "system", content: "You are ImpresaX Rendering Studio art director. Be specific, premium and commercially grounded." },
       { role: "user", content: prompt }
-    ], 1800, 0.55);
+    ], 1400, 0.5);
     const parsed = extractJson(aiText(result));
     if (parsed?.A && parsed?.B && parsed?.C) return parsed;
   } catch {}
@@ -192,19 +193,19 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
 }
 
 async function generateOne(env, master, prospect, key, direction) {
-  let result = await runModel(env, [
+  let result = await runModel(env, HTML_MODEL, [
     { role: "system", content: "You are a senior editorial web art director and frontend designer. Output production-grade HTML only." },
     { role: "user", content: buildVariantPrompt(master, prospect, key, direction, null, null) }
-  ], 12000, 0.58);
+  ], 9000, 0.56);
 
   let html = extractHtml(aiText(result));
   let gate = hardGate(html, prospect);
 
   if (!gate.pass) {
-    result = await runModel(env, [
+    result = await runModel(env, HTML_MODEL, [
       { role: "system", content: "You are a senior editorial web art director fixing a premium homepage without changing its core direction. Output HTML only." },
       { role: "user", content: buildVariantPrompt(master, prospect, key, direction, gate.issues, html) }
-    ], 12000, 0.48);
+    ], 9000, 0.46);
     html = extractHtml(aiText(result));
     gate = hardGate(html, prospect);
   }
@@ -237,7 +238,7 @@ export async function generateRenderVariants(env, prospect) {
   return {
     master: "RENDERING_STUDIO_V1_FROZEN",
     master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
-    model: PRIMARY_MODEL,
+    model: HTML_MODEL,
     variants
   };
 }
