@@ -194,6 +194,51 @@ async function discoverFirstPartyImages(websiteUrl) {
   }
 }
 
+function evaluateBrandGate(row) {
+  const logo = row?.logo || {};
+  const status = String(logo.status || "").toUpperCase();
+  const exactLogoLocked =
+    (status === "PASS" || status === "OFFICIAL_LOGO_LOCKED") &&
+    typeof (logo.url || logo.official_source) === "string";
+  const verifiedNoLogo =
+    status === "NO_OFFICIAL_LOGO_CONFIRMED" &&
+    (logo.generated === false || logo.use_verified_name_as_text === true);
+  const dna = row?.brand_dna && typeof row.brand_dna === "object" ? row.brand_dna : {};
+  const meaningfulDna = Object.entries(dna).filter(([,v]) => {
+    if (Array.isArray(v)) return v.length > 0;
+    if (v && typeof v === "object") return Object.keys(v).length > 0;
+    return String(v || "").trim().length > 2;
+  });
+  const source = row?.source_data || {};
+  const refs = Array.isArray(source.source_references) ? source.source_references.filter(Boolean) : [];
+  const issues = [];
+  if (!exactLogoLocked && !verifiedNoLogo) issues.push("OFFICIAL_LOGO_NOT_LOCKED_OR_NO_LOGO_NOT_VERIFIED");
+  if (meaningfulDna.length < 4) issues.push("BRAND_DNA_INCOMPLETE");
+  if (!source.verified_services) issues.push("VERIFIED_SERVICES_MISSING");
+  if (!source.verified_contacts) issues.push("VERIFIED_CONTACTS_MISSING");
+  if (!refs.length) issues.push("SOURCE_REFERENCES_MISSING");
+  return { pass: issues.length === 0, issues };
+}
+
+async function holdBrandGate(sql, row, issues) {
+  await sql`update render_packs set status='BRAND_GATE_HOLD'
+    where id=${row.render_pack_id}::uuid and approved_reference=false`;
+  await sql`update prospects set
+      pipeline_status='RENDER_REWORK'::pipeline_status,
+      render_status='BRAND_GATE_HOLD',
+      current_step='BRAND_GATE_HOLD',
+      next_action='COMPLETE_BRAND_GATE_BEFORE_ART_DIRECTION',
+      error=${issues.join(",")},
+      updated_at=now()
+    where id=${row.prospect_id}::uuid`;
+  await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
+    values(
+      ${row.prospect_id}::uuid,'BRAND_GATE_BLOCKED','render_pack',${row.render_pack_id}::uuid,
+      'rendering-studio-brand-gate','RENDER_REWORK'::pipeline_status,'RENDER_REWORK'::pipeline_status,
+      ${JSON.stringify({issues,rule:"NO_ART_DIRECTION_BEFORE_BRAND_GATE"})}::jsonb
+    )`;
+}
+
 function prospectPayload(row, firstPartyImages) {
   const source = row.source_data || {};
   return {
@@ -653,6 +698,12 @@ async function generatePackSingleCall(env, master, payload) {
 }
 
 async function generateProspect(sql, env, master, row) {
+  const brandGate = evaluateBrandGate(row);
+  if (!brandGate.pass) {
+    await holdBrandGate(sql,row,brandGate.issues);
+    return {ok:false,code:row.prospect_code,error:"BRAND_GATE_BLOCKED",issues:brandGate.issues};
+  }
+
   const jobId = await claimPack(sql, row);
   if (!jobId) return {ok:false,code:row.prospect_code,error:"CLAIMED_ELSEWHERE"};
 
