@@ -916,13 +916,170 @@ export async function handlePublicRenderIngest(request, env) {
   }
 }
 
+
+const FLOOT_RENDER_WORKER_URL="https://impresax.floot.app/_api/render-worker";
+
+function renderPriority(code, rank) {
+  const fixed={"CZ-063":1,"CZ-209":2,"CZ-031":3,"CZ-210":4,"CZ-058":5,"CZ-097":6,"CZ-001":7};
+  return fixed[code] ?? (1000 + Number(rank || 999));
+}
+
+async function dispatchAiRenderBatch(sql, limit=3) {
+  // Recover stale claims left behind by a timed-out worker.
+  await sql`update render_packs rp
+    set status='ART_DIRECTION'
+    where rp.status='AI_RENDERING'
+      and exists(
+        select 1 from render_jobs rj
+        where rj.prospect_id=rp.prospect_id
+          and rj.worker='floot-ai-renderer'
+          and rj.status='RUNNING'
+          and rj.started_at < now()-interval '12 minutes'
+      )`;
+  await sql`update render_jobs
+    set status='FAILED',error='STALE_AI_RENDER_CLAIM_RECOVERED',completed_at=now(),updated_at=now()
+    where worker='floot-ai-renderer' and status='RUNNING'
+      and started_at < now()-interval '12 minutes'`;
+
+  const rows=await sql`select
+      p.id as prospect_id,p.rank,p.business_name,p.vertical,p.city,p.country,p.website_url,
+      p.logo,p.brand_dna,p.source_data,p.pipeline_status,
+      rp.id as render_pack_id,rp.version,rp.status as pack_status,
+      t.token,
+      coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect') as prospect_code,
+      (select count(*)::int from render_staging_payloads s
+        where s.render_pack_id=rp.id and s.html_source is not null and length(s.html_source)>0) as staged_count
+    from prospects p
+    join lateral (
+      select x.* from render_packs x
+      where x.prospect_id=p.id
+        and x.approved_reference=false
+        and upper(x.status) not like '%ARCHIVED%'
+        and upper(x.status) not like '%REJECT%'
+      order by x.version desc limit 1
+    ) rp on true
+    join render_ingest_tokens t on t.render_pack_id=rp.id
+    where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)
+      and rp.status='ART_DIRECTION'
+      and not exists(
+        select 1 from render_staging_payloads s
+        where s.render_pack_id=rp.id and s.html_source is not null and length(s.html_source)>0
+      )
+    limit 30`;
+
+  rows.sort((a,b)=>renderPriority(a.prospect_code,a.rank)-renderPriority(b.prospect_code,b.rank));
+  const selected=rows.slice(0,Math.max(1,Math.min(Number(limit||3),3)));
+  const jobs=[];
+
+  for (const row of selected) {
+    const claimed=await sql`update render_packs
+      set status='AI_RENDERING'
+      where id=${row.render_pack_id}::uuid and status='ART_DIRECTION'
+      returning id`;
+    if (!claimed.length) continue;
+
+    const attempts=await sql`select coalesce(max(attempt),0)+1 as attempt
+      from render_jobs where prospect_id=${row.prospect_id}::uuid and worker='floot-ai-renderer'`;
+    const attempt=Number(attempts[0]?.attempt || 1);
+    const created=await sql`insert into render_jobs(
+      prospect_id,status,attempt,worker,input_data,started_at
+    ) values(
+      ${row.prospect_id}::uuid,'RUNNING',${attempt},'floot-ai-renderer',
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code})}::jsonb,now()
+    ) returning id`;
+
+    await sql`update prospects
+      set pipeline_status='RENDERING'::pipeline_status,
+          render_status='RENDERING',
+          current_step='AI_RENDERING',
+          next_action='AUTO_RENDER_A_B_C',
+          error=null,
+          updated_at=now()
+      where id=${row.prospect_id}::uuid
+        and pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)`;
+
+    jobs.push({row,jobId:created[0].id});
+  }
+
+  const results=await Promise.allSettled(jobs.map(async ({row,jobId})=>{
+    const source=row.source_data || {};
+    const payload={
+      packId:row.render_pack_id,
+      prospectCode:row.prospect_code,
+      version:Number(row.version),
+      ingestToken:row.token,
+      prospect:{
+        businessName:row.business_name,
+        vertical:row.vertical || null,
+        website:row.website_url || null,
+        address:source.address || row.city || null,
+        logo:row.logo || null,
+        brandDna:row.brand_dna || null,
+        verifiedServices:source.verified_services || null,
+        verifiedContacts:source.verified_contacts || null,
+        sourceData:source,
+        sourceReferences:Array.isArray(source.source_references)?source.source_references:[]
+      }
+    };
+
+    let response;
+    try {
+      response=await fetch(FLOOT_RENDER_WORKER_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify(payload)
+      });
+    } catch (error) {
+      await sql`update render_jobs set status='FAILED',error=${"FLOOT_FETCH_"+String(error?.message||error).slice(0,400)},completed_at=now(),updated_at=now()
+        where id=${jobId}::uuid`;
+      await sql`update render_packs set status='ART_DIRECTION'
+        where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
+      await sql`update prospects set error=${"FLOOT_FETCH_"+String(error?.message||error).slice(0,400)},current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',updated_at=now()
+        where id=${row.prospect_id}::uuid`;
+      return {ok:false,prospect_code:row.prospect_code,error:String(error?.message||error)};
+    }
+
+    const bodyText=await response.text();
+    let parsed=null;
+    try { parsed=JSON.parse(bodyText); } catch {}
+    if (!response.ok || !parsed?.ok) {
+      const err=String(parsed?.error || bodyText || ("HTTP_"+response.status)).slice(0,500);
+      await sql`update render_jobs set status='FAILED',error=${err},output_data=${JSON.stringify(parsed||{http_status:response.status,body:bodyText.slice(0,1000)})}::jsonb,completed_at=now(),updated_at=now()
+        where id=${jobId}::uuid`;
+      await sql`update render_packs set status='ART_DIRECTION'
+        where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
+      await sql`update prospects set error=${err},current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',updated_at=now()
+        where id=${row.prospect_id}::uuid`;
+      return {ok:false,prospect_code:row.prospect_code,status:response.status,error:err};
+    }
+
+    await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify(parsed)}::jsonb,error=null,completed_at=now(),updated_at=now()
+      where id=${jobId}::uuid`;
+    await sql`update render_packs set status='RENDERING'
+      where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
+    return {ok:true,prospect_code:row.prospect_code,version:row.version,floot_credits:parsed.flootCredits || null};
+  }));
+
+  return {
+    dispatched:jobs.length,
+    results:results.map((r,i)=>r.status==='fulfilled'?r.value:{ok:false,prospect_code:jobs[i]?.row?.prospect_code,error:String(r.reason||'UNKNOWN')})
+  };
+}
+
 export async function runRenderIngest(env) {
   const sql=db(env);
+  // Primary path: dispatch up to three prospects in parallel to the dedicated AI renderer.
+  const dispatch=await dispatchAiRenderBatch(sql,3);
+
+  // Legacy issue-comment ingest is retained only as backward-compatible recovery.
   let ingest={ok:true,skipped_poll:true};
   const minute=new Date().getUTCMinutes();
-  if (minute%2===0) ingest=await ingestRenderIssueComments(sql);
+  if (minute%10===0) ingest=await ingestRenderIssueComments(sql);
+
+  // Recovery renderer: if a staged pack exists but was not rendered inline by direct ingest,
+  // finish one pending pack on this cron.
   const render=await renderNextStagedPack(sql,env);
-  return {ingest,render};
+  return {dispatch,ingest,render};
 }
 
 async function dashboard(sql) {
