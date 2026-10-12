@@ -1,4 +1,4 @@
-import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
+import { handleOpsRequest, isOpsHost, runOrchestrator, runRenderIngest } from "./ops.js";
 import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 import { handlePublicRequest } from "./requests.js";
@@ -90,7 +90,12 @@ export default {
   },
 
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(runOrchestrator(env, "cloudflare-cron"));
+    ctx.waitUntil((async () => {
+      // Render ingest first: queued A/B/C become Gestionale previews as soon as possible.
+      // Then continue the ordinary build/QA/sales orchestrator.
+      await runRenderIngest(env);
+      await runOrchestrator(env, "cloudflare-cron");
+    })());
   },
 };
 
