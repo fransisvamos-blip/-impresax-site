@@ -192,6 +192,28 @@ const valueLabels={
  SITO_PROVVISORIO:"Sito provvisorio"
 };
 
+const taskLabels={
+  RENDER:"Rendering",
+  RENDER_REFERENCE:"Creazione riferimento visivo",
+  PREPARE_BUILD:"Preparazione costruzione",
+  BUILD:"Costruzione sito",
+  QA:"Controllo qualità",
+  QA_REWORK:"Correzione dopo controllo qualità",
+  SALES_HANDOFF:"Passaggio al Reparto Vendite"
+};
+
+const errorLabels={
+  REFERENCE_FIDELITY_OR_TECHNICAL_QA_FAILED:"Il sito non corrisponde abbastanza al riferimento oppure il controllo tecnico è fallito",
+  CABINA_VISUAL_REJECT:"Riferimento visivo rifiutato dalla Cabina",
+  CABINA_VISUAL_REJECT_V2:"Riferimento visivo V2 rifiutato dalla Cabina",
+  OPENAI_KEY_NOT_INJECTED:"Vecchia configurazione API non valida",
+  AI_GATEWAY_PLAN_REQUIRED:"Vecchio gateway AI non disponibile",
+  CANCELLED_BY_RENDERING_STUDIO_SCOPE_NO_QA_OR_BUILD:"Attività annullata: fuori dallo scopo del reparto rendering"
+};
+
+function tTask(v){return taskLabels[v]||String(v||"—").replaceAll("_"," ");}
+function tError(v){return errorLabels[v]||String(v||"—").replaceAll("_"," ");}
+
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
 function smallId(id){return id?String(id).slice(0,8)+"…":"—";}
 function fmtDate(v){if(!v)return"—";try{return new Intl.DateTimeFormat("it-IT",{dateStyle:"short",timeStyle:"short"}).format(new Date(v))}catch{return v}}
@@ -213,6 +235,8 @@ function localizedObject(value){
     if(eventLabels[value]) return eventLabels[value];
     if(verticalLabels[value]) return verticalLabels[value];
     if(valueLabels[value]) return valueLabels[value];
+    if(taskLabels[value]) return taskLabels[value];
+    if(errorLabels[value]) return errorLabels[value];
   }
   return value;
 }
@@ -225,13 +249,13 @@ function emailLogSummary(row){
 }
 function renderEmailSystem(email){
   const ready=email?.status==="IMPRESAX_EMAIL_READY";
-  $("#email-status").textContent=ready?"READY":"NON READY";
+  $("#email-status").textContent=ready?"OPERATIVO":"NON OPERATIVO";
   $("#email-status").className="email-overall status "+(ready?"ready":"");
-  $("#email-status-text").textContent=email?.status||"—";
-  $("#email-sending").textContent=email?.sending||"—";
+  $("#email-status-text").textContent=tStatus(email?.status)||"—";
+  $("#email-sending").textContent=tStatus(email?.sending)||"—";
 
   const tracking=email?.delivery_tracking||{};
-  $("#email-delivery-tracking").textContent=tracking.status||"PENDING";
+  $("#email-delivery-tracking").textContent=tStatus(tracking.status||"PENDING");
   $("#email-delivery-tracking").className=tracking.status==="ACTIVE"?"pass":tracking.status==="ERROR"?"fail":"pending";
 
   $("#email-from").textContent=email?.from_address||"—";
@@ -243,23 +267,23 @@ function renderEmailSystem(email){
 
   const permission=tracking.required_permission;
   $("#email-delivery-note").textContent=permission
-    ? "Delivery analytics: serve permesso "+permission
+    ? "Analisi consegne: serve il permesso "+permission
     : tracking.reason
-      ? "Delivery analytics: "+tracking.reason.replaceAll("_"," ")
+      ? "Analisi consegne: "+String(tracking.reason).replaceAll("_"," ").toLowerCase()
       : "";
 
   const qaLabels={
-    email_service_connection:"Email service connection",
-    from_domain:"From domain",
+    email_service_connection:"Connessione servizio email",
+    from_domain:"Dominio mittente",
     spf:"SPF",
     dkim:"DKIM",
-    test_send:"Test send",
-    no_send_error:"No send error"
+    test_send:"Invio di prova",
+    no_send_error:"Nessun errore di invio"
   };
   $("#email-qa").innerHTML=Object.entries(qaLabels).map(([key,label])=>{
     const value=email?.qa?.[key]||"PENDING";
     const cls=value==="PASS"?"pass":value==="FAIL"?"fail":"pending";
-    return `<div class="email-qa-item"><span>${esc(label)}</span><strong class="${cls}">${esc(value)}</strong></div>`;
+    return `<div class="email-qa-item"><span>${esc(label)}</span><strong class="${cls}">${esc(tStatus(value))}</strong></div>`;
   }).join("");
 }
 
@@ -295,7 +319,7 @@ function renderRows(){
     <td>${p.live_url?`<a class="live" href="${esc(p.live_url)}" target="_blank" rel="noopener">ONLINE ↗</a>`:"—"}</td>
     <td><span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.current_step))}</span></td>
     <td>${esc(tEvent(p.last_event))}<br><span class="id">${esc(fmtDate(p.last_event_at))}</span></td>
-    <td class="${p.error?"error":""}">${esc(p.error||"—")}</td>
+    <td class="${p.error?"error":""}">${esc(tError(p.error||"—"))}</td>
     <td>${esc(tAction(p.next_action))}</td>
   </tr>`).join("");
   document.querySelectorAll("tr[data-id]").forEach(tr=>tr.addEventListener("click",()=>selectProspect(tr.dataset.id)));
@@ -319,12 +343,12 @@ function renderHome(counts){
   $("#home-status").innerHTML=`
     <div class="home-status-row"><span>Attività in corso</span><strong>${active.length}</strong></div>
     <div class="home-status-row"><span>Demo pronte</span><strong>${ready.length}</strong></div>
-    <div class="home-status-row"><span>Render approvati</span><strong>${Number(counts.approved_reference||0)}</strong></div>
+    <div class="home-status-row"><span>Riferimenti approvati</span><strong>${Number(counts.approved_reference||0)}</strong></div>
   `;
   const escs=state.prospects.filter(p=>p.pipeline_status==="ESCALATION_REQUIRED");
   $("#home-escalations").innerHTML=escs.length?escs.map(p=>`
     <button class="mini-prospect" data-open-prospect="${esc(p.id_prospect)}">
-      <strong>${esc(p.azienda)}</strong><span>${esc(p.error||"Intervento richiesto")}</span>
+      <strong>${esc(p.azienda)}</strong><span>${esc(tError(p.error||"Intervento richiesto"))}</span>
     </button>`).join(""):'<span class="id">Nessun intervento richiesto</span>';
   document.querySelectorAll("[data-open-prospect]").forEach(b=>b.addEventListener("click",()=>{
     setView("prospects");selectProspect(b.dataset.openProspect);
@@ -337,7 +361,7 @@ function renderRenderingList(){
     <button class="render-prospect-row ${state.renderingSelected===p.id_prospect?"selected":""}" data-render-prospect="${esc(p.id_prospect)}">
       <span><strong>${esc(p.azienda)}</strong><small>${esc(tVertical(p.vertical))}</small></span>
       <span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.render_status||p.pipeline_status))}</span>
-    </button>`).join(""):'<div class="empty">Nessun prospect con rendering disponibile.</div>';
+    </button>`).join(""):'<div class="empty">Nessuna azienda con proposte visive disponibili.</div>';
   document.querySelectorAll("[data-render-prospect]").forEach(b=>b.addEventListener("click",()=>openRenderingProspect(b.dataset.renderProspect)));
 }
 function renderPackCard(pack,assets){
@@ -347,7 +371,7 @@ function renderPackCard(pack,assets){
   return `
     <article class="render-pack-card ${pack.approved_reference?"approved":""}">
       <div class="render-pack-head">
-        <div><span class="kicker">RENDER PACK</span><h3>Versione ${esc(pack.version)}</h3></div>
+        <div><span class="kicker">PACCHETTO GRAFICO</span><h3>Versione ${esc(pack.version)}</h3></div>
         <span class="${statusClass(pack.approved_reference?"APPROVED":pack.status)}">${pack.approved_reference?"SELEZIONATO":esc(tStatus(pack.status))}</span>
       </div>
       <div class="render-pair">
@@ -356,26 +380,26 @@ function renderPackCard(pack,assets){
       </div>
       ${directions.length?`<div class="direction-mini-grid">${directions.map(a=>`<a href="${esc(a.asset_url)}" target="_blank" rel="noopener"><img src="${esc(a.asset_url)}" alt="${esc(a.asset_type)}"><span>${esc(a.asset_type.replace("DIRECTION_","Direzione "))}</span></a>`).join("")}</div>`:""}
       <div class="render-pack-actions">
-        <span class="id">${pack.reference_score!=null?"Score "+esc(pack.reference_score):""}</span>
+        <span class="id">${pack.reference_score!=null?"Punteggio "+esc(pack.reference_score):""}</span>
         <button class="select-render" data-prospect-id="${esc(pack.prospect_id)}" data-pack-id="${esc(pack.id)}" ${(!complete||rejected||pack.approved_reference)?"disabled":""}>
-          ${pack.approved_reference?"Render selezionato":"Implementa questo render"}
+          ${pack.approved_reference?"Progetto selezionato":"Implementa questo progetto"}
         </button>
       </div>
     </article>`;
 }
 async function openRenderingProspect(id){
   state.renderingSelected=id;renderRenderingList();
-  $("#rendering-detail").innerHTML='<div class="empty">Caricamento render…</div>';
+  $("#rendering-detail").innerHTML='<div class="empty">Caricamento proposte…</div>';
   try{
     const d=await api("/ops/api/prospects/"+encodeURIComponent(id));
     const p=d.prospect;
     $("#rendering-detail").innerHTML=`
       <div class="detail-head">
-        <span class="kicker">RENDERING</span>
+        <span class="kicker">PROGETTAZIONE VISIVA</span>
         <h3>${esc(p.business_name)}</h3>
-        <p class="reference-note">Scegli solo una reference completa desktop + mobile. La scelta invia automaticamente il prospect alla Site Factory.</p>
+        <p class="reference-note">Scegli solo un riferimento completo desktop + mobile. La scelta invia automaticamente l’azienda alla costruzione del sito.</p>
       </div>
-      <div class="render-pack-stack">${(d.render_packs||[]).length?(d.render_packs||[]).map(pack=>renderPackCard(pack,d.render_assets||[])).join(""):'<div class="empty">Nessun Render Pack disponibile.</div>'}</div>
+      <div class="render-pack-stack">${(d.render_packs||[]).length?(d.render_packs||[]).map(pack=>renderPackCard(pack,d.render_assets||[])).join(""):'<div class="empty">Nessun pacchetto grafico disponibile.</div>'}</div>
     `;
     document.querySelectorAll(".select-render").forEach(b=>b.addEventListener("click",()=>selectRender(b.dataset.prospectId,b.dataset.packId,b)));
   }catch(e){
@@ -383,13 +407,13 @@ async function openRenderingProspect(id){
   }
 }
 async function selectRender(prospectId,packId,button){
-  if(!confirm("Inviare questo render alla Site Factory?"))return;
-  button.disabled=true;button.textContent="Invio alla Site Factory…";
+  if(!confirm("Inviare questo progetto alla costruzione del sito?"))return;
+  button.disabled=true;button.textContent="Invio alla costruzione del sito…";
   try{
     await api("/ops/api/render/select",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prospect_id:prospectId,render_pack_id:packId})});
     await load();await openRenderingProspect(prospectId);
   }catch(e){
-    alert("Selezione render non riuscita.");console.error(e);button.disabled=false;button.textContent="Implementa questo render";
+    alert("Selezione del progetto non riuscita.");console.error(e);button.disabled=false;button.textContent="Implementa questo progetto";
   }
 }
 function renderFactoryList(){
@@ -398,8 +422,8 @@ function renderFactoryList(){
   $("#factory-list").innerHTML=rows.length?rows.map(p=>`
     <article class="factory-row">
       <div><strong>${esc(p.azienda)}</strong><small>${esc(tVertical(p.vertical))}</small></div>
-      <div><span>Build</span><strong>${esc(tStatus(p.build_status))}</strong></div>
-      <div><span>QA</span><strong>${esc(tStatus(p.qa_status))}</strong></div>
+      <div><span>Costruzione</span><strong>${esc(tStatus(p.build_status))}</strong></div>
+      <div><span>Controllo qualità</span><strong>${esc(tStatus(p.qa_status))}</strong></div>
       <div><span>Fase</span><strong>${esc(tStatus(p.current_step))}</strong></div>
       <div><span>Tentativo</span><strong>${esc(p.attempt??0)}</strong></div>
       <div class="factory-actions">${p.live_url?`<a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a>`:""}<button data-factory-prospect="${esc(p.id_prospect)}">Dettaglio</button></div>
@@ -415,17 +439,17 @@ function renderSalesList(){
       <span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.pipeline_status))}</span>
       <div>${p.live_url?`<a href="${esc(p.live_url)}" target="_blank" rel="noopener">Demo ↗</a>`:"—"}</div>
       <button data-sales-prospect="${esc(p.id_prospect)}">Apri scheda</button>
-    </article>`).join(""):'<div class="empty">Nessun prospect ancora pronto per Sales.</div>';
+    </article>`).join(""):'<div class="empty">Nessuna azienda ancora pronta per il Reparto Vendite.</div>';
   document.querySelectorAll("[data-sales-prospect]").forEach(b=>b.addEventListener("click",()=>{setView("prospects");selectProspect(b.dataset.salesProspect)}));
 }
 function renderSystemQueue(){
   const q=state.queue||[];
   $("#system-queue").innerHTML=q.length?q.map(job=>`
     <article class="queue-row">
-      <div><strong>${esc(job.task_type)}</strong><small>${esc(smallId(job.prospect_id))}</small></div>
+      <div><strong>${esc(tTask(job.task_type))}</strong><small>${esc(smallId(job.prospect_id))}</small></div>
       <span class="${statusClass(job.status)}">${esc(tStatus(job.status))}</span>
-      <span>Attempt ${esc(job.attempt_count||0)}/${esc(job.max_attempts||0)}</span>
-      <span class="${job.error?"error":"id"}">${esc(job.error||"—")}</span>
+      <span>Tentativo ${esc(job.attempt_count||0)}/${esc(job.max_attempts||0)}</span>
+      <span class="${job.error?"error":"id"}">${esc(tError(job.error||"—"))}</span>
       <time>${esc(fmtDate(job.updated_at))}</time>
     </article>`).join(""):'<div class="empty">Coda orchestratore vuota.</div>';
 }
@@ -443,7 +467,7 @@ function linkMaybe(url,label){
 }
 function renderReferenceStudio(packs,assets){
   const pack=(packs||[]).find(x=>x.approved_reference)||(packs||[])[0];
-  if(!pack)return '<section class="detail-section"><h4>Reference finale</h4><span class="id">Nessun Render Pack disponibile</span></section>';
+  if(!pack)return '<section class="detail-section"><h4>Riferimento finale</h4><span class="id">Nessun Pacchetto grafico disponibile</span></section>';
 
   const cta=pack.cta_map||{};
   const directions=(assets||[])
@@ -457,12 +481,12 @@ function renderReferenceStudio(packs,assets){
     <section class="detail-section reference-studio">
       <div class="reference-title">
         <div>
-          <span class="kicker">REFERENCE FINALE</span>
+          <span class="kicker">RIFERIMENTO FINALE</span>
           <h4>Home completa · v${esc(pack.version)}</h4>
         </div>
         <span class="${statusClass(pack.approved_reference?"APPROVED":"PENDING")}">${pack.approved_reference?"APPROVATA":"DA VALIDARE"}</span>
       </div>
-      <p class="reference-note">Le tre direzioni creative sono concept di selezione. Qui sotto trovi invece la reference completa che la Site Factory deve riprodurre.</p>
+      <p class="reference-note">Le tre direzioni creative sono proposte iniziali di selezione. Qui sotto trovi invece il riferimento completo che il reparto Costruzione siti deve riprodurre.</p>
 
       <div class="cta-preview">
         ${cta.primary?`<span><b>CTA primaria</b>${esc(cta.primary)}</span>`:""}
@@ -474,18 +498,18 @@ function renderReferenceStudio(packs,assets){
       <div class="reference-grid">
         <article class="reference-card">
           <div class="reference-card-head"><strong>DESKTOP · 1440</strong>${linkMaybe(desktop,"Apri a piena risoluzione")}</div>
-          ${desktop?`<a href="${esc(desktop)}" target="_blank" rel="noopener"><img class="reference-shot desktop-shot" src="${esc(desktop)}" alt="Reference desktop completa"></a>`:'<span class="id">Reference desktop mancante</span>'}
+          ${desktop?`<a href="${esc(desktop)}" target="_blank" rel="noopener"><img class="reference-shot desktop-shot" src="${esc(desktop)}" alt="Riferimento desktop completo"></a>`:'<span class="id">Riferimento desktop mancante</span>'}
         </article>
         <article class="reference-card">
           <div class="reference-card-head"><strong>MOBILE · 390</strong>${linkMaybe(mobile,"Apri a piena risoluzione")}</div>
-          ${mobile?`<a href="${esc(mobile)}" target="_blank" rel="noopener"><img class="reference-shot mobile-shot" src="${esc(mobile)}" alt="Reference mobile completa"></a>`:'<span class="id">Reference mobile mancante</span>'}
+          ${mobile?`<a href="${esc(mobile)}" target="_blank" rel="noopener"><img class="reference-shot mobile-shot" src="${esc(mobile)}" alt="Riferimento mobile completo"></a>`:'<span class="id">Riferimento mobile mancante</span>'}
         </article>
       </div>
 
       ${directions.length?`
         <div class="directions-block">
           <h4>Direzioni creative · concept di selezione</h4>
-          <p class="reference-note">A / B / C non sono home complete: servono solo a scegliere l'art direction. La home completa è quella mostrata sopra.</p>
+          <p class="reference-note">A / B / C non sono home complete: servono solo a scegliere la direzione creativa. La home completa è quella mostrata sopra.</p>
           <div class="direction-grid">
             ${directions.map(x=>`<a class="direction-card" href="${esc(x.asset_url)}" target="_blank" rel="noopener">
               <img src="${esc(x.asset_url)}" alt="${esc(x.asset_type)}">
@@ -510,7 +534,7 @@ async function selectProspect(id){
         <dt>URL demo</dt><dd>${linkMaybe(p.live_url,p.live_url)}</dd>
         <dt>Fase attuale</dt><dd>${esc(tStatus(p.current_step))}</dd>
         <dt>Prossima azione</dt><dd>${esc(tAction(p.next_action))}</dd>
-        <dt>Motivo pausa</dt><dd>${esc(p.hold_reason||"—")}</dd>\n        <dt>Errore</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
+        <dt>Motivo pausa</dt><dd>${esc(p.hold_reason||"—")}</dd>\n        <dt>Errore</dt><dd class="${p.error?"error":""}">${esc(tError(p.error||"—"))}</dd>
       </dl></section>
       ${renderReferenceStudio(d.render_packs,d.render_assets)}
       ${jsonBlock("Dati azienda / fonti",p.source_data)}
@@ -566,11 +590,11 @@ $("#email-test-form").addEventListener("submit",async e=>{
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({recipient})
     });
-    feedback.textContent="Invio accettato da Cloudflare. Email sending operativo; delivery tracking separato.";
+    feedback.textContent="Invio accettato da Cloudflare. Sistema di invio operativo; tracciamento della consegna separato.";
     feedback.className="email-feedback success";
     await loadEmailSystem();
   }catch(e){
-    feedback.textContent="Test email fallito. Controlla LAST ERROR.";
+    feedback.textContent="Test email fallito. Controlla “Ultimo errore”.";
     feedback.className="email-feedback error";
     await loadEmailSystem();
     console.error(e);
