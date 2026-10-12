@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>ImpresaX Ops — Cabina Operativa</title>
+  <title>ImpresaX Ops — Orchestratore</title>
   <link rel="stylesheet" href="/ops.css">
 </head>
 <body>
   <header class="top">
     <div>
       <span class="kicker">IMPRESAX OPS</span>
-      <h1>Cabina Operativa</h1>
+      <h1>Orchestratore ImpresaX</h1>
     </div>
     <div class="top-actions">
       <span id="updated">—</span>
@@ -21,11 +21,11 @@
   </header>
 
   <nav class="ops-nav" aria-label="Menu ImpresaX Ops">
-    <button class="nav-item active" data-view="home">Home</button>
-    <button class="nav-item" data-view="prospects">Prospect</button>
-    <button class="nav-item" data-view="rendering">Rendering</button>
-    <button class="nav-item" data-view="factory">Site Factory</button>
-    <button class="nav-item" data-view="sales">Sales</button>
+    <button class="nav-item active" data-view="home">Panoramica</button>
+    <button class="nav-item" data-view="prospects">Aziende</button>
+    <button class="nav-item" data-view="rendering">Progettazione visiva</button>
+    <button class="nav-item" data-view="factory">Costruzione siti</button>
+    <button class="nav-item" data-view="sales">Vendite</button>
     <button class="nav-item" data-view="system">Sistema</button>
   </nav>
 
@@ -62,7 +62,7 @@
         <div class="board">
           <div class="section-head">
             <div>
-              <span class="kicker">PROSPECT</span>
+              <span class="kicker">AZIENDE</span>
               <h2>Tutte le aziende</h2>
             </div>
             <input id="search" type="search" placeholder="Cerca azienda, ID, verticale, stato…">
@@ -94,9 +94,9 @@
     <section class="app-view" data-view-panel="rendering">
       <div class="section-head standalone">
         <div>
-          <span class="kicker">RENDERING STUDIO</span>
-          <h2>Render pronti da valutare</h2>
-          <p>Apri un prospect, confronta desktop e mobile e scegli quale reference mandare alla Site Factory.</p>
+          <span class="kicker">STUDIO VISIVO</span>
+          <h2>Proposte visive da valutare</h2>
+          <p>Apri un’azienda, confronta desktop e mobile e scegli quale riferimento mandare alla costruzione del sito.</p>
         </div>
       </div>
       <section class="two-pane">
@@ -105,8 +105,8 @@
         </div>
         <aside class="detail rendering-detail" id="rendering-detail">
           <div class="empty">
-            <span class="kicker">SELEZIONE RENDER</span>
-            <p>Seleziona un prospect per vedere tutti i render disponibili.</p>
+            <span class="kicker">SELEZIONE PROGETTO</span>
+            <p>Seleziona un’azienda per vedere tutte le proposte visive disponibili.</p>
           </div>
         </aside>
       </section>
@@ -115,9 +115,9 @@
     <section class="app-view" data-view-panel="factory">
       <div class="section-head standalone">
         <div>
-          <span class="kicker">SITE FACTORY</span>
-          <h2>Build, QA e demo</h2>
-          <p>Qui vedi cosa sta costruendo la Factory, cosa è in QA e cosa richiede intervento.</p>
+          <span class="kicker">COSTRUZIONE SITI</span>
+          <h2>Costruzione, controllo qualità e demo</h2>
+          <p>Qui vedi cosa è in costruzione, cosa è in controllo qualità e cosa richiede un intervento.</p>
         </div>
       </div>
       <section class="panel-card">
@@ -128,9 +128,9 @@
     <section class="app-view" data-view-panel="sales">
       <div class="section-head standalone">
         <div>
-          <span class="kicker">SALES ENGINE</span>
-          <h2>Outreach, contatti e trattative</h2>
-          <p>Email, WhatsApp, chiamate, follow-up, appuntamenti e stato commerciale dei prospect.</p>
+          <span class="kicker">REPARTO VENDITE</span>
+          <h2>Contatti, follow-up e trattative</h2>
+          <p>Email, WhatsApp, chiamate, follow-up, appuntamenti e stato commerciale delle aziende.</p>
         </div>
       </div>
 
@@ -155,22 +155,22 @@
       <section class="email-system" id="email-system">
         <div class="section-head">
           <div>
-            <span class="kicker">EMAIL SYSTEM</span>
+            <span class="kicker">SISTEMA EMAIL</span>
             <h2>Invio email ImpresaX</h2>
           </div>
           <span class="email-overall status" id="email-status">Verifica…</span>
         </div>
 
         <div class="email-summary">
-          <article><span>Email system</span><strong id="email-status-text">—</strong></article>
-          <article><span>Sending</span><strong id="email-sending">—</strong></article>
-          <article><span>Delivery tracking</span><strong id="email-delivery-tracking">—</strong></article>
-          <article><span>Last send</span><strong id="email-last-send">—</strong></article>
-          <article><span>Last delivery</span><strong id="email-last-delivery">—</strong></article>
-          <article><span>Last error</span><strong id="email-last-error">—</strong></article>
+          <article><span>Stato sistema email</span><strong id="email-status-text">—</strong></article>
+          <article><span>Invio</span><strong id="email-sending">—</strong></article>
+          <article><span>Tracciamento consegna</span><strong id="email-delivery-tracking">—</strong></article>
+          <article><span>Ultimo invio</span><strong id="email-last-send">—</strong></article>
+          <article><span>Ultima consegna</span><strong id="email-last-delivery">—</strong></article>
+          <article><span>Ultimo errore</span><strong id="email-last-error">—</strong></article>
         </div>
         <div class="email-meta">
-          <span>FROM ADDRESS</span>
+          <span>MITTENTE</span>
           <strong id="email-from">—</strong>
           <span id="email-delivery-note"></span>
         </div>
@@ -182,7 +182,7 @@
               <input id="email-recipient" name="recipient" type="email" inputmode="email" autocomplete="email" placeholder="nome@dominio.it" required>
               <button id="email-test-button" type="submit">Invia email di test</button>
             </div>
-            <span class="email-feedback" id="email-feedback">FROM: info@impresax.org</span>
+            <span class="email-feedback" id="email-feedback">MITTENTE: info@impresax.org</span>
           </form>
           <div class="email-qa" id="email-qa" aria-label="Controlli qualità email"></div>
         </div>
@@ -191,8 +191,8 @@
       <section class="panel-card">
         <div class="section-head compact-head">
           <div>
-            <span class="kicker">PIPELINE SALES</span>
-            <h2>Prospect commerciali</h2>
+            <span class="kicker">FLUSSO VENDITE</span>
+            <h2>Aziende in fase commerciale</h2>
           </div>
         </div>
         <div id="sales-list"></div>
@@ -204,7 +204,7 @@
         <div>
           <span class="kicker">SISTEMA</span>
           <h2>Orchestratore e coda lavori</h2>
-          <p>Controllo tecnico della pipeline, job attivi, errori e attività in attesa.</p>
+          <p>Controllo tecnico del flusso, lavori attivi, errori e attività in attesa.</p>
         </div>
       </div>
       <section class="panel-card">
