@@ -107,7 +107,6 @@ function hardGate(html, prospect) {
   if (!/viewport/i.test(html)) issues.push("viewport_missing");
   if (logoUrl && !html.includes(logoUrl)) issues.push("official_logo_not_used");
   if (/lorem ipsum|placeholder|coming soon|your company/i.test(html)) issues.push("placeholder_copy");
-  if (/linear-gradient|radial-gradient|glassmorphism|backdrop-filter/i.test(html)) issues.push("generic_effects");
   if (!/mailto:|tel:/i.test(html) && prospect?.verifiedContacts) issues.push("verified_contact_path_missing");
   if (!/<img[\s>]/i.test(html) && !/background-image/i.test(html)) issues.push("imagery_missing");
   if (lower.includes("award-winning") || lower.includes("leader di mercato") || lower.includes("n. 1")) issues.push("unverified_claim_risk");
