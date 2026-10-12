@@ -451,7 +451,7 @@ async function syncCanonicalRenderManifest(sql, code, version) {
   const v=validRenderVersion(version);
   if (!v) return {ok:false,status:400,error:"INVALID_RENDER_VERSION"};
 
-  const prospects=await sql`select id,business_name,pipeline_status,render_status,current_step,next_action,legacy_ids,source_data
+  const prospects=await sql`select id,business_name,pipeline_status,render_status,current_step,next_action,legacy_ids,source_data,brand_dna,logo
     from prospects
     where legacy_ids->>'id_prospect'=${code} or source_data->>'id_prospect'=${code}
     order by rank nulls last
@@ -459,11 +459,40 @@ async function syncCanonicalRenderManifest(sql, code, version) {
   const prospect=prospects[0];
   if (!prospect) return {ok:false,status:404,error:"PROSPECT_NOT_FOUND"};
 
-  const packs=await sql`select * from render_packs
+  let packs=await sql`select * from render_packs
     where prospect_id=${prospect.id}::uuid and version=${v}
     order by created_at desc limit 1`;
-  const pack=packs[0];
-  if (!pack) return {ok:false,status:404,error:"RENDER_PACK_NOT_FOUND"};
+  let pack=packs[0];
+
+  if (!pack) {
+    const versions=await sql`select coalesce(max(version),0)::int as max_version
+      from render_packs where prospect_id=${prospect.id}::uuid`;
+    const expected=Number(versions[0]?.max_version || 0)+1;
+    if (v!==expected) {
+      return {ok:false,status:409,error:"RENDER_VERSION_NOT_NEXT",expected_version:expected};
+    }
+
+    const inserted=await sql`insert into render_packs(
+      prospect_id,status,version,approved_reference,brand_dna,official_logo,source_references
+    ) values(
+      ${prospect.id}::uuid,'RENDERING',${v},false,
+      ${JSON.stringify(prospect.brand_dna || {})}::jsonb,
+      ${JSON.stringify(prospect.logo || {})}::jsonb,
+      ${JSON.stringify(Array.isArray(prospect.source_data?.source_references) ? prospect.source_data.source_references : [])}::jsonb
+    ) returning *`;
+    pack=inserted[0];
+
+    if (prospect.pipeline_status==="READY_FOR_RENDERING") {
+      await sql`update prospects
+        set pipeline_status='RENDERING'::pipeline_status,
+            render_status='RENDERING',
+            current_step='ART_DIRECTION',
+            next_action='WAIT_RENDER_MANIFEST',
+            updated_at=now()
+        where id=${prospect.id}::uuid`;
+      prospect.pipeline_status="RENDERING";
+    }
+  }
 
   const fetched=await fetchCanonicalRenderManifest(code,v);
   if (!fetched.ok) return fetched;
