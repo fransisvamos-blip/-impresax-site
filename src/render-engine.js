@@ -168,6 +168,178 @@ async function loadFrozenMaster() {
   return (await res.text()).slice(0, 50000);
 }
 
+function attrValue(tag, name) {
+  const m = String(tag || "").match(new RegExp(name + "\\s*=\\s*[\\\"']([^\\\"']+)[\\\"']", "i"));
+  return m ? m[1].trim() : "";
+}
+
+function visibleTextFromHtml(html) {
+  return String(html || "")
+    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<svg[\\s\\S]*?<\\/svg>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\\s+/g, " ")
+    .trim()
+    .slice(0, 18000);
+}
+
+async function discoverOfficialBrandEvidence(websiteUrl) {
+  if (!websiteUrl) return null;
+  try {
+    const res = await fetch(websiteUrl, {
+      redirect:"follow",
+      headers:{ "User-Agent":"ImpresaX-RenderingStudio-BrandGate/1.0" }
+    });
+    if (!res.ok) return null;
+    const html = (await res.text()).slice(0, 700000);
+    const base = new URL(res.url || websiteUrl);
+    const logoCandidates = [];
+    for (const m of html.matchAll(/<img\\b[^>]*>/gi)) {
+      const tag = m[0];
+      const src = attrValue(tag,"src") || attrValue(tag,"data-src") || attrValue(tag,"data-lazy-src");
+      if (!src || src.startsWith("data:") || src.startsWith("blob:")) continue;
+      let url;
+      try { url = new URL(src, base); } catch { continue; }
+      if (url.protocol !== "https:") continue;
+      const signal = [
+        src,
+        attrValue(tag,"alt"),
+        attrValue(tag,"class"),
+        attrValue(tag,"id"),
+        attrValue(tag,"title")
+      ].join(" ").toLowerCase();
+      let score = 0;
+      if (/\\blogo\\b|site-logo|custom-logo|brand-logo|navbar-brand/.test(signal)) score += 10;
+      if (/header/.test(signal)) score += 2;
+      if (/footer/.test(signal)) score -= 1;
+      if (/icon|favicon|avatar|testimonial|partner|client/.test(signal)) score -= 5;
+      if (/\\.(svg|png|webp)(?:[?#]|$)/i.test(url.pathname)) score += 1;
+      if (url.hostname === base.hostname || url.hostname.endsWith("." + base.hostname.replace(/^www\\./,""))) score += 2;
+      logoCandidates.push({url:url.href,score,signal:signal.slice(0,400)});
+    }
+    logoCandidates.sort((a,b) => b.score-a.score);
+    const bestLogo = logoCandidates.find(x => x.score >= 10) || null;
+
+    const title = (html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] || "").replace(/<[^>]+>/g," ").trim();
+    const description =
+      attrValue(html.match(/<meta[^>]+name=[\\\"']description[\\\"'][^>]*>/i)?.[0] || "","content") ||
+      attrValue(html.match(/<meta[^>]+property=[\\\"']og:description[\\\"'][^>]*>/i)?.[0] || "","content");
+    const colors = [...html.matchAll(/#[0-9a-f]{6}\\b/gi)].map(x=>x[0].toUpperCase());
+    const colorCounts = {};
+    for (const color of colors) colorCounts[color]=(colorCounts[color]||0)+1;
+    const topColors = Object.entries(colorCounts).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([color,count])=>({color,count}));
+
+    return {
+      official_url: base.href,
+      official_host: base.hostname,
+      title,
+      description: String(description || "").slice(0,1200),
+      visible_text: visibleTextFromHtml(html),
+      logo_candidate: bestLogo,
+      top_colors: topColors
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function deriveBrandDna(env, row, evidence) {
+  const source = row.source_data || {};
+  const prompt = [
+    "You are the Brand Gate analyst for ImpresaX Rendering Studio.",
+    "Extract REAL Brand DNA from the verified company data and first-party website evidence below.",
+    "Do not invent facts. Strategic/visual interpretation is allowed only when grounded in the supplied evidence.",
+    "Return ONLY valid JSON with these keys:",
+    "brand_personality, visual_cues, tone, audience, offer, local_context, trust_signals, existing_colors, typography_cues, imagery_cues, business_positioning, commercial_behavior, visual_signature.",
+    "Use arrays or strings. Every field must be meaningful and prospect-specific; no generic sector filler.",
+    "",
+    "BUSINESS:", row.business_name,
+    "VERTICAL:", row.vertical || "",
+    "CITY:", row.city || "",
+    "CURRENT LOGO RECORD:", JSON.stringify(row.logo || {}),
+    "VERIFIED SERVICES:", safeText(source.verified_services,3000),
+    "VERIFIED CONTACTS:", safeText(source.verified_contacts,2000),
+    "VERIFIED TRUST:", safeText(source.verified_trust,3000),
+    "SOURCE REFERENCES:", JSON.stringify(source.source_references || []),
+    "FIRST-PARTY WEBSITE EVIDENCE:", JSON.stringify(evidence || {})
+  ].join("\n");
+
+  const out = await env.AI.run(MODEL, {
+    messages:[
+      {role:"system",content:"You are a strict brand researcher. Output JSON only. Never invent company facts."},
+      {role:"user",content:prompt}
+    ],
+    max_completion_tokens:2200,
+    temperature:0.25
+  });
+  const parsed = extractJsonObject(extractModelText(out));
+  if (!parsed || typeof parsed !== "object") throw new Error("BRAND_DNA_JSON_REQUIRED");
+  const meaningful = Object.entries(parsed).filter(([,v]) => {
+    if (Array.isArray(v)) return v.length > 0;
+    if (v && typeof v === "object") return Object.keys(v).length > 0;
+    return String(v || "").trim().length > 2;
+  });
+  if (meaningful.length < 8) throw new Error("BRAND_DNA_TOO_THIN");
+  return parsed;
+}
+
+async function attemptAutomaticBrandGate(sql, env, row) {
+  const originalLogo = row.logo || {};
+  const status = String(originalLogo.status || "").toUpperCase();
+  const evidence = await discoverOfficialBrandEvidence(row.website_url);
+
+  let logo = originalLogo;
+  const alreadyExact =
+    (status === "PASS" || status === "OFFICIAL_LOGO_LOCKED") &&
+    typeof (originalLogo.url || originalLogo.official_source) === "string";
+  const verifiedNoLogo = status === "NO_OFFICIAL_LOGO_CONFIRMED";
+
+  if (!alreadyExact && !verifiedNoLogo && evidence?.logo_candidate?.url) {
+    logo = {
+      status:"OFFICIAL_LOGO_LOCKED",
+      url:evidence.logo_candidate.url,
+      source:"OFFICIAL_PRIMARY_DOMAIN",
+      source_url:evidence.official_url,
+      source_host:evidence.official_host,
+      generated:false,
+      lock:"IMMUTABLE",
+      verification:"FIRST_PARTY_HTML_LOGO_SIGNAL"
+    };
+  }
+
+  let brandDna = row.brand_dna || {};
+  const meaningfulDna = Object.entries(brandDna).filter(([,v]) => {
+    if (Array.isArray(v)) return v.length > 0;
+    if (v && typeof v === "object") return Object.keys(v).length > 0;
+    return String(v || "").trim().length > 2;
+  });
+  if (meaningfulDna.length < 4) {
+    try {
+      brandDna = await deriveBrandDna(env,row,evidence);
+    } catch {}
+  }
+
+  await sql`update prospects set
+      logo=${JSON.stringify(logo)}::jsonb,
+      brand_dna=${JSON.stringify(brandDna)}::jsonb,
+      updated_at=now()
+    where id=${row.prospect_id}::uuid`;
+  await sql`update render_packs set
+      official_logo=${JSON.stringify(logo)}::jsonb,
+      brand_dna=${JSON.stringify(brandDna)}::jsonb,
+      content_map=coalesce(content_map,'{}'::jsonb) ||
+        ${JSON.stringify({
+          brand_gate_auto_attempted:true,
+          brand_gate_source:"OFFICIAL_FIRST_PARTY_DOMAIN"
+        })}::jsonb
+    where id=${row.render_pack_id}::uuid and approved_reference=false`;
+
+  return {...row,logo,brand_dna:brandDna};
+}
+
 async function discoverFirstPartyImages(websiteUrl) {
   if (!websiteUrl) return [];
   try {
@@ -713,12 +885,18 @@ async function generatePackSingleCall(env, master, payload) {
 }
 
 async function generateProspect(sql, env, master, row) {
-  const brandGate = evaluateBrandGate(row);
+  let workingRow = row;
+  let brandGate = evaluateBrandGate(workingRow);
   if (!brandGate.pass) {
-    await holdBrandGate(sql,row,brandGate.issues);
-    return {ok:false,code:row.prospect_code,error:"BRAND_GATE_BLOCKED",issues:brandGate.issues};
+    workingRow = await attemptAutomaticBrandGate(sql,env,workingRow);
+    brandGate = evaluateBrandGate(workingRow);
+  }
+  if (!brandGate.pass) {
+    await holdBrandGate(sql,workingRow,brandGate.issues);
+    return {ok:false,code:workingRow.prospect_code,error:"BRAND_GATE_BLOCKED",issues:brandGate.issues};
   }
 
+  row = workingRow;
   const jobId = await claimPack(sql, row);
   if (!jobId) return {ok:false,code:row.prospect_code,error:"CLAIMED_ELSEWHERE"};
 
