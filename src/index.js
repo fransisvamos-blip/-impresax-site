@@ -1,4 +1,4 @@
-import { handleOpsRequest, isOpsHost, runOrchestrator, handlePublicRenderIngest } from "./ops.js";
+import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
 import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 import { handlePublicRequest } from "./requests.js";
