@@ -33,6 +33,8 @@ jobs:
               && grep -q '"render_selection_mode":"TWO_STEP_EXPLICIT"' /tmp/health.json \
               && grep -q '"render_ui_two_step":true' /tmp/health.json \
               && grep -q '"legacy_render_transports":"DISABLED"' /tmp/health.json \
+              && grep -q '"false_render_ready_count":0' /tmp/health.json \
+              && grep -q '"legacy_render_queue_active":0' /tmp/health.json \
               && grep -q '"ai_binding":true' /tmp/health.json \
               && grep -q '"browser_binding":true' /tmp/health.json; then
               exit 0
