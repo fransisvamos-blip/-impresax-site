@@ -654,7 +654,7 @@ async function candidates(sql, limit) {
       order by x.version desc limit 1
     ) rp on true
     where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status,'RENDER_REWORK'::pipeline_status)
-      and rp.status='ART_DIRECTION'
+      and rp.status in ('ART_DIRECTION','BRAND_GATE_HOLD')
       and coalesce(p.source_data->>'id_prospect',p.legacy_ids->>'id_prospect') <> 'CZ-000'
     order by
       case coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')
@@ -894,6 +894,23 @@ async function generateProspect(sql, env, master, row) {
   if (!brandGate.pass) {
     await holdBrandGate(sql,workingRow,brandGate.issues);
     return {ok:false,code:workingRow.prospect_code,error:"BRAND_GATE_BLOCKED",issues:brandGate.issues};
+  }
+
+  if (workingRow.pack_status === "BRAND_GATE_HOLD") {
+    const reopened = await sql`update render_packs set status='ART_DIRECTION'
+      where id=${workingRow.render_pack_id}::uuid
+        and status='BRAND_GATE_HOLD'
+        and approved_reference=false
+      returning id`;
+    if (!reopened.length) return {ok:false,code:workingRow.prospect_code,error:"BRAND_GATE_REOPEN_RACE"};
+    workingRow = {...workingRow,pack_status:"ART_DIRECTION"};
+    await sql`update prospects set
+        render_status='RENDER_REWORK',
+        current_step='ART_DIRECTION',
+        next_action='AUTO_RENDER_A_B_C',
+        error=null,
+        updated_at=now()
+      where id=${workingRow.prospect_id}::uuid`;
   }
 
   row = workingRow;
