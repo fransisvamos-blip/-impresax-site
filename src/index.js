@@ -44,11 +44,6 @@ export default {
       return handlePublicRequest(request, env);
     }
 
-    // Capability-token ingest used by the autonomous Render Queue.
-    if ((host === ROOT_HOST || host === WWW_HOST || host.endsWith(".workers.dev")) && url.pathname === "/api/render-ingest") {
-      return handlePublicRenderIngest(request, env);
-    }
-
     // Keep the existing workers.dev endpoint as a technical fallback.
     if (host.endsWith(".workers.dev")) {
       return serveMainSite(request, env);
