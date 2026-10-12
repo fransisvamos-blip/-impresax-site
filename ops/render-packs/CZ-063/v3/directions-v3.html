@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DEDIL V3 — Three Creative Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#b72025;--ink:#101112;--paper:#f2efe8;--steel:#d6d7d7;--white:#fff;--muted:#77736e}
+*{box-sizing:border-box}html,body{margin:0;background:#0b0b0b;color:var(--ink);font-family:"IBM Plex Sans",sans-serif}body{width:1440px}.dir{width:1440px;height:900px;position:relative;overflow:hidden;border-bottom:12px solid #0b0b0b}
+.logo{display:block;width:245px;height:auto}.mono{font-family:"IBM Plex Mono",monospace}.cond{font-family:"Barlow Condensed",sans-serif}
+.badge{font:600 11px "IBM Plex Mono";letter-spacing:.14em;text-transform:uppercase}
+.cta{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;background:var(--red);color:#fff;font:700 11px "IBM Plex Sans";letter-spacing:.05em;text-transform:uppercase}
+.call{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border:1px solid currentColor;font:700 11px "IBM Plex Sans";letter-spacing:.05em;text-transform:uppercase}
+
+/* A — TRANSFORMATION GRID */
+.a{background:var(--paper)}
+.a header{position:absolute;z-index:20;left:56px;right:56px;top:30px;display:flex;align-items:center;gap:34px}.a nav{margin-left:auto;display:flex;gap:26px;font-size:12px;font-weight:600}.a .hero-copy{position:absolute;left:56px;top:150px;width:590px;z-index:5}.a .kicker{color:var(--red);font:600 12px "IBM Plex Mono";letter-spacing:.14em;text-transform:uppercase}.a h1{font:800 78px/.88 "Barlow Condensed";letter-spacing:-.03em;text-transform:uppercase;margin:18px 0 22px}.a h1 span{color:var(--red)}.a .lead{font-size:18px;line-height:1.5;max-width:515px;color:#454341}.a .actions{display:flex;gap:10px;margin-top:28px}.a .tech{position:absolute;right:0;top:0;width:670px;height:900px;background:#111;color:#fff;overflow:hidden}.a .tech:before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:36px 36px}.a .ring{position:absolute;border:2px solid #f4f1eb;border-radius:50%;width:420px;height:420px;right:95px;top:178px}.a .ring:before,.a .ring:after{content:"";position:absolute;border:1px solid rgba(255,255,255,.45);border-radius:50%;inset:46px}.a .ring:after{inset:96px}.a .axis-x{position:absolute;left:40px;right:40px;top:388px;height:1px;background:rgba(255,255,255,.45)}.a .axis-y{position:absolute;top:120px;bottom:90px;right:304px;width:1px;background:rgba(255,255,255,.45)}.a .measure{position:absolute;font:600 12px "IBM Plex Mono";letter-spacing:.12em;color:#fff}.a .m1{right:452px;top:365px}.a .m2{right:79px;top:616px;color:#ff5b5e}.a .m3{right:77px;top:655px}.a .evidence{position:absolute;left:56px;bottom:42px;width:585px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #beb9b0;padding-top:18px}.a .evidence strong{font:800 29px "Barlow Condensed";letter-spacing:-.02em}.a .evidence small{display:block;margin-top:4px;font:500 9px "IBM Plex Mono";letter-spacing:.08em;text-transform:uppercase;color:#69655f}
+
+/* B — STOCK / SUPPLY OPERATING SYSTEM */
+.b{background:#141516;color:#fff}.b .bg{position:absolute;inset:0 0 0 520px;background:url("materials.jpg") center/cover no-repeat}.b .bg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#141516 0%,rgba(20,21,22,.78) 23%,rgba(20,21,22,.08) 70%)}.b .rail{position:absolute;left:0;top:0;bottom:0;width:84px;background:var(--red);display:flex;align-items:center;justify-content:center}.b .rail span{writing-mode:vertical-rl;transform:rotate(180deg);font:700 12px "IBM Plex Mono";letter-spacing:.24em}.b header{position:absolute;z-index:10;left:126px;right:50px;top:34px;display:flex;align-items:center;gap:28px}.b .logo-wrap{background:#f5f2eb;padding:7px 10px}.b .logo{width:230px}.b nav{margin-left:auto;display:flex;gap:24px;font:500 11px "IBM Plex Mono";text-transform:uppercase}.b .copy{position:absolute;left:126px;top:176px;width:570px;z-index:3}.b .eyebrow{font:600 11px "IBM Plex Mono";color:#ff6366;letter-spacing:.18em;text-transform:uppercase}.b h2{font:800 86px/.84 "Barlow Condensed";text-transform:uppercase;letter-spacing:-.035em;margin:20px 0}.b .copy p{font-size:17px;line-height:1.5;color:#d0cdc7;max-width:470px}.b .supply-index{position:absolute;left:126px;right:52px;bottom:48px;z-index:4;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-top:1px solid rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.22)}.b .supply-index div{padding:17px 15px 18px 0;border-right:1px solid rgba(255,255,255,.18)}.b .supply-index strong{display:block;font:700 20px "Barlow Condensed";text-transform:uppercase}.b .supply-index small{font:500 9px "IBM Plex Mono";color:#aaa59f;text-transform:uppercase;letter-spacing:.09em}
+
+/* C — INFRASTRUCTURE PROOF */
+.c{background:#e9e8e3;color:#101112}.c header{position:absolute;z-index:10;left:54px;right:54px;top:30px;display:flex;align-items:center}.c nav{margin-left:auto;display:flex;gap:26px;font:600 11px "IBM Plex Sans"}.c .proof{position:absolute;left:54px;top:170px;right:54px;display:grid;grid-template-columns:1.15fr .85fr;gap:54px}.c .numbers{display:grid;grid-template-columns:1fr 1fr;gap:14px}.c .metric{background:#111;color:#fff;padding:34px 32px;min-height:230px;position:relative;overflow:hidden}.c .metric.red{background:var(--red)}.c .metric strong{font:800 92px/.8 "Barlow Condensed";letter-spacing:-.04em}.c .metric span{display:block;margin-top:14px;font:500 11px "IBM Plex Mono";text-transform:uppercase;letter-spacing:.09em;max-width:230px}.c .metric .unit{position:absolute;right:20px;top:20px;font:600 11px "IBM Plex Mono";opacity:.65}.c .story{padding-top:6px}.c .story .badge{color:var(--red)}.c .story h2{font:800 70px/.9 "Barlow Condensed";text-transform:uppercase;letter-spacing:-.03em;margin:18px 0}.c .story p{font-size:17px;line-height:1.55;max-width:470px}.c .route{position:absolute;left:54px;right:54px;bottom:50px;border-top:2px solid #111;display:grid;grid-template-columns:repeat(4,1fr)}.c .route div{padding-top:16px;position:relative}.c .route div:before{content:"";position:absolute;width:12px;height:12px;background:var(--red);border-radius:50%;top:-7px;left:0}.c .route strong{font:700 16px "Barlow Condensed";text-transform:uppercase}.c .route small{display:block;margin-top:4px;font:500 9px "IBM Plex Mono";text-transform:uppercase;color:#68645f}
+.corner{position:absolute;right:20px;bottom:16px;background:#fff;color:#111;padding:9px 11px;font:700 9px "IBM Plex Mono";letter-spacing:.12em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<section class="dir a">
+<header><img src="dedil-logo-official.png" class="logo"><nav><span>Materiali</span><span>Centro acciaio</span><span>Trust</span><span>Contatti</span></nav><span class="call">CHIAMA · 0961 754432</span><span class="cta">RICHIEDI PREVENTIVO</span></header>
+<div class="hero-copy">
+<div class="kicker">DEDIL DONATO · CENTRO TRASFORMAZIONE ACCIAIO PER CLS</div>
+<h1>DAL FERRO<br>ALLA <span>STRUTTURA.</span></h1>
+<p class="lead">Materiali per l’edilizia e lavorazione del tondo per cemento armato. Una homepage costruita attorno a misure, trasformazione e commessa reale.</p>
+<div class="actions"><span class="cta">RICHIEDI UN PREVENTIVO</span><span class="call">CHIAMA ORA</span></div>
+</div>
+<div class="tech"><div class="ring"></div><div class="axis-x"></div><div class="axis-y"></div><span class="measure m1">Ø 1500 MM</span><span class="measure m2">L 47 M</span><span class="measure m3">GABBIE PER PALI · SS106 SIBARI</span></div>
+<div class="evidence"><div><strong>125 T</strong><small>acciaio B450C · plinto eolico</small></div><div><strong>Ø1500</strong><small>gabbie per pali</small></div><div><strong>47 M</strong><small>lunghezza commessa pubblicata</small></div></div>
+<div class="corner">A · TRANSFORMATION GRID</div>
+</section>
+
+<section class="dir b">
+<div class="rail"><span>DEDIL / MATERIALI / OPERATIVITÀ</span></div><div class="bg"></div>
+<header><div class="logo-wrap"><img src="dedil-logo-official.png" class="logo"></div><nav><span>01 Materiali</span><span>02 Acciaio</span><span>03 Rete partner</span><span>04 Contatti</span></nav><span class="cta">PREVENTIVO</span></header>
+<div class="copy"><div class="eyebrow">FORNITURA + TRASFORMAZIONE</div><h2>PRONTI<br>PER IL<br>CANTIERE.</h2><p>Un sistema visivo basato su disponibilità, catalogazione e velocità operativa: il lato fornitura di DEDIL diventa la struttura della pagina.</p><div style="margin-top:24px"><span class="call">0961 754432</span></div></div>
+<div class="supply-index"><div><strong>Materiali</strong><small>vendita all’ingrosso</small></div><div><strong>Acciaio</strong><small>trasformazione c.a.</small></div><div><strong>Germaneto</strong><small>Catanzaro</small></div><div><strong>Rete</strong><small>U-Power · Cusimano · Montolit</small></div></div>
+<div class="corner">B · SUPPLY OPERATING SYSTEM</div>
+</section>
+
+<section class="dir c">
+<header><img src="dedil-logo-official.png" class="logo"><nav><span>Chi siamo</span><span>Cosa facciamo</span><span>Prove di lavoro</span><span>Contatti</span></nav><span class="call" style="margin-left:24px">CHIAMA</span></header>
+<div class="proof">
+<div class="numbers">
+<div class="metric red"><div class="unit">B450C</div><strong>125</strong><span>tonnellate di acciaio in un plinto per parco eolico pubblicato da DEDIL</span></div>
+<div class="metric"><div class="unit">Ø</div><strong>1500</strong><span>diametro gabbie per pali</span></div>
+<div class="metric"><div class="unit">L</div><strong>47</strong><span>metri di lunghezza · commessa SS106 Sibari</span></div>
+<div class="metric"><div class="unit">CZ</div><strong>PIP</strong><span>Germaneto · Catanzaro</span></div>
+</div>
+<div class="story"><div class="badge">DALLA FORNITURA ALLA STRUTTURA</div><h2>IL LAVORO<br>SI MISURA.</h2><p>Qui la credibilità non viene raccontata con slogan generici: parte da attività, dimensioni e lavori realmente pubblicati da una figura collegata a DEDIL.</p><div style="display:flex;gap:10px;margin-top:26px"><span class="cta">RICHIEDI PREVENTIVO</span><span class="call">0961 754432</span></div></div>
+</div>
+<div class="route"><div><strong>Materiali</strong><small>fornitura</small></div><div><strong>Taglio / sagoma</strong><small>trasformazione acciaio</small></div><div><strong>Gabbie / plinti</strong><small>evidenza pubblica DEDIL</small></div><div><strong>Cantiere</strong><small>azione → preventivo / chiamata</small></div></div>
+<div class="corner">C · INFRASTRUCTURE PROOF</div>
+</section>
+</body></html>
