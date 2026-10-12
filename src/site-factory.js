@@ -485,7 +485,7 @@ export async function resolveFactoryTenant(env, slug) {
       order by s.attempt desc,s.created_at desc limit 1
     ) sb on true
     where p.slug=${slug}
-      and p.pipeline_status in ('QA_RUNNING','QA_FAILED','BUILD_REWORK','DEMO_READY')
+      and p.pipeline_status in ('QA_RUNNING','QA_FAILED','BUILD_REWORK','ESCALATION_REQUIRED','DEMO_READY')
     limit 1`;
   const row=rows[0];
   if (!row) return null;
