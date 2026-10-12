@@ -1716,8 +1716,17 @@ export async function handleOpsRequest(request, env) {
         now() as checked_at`;
       const adminAssetUrl = new URL("/admin/", request.url);
       const adminAsset = await env.ASSETS.fetch(new Request(adminAssetUrl));
+      const renderUiUrl = new URL("/admin/render-variants.js", request.url);
+      const renderUiAsset = await env.ASSETS.fetch(new Request(renderUiUrl));
+      const renderUiText = renderUiAsset.ok ? await renderUiAsset.text() : "";
+      const renderUiTwoStep =
+        renderUiText.includes("Scegli questa versione") &&
+        renderUiText.includes("Implementa questa versione") &&
+        renderUiText.includes("/ops/api/render/select") &&
+        renderUiText.includes("/ops/api/render/implement");
+      const healthy = adminAsset.ok && renderUiAsset.ok && renderUiTwoStep;
       return json({
-        ok: true,
+        ok: healthy,
         service: "impresax-ops",
         database: rows[0]?.database || "unknown",
         database_connected: true,
@@ -1726,12 +1735,15 @@ export async function handleOpsRequest(request, env) {
         render_engine_version: "CLOUDFLARE_NATIVE_V4",
         render_owner: "CLOUDFLARE_NATIVE_ONLY",
         render_selection_mode: "TWO_STEP_EXPLICIT",
+        render_ui_two_step: renderUiTwoStep,
+        legacy_render_transports: "DISABLED",
         ai_binding: Boolean(env.AI),
         browser_binding: Boolean(env.BROWSER),
         control_room_asset: adminAsset.ok,
         control_room_asset_status: adminAsset.status,
+        render_ui_asset_status: renderUiAsset.status,
         checked_at: rows[0]?.checked_at || new Date().toISOString()
-      }, adminAsset.ok ? 200 : 503, {
+      }, healthy ? 200 : 503, {
         "X-Robots-Tag": "noindex, nofollow, noarchive"
       });
     } catch (error) {
