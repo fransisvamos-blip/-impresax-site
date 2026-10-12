@@ -531,18 +531,14 @@ async function renderPack(sql, env, row) {
 
   const browser = await puppeteer.launch(env.BROWSER);
   try {
-    const rendered = await Promise.all(rows.map(async item => {
-      const [desktop, mobile] = await Promise.all([
-        renderHtml(browser, item.html_source, 1440, 900),
-        renderHtml(browser, item.html_source, 390, 844)
+    for (const item of rows) {
+      const [desktop,mobile] = await Promise.all([
+        renderHtml(browser,item.html_source,1440,900),
+        renderHtml(browser,item.html_source,390,844)
       ]);
-      return {item,desktop,mobile};
-    }));
-
-    for (const result of rendered) {
-      const desktopB64 = bytesToBase64(result.desktop);
-      const mobileB64 = bytesToBase64(result.mobile);
-      const base = "https://" + ADMIN_HOST + "/ops/render-assets/" + result.item.variant_id;
+      const desktopB64=bytesToBase64(desktop);
+      const mobileB64=bytesToBase64(mobile);
+      const base="https://"+ADMIN_HOST+"/ops/render-assets/"+item.variant_id;
 
       await sql`update render_staging_payloads set
           status='RENDERED',
@@ -552,14 +548,14 @@ async function renderPack(sql, env, row) {
           render_error=null,
           rendered_at=now(),
           updated_at=now()
-        where id=${result.item.id}::uuid`;
+        where id=${item.id}::uuid`;
 
       await sql`update render_variants set
           status='RENDER_READY',
           desktop_render_url=${base+"/desktop"},
           mobile_render_url=${base+"/mobile"},
           updated_at=now()
-        where id=${result.item.variant_id}::uuid`;
+        where id=${item.variant_id}::uuid`;
     }
   } catch (error) {
     const message = String(error?.message || error || "BROWSER_RENDER_FAILED").slice(0, 600);
