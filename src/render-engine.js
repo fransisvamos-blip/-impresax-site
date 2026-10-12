@@ -255,7 +255,7 @@ async function recoverStaleClaims(sql) {
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
       and status='RUNNING'
-      and started_at < now()-interval '12 minutes'`;
+      and started_at < now()-interval '6 minutes'`;
 
   await sql`update render_packs rp
     set status='ART_DIRECTION'
@@ -265,7 +265,7 @@ async function recoverStaleClaims(sql) {
         select 1 from render_jobs rj
         where rj.worker='cloudflare-workers-ai'
           and rj.status='RUNNING'
-          and rj.started_at >= now()-interval '12 minutes'
+          and rj.started_at >= now()-interval '6 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
 
@@ -419,6 +419,79 @@ async function failGeneration(sql, row, jobId, error) {
     where id=${row.prospect_id}::uuid`;
 }
 
+
+function splitVariantPack(raw) {
+  const text=String(raw || "");
+  const a=text.indexOf("<<<A>>>");
+  const b=text.indexOf("<<<B>>>");
+  const cc=text.indexOf("<<<C>>>");
+  if (a<0 || b<=a || cc<=b) throw new Error("AI_VARIANT_MARKERS_REQUIRED");
+  return {
+    A:text.slice(a+7,b).trim(),
+    B:text.slice(b+7,cc).trim(),
+    C:text.slice(cc+7).trim()
+  };
+}
+
+async function generatePackSingleCall(env, master, payload) {
+  const logoUrl=payload?.official_logo?.url || payload?.official_logo?.official_source || "";
+  const direction=fallbackDirections();
+  const prompt=[
+    "You are ImpresaX Rendering Studio. Produce THREE complete premium homepage variants for the same prospect in ONE response.",
+    "Return exactly three blocks using these markers and nothing else:",
+    "<<<A>>>",
+    "<!doctype html>...complete A...</html>",
+    "<<<B>>>",
+    "<!doctype html>...complete B...</html>",
+    "<<<C>>>",
+    "<!doctype html>...complete C...</html>",
+    "",
+    "All three must obey the frozen master and use VERIFIED DATA ONLY.",
+    "Do not invent services, awards, staff, branches, projects, testimonials, numbers or capabilities.",
+    "Use the exact official logo URL when supplied; never redraw or approximate the logo.",
+    "Each variant must be standalone HTML+CSS, no JavaScript, no iframe/object/embed, full desktop 1440 + mobile 390.",
+    "Each must include header/navigation, strong hero, complete body, verified services/offering, verified trust where available, conversion/contact and footer.",
+    "A/B/C must be visibly and structurally different: different hero logic, grid, typography, image language, rhythm, signature device, hierarchy and CTA treatment.",
+    "No generic SaaS, no template feel, no card-grid inflation, no gradients/glows/glassmorphism.",
+    "Prefer supplied first-party images. If they are insufficient, use typography/material composition rather than fake company photography.",
+    "Keep each HTML compact (roughly 4k-12k characters) so the whole pack renders fast.",
+    "",
+    "DIRECTION A:",JSON.stringify(direction.A),
+    "DIRECTION B:",JSON.stringify(direction.B),
+    "DIRECTION C:",JSON.stringify(direction.C),
+    "",
+    "EXACT LOGO:",logoUrl || "NO_OFFICIAL_LOGO_CONFIRMED",
+    "PROSPECT:",JSON.stringify(payload),
+    "FROZEN MASTER:",master
+  ].join("\n");
+
+  let lastError=null;
+  for (let attempt=1;attempt<=2;attempt++) {
+    try {
+      const out=await env.AI.run(MODEL,{
+        messages:[
+          {role:"system",content:"You are a senior digital art director and frontend designer. Output only the three marked HTML blocks."},
+          {role:"user",content:prompt+(attempt===2?"\nREWORK: previous pack failed validation. Return all three complete marked HTML documents, compact and valid.":"")}
+        ],
+        max_completion_tokens:15000,
+        temperature:0.5
+      });
+      const parts=splitVariantPack(extractModelText(out));
+      return {
+        htmlByKey:{
+          A:validateHtml(parts.A,logoUrl),
+          B:validateHtml(parts.B,logoUrl),
+          C:validateHtml(parts.C,logoUrl)
+        },
+        directions:direction
+      };
+    } catch (error) {
+      lastError=error;
+    }
+  }
+  throw lastError || new Error("AI_PACK_GENERATION_FAILED");
+}
+
 async function generateProspect(sql, env, master, row) {
   const jobId = await claimPack(sql, row);
   if (!jobId) return {ok:false,code:row.prospect_code,error:"CLAIMED_ELSEWHERE"};
@@ -426,15 +499,8 @@ async function generateProspect(sql, env, master, row) {
   try {
     const firstPartyImages = await discoverFirstPartyImages(row.website_url);
     const payload = prospectPayload(row, firstPartyImages);
-    const directions = await planDirections(env, master, payload);
-
-    const [A, B, C] = await Promise.all([
-      generateVariant(env, master, payload, directions.A, "A"),
-      generateVariant(env, master, payload, directions.B, "B"),
-      generateVariant(env, master, payload, directions.C, "C")
-    ]);
-
-    await persistGeneratedPack(sql, row, jobId, {A,B,C}, directions);
+    const pack = await generatePackSingleCall(env, master, payload);
+    await persistGeneratedPack(sql, row, jobId, pack.htmlByKey, pack.directions);
     return {ok:true,code:row.prospect_code,pack_id:row.render_pack_id,version:row.version};
   } catch (error) {
     await failGeneration(sql, row, jobId, error);
@@ -561,25 +627,36 @@ async function renderCandidates(sql, limit) {
 
 export async function runCloudflareRenderEngine(env) {
   if (!env.AI) return {ok:false,error:"AI_BINDING_NOT_CONFIGURED"};
-  const sql = db(env);
+  const sql=db(env);
 
   await recoverStaleClaims(sql);
   await ensureActivePacks(sql);
-  const master = await loadFrozenMaster();
 
-  const selected = await candidates(sql, MAX_PROSPECTS_PER_TICK);
-  const generated = selected.length
-    ? await Promise.all(selected.map(row => generateProspect(sql, env, master, row)))
-    : [];
-
-  const readyToRender = await renderCandidates(sql, MAX_RENDER_PACKS_PER_TICK);
-  const rendered = [];
+  const readyToRender=await renderCandidates(sql,MAX_RENDER_PACKS_PER_TICK);
+  const rendered=[];
   for (const row of readyToRender) {
-    rendered.push(await renderPack(sql, env, row));
+    rendered.push(await renderPack(sql,env,row));
+  }
+
+  const activeRows=await sql`select count(*)::int as n from render_jobs
+    where worker='cloudflare-workers-ai' and status='RUNNING'
+      and started_at >= now()-interval '6 minutes'`;
+  const active=Number(activeRows[0]?.n || 0);
+  const slots=Math.max(0,MAX_PROSPECTS_PER_TICK-active);
+
+  let generated=[];
+  if (slots>0) {
+    const selected=await candidates(sql,slots);
+    if (selected.length) {
+      const master=await loadFrozenMaster();
+      generated=await Promise.all(selected.map(row=>generateProspect(sql,env,master,row)));
+    }
   }
 
   return {
     ok:true,
+    active_generation_jobs:active,
+    generation_slots:slots,
     generated_count:generated.filter(x=>x.ok).length,
     render_ready_count:rendered.filter(x=>x.ok).length,
     generated,
