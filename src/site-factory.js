@@ -205,6 +205,28 @@ function validateApprovedPack(pack) {
 export async function buildApprovedReference(env, prospectId) {
   const sql=db(env);
   const { prospect,pack,assets }=await approvedContext(sql,prospectId);
+
+  // Hard stop per approved Render Pack: never exceed the frozen 5-cycle limit,
+  // even if an upstream state counter is reset or a stale job is reconciled again.
+  const cycleRows=await sql`select count(*)::int as cycles
+    from site_builds
+    where prospect_id=${prospectId}::uuid
+      and render_pack_id=${pack.id}::uuid
+      and status not in ('STALE_VISUAL_REJECTED','STALE_REFERENCE_V1')`;
+  const packCycles=Number(cycleRows[0]?.cycles || 0);
+  if (packCycles>=MAX_FACTORY_CYCLES) {
+    const error="FACTORY_MAX_CYCLES_REACHED";
+    await sql`select * from ops_transition_prospect(
+      ${prospectId}::uuid,'ESCALATION_REQUIRED','FACTORY_MAX_CYCLES_REACHED',
+      ${JSON.stringify({render_pack_id:pack.id,render_pack_version:pack.version,factory_cycles:packCycles,max_cycles:MAX_FACTORY_CYCLES})}::jsonb,
+      'site-factory'
+    )`;
+    await sql`update prospects
+      set build_status='STOPPED',qa_status='FAIL',error=${error},updated_at=now()
+      where id=${prospectId}::uuid`;
+    return {pass:false,status:"ESCALATION_REQUIRED",error,factory_cycle:packCycles,max_cycles:MAX_FACTORY_CYCLES};
+  }
+
   const missing=validateApprovedPack(pack);
   if (missing.length) {
     const error="RENDER_PACK_INCOMPLETE: "+missing.join(",");
