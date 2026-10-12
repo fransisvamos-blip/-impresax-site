@@ -22,6 +22,7 @@
 
   <nav class="ops-nav" aria-label="Menu ImpresaX Ops">
     <button class="nav-item active" data-view="home">Panoramica</button>
+    <button class="nav-item" data-view="requests">Richieste</button>
     <button class="nav-item" data-view="prospects">Aziende</button>
     <button class="nav-item" data-view="rendering">Progettazione visiva</button>
     <button class="nav-item" data-view="factory">Costruzione siti</button>
@@ -54,6 +55,29 @@
           </div>
         </div>
         <div id="events"></div>
+      </section>
+    </section>
+
+    <section class="app-view" data-view-panel="requests">
+      <div class="section-head standalone">
+        <div>
+          <span class="kicker">RICHIESTE</span>
+          <h2>Dati lasciati dal sito</h2>
+          <p>Ogni richiesta inviata dal modulo di impresax.org arriva qui automaticamente.</p>
+        </div>
+      </div>
+
+      <section class="request-metrics" id="request-metrics"></section>
+
+      <section class="panel-card">
+        <div class="section-head compact-head">
+          <div>
+            <span class="kicker">IN ARRIVO</span>
+            <h2>Richieste ricevute</h2>
+          </div>
+          <button id="refresh-requests" type="button">Aggiorna richieste</button>
+        </div>
+        <div id="requests-list"></div>
       </section>
     </section>
 
