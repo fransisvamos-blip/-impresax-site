@@ -645,6 +645,14 @@ async function processExternal(sql, env, job, prospect, kind, url, runningStatus
     await logEvent(sql, prospect.id, `${kind}_COMPLETED`, { queue_id: job.id, result });
 
     if (kind === "RENDER") {
+      const variants=Array.isArray(result?.variants)?result.variants:[];
+      const keyed=new Map(variants.map(v=>[String(v?.variant_key||""),v]));
+      const complete=["A","B","C"].every(key=>{
+        const v=keyed.get(key);
+        return v && v.desktop_render_url && v.mobile_render_url;
+      });
+      if (!complete) throw new Error("RENDER_EXECUTOR_THREE_COMPLETE_VARIANTS_REQUIRED");
+
       const rows = await sql`select coalesce(max(attempt),0)+1 as attempt from render_jobs where prospect_id=${prospect.id}::uuid`;
       const attempt = Number(rows[0]?.attempt || 1);
       const rj = await sql`insert into render_jobs(prospect_id,status,attempt,worker,input_data,output_data,started_at,completed_at)
@@ -652,14 +660,45 @@ async function processExternal(sql, env, job, prospect, kind, url, runningStatus
         returning id`;
       const versions = await sql`select coalesce(max(version),0)+1 as version from render_packs where prospect_id=${prospect.id}::uuid`;
       const version = Number(versions[0]?.version || 1);
-      await sql`insert into render_packs(
-        prospect_id,render_job_id,status,version,desktop_render_url,mobile_render_url,brand_dna,reference_score,approved_reference,approved_at
+      const packs=await sql`insert into render_packs(
+        prospect_id,render_job_id,status,version,brand_dna,approved_reference
       ) values(
-        ${prospect.id}::uuid,${rj[0].id}::uuid,'APPROVED',${version},
-        ${result.desktop_render_url || null},${result.mobile_render_url || null},
-        ${JSON.stringify(result.brand_dna || {})}::jsonb,${result.reference_score ?? null},
-        true,now()
-      )`;
+        ${prospect.id}::uuid,${rj[0].id}::uuid,'RENDER_READY',${version},
+        ${JSON.stringify(result.brand_dna || {})}::jsonb,false
+      ) returning id`;
+      const packId=packs[0].id;
+
+      for (const key of ["A","B","C"]) {
+        const v=keyed.get(key);
+        await sql`insert into render_variants(
+          render_pack_id,variant_key,name,status,desktop_render_url,mobile_render_url,
+          reference_score,brand_dna,palette,typography,image_asset_map,section_map,cta_map,content_map,source_references
+        ) values(
+          ${packId}::uuid,${key},${String(v.name||("Versione "+key))},'RENDER_READY',
+          ${v.desktop_render_url},${v.mobile_render_url},${v.reference_score ?? null},
+          ${JSON.stringify(v.brand_dna || result.brand_dna || {})}::jsonb,
+          ${JSON.stringify(v.palette || {})}::jsonb,
+          ${JSON.stringify(v.typography || {})}::jsonb,
+          ${JSON.stringify(v.image_asset_map || {})}::jsonb,
+          ${JSON.stringify(v.section_map || [])}::jsonb,
+          ${JSON.stringify(v.cta_map || {})}::jsonb,
+          ${JSON.stringify(v.content_map || {})}::jsonb,
+          ${JSON.stringify(v.source_references || [])}::jsonb
+        )`;
+      }
+
+      await sql`update prospects
+        set pipeline_status='RENDERING'::pipeline_status,
+            render_status='RENDER_READY',
+            current_step='AWAITING_RENDER_SELECTION',
+            next_action='SELECT_RENDER_IN_GESTIONALE',
+            updated_at=now()
+        where id=${prospect.id}::uuid`;
+      await queueComplete(sql, job.id, result);
+      await logEvent(sql, prospect.id, "RENDER_VARIANTS_READY", {
+        queue_id:job.id,render_pack_id:packId,render_pack_version:version,variants:["A","B","C"]
+      });
+      return { outcome:"completed",task:"RENDER",prospect_id:prospect.id,render_pack_id:packId };
     }
 
     if (kind === "BUILD") {
@@ -775,6 +814,10 @@ export async function runOrchestrator(env, workerId = "impresax-orchestrator-v1"
   ]);
 
   const supportedTasks = ["PREPARE_BUILD","BUILD","QA","QA_REWORK","SALES_HANDOFF"];
+  // RENDER is claimable only when a real backend executor exists.
+  // This prevents the cron from repeatedly claiming/releasing render jobs while
+  // Rendering Studio is operating through the external Queue ingest bridge.
+  if (env.RENDER_EXECUTOR_URL) supportedTasks.unshift("RENDER");
   const jobs = await sql`select * from ops_claim_job(${workerId}, ${supportedTasks}::text[])`;
   const job = jobs[0];
   if (!job || !job.id) {
