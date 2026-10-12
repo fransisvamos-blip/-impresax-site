@@ -1,4 +1,4 @@
-import { handleOpsRequest, isOpsHost, runOrchestrator, runRenderIngest } from "./ops.js";
+import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
 import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 import { handlePublicRequest } from "./requests.js";
@@ -90,10 +90,7 @@ export default {
   },
 
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(Promise.allSettled([
-      runRenderIngest(env),
-      runOrchestrator(env, "cloudflare-cron")
-    ]));
+    ctx.waitUntil(runOrchestrator(env, "cloudflare-cron"));
   },
 };
 
