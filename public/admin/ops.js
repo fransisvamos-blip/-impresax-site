@@ -451,7 +451,7 @@ function renderSystemQueue(){
       <span>Tentativo ${esc(job.attempt_count||0)}/${esc(job.max_attempts||0)}</span>
       <span class="${job.error?"error":"id"}">${esc(tError(job.error||"—"))}</span>
       <time>${esc(fmtDate(job.updated_at))}</time>
-    </article>`).join(""):'<div class="empty">Coda orchestratore vuota.</div>';
+    </article>`).join(""):'<div class="empty">Coda lavori vuota.</div>';
 }
 
 function listBlock(title,items,formatter){
@@ -616,7 +616,7 @@ $("#run").addEventListener("click",async()=>{
     alert("Errore durante l'esecuzione dell'orchestratore.");
   }finally{
     b.disabled=false;
-    b.textContent="Esegui orchestratore";
+    b.textContent="Esegui ciclo operativo";
   }
 });
 $("#search").addEventListener("input",renderRows);
