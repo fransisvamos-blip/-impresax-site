@@ -372,3 +372,22 @@
   .request-grid>div{border-right:0;border-bottom:1px solid var(--line)}
   .request-grid>div:last-child{border-bottom:0}
 }
+
+.variant-preview-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:10px 12px 0;
+}
+.variant-preview-actions a{
+  display:inline-flex;
+  align-items:center;
+  min-height:32px;
+  padding:7px 9px;
+  border:1px solid var(--line);
+  color:var(--good);
+  text-decoration:none;
+  font-size:9px;
+  font-weight:800;
+}
+.variant-preview-actions a:hover{border-color:#59635c;background:#18221b}
