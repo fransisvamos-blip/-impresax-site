@@ -662,7 +662,9 @@ async function handleDirectRenderIngest(sql, env, url) {
 
   await sql`delete from render_ingest_chunks
     where render_pack_id=${gate.render_pack_id}::uuid and variant_key=${variant}`;
-  await sql`update render_packs set status='RENDERING' where id=${gate.render_pack_id}::uuid`;
+  await sql`update render_packs set status='RENDERING'
+    where id=${gate.render_pack_id}::uuid
+      and status not in ('RENDERING_ASSETS','RENDER_READY')`;
   await sql`update prospects set
       pipeline_status='RENDERING'::pipeline_status,
       render_status='RENDERING',
@@ -789,7 +791,7 @@ async function renderNextStagedPack(sql, env) {
     from render_packs rp
     join prospects p on p.id=rp.prospect_id
     where rp.approved_reference=false
-      and rp.status not like 'ARCHIVED%'
+      and rp.status in ('RENDERING','ART_DIRECTION','AI_RENDERING')
       and (select count(*) from render_staging_payloads s
            where s.render_pack_id=rp.id and s.html_source is not null and length(s.html_source)>0)=3
       and exists(select 1 from render_staging_payloads s
@@ -799,7 +801,17 @@ async function renderNextStagedPack(sql, env) {
   const candidate=candidates[0];
   if (!candidate) return {outcome:"idle"};
 
-  if (!env.BROWSER) return {outcome:"blocked",error:"BROWSER_BINDING_NOT_CONFIGURED",render_pack_id:candidate.render_pack_id};
+  const claim=await sql`update render_packs
+    set status='RENDERING_ASSETS'
+    where id=${candidate.render_pack_id}::uuid
+      and status in ('RENDERING','ART_DIRECTION','AI_RENDERING')
+    returning id`;
+  if (!claim.length) return {outcome:"claimed_elsewhere",render_pack_id:candidate.render_pack_id};
+
+  if (!env.BROWSER) {
+    await sql`update render_packs set status='RENDERING' where id=${candidate.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
+    return {outcome:"blocked",error:"BROWSER_BINDING_NOT_CONFIGURED",render_pack_id:candidate.render_pack_id};
+  }
 
   const rows=await sql`select * from render_staging_payloads
     where render_pack_id=${candidate.render_pack_id}::uuid
@@ -846,6 +858,8 @@ async function renderNextStagedPack(sql, env) {
         await sql`update render_staging_payloads set
           status='RENDER_ERROR',render_error=${String(error?.message || error).slice(0,500)},updated_at=now()
           where id=${row.id}::uuid`;
+        await sql`update render_packs set status='RENDERING'
+          where id=${candidate.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
         return {outcome:"error",render_pack_id:candidate.render_pack_id,variant:row.variant_key,error:String(error?.message || error)};
       }
     }
@@ -857,6 +871,8 @@ async function renderNextStagedPack(sql, env) {
     where render_pack_id=${candidate.render_pack_id}::uuid and status='RENDERED'
       and desktop_image_base64 is not null and mobile_image_base64 is not null`;
   if (Number(complete[0]?.n || 0)!==3) {
+    await sql`update render_packs set status='RENDERING'
+      where id=${candidate.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     return {outcome:"blocked",render_pack_id:candidate.render_pack_id,error:"RENDERED_VARIANTS_INCOMPLETE"};
   }
 
