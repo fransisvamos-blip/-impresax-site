@@ -1713,6 +1713,41 @@ export async function handleOpsRequest(request, env) {
       const rows = await sql`select
         current_database() as database,
         (select count(*)::int from prospects) as prospects,
+        (select count(*)::int from prospects where render_status='RENDER_READY') as render_ready_count,
+        (select count(*)::int
+           from prospects p
+          where p.render_status='RENDER_READY'
+            and not exists (
+              select 1
+                from lateral (
+                  select rp.*
+                    from render_packs rp
+                   where rp.prospect_id=p.id
+                     and upper(coalesce(rp.status,'')) not like '%ARCHIVED%'
+                     and upper(coalesce(rp.status,'')) not like '%REJECT%'
+                   order by rp.version desc,rp.created_at desc
+                   limit 1
+                ) rp
+               where rp.status='RENDER_READY'
+                 and rp.approved_reference=false
+                 and p.pipeline_status='RENDERING'::pipeline_status
+                 and p.current_step='AWAITING_RENDER_SELECTION'
+                 and p.next_action='SELECT_RENDER_IN_GESTIONALE'
+                 and (select count(*) from render_variants rv
+                       where rv.render_pack_id=rp.id
+                         and rv.variant_key in ('A','B','C')
+                         and rv.desktop_render_url is not null
+                         and rv.mobile_render_url is not null
+                         and upper(coalesce(rv.status,'')) not like '%REJECT%'
+                         and upper(coalesce(rv.status,'')) not like '%ARCHIVED%')=3
+                 and (select count(distinct rv.variant_key) from render_variants rv
+                       where rv.render_pack_id=rp.id and rv.variant_key in ('A','B','C'))=3
+                 and (select count(*) from render_variants rv
+                       where rv.render_pack_id=rp.id and rv.selected=true)=0
+            )
+        ) as false_render_ready_count,
+        (select count(*)::int from orchestrator_queue
+          where task_type='RENDER' and status in ('QUEUED','RUNNING')) as legacy_render_queue_active,
         now() as checked_at`;
       const adminAssetUrl = new URL("/admin/", request.url);
       const adminAsset = await env.ASSETS.fetch(new Request(adminAssetUrl));
@@ -1724,7 +1759,14 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("Implementa questa versione") &&
         renderUiText.includes("/ops/api/render/select") &&
         renderUiText.includes("/ops/api/render/implement");
-      const healthy = adminAsset.ok && renderUiAsset.ok && renderUiTwoStep;
+      const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
+      const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
+      const healthy =
+        adminAsset.ok &&
+        renderUiAsset.ok &&
+        renderUiTwoStep &&
+        falseRenderReady===0 &&
+        legacyRenderQueueActive===0;
       return json({
         ok: healthy,
         service: "impresax-ops",
@@ -1737,6 +1779,9 @@ export async function handleOpsRequest(request, env) {
         render_selection_mode: "TWO_STEP_EXPLICIT",
         render_ui_two_step: renderUiTwoStep,
         legacy_render_transports: "DISABLED",
+        render_ready_count: Number(rows[0]?.render_ready_count || 0),
+        false_render_ready_count: falseRenderReady,
+        legacy_render_queue_active: legacyRenderQueueActive,
         ai_binding: Boolean(env.AI),
         browser_binding: Boolean(env.BROWSER),
         control_room_asset: adminAsset.ok,
