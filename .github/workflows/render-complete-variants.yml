@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "ops/render-packs/**/variant-*.html"
+      - "ops/render-packs/**/render-ready.trigger"
       - ".github/workflows/render-complete-variants.yml"
   workflow_dispatch:
 
@@ -30,26 +30,34 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            git diff --name-only "${{ github.event.before }}" "${{ github.sha }}"               | grep '^ops/render-packs/.*/variant-.*\.html$'               | xargs -r -n1 dirname               | sort -u > /tmp/render_dirs.txt || true
+            git diff --name-only "${{ github.event.before }}" "${{ github.sha }}"               | grep '^ops/render-packs/.*/render-ready\.trigger$'               | xargs -r -n1 dirname               | sort -u > /tmp/render_dirs.txt || true
           else
-            find ops/render-packs -type f -name 'variant-*.html' -printf '%h\n' | sort -u > /tmp/render_dirs.txt
+            find ops/render-packs -type f -name 'render-ready.trigger' -printf '%h\n' | sort -u > /tmp/render_dirs.txt
           fi
 
           echo "Render directories:"
           cat /tmp/render_dirs.txt || true
 
           if [ ! -s /tmp/render_dirs.txt ]; then
-            echo "No render directories changed."
+            echo "No render directories selected."
           fi
 
-      - name: Install headless renderer
-        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+      - name: Validate source pack before rendering
         shell: bash
         run: |
-          npm install --no-save puppeteer-core@24
+          set -euo pipefail
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            for key in A B C; do
+              test -s "$d/variant-$key.html"
+            done
+          done < /tmp/render_dirs.txt
 
-      - name: Render all A/B/C desktop + mobile in one batch
-        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+      - name: Install headless renderer
+        shell: bash
+        run: npm install --no-save puppeteer-core@24
+
+      - name: Render all A/B/C desktop + mobile in parallel
         shell: bash
         run: |
           set -euo pipefail
@@ -77,7 +85,7 @@ jobs:
             await page.evaluate(async () => {
               if (document.fonts && document.fonts.ready) await document.fonts.ready;
             });
-            await new Promise(r=>setTimeout(r,1200));
+            await new Promise(r=>setTimeout(r,800));
             await page.screenshot({path: output, fullPage: true, type:'png'});
             await page.close();
           }
@@ -94,7 +102,6 @@ jobs:
                 const jobs = [];
                 for (const key of ['A','B','C']) {
                   const html = path.join(dir, `variant-${key}.html`);
-                  if (!fs.existsSync(html)) continue;
                   jobs.push(renderOne(browser, html, path.join(dir,`variant-${key}-desktop.png`), 1440, 900));
                   jobs.push(renderOne(browser, html, path.join(dir,`variant-${key}-mobile.png`), 390, 844));
                 }
@@ -107,7 +114,6 @@ jobs:
           NODE
 
       - name: Build lightweight previews
-        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
         shell: bash
         run: |
           python -m pip install --quiet pillow
@@ -120,34 +126,30 @@ jobs:
               for key in ('A','B','C'):
                   desk=d/f'variant-{key}-desktop.png'
                   mob=d/f'variant-{key}-mobile.png'
-                  if desk.exists():
-                      im=Image.open(desk).convert('RGB')
-                      w=900
-                      h=round(im.height*w/im.width)
-                      im.resize((w,h),Image.Resampling.LANCZOS).save(d/f'variant-{key}-desktop-preview.jpg','JPEG',quality=84,optimize=True,progressive=True)
-                  if mob.exists():
-                      im=Image.open(mob).convert('RGB')
-                      w=390
-                      h=round(im.height*w/im.width)
-                      im.resize((w,h),Image.Resampling.LANCZOS).save(d/f'variant-{key}-mobile-preview.jpg','JPEG',quality=82,optimize=True,progressive=True)
+                  im=Image.open(desk).convert('RGB')
+                  w=900
+                  h=round(im.height*w/im.width)
+                  im.resize((w,h),Image.Resampling.LANCZOS).save(d/f'variant-{key}-desktop-preview.jpg','JPEG',quality=84,optimize=True,progressive=True)
+
+                  im=Image.open(mob).convert('RGB')
+                  w=390
+                  h=round(im.height*w/im.width)
+                  im.resize((w,h),Image.Resampling.LANCZOS).save(d/f'variant-{key}-mobile-preview.jpg','JPEG',quality=82,optimize=True,progressive=True)
           PY
 
       - name: Validate full variant pack
-        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
         shell: bash
         run: |
           set -euo pipefail
           while IFS= read -r d; do
             [ -z "$d" ] && continue
             for key in A B C; do
-              test -s "$d/variant-$key.html"
               test -s "$d/variant-$key-desktop.png"
               test -s "$d/variant-$key-mobile.png"
             done
           done < /tmp/render_dirs.txt
 
       - name: Commit all six renders together
-        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
         shell: bash
         run: |
           set -euo pipefail
