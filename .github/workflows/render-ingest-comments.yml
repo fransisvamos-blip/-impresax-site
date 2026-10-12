@@ -1,0 +1,126 @@
+name: Ingest render variant from Queue
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: render-ingest-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    if: github.event.issue.number == 5 && startsWith(github.event.comment.body, 'IMPRESAX_RENDER_VARIANT_V1')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decode queue payload
+        id: decode
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import os, json, base64, re
+          from pathlib import Path
+
+          event=json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          body=event["comment"]["body"]
+          rows={}
+          for line in body.splitlines()[1:]:
+              if "=" not in line:
+                  continue
+              k,v=line.split("=",1)
+              rows[k.strip()]=v.strip()
+
+          prospect=rows.get("prospect","")
+          version=rows.get("version","")
+          variant=rows.get("variant","")
+          content_b64=rows.get("content_b64","")
+
+          if not re.fullmatch(r"[A-Z]{2,8}-[A-Z0-9-]{1,32}", prospect):
+              raise SystemExit("INVALID_PROSPECT")
+          if not re.fullmatch(r"[1-9][0-9]{0,3}", version):
+              raise SystemExit("INVALID_VERSION")
+          if variant not in {"A","B","C"}:
+              raise SystemExit("INVALID_VARIANT")
+          if not content_b64:
+              raise SystemExit("EMPTY_CONTENT")
+
+          try:
+              html=base64.b64decode(content_b64, validate=True).decode("utf-8")
+          except Exception as e:
+              raise SystemExit(f"INVALID_BASE64: {e}")
+
+          if "<html" not in html.lower() or "</html>" not in html.lower():
+              raise SystemExit("HTML_DOCUMENT_REQUIRED")
+          if len(html) > 250_000:
+              raise SystemExit("HTML_TOO_LARGE")
+
+          d=Path("ops/render-packs")/prospect/f"v{version}"
+          d.mkdir(parents=True, exist_ok=True)
+          path=d/f"variant-{variant}.html"
+          path.write_text(html, encoding="utf-8")
+
+          out=Path(os.environ["GITHUB_OUTPUT"])
+          with out.open("a") as f:
+              f.write(f"prospect={prospect}\n")
+              f.write(f"version={version}\n")
+              f.write(f"variant={variant}\n")
+              f.write(f"dir={d.as_posix()}\n")
+              f.write(f"path={path.as_posix()}\n")
+          PY
+
+      - name: Commit exact variant source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Render Ingest"
+          git config user.email "actions@users.noreply.github.com"
+          git pull --rebase origin main
+          git add "${{ steps.decode.outputs.path }}"
+          if git diff --cached --quiet; then
+            echo "Variant source already canonical."
+          else
+            git commit -m "Ingest ${{ steps.decode.outputs.prospect }} v${{ steps.decode.outputs.version }} variant ${{ steps.decode.outputs.variant }}"
+            for i in 1 2 3 4 5; do
+              if git push; then break; fi
+              git pull --rebase origin main
+              sleep 2
+              test "$i" != "5"
+            done
+          fi
+
+      - name: Trigger render when A B C are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --rebase origin main
+          d="${{ steps.decode.outputs.dir }}"
+          for key in A B C; do
+            test -s "$d/variant-$key.html" || exit 0
+          done
+
+          printf '%s\n' "source=issue-comment-ingest" "prospect=${{ steps.decode.outputs.prospect }}" "version=${{ steps.decode.outputs.version }}" > "$d/render-ready.trigger"
+
+          git add "$d/render-ready.trigger"
+          if git diff --cached --quiet; then
+            echo "Render already triggered."
+            exit 0
+          fi
+
+          git commit -m "Trigger ${{ steps.decode.outputs.prospect }} v${{ steps.decode.outputs.version }} batch render"
+          for i in 1 2 3 4 5; do
+            if git push; then exit 0; fi
+            git pull --rebase origin main
+            sleep 2
+          done
+          exit 1
