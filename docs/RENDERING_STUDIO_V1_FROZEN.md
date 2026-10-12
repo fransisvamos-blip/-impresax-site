@@ -1,90 +1,664 @@
-# IMPRESAX — RENDERING STUDIO V1 — FROZEN
+# IMPRESAX — RENDERING STUDIO V1 — FROZEN MASTER
 
-SOURCE OF TRUTH VISIVA RECUPERATA DAL PROJECT MEMORY
-Data lock originale: 2026-10-11
+STATUS: FROZEN
+ORIGINAL LOCK: 2026-10-11
+OWNER: RENDERING STUDIO
+CHANGE POLICY: ONLY CABINA MAY REOPEN OR AMEND
 
-## QUALITY BAR — LOVEFROM / FERRARI LUCE
+This document consolidates the rendering rules that were fragmented across ImpresaX Memory, event log and project context. It is the canonical visual source of truth.
 
-Regola recuperata dal Project Memory:
+---
 
-- reference: **LoveFrom / Ferrari Luce**
-- status: **LOCKED**
-- principio: usare questo livello come quality bar permanente per l'art direction dei siti premium ImpresaX;
-- l'implementazione deve seguire la reference visiva approvata, NON prompt generici "premium";
-- principi associati: ART_DIRECTION_FIRST, ORIGINAL_VERTICAL_INTERPRETATION, VISUAL_CRITIQUE_BEFORE_DELIVERY, REFERENCE_LOCK_AFTER_APPROVAL, NO_TEMPLATE_FEEL.
+## 0. SOURCE HIERARCHY
 
-Questa è una **quality bar**, NON un invito a copiare Ferrari, LoveFrom o un loro layout.
-Il lavoro deve avere la stessa ambizione, precisione, cura, originalità e livello di art direction, ma restare originale e specifico per il prospect.
+When rules conflict, use this order:
 
-## BUDGET MENTALITY — UNLIMITED
+1. CABINA explicit current decision.
+2. RENDERING_STUDIO_V1 frozen rules below.
+3. Prospect verified data / official brand assets.
+4. Output-contract requirements from the Gestionale.
+5. Everything else is secondary.
 
-Aggiunta/riconferma Cabina 2026-10-12:
+Do NOT introduce new creative frameworks unless Cabina explicitly amends this standard.
 
-Il Rendering Studio deve ragionare come una top-tier agency con **budget creativo virtualmente illimitato**.
+---
 
-Questo significa:
-- non scegliere una soluzione perché è più veloce o più economica;
-- non accontentarsi di stock mediocre, template, font generici o composizioni standard;
-- dedicare tutta la ricerca, art direction, image direction e refinement necessari per arrivare al miglior risultato possibile;
-- trattare ogni prospect come un incarico flagship;
-- il limite resta verità dei dati, copyright/licenze, coerenza del brand e fattibilità tecnica finale.
+## 1. WHY THE RENDERING STUDIO EXISTS
 
-## LOGO-FIRST / BRAND GATE — REGOLA FROZEN
+The Site Factory failed when it was allowed to invent art direction while coding.
 
-Il Rendering Studio deve iniziare dal marchio reale del prospect.
+Therefore:
 
-Ordine obbligatorio:
+PROSPECT ENGINE
+→ RENDERING STUDIO
+→ APPROVED VISUAL REFERENCE
+→ SITE FACTORY IN REFERENCE-LOCK
+→ QA
+→ DEMO_READY
+→ SALES ENGINE
 
-1. trovare il logo ufficiale/originale del prospect;
-2. verificarne la fonte;
-3. bloccare l'asset ufficiale come OFFICIAL_LOGO_LOCKED;
-4. NON ridisegnarlo, NON ricostruirlo, NON reinterpretarlo, NON generarne uno nuovo;
-5. solo dopo il logo, estrarre il Brand DNA reale;
-6. solo dopo il Brand DNA, sviluppare art direction, palette, tipografia, immagini e composizione.
+Rendering Studio owns:
 
-Il logo non è un dettaglio da inserire alla fine: è il primo input visuale del progetto.
+- art direction
+- visual concept
+- visual system
+- desktop reference
+- mobile reference
+- image direction
+- typography direction
+- approved visual reference
 
-Se esistono più versioni del logo, scegliere la migliore versione ufficiale disponibile e conservarne la provenienza.
-Se il logo è ambiguo/non verificabile, il Brand Gate non può essere considerato PASS.
-Se il business non possiede realmente un logo pubblico ufficiale, non inventarne uno: usare il nome verificato come testo e registrare esplicitamente NO_OFFICIAL_LOGO_CONFIRMED.
+Rendering Studio does NOT own:
 
-## RULESET_LOCKED — core rules
+- frontend implementation
+- tenant routing
+- deployment
+- sales outreach
 
-- art_direction_first
-- desktop_and_mobile_full_home
-- verified_data_only
-- no_code_before_approval
-- iterative_critique
-- reference_lock_handoff
-- no_template_feel
-- premium_image_direction
-- commercial_design_without_aggressive_sales
+---
 
-## OPERATING_STANDARD_FROZEN
+## 2. QUALITY BAR — LOVEFROM / FERRARI LUCE
 
-- verified_data_first
-- art_direction_first
-- full_home_desktop_1440
-- full_home_mobile_390
-- premium_imagery
-- no_template_feel
-- iterative_critique_until_render_ready
-- no_code_before_approval
-- approved_reference_required
-- site_factory_reference_lock_only
+Permanent quality benchmark recovered from ImpresaX Memory:
 
-## Governance
+- editorial art direction
+- contemporary luxury
+- strong composition
+- typographic hierarchy
+- visual rhythm
+- materiality
+- signature imagery
+- restraint
+- no template feel
+- no generic SaaS
+- no card-grid dependence
 
-Flow frozen:
-PROSPECT_ENGINE -> RENDERING_STUDIO -> CABINA_APPROVAL -> SITE_FACTORY -> SALES_ENGINE
+Reference quality bar:
 
-Change policy:
-ONLY CABINA MAY REOPEN OR AMEND THIS STANDARD.
+LOVEFROM / FERRARI LUCE
 
-## Interpretazione operativa minima
+This is a QUALITY BENCHMARK ONLY.
 
-Queste regole sono la sola source of truth per le decisioni VISIVE del Rendering Studio.
-Non aggiungere framework estetici, stili, archetipi, griglie, font, palette, formule di conversione o benchmark ulteriori che non derivino dal prospect e dalle regole frozen.
+NEVER clone:
 
-Le richieste tecniche di formato del Gestionale (per esempio numero di varianti, campi obbligatori, desktop/mobile, storage e selezione) sono un contratto di output, NON nuove regole creative.
+- Ferrari layouts
+- LoveFrom layouts
+- protected assets
+- distinctive visual expression
+- photography
+- typography systems
+- exact compositions
 
+Target:
+
+the same level of ambition, precision, originality, restraint, material sensitivity and art-direction quality — but always original and prospect-specific.
+
+### Budget mentality
+
+Cabina reconfirmed on 2026-10-12:
+
+VIRTUALLY UNLIMITED CREATIVE BUDGET.
+
+Meaning:
+
+- never choose a weaker solution because it is faster;
+- never choose mediocre stock because it is easier;
+- never settle for a generic font or layout;
+- treat each prospect as a flagship commission;
+- invest all necessary research, art direction, image direction and refinement;
+- the only real limits are truth, rights/licensing, brand coherence and technical feasibility.
+
+---
+
+## 3. VERIFIED DATA FIRST
+
+Before design:
+
+- verify business identity;
+- verify official site;
+- verify services;
+- verify contacts;
+- verify location;
+- verify trust signals;
+- verify source provenance;
+- separate VERIFIED facts from inference and unavailable data.
+
+Never invent:
+
+- services
+- reviews
+- certifications
+- team members
+- years in business
+- facilities
+- prices
+- results
+- statistics
+- locations
+- partner relationships
+
+Absence of evidence is NOT evidence of absence.
+
+---
+
+## 4. LOGO FIRST / BRAND GATE
+
+Every rendering job starts from the real brand.
+
+Mandatory order:
+
+1. find the official/original prospect logo;
+2. verify the source;
+3. lock the exact official asset as OFFICIAL_LOGO_LOCKED;
+4. preserve provenance;
+5. never redraw it;
+6. never reconstruct it;
+7. never reinterpret it;
+8. never generate a replacement logo;
+9. only then extract Brand DNA;
+10. only then start art direction.
+
+If multiple official versions exist:
+
+- choose the best official asset for digital use;
+- keep source provenance.
+
+If the logo is expected/claimed but ambiguous:
+
+BRAND GATE = FAIL / HOLD.
+
+If the business genuinely has no public official logo:
+
+- record NO_OFFICIAL_LOGO_CONFIRMED;
+- use verified business/professional name as plain text;
+- do not invent a mark.
+
+The logo is NOT a final decoration.
+It is the first visual input.
+
+---
+
+## 5. REAL BRAND DNA
+
+After the logo lock, extract real Brand DNA from verified sources.
+
+At minimum:
+
+- brand personality
+- visual cues
+- tone
+- business type
+- audience
+- offer
+- local context
+- trust signals
+- existing colors
+- existing typography cues
+- existing imagery cues
+- business positioning
+- commercial behavior
+
+Do not replace real Brand DNA with generic sector labels.
+
+Examples of INVALID shortcuts:
+
+- "premium industrial"
+- "luxury medical"
+- "modern legal"
+- "editorial construction"
+
+unless those directions are actually derived from the prospect.
+
+---
+
+## 6. ART DIRECTION FIRST
+
+Do NOT begin from:
+
+- a template;
+- a component library;
+- a card system;
+- a page builder;
+- a generic hero;
+- a coding scaffold.
+
+First define the visual idea.
+
+The art direction must decide:
+
+- composition
+- hierarchy
+- typography
+- image language
+- visual rhythm
+- negative space
+- materiality
+- signature visual language
+- section behavior
+- emotional tone
+
+Only after the visual direction is credible may the reference be completed.
+
+---
+
+## 7. THREE GENUINELY DIFFERENT CREATIVE DIRECTIONS
+
+Create 3 REAL visual directions:
+
+A
+B
+C
+
+They must NOT be:
+
+- 3 names in metadata;
+- 3 text descriptions;
+- the same layout with different photos;
+- the same layout with different fonts;
+- 3 hero crops only.
+
+They must be materially different in:
+
+- composition
+- hero logic
+- grid
+- typography
+- image language
+- rhythm
+- section behavior
+- visual signature
+- information hierarchy
+- CTA treatment
+
+The directions must be visually rendered and compared.
+
+---
+
+## 8. IMAGE DIRECTION — PREMIUM
+
+Images are part of art direction, not decoration.
+
+Requirements:
+
+- premium
+- credible
+- relevant
+- high-resolution
+- business-specific
+- visually coherent
+- not repetitive
+- not obvious AI
+- not generic corporate stock
+
+Priority:
+
+1. real verified prospect imagery;
+2. verified official/network imagery when legitimate;
+3. licensed premium imagery when necessary;
+4. generated imagery only when appropriate and when it does not look artificial or misrepresent reality.
+
+Never present representative imagery as the prospect's actual:
+
+- premises
+- team
+- fleet
+- products
+- equipment
+
+unless verified.
+
+Each asset should preserve provenance.
+
+---
+
+## 9. TYPOGRAPHY IS DESIGN
+
+Typography is part of the art direction.
+
+Do not treat typography as an afterthought.
+
+It must support:
+
+- hierarchy
+- rhythm
+- character
+- credibility
+- premium perception
+- mobile readability
+
+Avoid default-looking typographic systems and generic choices that make the design feel like a template.
+
+---
+
+## 10. FULL HOME — DESKTOP + MOBILE
+
+Frozen requirement:
+
+DESKTOP FULL HOME = 1440
+MOBILE FULL HOME = 390
+
+The reference must include the complete experience, not only above-the-fold.
+
+At minimum:
+
+- header/navigation
+- hero
+- body sections
+- services/offering
+- trust where verified
+- CTA system
+- contact path
+- complete footer
+
+MOBILE is not a shrunken desktop.
+
+Mobile needs its own design pass for:
+
+- hierarchy
+- navigation
+- spacing
+- image crop
+- typography
+- CTA placement
+- section density
+- scroll rhythm
+
+---
+
+## 11. COMMERCIAL DESIGN WITHOUT AGGRESSIVE SALES
+
+The site must work commercially.
+
+But do NOT make it look like an aggressive affiliate funnel.
+
+Principle:
+
+CLARITY
+→ DESIRE
+→ TRUST
+→ ACTION
+
+Use relevant CTAs based on verified contact methods and the real business journey.
+
+No:
+
+- fake urgency
+- fake scarcity
+- fake proof
+- invented numbers
+- manipulative claims
+
+---
+
+## 12. NO TEMPLATE FEEL
+
+Hard fail if the page feels like:
+
+- generic agency template
+- generic SaaS
+- repeated card grid
+- interchangeable vertical master
+- stock corporate website
+- page-builder composition
+
+A useful test:
+
+"If logo, text and photos changed, could this exact design serve 50 other companies?"
+
+If YES:
+
+FAIL.
+
+---
+
+## 13. SIGNATURE VISUAL LANGUAGE
+
+Every approved reference must contain a memorable visual idea that belongs to the prospect.
+
+This can emerge from:
+
+- brand assets
+- business materiality
+- sector reality
+- physical environment
+- products
+- services
+- geometry
+- local context
+- typography
+- photography
+- storytelling
+
+It must be meaningful, not decorative noise.
+
+---
+
+## 14. ITERATIVE VISUAL CRITIQUE
+
+Do not trust self-scoring or metadata.
+
+Critique the ACTUAL visible renders.
+
+Review:
+
+- first impression
+- art-direction strength
+- prospect specificity
+- logo integration
+- Brand DNA fidelity
+- composition
+- typography
+- imagery
+- materiality
+- signature imagery
+- rhythm
+- restraint
+- CTA integration
+- commercial clarity
+- desktop quality
+- mobile quality
+- footer
+- template feel
+- SaaS feel
+- AI feel
+- truth integrity
+
+If weak:
+
+REWORK.
+
+Maximum:
+
+5 REAL critique/rework cycles.
+
+After 5 unresolved cycles:
+
+ESCALATION_REQUIRED.
+
+---
+
+## 15. HARD GATES BEFORE APPROVED_REFERENCE
+
+APPROVED_REFERENCE is forbidden unless all relevant gates pass:
+
+- VERIFIED_DATA_GATE
+- BRAND_GATE
+- OFFICIAL_LOGO_LOCK or NO_OFFICIAL_LOGO_CONFIRMED
+- BRAND_DNA_GATE
+- ART_DIRECTION_GATE
+- THREE_VISUAL_DIRECTIONS_GATE
+- PREMIUM_IMAGE_GATE
+- DESKTOP_FULL_HOME_GATE
+- MOBILE_FULL_HOME_GATE
+- FOOTER_GATE
+- TYPOGRAPHY_GATE
+- NO_TEMPLATE_GATE
+- COMMERCIAL_DESIGN_GATE
+- TRUTH_PASS
+- VISUAL_CRITIQUE_GATE
+- CONSISTENCY_GATE
+
+Numerical scores can document a result.
+They can NEVER replace visual evidence.
+
+---
+
+## 16. RENDER_READY / APPROVED_REFERENCE
+
+The Rendering Studio works until the output is genuinely:
+
+RENDER_READY
+
+Only then can it become:
+
+APPROVED_REFERENCE
+
+The reference must be a real visual source of truth.
+
+No fake PASS.
+No metadata-only PASS.
+No self-declared 9/10 without visible proof.
+
+---
+
+## 17. SITE FACTORY REFERENCE-LOCK
+
+After APPROVED_REFERENCE:
+
+the Site Factory must IMPLEMENT, not redesign.
+
+It may not:
+
+- change art direction;
+- replace typography arbitrarily;
+- replace imagery arbitrarily;
+- simplify composition because it is easier;
+- convert the reference into a generic component system.
+
+Its responsibility:
+
+REFERENCE FIDELITY + TECHNICAL QUALITY.
+
+---
+
+## 18. IMPORTANT RECOVERED LESSONS
+
+### Giardinelli
+
+V1, V2 and V3 were visually rejected.
+
+The key correction was:
+
+STOP autonomous Site Factory art direction.
+
+Use:
+
+APPROVED VISUAL REFERENCE FIRST
+→ REFERENCE-LOCK IMPLEMENTATION.
+
+### Fisioexpress
+
+Recovered successful direction from project context:
+
+PREMIUM LOCAL TRUST.
+
+Characteristics that were preferred:
+
+- light white/blue direction;
+- exact official FISIOEXPRESS.it identity;
+- strong Catanzaro Lido presence;
+- clean hero;
+- real/credible photography;
+- services clearly readable;
+- Luca Iannelli profile;
+- coherent mobile version.
+
+This is a REFERENCE CASE, not a universal template.
+
+Lesson:
+
+technical functionality does not equal visual/commercial adequacy.
+
+---
+
+## 19. AUTOMATION PRINCIPLE
+
+Rendering automation must reproduce this frozen method.
+
+It must NOT simplify it into:
+
+- prompts saying "make it premium";
+- metadata scores;
+- sector templates;
+- generic design presets.
+
+Automation must preserve:
+
+research
+→ logo/brand gate
+→ Brand DNA
+→ art direction
+→ visual directions
+→ full desktop/mobile
+→ critique
+→ rework
+→ Render Ready.
+
+---
+
+## 20. CURRENT GESTIONALE OUTPUT CONTRACT — NOT A CREATIVE RULE
+
+Added later for the Gestionale.
+
+For each prospect, produce:
+
+3 selectable COMPLETE variants:
+
+A
+B
+C
+
+Each variant must contain:
+
+- full desktop 1440 home
+- full mobile 390 home
+
+The 3 variants are stored independently and shown in the Gestionale.
+
+The user selects which one to implement.
+
+This requirement is a DELIVERY/PRODUCT CONTRACT.
+
+It must NOT alter or replace the frozen creative rules above.
+
+---
+
+## 21. CURRENT MASTER PRINCIPLE
+
+LOGO FIRST
+→ VERIFIED DATA
+→ REAL BRAND DNA
+→ ART DIRECTION FIRST
+→ LOVEFROM / FERRARI LUCE QUALITY BAR
+→ VIRTUALLY UNLIMITED CREATIVE BUDGET
+→ 3 REAL VISUAL DIRECTIONS
+→ PREMIUM IMAGE DIRECTION
+→ COMPLETE DESKTOP + MOBILE
+→ ITERATIVE CRITIQUE
+→ RENDER_READY
+→ APPROVED_REFERENCE
+→ SITE FACTORY REFERENCE-LOCK
+
+If the result looks merely "good for a local business":
+
+it has not met the standard.
+
+The target is:
+
+FLAGSHIP-LEVEL ART DIRECTION
++
+PROSPECT-SPECIFIC IDENTITY
++
+COMMERCIAL CLARITY
++
+TRUTH.
