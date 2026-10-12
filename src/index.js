@@ -1,6 +1,7 @@
 import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
 import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
+import { handlePublicRequest } from "./requests.js";
 
 const ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
@@ -35,6 +36,11 @@ export default {
         return Response.redirect(target.toString(), 301);
       }
       return handleOpsRequest(request, env);
+    }
+
+    // Public inbound request endpoint used by the ImpresaX website form.
+    if ((host === ROOT_HOST || host === WWW_HOST || host.endsWith(".workers.dev")) && url.pathname === "/api/richieste") {
+      return handlePublicRequest(request, env);
     }
 
     // Keep the existing workers.dev endpoint as a technical fallback.
