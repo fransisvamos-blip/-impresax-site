@@ -2,6 +2,14 @@
 /* Gestionale ImpresaX — rendering variants UI
    Overrides the legacy render panel with complete A/B/C full-home candidates. */
 
+function renderSyncStateLabel(variant){
+  const hasDesktop=Boolean(variant.desktop_render_url);
+  const hasMobile=Boolean(variant.mobile_render_url);
+  if(hasDesktop&&hasMobile) return "SINCRONIZZATO";
+  if(hasDesktop||hasMobile) return "SINCRONIZZAZIONE PARZIALE";
+  return "IN SINCRONIZZAZIONE";
+}
+
 function renderVariantCardV2(variant, pack, prospectId) {
   const rejected = String(variant.status || "").includes("REJECT");
   const complete = Boolean(variant.desktop_render_url && variant.mobile_render_url);
@@ -15,7 +23,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
   html += selected ? 'SELEZIONATA' : esc(tStatus(variant.status));
   html += '</span></div>';
 
-  html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390</div>';
+  html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390 · ' + renderSyncStateLabel(variant) + '</div>';
   html += '<div class="render-pair">';
 
   html += '<div><div class="render-label">Home completa desktop · 1440</div>';
@@ -23,7 +31,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
     html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">';
     html += '<img src="' + esc(variant.desktop_render_url) + '" alt="Versione ' + esc(variant.variant_key) + ' desktop completa"></a>';
   } else {
-    html += '<div class="missing-render">Home desktop completa mancante</div>';
+    html += '<div class="missing-render">Render desktop in sincronizzazione dal Rendering Studio</div>';
   }
   html += '</div>';
 
@@ -32,7 +40,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
     html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">';
     html += '<img src="' + esc(variant.mobile_render_url) + '" alt="Versione ' + esc(variant.variant_key) + ' mobile completa"></a>';
   } else {
-    html += '<div class="missing-render">Home mobile completa mancante</div>';
+    html += '<div class="missing-render">Render mobile in sincronizzazione dal Rendering Studio</div>';
   }
   html += '</div></div>';
 
@@ -191,3 +199,19 @@ selectRender = async function(prospectId, packId, variantId, button) {
 };
 
 if (typeof load === "function") load();
+
+let renderAutoRefreshBusy=false;
+setInterval(async () => {
+  if(renderAutoRefreshBusy) return;
+  const panel=document.querySelector('[data-view-panel="rendering"]');
+  if(!panel || !panel.classList.contains('active') || !state.renderingSelected) return;
+  renderAutoRefreshBusy=true;
+  try{
+    await load();
+    await openRenderingProspect(state.renderingSelected);
+  }catch(e){
+    console.warn("Aggiornamento automatico render non riuscito",e);
+  }finally{
+    renderAutoRefreshBusy=false;
+  }
+},30000);
