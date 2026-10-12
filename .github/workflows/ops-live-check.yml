@@ -59,3 +59,5 @@ jobs:
           grep -qi "ImpresaX" /tmp/root
           grep -qi "Giardinelli" /tmp/pilot
           grep -qi "noindex" /tmp/pilot
+
+# CLOUDFLARE_NATIVE_RENDER_VERIFY_V1
