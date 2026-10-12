@@ -764,6 +764,48 @@ async function api(request, env, pathname) {
     return detail ? json({ ok:true, ...detail }) : json({ ok:false, error:"NOT_FOUND" },404);
   }
 
+  if (request.method === "POST" && pathname === "/ops/api/render/select") {
+    let payload;
+    try { payload = await request.json(); }
+    catch { return json({ ok:false, error:"INVALID_JSON" },400); }
+
+    const prospectId=String(payload?.prospect_id||"").trim();
+    const renderPackId=String(payload?.render_pack_id||"").trim();
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(!uuid.test(prospectId)||!uuid.test(renderPackId)) return json({ok:false,error:"INVALID_ID"},400);
+
+    const rows=await sql`select rp.*,p.business_name,p.pipeline_status
+      from render_packs rp join prospects p on p.id=rp.prospect_id
+      where rp.id=${renderPackId}::uuid and rp.prospect_id=${prospectId}::uuid limit 1`;
+    const pack=rows[0];
+    if(!pack) return json({ok:false,error:"RENDER_PACK_NOT_FOUND"},404);
+    if(!pack.desktop_render_url || !pack.mobile_render_url) return json({ok:false,error:"RENDER_PACK_INCOMPLETE"},409);
+    if(String(pack.status||"").includes("REJECT")) return json({ok:false,error:"RENDER_PACK_REJECTED"},409);
+
+    await sql`update render_packs set approved_reference=false where prospect_id=${prospectId}::uuid`;
+    await sql`update render_packs set approved_reference=true,status='APPROVED',approved_at=now() where id=${renderPackId}::uuid`;
+    await sql`update orchestrator_queue
+      set status='CANCELLED',locked_at=null,heartbeat_at=null,locked_by=null,error='SUPERSEDED_BY_RENDER_SELECTION'
+      where prospect_id=${prospectId}::uuid
+        and status in ('QUEUED','RUNNING')
+        and task_type in ('PREPARE_BUILD','BUILD','QA','QA_REWORK')
+        and (render_pack_id is null or render_pack_id<>${renderPackId}::uuid)`;
+    await sql`update prospects set
+      pipeline_status='APPROVED_REFERENCE'::pipeline_status,
+      render_status='APPROVED_REFERENCE',
+      build_status=null,qa_status=null,
+      current_step='SITE_FACTORY_READY',
+      next_action='SITE_FACTORY',
+      error=null,hold_reason=null,updated_at=now()
+      where id=${prospectId}::uuid`;
+    await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
+      values(${prospectId}::uuid,'RENDER_SELECTED_BY_CABINA','render_pack',${renderPackId}::uuid,'control-room',
+        ${pack.pipeline_status},'APPROVED_REFERENCE',
+        ${JSON.stringify({source:"control-room",action:"implement_selected_render"})}::jsonb)`;
+    await sql`select ops_enqueue_for_status(${prospectId}::uuid,'APPROVED_REFERENCE'::pipeline_status)`;
+    return json({ok:true,prospect_id:prospectId,render_pack_id:renderPackId,status:"SITE_FACTORY_READY"});
+  }
+
   if (request.method === "POST" && pathname === "/ops/api/orchestrator/run") {
     const result = await runOrchestrator(env, "control-room");
     return json({ ok:true, result });
