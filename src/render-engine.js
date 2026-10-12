@@ -3,6 +3,8 @@ import puppeteer from "@cloudflare/puppeteer";
 import { generateRenderVariants } from "./rendering-studio.js";
 
 const MODEL = "@cf/zai-org/glm-4.7-flash";
+const VISUAL_QA_MODEL = "@cf/qwen/qwen3.8-27b";
+const MAX_VISUAL_REWORK_CYCLES = 5;
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 const ADMIN_HOST = "admin.impresax.org";
 const MAX_PROSPECTS_PER_TICK = 3;
@@ -33,6 +35,102 @@ function stripCodeFence(value) {
   let text = String(value || "").trim();
   text = text.replace(/^\`\`\`(?:html)?\s*/i, "").replace(/\s*\`\`\`$/i, "");
   return text.trim();
+}
+
+function extractJsonObject(value) {
+  let text = String(value || "").trim()
+    .replace(/^\`\`\`(?:json)?\s*/i, "")
+    .replace(/\s*\`\`\`$/i, "");
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+  if (first < 0 || last <= first) throw new Error("VISUAL_QA_JSON_REQUIRED");
+  return JSON.parse(text.slice(first, last + 1));
+}
+
+function normalizeVisualQa(result) {
+  const issues = Array.isArray(result?.issues) ? result.issues.map(x => String(x).slice(0, 300)).slice(0, 20) : [];
+  const instructions = Array.isArray(result?.rework_instructions)
+    ? result.rework_instructions.map(x => String(x).slice(0, 500)).slice(0, 20)
+    : [];
+  const scores = result?.scores && typeof result.scores === "object" ? result.scores : {};
+  const criticalScores = [
+    "art_direction",
+    "prospect_specificity",
+    "brand_fidelity",
+    "typography",
+    "imagery",
+    "desktop_quality",
+    "mobile_quality",
+    "no_template_feel",
+    "truth_integrity"
+  ];
+  const scoreFailure = criticalScores.some(k => Number.isFinite(Number(scores[k])) && Number(scores[k]) < 8);
+  return {
+    pass: result?.pass === true && issues.length === 0 && !scoreFailure,
+    issues: scoreFailure && issues.length === 0 ? ["VISIBLE_QUALITY_BELOW_FROZEN_BAR"] : issues,
+    rework_instructions: instructions,
+    scores,
+    summary: String(result?.summary || "").slice(0, 1200),
+    model: VISUAL_QA_MODEL,
+    checked_at: new Date().toISOString()
+  };
+}
+
+async function critiqueVisibleRender(env, master, prospect, variantKey, direction, desktopB64, mobileB64) {
+  const prompt = [
+    "You are the independent VISUAL CRITIQUE gate for ImpresaX Rendering Studio.",
+    "Judge the ACTUAL visible desktop and mobile screenshots, not metadata and not intentions.",
+    "The frozen master is binding. LoveFrom / Ferrari Luce is only a quality benchmark: originality, precision, restraint, material sensitivity, premium art direction.",
+    "FAIL if the result feels like a generic local-business template, SaaS/agency template, repeated card grid, weak typography, cheap/irrelevant imagery, obvious AI imagery, generic sector design, or if mobile is merely a shrunken desktop.",
+    "FAIL if the design is not clearly specific to this prospect and its verified brand DNA.",
+    "FAIL if logo integration, hierarchy, spacing, rhythm, image direction, footer, CTA integration, desktop quality or mobile quality is visibly weak.",
+    "FAIL on any visible unverified/fake claim risk.",
+    "Do not reward a page merely because it is complete or functional.",
+    "Return ONLY strict JSON:",
+    '{"pass":true|false,"summary":"...","issues":["..."],"rework_instructions":["..."],"scores":{"art_direction":0,"prospect_specificity":0,"brand_fidelity":0,"typography":0,"imagery":0,"desktop_quality":0,"mobile_quality":0,"no_template_feel":0,"truth_integrity":0}}',
+    "A pass requires every visible dimension to meet a flagship-level bar. Be demanding.",
+    "",
+    "VARIANT: " + variantKey,
+    "CREATIVE DIRECTION:",
+    JSON.stringify(direction || {}),
+    "",
+    "VERIFIED PROSPECT:",
+    JSON.stringify(prospect),
+    "",
+    "FROZEN MASTER:",
+    master.slice(0, 30000),
+    "",
+    "IMAGE 1 = desktop 1440 full homepage. IMAGE 2 = mobile 390 full homepage."
+  ].join("\n");
+
+  let lastError = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const out = await env.AI.run(VISUAL_QA_MODEL, {
+        messages: [
+          {
+            role: "system",
+            content: "You are a strict senior visual design reviewer. Output valid JSON only. Never pass mediocre work."
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: "data:image/jpeg;base64," + desktopB64 } },
+              { type: "image_url", image_url: { url: "data:image/jpeg;base64," + mobileB64 } }
+            ]
+          }
+        ],
+        max_completion_tokens: 1800,
+        temperature: 0.15,
+        reasoning_effort: "high"
+      });
+      return normalizeVisualQa(extractJsonObject(extractModelText(out)));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("VISUAL_QA_FAILED_TO_RUN");
 }
 
 function validateHtml(value, logoUrl) {
@@ -611,7 +709,7 @@ async function generateProspect(sql, env, master, row) {
   }
 }
 
-async function renderPack(sql, env, row, sharedBrowser = null) {
+async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
   const claim = await sql`update render_packs set status='RENDERING_ASSETS'
     where id=${row.render_pack_id}::uuid and status='RENDERING'
     returning id`;
@@ -641,12 +739,19 @@ async function renderPack(sql, env, row, sharedBrowser = null) {
     where s.render_pack_id=${row.render_pack_id}::uuid
       and s.html_source is not null
     order by s.variant_key asc`;
+  const prospectRows = await sql`select
+      p.business_name,p.vertical,p.city,p.country,p.website_url,p.logo,p.brand_dna,p.source_data,
+      coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect') as prospect_code
+    from prospects p where p.id=${row.prospect_id}::uuid limit 1`;
+  if (!prospectRows.length) throw new Error("VISUAL_QA_PROSPECT_REQUIRED");
+  const visualQaProspect = prospectPayload(prospectRows[0], []);
   if (rows.length !== 3) {
     await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     return {ok:false,pack_id:row.render_pack_id,error:"THREE_STAGED_VARIANTS_REQUIRED"};
   }
 
   const browser = sharedBrowser || await puppeteer.launch(env.BROWSER);
+  const visualQa = [];
   try {
     for (const item of rows) {
       const [desktop,mobile] = await Promise.all([
@@ -655,10 +760,9 @@ async function renderPack(sql, env, row, sharedBrowser = null) {
       ]);
       const desktopB64=bytesToBase64(desktop);
       const mobileB64=bytesToBase64(mobile);
-      const base="https://"+ADMIN_HOST+"/ops/render-assets/"+item.variant_id;
 
       await sql`update render_staging_payloads set
-          status='RENDERED',
+          status='VISUAL_QA_PENDING',
           desktop_image_base64=${desktopB64},
           mobile_image_base64=${mobileB64},
           image_mime='image/jpeg',
@@ -668,9 +772,31 @@ async function renderPack(sql, env, row, sharedBrowser = null) {
         where id=${item.id}::uuid`;
 
       await sql`update render_variants set
-          status='RENDER_READY',
-          desktop_render_url=${base+"/desktop"},
-          mobile_render_url=${base+"/mobile"},
+          status='VISUAL_QA_PENDING',
+          desktop_render_url=null,
+          mobile_render_url=null,
+          updated_at=now()
+        where id=${item.variant_id}::uuid`;
+
+      const qa = await critiqueVisibleRender(
+        env,
+        master,
+        visualQaProspect,
+        item.variant_key,
+        item.design_notes?.direction || {},
+        desktopB64,
+        mobileB64
+      );
+      visualQa.push({ variant_key:item.variant_key, variant_id:item.variant_id, staging_id:item.id, qa });
+
+      await sql`update render_staging_payloads set
+          status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
+          design_notes=coalesce(design_notes,'{}'::jsonb) || ${JSON.stringify({visual_qa:qa})}::jsonb,
+          updated_at=now()
+        where id=${item.id}::uuid`;
+
+      await sql`update render_variants set
+          status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
           updated_at=now()
         where id=${item.variant_id}::uuid`;
     }
@@ -684,6 +810,64 @@ async function renderPack(sql, env, row, sharedBrowser = null) {
     return {ok:false,pack_id:row.render_pack_id,error:message};
   } finally {
     if (!sharedBrowser) await browser.close();
+  }
+
+  const failedVisualQa = visualQa.filter(x => !x.qa.pass);
+  if (visualQa.length !== 3 || failedVisualQa.length) {
+    const cycleRows = await sql`select coalesce((content_map->>'visual_rework_cycle')::int,0)+1 as cycle
+      from render_packs where id=${row.render_pack_id}::uuid`;
+    const cycle = Number(cycleRows[0]?.cycle || 1);
+    const escalation = cycle >= MAX_VISUAL_REWORK_CYCLES;
+    const qaSummary = visualQa.map(x => ({variant:x.variant_key, ...x.qa}));
+
+    await sql`update render_packs set
+        status=${escalation ? "ESCALATION_REQUIRED" : "ART_DIRECTION"},
+        content_map=coalesce(content_map,'{}'::jsonb) ||
+          ${JSON.stringify({visual_rework_cycle:cycle,visual_qa_last_run:qaSummary})}::jsonb
+      where id=${row.render_pack_id}::uuid and approved_reference=false`;
+
+    await sql`update render_jobs set
+        status='COMPLETED',
+        output_data=${JSON.stringify({variants:["A","B","C"],desktop_mobile:true,visual_qa_pass:false,visual_rework_cycle:cycle})}::jsonb,
+        error=null,completed_at=now(),updated_at=now()
+      where id=${browserJobId}::uuid`;
+
+    await sql`update prospects set
+        pipeline_status=${escalation ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
+        render_status=${escalation ? "ESCALATION_REQUIRED" : "RENDER_REWORK"},
+        current_step=${escalation ? "ESCALATION_REQUIRED" : "VISUAL_CRITIQUE_REWORK"},
+        next_action=${escalation ? "CABINA_VISUAL_REVIEW" : "AUTO_REWORK_FROM_VISUAL_QA"},
+        error=null,
+        updated_at=now()
+      where id=${row.prospect_id}::uuid`;
+
+    await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
+      values(
+        ${row.prospect_id}::uuid,
+        ${escalation ? "VISUAL_QA_ESCALATION_REQUIRED" : "VISUAL_QA_REWORK_REQUIRED"},
+        'render_pack',${row.render_pack_id}::uuid,'rendering-studio-visual-qa',
+        'RENDERING'::pipeline_status,${escalation ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
+        ${JSON.stringify({cycle,qa:qaSummary,model:VISUAL_QA_MODEL})}::jsonb
+      )`;
+
+    return {
+      ok:false,
+      pack_id:row.render_pack_id,
+      error:escalation ? "VISUAL_QA_ESCALATION_REQUIRED" : "VISUAL_QA_REWORK_REQUIRED",
+      visual_rework_cycle:cycle
+    };
+  }
+
+  for (const item of visualQa) {
+    const base="https://"+ADMIN_HOST+"/ops/render-assets/"+item.variant_id;
+    await sql`update render_staging_payloads set status='RENDERED',updated_at=now()
+      where id=${item.staging_id}::uuid`;
+    await sql`update render_variants set
+        status='RENDER_READY',
+        desktop_render_url=${base+"/desktop"},
+        mobile_render_url=${base+"/mobile"},
+        updated_at=now()
+      where id=${item.variant_id}::uuid`;
   }
 
   const complete = await sql`select count(*)::int as n
@@ -755,13 +939,15 @@ export async function runCloudflareRenderEngine(env) {
 
   const readyToRender=await renderCandidates(sql,MAX_RENDER_PACKS_PER_TICK);
   let rendered=[];
+  let renderMaster="";
   if (readyToRender.length) {
+    renderMaster=await loadFrozenMaster();
     if (!env.BROWSER) {
-      rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row)));
+      rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,null,renderMaster)));
     } else {
       const sharedBrowser=await puppeteer.launch(env.BROWSER);
       try {
-        rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,sharedBrowser)));
+        rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,sharedBrowser,renderMaster)));
       } finally {
         await sharedBrowser.close();
       }
