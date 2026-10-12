@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import puppeteer from "@cloudflare/puppeteer";
 import { buildApprovedReference, qaApprovedReference } from "./site-factory.js";
 
 const ADMIN_HOST = "admin.impresax.org";
@@ -400,6 +401,301 @@ function authResponse(env) {
       "X-Robots-Tag": "noindex, nofollow, noarchive",
     },
   });
+}
+
+
+function decodeBase64Utf8(value) {
+  const raw=atob(String(value || ""));
+  const bytes=new Uint8Array(raw.length);
+  for (let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function bytesToBase64Ops(bytes) {
+  let binary="";
+  const view=bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const chunk=0x8000;
+  for (let i=0;i<view.length;i+=chunk) {
+    binary+=String.fromCharCode(...view.subarray(i,Math.min(i+chunk,view.length)));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytesOps(value) {
+  const raw=atob(String(value || ""));
+  const bytes=new Uint8Array(raw.length);
+  for (let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+  return bytes;
+}
+
+async function sha256Ops(value) {
+  const bytes=new TextEncoder().encode(String(value || ""));
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function parseRenderIngestComment(body) {
+  const text=String(body || "");
+  if (!text.startsWith("IMPRESAX_RENDER_VARIANT_V1")) return null;
+  const rows={};
+  for (const line of text.split(/\r?\n/).slice(1)) {
+    const i=line.indexOf("=");
+    if (i<1) continue;
+    rows[line.slice(0,i).trim()]=line.slice(i+1).trim();
+  }
+  const prospect=String(rows.prospect || "").toUpperCase();
+  const version=Number(rows.version);
+  const variant=String(rows.variant || "").toUpperCase();
+  const contentB64=String(rows.content_b64 || "");
+  if (!validRenderProspectCode(prospect)) throw new Error("INVALID_PROSPECT_CODE");
+  if (!validRenderVersion(version)) throw new Error("INVALID_RENDER_VERSION");
+  if (!["A","B","C"].includes(variant)) throw new Error("INVALID_VARIANT");
+  if (!contentB64) throw new Error("EMPTY_CONTENT_B64");
+  const html=decodeBase64Utf8(contentB64);
+  if (!/<html[\s>]/i.test(html) || !/<\/html>/i.test(html)) throw new Error("HTML_DOCUMENT_REQUIRED");
+  if (html.length>250000) throw new Error("HTML_TOO_LARGE");
+  return {prospect,version,variant,html};
+}
+
+async function ensureRenderPackForIngest(sql, code, version) {
+  const prospects=await sql`select id,business_name,pipeline_status,brand_dna,logo,source_data
+    from prospects
+    where legacy_ids->>'id_prospect'=${code} or source_data->>'id_prospect'=${code}
+    order by rank nulls last
+    limit 1`;
+  const prospect=prospects[0];
+  if (!prospect) throw new Error("PROSPECT_NOT_FOUND");
+
+  let packs=await sql`select * from render_packs
+    where prospect_id=${prospect.id}::uuid and version=${version}
+    order by created_at desc limit 1`;
+  let pack=packs[0];
+
+  if (!pack) {
+    const versions=await sql`select coalesce(max(version),0)::int as max_version
+      from render_packs where prospect_id=${prospect.id}::uuid`;
+    const expected=Number(versions[0]?.max_version || 0)+1;
+    if (Number(version)!==expected) throw new Error("RENDER_VERSION_NOT_NEXT_"+expected);
+    const refs=Array.isArray(prospect.source_data?.source_references)?prospect.source_data.source_references:[];
+    const inserted=await sql`insert into render_packs(
+      prospect_id,status,version,approved_reference,brand_dna,official_logo,source_references
+    ) values(
+      ${prospect.id}::uuid,'RENDERING',${version},false,
+      ${JSON.stringify(prospect.brand_dna || {})}::jsonb,
+      ${JSON.stringify(prospect.logo || {})}::jsonb,
+      ${JSON.stringify(refs)}::jsonb
+    ) returning *`;
+    pack=inserted[0];
+  }
+
+  if (prospect.pipeline_status==="READY_FOR_RENDERING") {
+    await sql`update prospects
+      set pipeline_status='RENDERING'::pipeline_status,
+          render_status='RENDERING',
+          current_step='ART_DIRECTION',
+          next_action='WAIT_RENDER_INGEST',
+          updated_at=now()
+      where id=${prospect.id}::uuid`;
+    prospect.pipeline_status="RENDERING";
+  }
+
+  return {prospect,pack};
+}
+
+async function ingestRenderIssueComments(sql) {
+  const response=await fetch(
+    "https://api.github.com/repos/"+RENDER_REPOSITORY+"/issues/5/comments?per_page=100&sort=created&direction=asc",
+    {headers:{"Accept":"application/vnd.github+json","User-Agent":"ImpresaX-Render-Ingest/1.0","Cache-Control":"no-cache"}}
+  );
+  if (!response.ok) return {ok:false,error:"COMMENTS_FETCH_"+response.status,ingested:0};
+  const comments=await response.json();
+  let ingested=0,errors=0,skipped=0;
+
+  for (const comment of Array.isArray(comments)?comments:[]) {
+    const commentId=Number(comment?.id);
+    const body=String(comment?.body || "");
+    if (!commentId || !body.startsWith("IMPRESAX_RENDER_VARIANT_V1")) continue;
+
+    const existing=await sql`select comment_id,status from render_ingest_comments where comment_id=${commentId} limit 1`;
+    if (existing.length) { skipped++; continue; }
+
+    await sql`insert into render_ingest_comments(comment_id,comment_url,status)
+      values(${commentId},${comment?.html_url || null},'RECEIVED')
+      on conflict(comment_id) do nothing`;
+
+    try {
+      const payload=parseRenderIngestComment(body);
+      if (!payload) { skipped++; continue; }
+      const {prospect,pack}=await ensureRenderPackForIngest(sql,payload.prospect,payload.version);
+      const digest=await sha256Ops(payload.html);
+
+      await sql`insert into render_staging_payloads(
+        render_pack_id,variant_key,status,html_source,design_notes,source_render_ref,
+        source_comment_id,source_sha256,desktop_image_base64,mobile_image_base64,render_error,rendered_at,updated_at
+      ) values(
+        ${pack.id}::uuid,${payload.variant},'STAGED_SOURCE',${payload.html},
+        ${JSON.stringify({source:"IMPRESAX_RENDER_QUEUE",prospect_code:payload.prospect,version:payload.version,variant:payload.variant})}::jsonb,
+        ${comment?.html_url || null},${commentId},${digest},null,null,null,null,now()
+      )
+      on conflict(render_pack_id,variant_key) do update set
+        status='STAGED_SOURCE',
+        html_source=excluded.html_source,
+        design_notes=excluded.design_notes,
+        source_render_ref=excluded.source_render_ref,
+        source_comment_id=excluded.source_comment_id,
+        source_sha256=excluded.source_sha256,
+        desktop_image_base64=null,
+        mobile_image_base64=null,
+        render_error=null,
+        rendered_at=null,
+        updated_at=now()`;
+
+      await sql`insert into render_variants(render_pack_id,variant_key,name,status,source_references)
+        values(${pack.id}::uuid,${payload.variant},${"Versione "+payload.variant},'STAGED_SOURCE',
+          ${JSON.stringify([comment?.html_url || "github-issue:5"])}::jsonb)
+        on conflict(render_pack_id,variant_key) do update set
+          status='STAGED_SOURCE',
+          desktop_render_url=null,
+          mobile_render_url=null,
+          source_references=excluded.source_references,
+          updated_at=now()`;
+
+      await sql`update render_ingest_comments
+        set prospect_code=${payload.prospect},render_version=${payload.version},variant_key=${payload.variant},
+            status='STAGED',error=null,processed_at=now()
+        where comment_id=${commentId}`;
+      await sql`update render_packs set status='RENDERING' where id=${pack.id}::uuid`;
+      await sql`update prospects set render_status='RENDERING',current_step='RENDER_INGEST',
+        next_action='AUTO_RENDER_STAGED_VARIANTS',updated_at=now()
+        where id=${prospect.id}::uuid and pipeline_status='RENDERING'::pipeline_status`;
+      ingested++;
+    } catch (error) {
+      errors++;
+      await sql`update render_ingest_comments
+        set status='ERROR',error=${String(error?.message || error).slice(0,500)},processed_at=now()
+        where comment_id=${commentId}`;
+    }
+  }
+
+  return {ok:true,ingested,errors,skipped};
+}
+
+async function renderHtmlReference(browser, html, width, height) {
+  const page=await browser.newPage();
+  try {
+    await page.setViewport({width,height,deviceScaleFactor:1});
+    await page.setJavaScriptEnabled(false);
+    await page.setContent(html,{waitUntil:"networkidle0",timeout:30000});
+    await new Promise(resolve=>setTimeout(resolve,500));
+    return await page.screenshot({type:"jpeg",quality:80,fullPage:true});
+  } finally {
+    await page.close();
+  }
+}
+
+async function renderNextStagedPack(sql, env) {
+  const candidates=await sql`select rp.id as render_pack_id,rp.version,p.id as prospect_id,p.business_name
+    from render_packs rp
+    join prospects p on p.id=rp.prospect_id
+    where rp.approved_reference=false
+      and rp.status not like 'ARCHIVED%'
+      and (select count(*) from render_staging_payloads s
+           where s.render_pack_id=rp.id and s.html_source is not null and length(s.html_source)>0)=3
+      and exists(select 1 from render_staging_payloads s
+                 where s.render_pack_id=rp.id and s.status in ('STAGED_SOURCE','RENDER_ERROR'))
+    order by rp.created_at asc
+    limit 1`;
+  const candidate=candidates[0];
+  if (!candidate) return {outcome:"idle"};
+
+  if (!env.BROWSER) return {outcome:"blocked",error:"BROWSER_BINDING_NOT_CONFIGURED",render_pack_id:candidate.render_pack_id};
+
+  const rows=await sql`select * from render_staging_payloads
+    where render_pack_id=${candidate.render_pack_id}::uuid
+    order by variant_key asc`;
+  if (rows.length!==3) return {outcome:"blocked",error:"THREE_STAGED_VARIANTS_REQUIRED"};
+
+  const browser=await puppeteer.launch(env.BROWSER);
+  try {
+    for (const row of rows) {
+      try {
+        const variants=await sql`insert into render_variants(render_pack_id,variant_key,name,status)
+          values(${candidate.render_pack_id}::uuid,${row.variant_key},${"Versione "+row.variant_key},'RENDERING_ASSETS')
+          on conflict(render_pack_id,variant_key) do update set
+            status='RENDERING_ASSETS',updated_at=now()
+          returning id`;
+        const variantId=variants[0].id;
+
+        const [desktop,mobile]=await Promise.all([
+          renderHtmlReference(browser,row.html_source,1440,900),
+          renderHtmlReference(browser,row.html_source,390,844)
+        ]);
+
+        const desktopB64=bytesToBase64Ops(desktop);
+        const mobileB64=bytesToBase64Ops(mobile);
+        const base="https://"+ADMIN_HOST+"/ops/api/render-assets/"+variantId;
+
+        await sql`update render_staging_payloads set
+          status='RENDERED',
+          desktop_image_base64=${desktopB64},
+          mobile_image_base64=${mobileB64},
+          image_mime='image/jpeg',
+          render_error=null,
+          rendered_at=now(),
+          updated_at=now()
+          where id=${row.id}::uuid`;
+
+        await sql`update render_variants set
+          status='RENDER_READY',
+          desktop_render_url=${base+"/desktop"},
+          mobile_render_url=${base+"/mobile"},
+          updated_at=now()
+          where id=${variantId}::uuid`;
+      } catch (error) {
+        await sql`update render_staging_payloads set
+          status='RENDER_ERROR',render_error=${String(error?.message || error).slice(0,500)},updated_at=now()
+          where id=${row.id}::uuid`;
+        return {outcome:"error",render_pack_id:candidate.render_pack_id,variant:row.variant_key,error:String(error?.message || error)};
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+
+  const complete=await sql`select count(*)::int as n from render_staging_payloads
+    where render_pack_id=${candidate.render_pack_id}::uuid and status='RENDERED'
+      and desktop_image_base64 is not null and mobile_image_base64 is not null`;
+  if (Number(complete[0]?.n || 0)!==3) {
+    return {outcome:"blocked",render_pack_id:candidate.render_pack_id,error:"RENDERED_VARIANTS_INCOMPLETE"};
+  }
+
+  await sql`update render_packs set status='RENDER_READY',approved_reference=false,approved_at=null
+    where id=${candidate.render_pack_id}::uuid`;
+  await sql`update prospects set
+    pipeline_status='RENDERING'::pipeline_status,
+    render_status='RENDER_READY',
+    current_step='AWAITING_RENDER_SELECTION',
+    next_action='SELECT_RENDER_IN_GESTIONALE',
+    error=null,
+    updated_at=now()
+    where id=${candidate.prospect_id}::uuid`;
+  await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
+    values(
+      ${candidate.prospect_id}::uuid,'RENDER_QUEUE_AUTO_INGEST_READY','render_pack',${candidate.render_pack_id}::uuid,
+      'render-ingest','RENDERING'::pipeline_status,'RENDERING'::pipeline_status,
+      ${JSON.stringify({version:candidate.version,variants:["A","B","C"],storage:"NEON_STAGING",selection_required:true})}::jsonb
+    )`;
+
+  return {outcome:"completed",render_pack_id:candidate.render_pack_id,prospect_id:candidate.prospect_id,version:candidate.version};
+}
+
+export async function runRenderIngest(env) {
+  const sql=db(env);
+  let ingest={ok:true,skipped_poll:true};
+  const minute=new Date().getUTCMinutes();
+  if (minute%2===0) ingest=await ingestRenderIssueComments(sql);
+  const render=await renderNextStagedPack(sql,env);
+  return {ingest,render};
 }
 
 async function dashboard(sql) {
@@ -919,6 +1215,29 @@ async function api(request, env, pathname) {
   try { sql = db(env); }
   catch (error) {
     return json({ ok:false, error:error.code || error.message }, 503);
+  }
+
+  const renderAssetMatch=pathname.match(/^\/ops\/api\/render-assets\/([0-9a-f-]{36})\/(desktop|mobile)$/i);
+  if (request.method === "GET" && renderAssetMatch) {
+    const variantId=renderAssetMatch[1];
+    const mode=renderAssetMatch[2].toLowerCase();
+    const rows=await sql`select s.desktop_image_base64,s.mobile_image_base64,s.image_mime
+      from render_variants rv
+      join render_staging_payloads s on s.render_pack_id=rv.render_pack_id and s.variant_key=rv.variant_key
+      where rv.id=${variantId}::uuid
+      limit 1`;
+    const row=rows[0];
+    if (!row) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store"}});
+    const encoded=mode==="desktop"?row.desktop_image_base64:row.mobile_image_base64;
+    if (!encoded) return new Response("Not ready",{status:404,headers:{"Cache-Control":"no-store"}});
+    return new Response(base64ToBytesOps(encoded),{
+      status:200,
+      headers:{
+        "Content-Type":row.image_mime || "image/jpeg",
+        "Cache-Control":"private, max-age=300",
+        "X-Robots-Tag":"noindex, nofollow, noarchive"
+      }
+    });
   }
 
   if (request.method === "GET" && pathname === "/ops/api/dashboard") {
