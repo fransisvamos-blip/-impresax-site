@@ -1681,42 +1681,17 @@ export function isOpsHost(hostname) {
 export async function handleOpsRequest(request, env) {
   const url = new URL(request.url);
 
-  // Public technical reconciliation endpoint.
-  // It can only import a manifest already committed in the fixed ImpresaX GitHub repository,
-  // so callers cannot inject arbitrary render URLs or content.
-  if (url.pathname === "/ops/render-sync" && request.method === "GET") {
-    try {
-      const sql=db(env);
-      const code=String(url.searchParams.get("prospect") || "").trim().toUpperCase();
-      const version=url.searchParams.get("version");
-      const result=await syncCanonicalRenderManifest(sql,code,version);
-      return json(result,result.status || (result.ok?200:400),{
-        "X-Robots-Tag":"noindex, nofollow, noarchive"
-      });
-    } catch (error) {
-      return json({ok:false,error:error.message || String(error)},503,{
-        "X-Robots-Tag":"noindex, nofollow, noarchive"
-      });
-    }
-  }
-
-  // Capability-token render ingest used by the background Rendering Queue.
-  // GET is intentionally used because scheduled ChatGPT web fetches cannot POST; the random
-  // per-pack token limits the write scope to one non-approved render pack.
-  if (url.pathname === "/ops/render-ingest" && request.method === "GET") {
-    try {
-      const sql=db(env);
-      const result=await handleDirectRenderIngest(sql,env,url);
-      return json(result,result.status || (result.ok?200:400),{
-        "X-Robots-Tag":"noindex, nofollow, noarchive",
-        "Referrer-Policy":"no-referrer"
-      });
-    } catch (error) {
-      return json({ok:false,error:error.message || String(error)},503,{
-        "X-Robots-Tag":"noindex, nofollow, noarchive",
-        "Referrer-Policy":"no-referrer"
-      });
-    }
+  // Legacy GitHub-manifest sync and capability-token ingest are permanently disabled.
+  // Cloudflare-native Rendering Engine + Neon are the only operational rendering path.
+  if (
+    (url.pathname === "/ops/render-sync" || url.pathname === "/ops/render-ingest") &&
+    (request.method === "GET" || request.method === "POST")
+  ) {
+    return json({ok:false,error:"LEGACY_RENDER_TRANSPORT_DISABLED"},410,{
+      "X-Robots-Tag":"noindex, nofollow, noarchive",
+      "Referrer-Policy":"no-referrer",
+      "Cache-Control":"no-store"
+    });
   }
 
   // Public immutable preview assets. URLs contain unguessable variant UUIDs and expose only
