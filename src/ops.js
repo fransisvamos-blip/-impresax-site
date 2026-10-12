@@ -544,13 +544,16 @@ async function handleDirectRenderIngest(sql, env, url) {
     return {ok:true,status:200,service:"impresax-render-ingest",transport:"HTTPS_CHUNK_V1"};
   }
   const token=String(url.searchParams.get("token") || "").trim();
+  const packCapability=String(url.searchParams.get("pack") || "").trim().toLowerCase();
   const variant=String(url.searchParams.get("variant") || "").trim().toUpperCase();
   const part=Number(url.searchParams.get("part"));
   const total=Number(url.searchParams.get("total"));
   const data=String(url.searchParams.get("data") || "").trim();
   const dry=url.searchParams.get("dry")==="1";
 
-  if (!/^[a-f0-9]{64}$/i.test(token)) return {ok:false,status:403,error:"INVALID_INGEST_TOKEN"};
+  const tokenMode=/^[a-f0-9]{64}$/i.test(token);
+  const packMode=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(packCapability);
+  if (!tokenMode && !packMode) return {ok:false,status:403,error:"INVALID_INGEST_CAPABILITY"};
   if (!["A","B","C"].includes(variant)) return {ok:false,status:400,error:"INVALID_VARIANT"};
   if (!Number.isInteger(part) || !Number.isInteger(total) || part<1 || total<1 || part>total || total>100) {
     return {ok:false,status:400,error:"INVALID_CHUNK_INDEX"};
@@ -559,16 +562,29 @@ async function handleDirectRenderIngest(sql, env, url) {
     return {ok:false,status:400,error:"INVALID_CHUNK_DATA"};
   }
 
-  const tokens=await sql`select t.render_pack_id,t.prospect_id,t.prospect_code,t.version,t.expires_at,
-      rp.status as pack_status,rp.approved_reference,p.pipeline_status
-    from render_ingest_tokens t
-    join render_packs rp on rp.id=t.render_pack_id
-    join prospects p on p.id=t.prospect_id
-    where t.token=${token}
-    limit 1`;
-  const gate=tokens[0];
-  if (!gate) return {ok:false,status:403,error:"INGEST_TOKEN_NOT_FOUND"};
-  if (new Date(gate.expires_at).getTime()<Date.now()) return {ok:false,status:403,error:"INGEST_TOKEN_EXPIRED"};
+  let gates;
+  if (tokenMode) {
+    gates=await sql`select t.render_pack_id,t.prospect_id,t.prospect_code,t.version,t.expires_at,
+        rp.status as pack_status,rp.approved_reference,p.pipeline_status
+      from render_ingest_tokens t
+      join render_packs rp on rp.id=t.render_pack_id
+      join prospects p on p.id=t.prospect_id
+      where t.token=${token}
+      limit 1`;
+  } else {
+    gates=await sql`select rp.id as render_pack_id,rp.prospect_id,
+        coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect') as prospect_code,
+        rp.version,(now()+interval '1 day') as expires_at,
+        rp.status as pack_status,rp.approved_reference,p.pipeline_status
+      from render_packs rp
+      join prospects p on p.id=rp.prospect_id
+      where rp.id=${packCapability}::uuid
+        and p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)
+      limit 1`;
+  }
+  const gate=gates[0];
+  if (!gate) return {ok:false,status:403,error:"INGEST_CAPABILITY_NOT_FOUND"};
+  if (tokenMode && new Date(gate.expires_at).getTime()<Date.now()) return {ok:false,status:403,error:"INGEST_TOKEN_EXPIRED"};
   if (gate.approved_reference || /ARCHIVED|REJECT/i.test(String(gate.pack_status || ""))) {
     return {ok:false,status:409,error:"RENDER_PACK_NOT_WRITABLE"};
   }
@@ -580,7 +596,9 @@ async function handleDirectRenderIngest(sql, env, url) {
     values(${gate.render_pack_id}::uuid,${variant},${part},${total},${data})
     on conflict(render_pack_id,variant_key,part) do update set
       total_parts=excluded.total_parts,data=excluded.data,created_at=now()`;
-  await sql`update render_ingest_tokens set last_used_at=now() where render_pack_id=${gate.render_pack_id}::uuid`;
+  if (tokenMode) {
+    await sql`update render_ingest_tokens set last_used_at=now() where render_pack_id=${gate.render_pack_id}::uuid`;
+  }
 
   const chunks=await sql`select part,total_parts,data
     from render_ingest_chunks
