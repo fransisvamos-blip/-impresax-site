@@ -3,6 +3,25 @@
 SOURCE OF TRUTH VISIVA RECUPERATA DAL PROJECT MEMORY
 Data lock originale: 2026-10-11
 
+## LOGO-FIRST / BRAND GATE — REGOLA FROZEN
+
+Il Rendering Studio deve iniziare dal marchio reale del prospect.
+
+Ordine obbligatorio:
+
+1. trovare il logo ufficiale/originale del prospect;
+2. verificarne la fonte;
+3. bloccare l'asset ufficiale come OFFICIAL_LOGO_LOCKED;
+4. NON ridisegnarlo, NON ricostruirlo, NON reinterpretarlo, NON generarne uno nuovo;
+5. solo dopo il logo, estrarre il Brand DNA reale;
+6. solo dopo il Brand DNA, sviluppare art direction, palette, tipografia, immagini e composizione.
+
+Il logo non è un dettaglio da inserire alla fine: è il primo input visuale del progetto.
+
+Se esistono più versioni del logo, scegliere la migliore versione ufficiale disponibile e conservarne la provenienza.
+Se il logo è ambiguo/non verificabile, il Brand Gate non può essere considerato PASS.
+Se il business non possiede realmente un logo pubblico ufficiale, non inventarne uno: usare il nome verificato come testo e registrare esplicitamente NO_OFFICIAL_LOGO_CONFIRMED.
+
 ## RULESET_LOCKED — core rules
 
 - art_direction_first
