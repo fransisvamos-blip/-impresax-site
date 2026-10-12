@@ -147,7 +147,7 @@ function isPublicTenant(tenant) {
 
   if (tenant.status === "CONVERTED_CLIENT") return true;
 
-  if (tenant.autonomous_factory === true && ["QA_RUNNING","QA_FAILED","BUILD_REWORK"].includes(tenant.status) && tenant.public_preview === true) {
+  if (tenant.autonomous_factory === true && ["QA_RUNNING","QA_FAILED","BUILD_REWORK","ESCALATION_REQUIRED"].includes(tenant.status) && tenant.public_preview === true) {
     return true;
   }
 
