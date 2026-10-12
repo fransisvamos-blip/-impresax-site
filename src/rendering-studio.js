@@ -125,6 +125,14 @@ function directionFallbacks(prospect) {
   };
 }
 
+function validDirections(parsed) {
+  if (!parsed?.A || !parsed?.B || !parsed?.C) return false;
+  const values = [parsed.A, parsed.B, parsed.C].map(v => String(v || "").trim());
+  if (values.some(v => v.length < 120)) return false;
+  if (new Set(values.map(v => v.toLowerCase())).size !== 3) return false;
+  return true;
+}
+
 async function deriveDirections(env, master, prospect) {
   const prompt = [
     "Create three distinct art-direction briefs A/B/C for one premium business homepage.",
@@ -132,7 +140,7 @@ async function deriveDirections(env, master, prospect) {
     "Each brief must be prospect-specific, not reusable as a sector template.",
     "They must differ materially in hero logic, grid, typography, imagery language, rhythm, signature device, information hierarchy and CTA treatment.",
     "Base every direction on the verified logo, Brand DNA, real services, real trust, local context and available first-party imagery.",
-    "If the verified prospect data is too weak to create three genuinely prospect-specific directions, FAIL instead of using a generic sector fallback.",
+    "If the verified prospect data is too weak to create three genuinely prospect-specific directions, say INSUFFICIENT_VERIFIED_BRAND_INPUT instead of inventing.",
     "Return ONLY valid JSON in this exact shape: {\"A\":\"...\",\"B\":\"...\",\"C\":\"...\"}.",
     "",
     "FROZEN MASTER:",
@@ -145,9 +153,37 @@ async function deriveDirections(env, master, prospect) {
   const result = await runModel(env, ART_MODEL, [
     { role: "system", content: "You are ImpresaX Rendering Studio art director. Generic fallback directions are forbidden. Be prospect-specific, premium and commercially grounded." },
     { role: "user", content: prompt }
-  ], 1800, 0.45);
-  const parsed = extractJson(aiText(result));
-  if (!parsed?.A || !parsed?.B || !parsed?.C) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+  ], 2200, 0.42);
+
+  const raw = aiText(result);
+  let parsed = extractJson(raw);
+  if (validDirections(parsed)) return parsed;
+
+  const repairPrompt = [
+    "Normalize or recreate the following art-direction output into STRICT JSON only.",
+    "Do not simplify, generalize or replace it with generic sector directions.",
+    "Use the verified prospect data below to preserve or increase prospect specificity.",
+    "Return exactly: {\"A\":\"...\",\"B\":\"...\",\"C\":\"...\"}.",
+    "Each value must be a detailed, prospect-specific art-direction brief of at least 120 characters.",
+    "If the inputs do not support prospect-specific art direction, return {\"error\":\"INSUFFICIENT_VERIFIED_BRAND_INPUT\"}.",
+    "",
+    "RAW ART-DIRECTOR OUTPUT:",
+    raw || "(empty)",
+    "",
+    "VERIFIED PROSPECT:",
+    JSON.stringify(prospect),
+    "",
+    "FROZEN MASTER:",
+    master
+  ].join("\n");
+
+  const repaired = await runModel(env, HTML_MODEL, [
+    { role: "system", content: "You are a strict structured-output editor. Output valid JSON only; generic fallback directions are forbidden." },
+    { role: "user", content: repairPrompt }
+  ], 2400, 0.2);
+
+  parsed = extractJson(aiText(repaired));
+  if (!validDirections(parsed)) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
   return parsed;
 }
 
