@@ -1,0 +1,61 @@
+name: Render DEDIL V3 directions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ops/render-packs/CZ-063/v3/directions-v3.html"
+      - ".github/workflows/render-dedil-v3-directions.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare official and fallback assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="ops/render-packs/CZ-063/v3"
+          cp ops/render-packs/CZ-063/v2/dedil-logo-official.png "$d/dedil-logo-official.png"
+          curl -fL --retry 3 "https://images.pexels.com/photos/10284048/pexels-photo-10284048.jpeg?auto=compress&dpr=1&h=1800&w=2400" -o "$d/materials.jpg"
+          file "$d/dedil-logo-official.png" "$d/materials.jpg"
+
+      - name: Render direction board
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$PWD/ops/render-packs/CZ-063/v3"
+          CHROME="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1             --window-size=1440,2700 --screenshot="$d/directions-v3-raw.png" "file://$d/directions-v3.html"
+
+      - name: Split direction previews
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          d=Path("ops/render-packs/CZ-063/v3")
+          im=Image.open(d/"directions-v3-raw.png").convert("RGB")
+          for i,name in enumerate(["A-transformation-grid","B-supply-system","C-infrastructure-proof"]):
+              crop=im.crop((0,i*900,1440,(i+1)*900))
+              crop.save(d/f"direction-{name}.png",quality=95)
+              prev=crop.resize((900,562),Image.Resampling.LANCZOS)
+              prev.save(d/f"direction-{name}-preview.jpg","JPEG",quality=84,optimize=True,progressive=True)
+          PY
+          rm -f "$d/directions-v3-raw.png" "$d/materials.jpg"
+
+      - name: Commit direction renders
+        shell: bash
+        run: |
+          git config user.name "ImpresaX Rendering Studio"
+          git config user.email "actions@users.noreply.github.com"
+          git add ops/render-packs/CZ-063/v3/direction-*.png ops/render-packs/CZ-063/v3/direction-*-preview.jpg ops/render-packs/CZ-063/v3/dedil-logo-official.png
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Render DEDIL V3 creative directions"
+          git push
