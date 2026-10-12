@@ -1187,6 +1187,17 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     const message = String(error?.message || error || "BROWSER_RENDER_FAILED").slice(0, 600);
     await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
       where id=${browserJobId}::uuid`;
+    await sql`update render_staging_payloads
+      set status='RENDER_ERROR',render_error=${message},updated_at=now()
+      where render_pack_id=${row.render_pack_id}::uuid
+        and html_source is not null
+        and status in ('VISUAL_QA_PENDING','VISUAL_QA_FAILED','VISUAL_QA_PASS','STAGED_SOURCE','RENDER_ERROR')`;
+    await sql`update render_variants
+      set status='RENDER_ERROR',desktop_render_url=null,mobile_render_url=null,selected=false,updated_at=now()
+      where render_pack_id=${row.render_pack_id}::uuid
+        and variant_key in ('A','B','C')
+        and upper(coalesce(status,'')) not like '%REJECT%'
+        and upper(coalesce(status,'')) not like '%ARCHIVED%'`;
     await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     await sql`update prospects set current_step='RENDERING_ASSETS',next_action='RETRY_BROWSER_RENDER',error=${message},updated_at=now()
       where id=${row.prospect_id}::uuid`;
@@ -1298,7 +1309,7 @@ async function renderCandidates(sql, limit) {
     where rp.approved_reference=false
       and rp.status='RENDERING'
       and (select count(*) from render_staging_payloads s
-           where s.render_pack_id=rp.id and s.status in ('STAGED_SOURCE','RENDER_ERROR','RENDERED')
+           where s.render_pack_id=rp.id
              and s.html_source is not null)=3
       and (select count(*) from render_variants rv
            where rv.render_pack_id=rp.id and rv.desktop_render_url is not null and rv.mobile_render_url is not null)<3
