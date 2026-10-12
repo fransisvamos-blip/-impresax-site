@@ -20,7 +20,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
   html += '<span class="kicker">VERSIONE ' + esc(variant.variant_key) + '</span>';
   html += '<h3>' + esc(variant.name || ("Versione " + variant.variant_key)) + '</h3>';
   html += '</div><span class="' + statusClass(selected ? "APPROVED" : variant.status) + '">';
-  html += selected ? 'SCELTA · NON ANCORA IMPLEMENTATA' : esc(tStatus(variant.status));
+  html += selected ? (pack.approved_reference ? 'IMPLEMENTATA' : 'SCELTA · NON ANCORA IMPLEMENTATA') : esc(tStatus(variant.status));
   html += '</span></div>';
 
   html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390 · ' + renderSyncStateLabel(variant) + '</div>';
