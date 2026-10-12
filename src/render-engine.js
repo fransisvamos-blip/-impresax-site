@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import puppeteer from "@cloudflare/puppeteer";
+import { generateRenderVariants } from "./rendering-studio.js";
 
 const MODEL = "@cf/zai-org/glm-4.7-flash";
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
@@ -560,10 +561,50 @@ async function generateProspect(sql, env, master, row) {
   try {
     const firstPartyImages = await discoverFirstPartyImages(row.website_url);
     const payload = prospectPayload(row, firstPartyImages);
-    const pack = await generatePackSingleCall(env, master, payload);
-    const persisted=await persistGeneratedPack(sql,row,jobId,pack.htmlByKey,pack.directions);
+    const feedbackRows = await sql`select variant_key, design_notes->'visual_qa' as visual_qa
+      from render_staging_payloads
+      where render_pack_id=${row.render_pack_id}::uuid
+        and design_notes ? 'visual_qa'
+      order by variant_key`;
+    const studioProspect = {
+      code: payload.code,
+      businessName: payload.business_name,
+      business_name: payload.business_name,
+      vertical: payload.vertical,
+      city: payload.city,
+      country: payload.country,
+      websiteUrl: payload.website_url,
+      website_url: payload.website_url,
+      logo: payload.official_logo,
+      brandDna: payload.brand_dna,
+      brand_dna: payload.brand_dna,
+      verifiedServices: payload.verified_services,
+      verified_services: payload.verified_services,
+      verifiedContacts: payload.verified_contacts,
+      verified_contacts: payload.verified_contacts,
+      verifiedTrust: payload.verified_trust,
+      verified_trust: payload.verified_trust,
+      address: payload.address,
+      primaryDigitalGap: payload.primary_digital_gap,
+      primaryMarketingGap: payload.primary_marketing_gap,
+      commercialGoal: payload.commercial_goal,
+      primaryCta: payload.primary_cta,
+      secondaryCta: payload.secondary_cta,
+      sourceReferences: payload.source_references,
+      firstPartyImages: payload.first_party_images,
+      visualReworkFeedback: feedbackRows.map(x => ({variant:x.variant_key, critique:x.visual_qa}))
+    };
+    const studio = await generateRenderVariants(env, studioProspect);
+    const htmlByKey = {};
+    const directions = {};
+    for (const variant of studio.variants || []) {
+      htmlByKey[variant.key] = variant.html;
+      directions[variant.key] = variant.direction;
+    }
+    if (!htmlByKey.A || !htmlByKey.B || !htmlByKey.C) throw new Error("RENDERING_STUDIO_THREE_VARIANTS_REQUIRED");
+    const persisted=await persistGeneratedPack(sql,row,jobId,htmlByKey,directions);
     if (!persisted) return {ok:false,code:row.prospect_code,error:"STALE_GENERATION_DISCARDED"};
-    return {ok:true,code:row.prospect_code,pack_id:row.render_pack_id,version:row.version};
+    return {ok:true,code:row.prospect_code,pack_id:row.render_pack_id,version:row.version,studio:"RENDERING_STUDIO_V1_FROZEN"};
   } catch (error) {
     await failGeneration(sql, row, jobId, error);
     return {ok:false,code:row.prospect_code,error:String(error?.message || error)};
