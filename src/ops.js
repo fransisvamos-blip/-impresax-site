@@ -1735,6 +1735,8 @@ export async function handleOpsRequest(request, env) {
         database_connected: true,
         render_pipeline: "CLOUDFLARE_NATIVE_V1",
         render_model: "@cf/zai-org/glm-4.7-flash",
+        ai_binding: Boolean(env.AI),
+        browser_binding: Boolean(env.BROWSER),
         control_room_asset: adminAsset.ok,
         control_room_asset_status: adminAsset.status,
         checked_at: rows[0]?.checked_at || new Date().toISOString()
