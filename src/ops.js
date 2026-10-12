@@ -924,6 +924,31 @@ function renderPriority(code, rank) {
 }
 
 async function generateNextCloudflareRender(sql, env) {
+  // Recover interrupted AI calls so one timed-out render can never freeze the queue.
+  await sql`update render_jobs
+    set status='FAILED',error='STALE_CLOUDFLARE_RENDER_RECOVERED',completed_at=now(),updated_at=now()
+    where worker='cloudflare-workers-ai' and status='RUNNING'
+      and started_at < now()-interval '4 minutes'`;
+  await sql`update render_packs rp
+    set status='ART_DIRECTION'
+    where rp.status='AI_RENDERING'
+      and exists(
+        select 1 from render_jobs rj
+        where rj.prospect_id=rp.prospect_id
+          and rj.worker='cloudflare-workers-ai'
+          and rj.status='FAILED'
+          and rj.error='STALE_CLOUDFLARE_RENDER_RECOVERED'
+          and rj.completed_at > now()-interval '2 minutes'
+      )`;
+  await sql`update prospects p
+    set current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',updated_at=now()
+    where p.pipeline_status='RENDERING'::pipeline_status
+      and exists(
+        select 1 from render_packs rp
+        where rp.prospect_id=p.id and rp.status='ART_DIRECTION' and rp.approved_reference=false
+      )
+      and p.current_step='AI_RENDERING'`;
+
   const rows=await sql`select
       p.id as prospect_id,p.rank,p.business_name,p.vertical,p.city,p.country,p.website_url,
       p.logo,p.brand_dna,p.source_data,p.pipeline_status,
