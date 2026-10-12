@@ -30,6 +30,8 @@ jobs:
               && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json \
               && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V4"' /tmp/health.json \
               && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
+              && grep -q '"visual_qa_required":true' /tmp/health.json \
+              && grep -q '"visual_qa_model":"@cf/qwen/qwen3.8-27b"' /tmp/health.json \
               && grep -q '"render_selection_mode":"TWO_STEP_EXPLICIT"' /tmp/health.json \
               && grep -q '"render_ui_two_step":true' /tmp/health.json \
               && grep -q '"legacy_render_transports":"DISABLED"' /tmp/health.json \
