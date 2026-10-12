@@ -169,9 +169,31 @@ async function loadFrozenMaster() {
 }
 
 function attrValue(tag, name) {
-  const pattern = name + "\\s*=\\s*[\\"']([^\\"']+)[\\"']";
-  const m = String(tag || "").match(new RegExp(pattern, "i"));
-  return m ? m[1].trim() : "";
+  const source = String(tag || "");
+  const lower = source.toLowerCase();
+  const needle = String(name || "").toLowerCase();
+  let pos = lower.indexOf(needle);
+  while (pos >= 0) {
+    const before = pos === 0 ? " " : lower[pos - 1];
+    const afterName = lower[pos + needle.length] || "";
+    if (!/[a-z0-9_:-]/i.test(before) && !/[a-z0-9_:-]/i.test(afterName)) {
+      const tail = source.slice(pos + needle.length);
+      const eq = tail.indexOf("=");
+      if (eq >= 0 && !tail.slice(0,eq).trim()) {
+        const valuePart = tail.slice(eq + 1).trimStart();
+        const quote = valuePart[0];
+        if (quote === '"' || quote === "'") {
+          const end = valuePart.indexOf(quote,1);
+          if (end > 1) return valuePart.slice(1,end).trim();
+        } else {
+          const end = valuePart.search(/[\s>]/);
+          return (end >= 0 ? valuePart.slice(0,end) : valuePart).trim();
+        }
+      }
+    }
+    pos = lower.indexOf(needle,pos + needle.length);
+  }
+  return "";
 }
 
 function visibleTextFromHtml(html) {
