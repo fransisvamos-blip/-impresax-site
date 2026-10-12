@@ -459,10 +459,20 @@ async function failGeneration(sql,row,jobId,error) {
       and id<>${jobId}::uuid
       and input_data->>'render_pack_id'=${row.render_pack_id}`;
   if (Number(active[0]?.n || 0)===0) {
-    await sql`update render_packs set status='ART_DIRECTION'
-      where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
-    await sql`update prospects set current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',error=${message},updated_at=now()
-      where id=${row.prospect_id}::uuid`;
+    const reset=await sql`update render_packs set status='ART_DIRECTION'
+      where id=${row.render_pack_id}::uuid and status='AI_RENDERING'
+      returning id`;
+    if (reset.length) {
+      await sql`update prospects set
+          render_status='RENDERING',
+          current_step='ART_DIRECTION',
+          next_action='RETRY_AI_RENDER',
+          error=${message},
+          updated_at=now()
+        where id=${row.prospect_id}::uuid
+          and pipeline_status='RENDERING'::pipeline_status
+          and render_status<>'RENDER_READY'`;
+    }
   }
 }
 
