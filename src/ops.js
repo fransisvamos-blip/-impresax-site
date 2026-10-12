@@ -540,6 +540,9 @@ async function renderAssetResponse(sql, variantId, mode) {
 }
 
 async function handleDirectRenderIngest(sql, env, url) {
+  if (url.searchParams.get("health")==="1") {
+    return {ok:true,status:200,service:"impresax-render-ingest",transport:"HTTPS_CHUNK_V1"};
+  }
   const token=String(url.searchParams.get("token") || "").trim();
   const variant=String(url.searchParams.get("variant") || "").trim().toUpperCase();
   const part=Number(url.searchParams.get("part"));
