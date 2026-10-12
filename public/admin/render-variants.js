@@ -36,6 +36,10 @@ function renderVariantCardV2(variant, pack, prospectId) {
   }
   html += '</div></div>';
 
+  html += '<div class="variant-preview-actions">';
+  if (variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Anteprima desktop ↗</a>';
+  if (variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Anteprima mobile ↗</a>';
+  html += '</div>';
   html += '<div class="render-pack-actions">';
   html += '<span class="id">' + (variant.reference_score != null ? 'Punteggio ' + esc(variant.reference_score) : 'Versione completa') + '</span>';
   html += '<button class="select-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
@@ -114,8 +118,14 @@ openRenderingProspect = async function(id) {
   try {
     const d = await api("/ops/api/prospects/" + encodeURIComponent(id));
     const p = d.prospect;
-    const variants = d.render_variants || [];
-    const packs = d.render_packs || [];
+    const allVariants = d.render_variants || [];
+    const allPacks = d.render_packs || [];
+    const packs = allPacks.filter(pack => {
+      const status = String(pack.status || "").toUpperCase();
+      return !status.includes("REJECT") && !status.includes("ARCHIVED");
+    });
+    const activePackIds = new Set(packs.map(pack => pack.id));
+    const variants = allVariants.filter(v => activePackIds.has(v.render_pack_id));
     let renderContent = "";
 
     if (variants.length) {
@@ -128,7 +138,7 @@ openRenderingProspect = async function(id) {
       renderContent += '<div class="render-contract-note warning"><strong>FORMATO VECCHIO</strong><span>Queste proposte sono precedenti alla nuova regola. Le tre immagini parziali non sono più considerate versioni. Il prossimo rendering dovrà produrre 3 home complete desktop + mobile.</span></div>';
       packs.forEach(pack => { renderContent += renderLegacyPackCardV2(pack); });
     } else {
-      renderContent = '<div class="empty">Nessun pacchetto grafico disponibile.</div>';
+      renderContent = '<div class="empty">Nuovi render in lavorazione. I render rifiutati o archiviati non vengono più mostrati.</div>';
     }
 
     let head = '<div class="detail-head render-detail-head"><div>';
