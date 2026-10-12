@@ -126,12 +126,13 @@ function directionFallbacks(prospect) {
 }
 
 async function deriveDirections(env, master, prospect) {
-  const fallback = directionFallbacks(prospect);
   const prompt = [
     "Create three distinct art-direction briefs A/B/C for one premium business homepage.",
     "Do not write HTML yet.",
     "Each brief must be prospect-specific, not reusable as a sector template.",
     "They must differ materially in hero logic, grid, typography, imagery language, rhythm, signature device, information hierarchy and CTA treatment.",
+    "Base every direction on the verified logo, Brand DNA, real services, real trust, local context and available first-party imagery.",
+    "If the verified prospect data is too weak to create three genuinely prospect-specific directions, FAIL instead of using a generic sector fallback.",
     "Return ONLY valid JSON in this exact shape: {\"A\":\"...\",\"B\":\"...\",\"C\":\"...\"}.",
     "",
     "FROZEN MASTER:",
@@ -141,15 +142,13 @@ async function deriveDirections(env, master, prospect) {
     JSON.stringify(prospect)
   ].join("\n");
 
-  try {
-    const result = await runModel(env, ART_MODEL, [
-      { role: "system", content: "You are ImpresaX Rendering Studio art director. Be specific, premium and commercially grounded." },
-      { role: "user", content: prompt }
-    ], 1400, 0.5);
-    const parsed = extractJson(aiText(result));
-    if (parsed?.A && parsed?.B && parsed?.C) return parsed;
-  } catch {}
-  return fallback;
+  const result = await runModel(env, ART_MODEL, [
+    { role: "system", content: "You are ImpresaX Rendering Studio art director. Generic fallback directions are forbidden. Be prospect-specific, premium and commercially grounded." },
+    { role: "user", content: prompt }
+  ], 1800, 0.45);
+  const parsed = extractJson(aiText(result));
+  if (!parsed?.A || !parsed?.B || !parsed?.C) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+  return parsed;
 }
 
 function buildVariantPrompt(master, prospect, key, direction, repairIssues, previousHtml) {
