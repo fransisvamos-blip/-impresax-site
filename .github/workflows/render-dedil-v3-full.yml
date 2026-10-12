@@ -24,7 +24,15 @@ jobs:
         run: |
           set -euo pipefail
           d="ops/render-packs/CZ-063/v3"
-          test -s "$d/dedil-logo-official.png"
+          if curl -fL --retry 2 "https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato.png" -o "$d/dedil-logo-hi.png"; then
+            mv "$d/dedil-logo-hi.png" "$d/dedil-logo-official.png"
+            echo "Using original-size official logo asset"
+          else
+            rm -f "$d/dedil-logo-hi.png"
+            test -s "$d/dedil-logo-official.png"
+            echo "Original-size asset unavailable; retaining verified official 300x70 asset"
+          fi
+          file "$d/dedil-logo-official.png"
           curl -fL --retry 3 "https://images.pexels.com/photos/10284048/pexels-photo-10284048.jpeg?auto=compress&dpr=1&h=1800&w=2400" -o "$d/materials.jpg"
           curl -fL --retry 3 "https://images.unsplash.com/photo-1763926025678-95d196d0ab28?auto=format&fit=crop&w=2200&q=85" -o "$d/rebar.jpg"
           file "$d/dedil-logo-official.png" "$d/materials.jpg" "$d/rebar.jpg"
