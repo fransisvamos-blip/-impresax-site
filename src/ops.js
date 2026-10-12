@@ -421,10 +421,14 @@ async function dashboard(sql) {
 }
 
 async function prospectDetail(sql, id) {
-  const [p, jobs, packs, assets, builds, qa, events, handoffs, queue] = await Promise.all([
+  const [p, jobs, packs, variants, assets, builds, qa, events, handoffs, queue] = await Promise.all([
     sql`select * from prospects where id=${id}::uuid limit 1`,
     sql`select * from render_jobs where prospect_id=${id}::uuid order by created_at desc`,
     sql`select * from render_packs where prospect_id=${id}::uuid order by version desc`,
+    sql`select rv.* from render_variants rv
+        join render_packs rp on rp.id=rv.render_pack_id
+        where rp.prospect_id=${id}::uuid
+        order by rp.version desc, rv.variant_key asc`,
     sql`select ra.* from render_assets ra join render_packs rp on rp.id=ra.render_pack_id
         where rp.prospect_id=${id}::uuid order by ra.created_at desc`,
     sql`select * from site_builds where prospect_id=${id}::uuid order by created_at desc`,
@@ -438,6 +442,7 @@ async function prospectDetail(sql, id) {
     prospect: p[0],
     render_jobs: jobs,
     render_packs: packs,
+    render_variants: variants,
     render_assets: assets,
     site_builds: builds,
     qa_runs: qa,
@@ -771,25 +776,74 @@ async function api(request, env, pathname) {
 
     const prospectId=String(payload?.prospect_id||"").trim();
     const renderPackId=String(payload?.render_pack_id||"").trim();
+    const renderVariantId=String(payload?.render_variant_id||"").trim();
     const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if(!uuid.test(prospectId)||!uuid.test(renderPackId)) return json({ok:false,error:"INVALID_ID"},400);
+    if(!uuid.test(prospectId)||!uuid.test(renderPackId)||(renderVariantId&&!uuid.test(renderVariantId))) {
+      return json({ok:false,error:"INVALID_ID"},400);
+    }
 
     const rows=await sql`select rp.*,p.business_name,p.pipeline_status
       from render_packs rp join prospects p on p.id=rp.prospect_id
       where rp.id=${renderPackId}::uuid and rp.prospect_id=${prospectId}::uuid limit 1`;
     const pack=rows[0];
     if(!pack) return json({ok:false,error:"RENDER_PACK_NOT_FOUND"},404);
-    if(!pack.desktop_render_url || !pack.mobile_render_url) return json({ok:false,error:"RENDER_PACK_INCOMPLETE"},409);
     if(String(pack.status||"").includes("REJECT")) return json({ok:false,error:"RENDER_PACK_REJECTED"},409);
 
-    await sql`update render_packs set approved_reference=false where prospect_id=${prospectId}::uuid`;
-    await sql`update render_packs set approved_reference=true,status='APPROVED',approved_at=now() where id=${renderPackId}::uuid`;
+    let selectedVariant=null;
+    if(renderVariantId){
+      const variants=await sql`select * from render_variants
+        where id=${renderVariantId}::uuid and render_pack_id=${renderPackId}::uuid limit 1`;
+      selectedVariant=variants[0]||null;
+      if(!selectedVariant) return json({ok:false,error:"RENDER_VARIANT_NOT_FOUND"},404);
+      if(!selectedVariant.desktop_render_url || !selectedVariant.mobile_render_url) {
+        return json({ok:false,error:"RENDER_VARIANT_INCOMPLETE"},409);
+      }
+      if(String(selectedVariant.status||"").includes("REJECT")) {
+        return json({ok:false,error:"RENDER_VARIANT_REJECTED"},409);
+      }
+
+      await sql`update render_variants set selected=false,updated_at=now()
+        where render_pack_id=${renderPackId}::uuid`;
+      await sql`update render_variants set selected=true,status='SELECTED',updated_at=now()
+        where id=${renderVariantId}::uuid`;
+
+      const mergedContent={
+        ...(selectedVariant.content_map||{}),
+        selected_variant:selectedVariant.variant_key,
+        selected_variant_id:selectedVariant.id,
+        selected_variant_name:selectedVariant.name
+      };
+      await sql`update render_packs set
+        desktop_render_url=${selectedVariant.desktop_render_url},
+        mobile_render_url=${selectedVariant.mobile_render_url},
+        brand_dna=${JSON.stringify(selectedVariant.brand_dna||{})}::jsonb,
+        palette=${JSON.stringify(selectedVariant.palette||{})}::jsonb,
+        typography=${JSON.stringify(selectedVariant.typography||{})}::jsonb,
+        image_asset_map=${JSON.stringify(selectedVariant.image_asset_map||{})}::jsonb,
+        section_map=${JSON.stringify(selectedVariant.section_map||[])}::jsonb,
+        cta_map=${JSON.stringify(selectedVariant.cta_map||{})}::jsonb,
+        content_map=${JSON.stringify(mergedContent)}::jsonb,
+        source_references=${JSON.stringify(selectedVariant.source_references||[])}::jsonb,
+        reference_score=${selectedVariant.reference_score ?? null},
+        approved_reference=true,status='APPROVED',approved_at=now()
+        where id=${renderPackId}::uuid`;
+    } else {
+      if(!pack.desktop_render_url || !pack.mobile_render_url) {
+        return json({ok:false,error:"RENDER_PACK_INCOMPLETE"},409);
+      }
+      await sql`update render_packs set approved_reference=true,status='APPROVED',approved_at=now()
+        where id=${renderPackId}::uuid`;
+    }
+
+    await sql`update render_packs set approved_reference=false
+      where prospect_id=${prospectId}::uuid and id<>${renderPackId}::uuid`;
+
     await sql`update orchestrator_queue
       set status='CANCELLED',locked_at=null,heartbeat_at=null,locked_by=null,error='SUPERSEDED_BY_RENDER_SELECTION'
       where prospect_id=${prospectId}::uuid
         and status in ('QUEUED','RUNNING')
-        and task_type in ('PREPARE_BUILD','BUILD','QA','QA_REWORK')
-        and (render_pack_id is null or render_pack_id<>${renderPackId}::uuid)`;
+        and task_type in ('PREPARE_BUILD','BUILD','QA','QA_REWORK')`;
+
     await sql`update prospects set
       pipeline_status='APPROVED_REFERENCE'::pipeline_status,
       render_status='APPROVED_REFERENCE',
@@ -798,12 +852,31 @@ async function api(request, env, pathname) {
       next_action='SITE_FACTORY',
       error=null,hold_reason=null,updated_at=now()
       where id=${prospectId}::uuid`;
+
+    const selectionPayload={
+      source:"gestionale",
+      action:"implement_selected_render",
+      render_variant_id:selectedVariant?.id||null,
+      variant_key:selectedVariant?.variant_key||null,
+      variant_name:selectedVariant?.name||null
+    };
     await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
-      values(${prospectId}::uuid,'RENDER_SELECTED_BY_CABINA','render_pack',${renderPackId}::uuid,'control-room',
+      values(${prospectId}::uuid,'RENDER_SELECTED_BY_CABINA',
+        ${selectedVariant ? "render_variant" : "render_pack"},
+        ${selectedVariant ? selectedVariant.id : renderPackId}::uuid,
+        'gestionale',
         ${pack.pipeline_status},'APPROVED_REFERENCE',
-        ${JSON.stringify({source:"control-room",action:"implement_selected_render"})}::jsonb)`;
+        ${JSON.stringify(selectionPayload)}::jsonb)`;
+
     await sql`select ops_enqueue_for_status(${prospectId}::uuid,'APPROVED_REFERENCE'::pipeline_status)`;
-    return json({ok:true,prospect_id:prospectId,render_pack_id:renderPackId,status:"SITE_FACTORY_READY"});
+    return json({
+      ok:true,
+      prospect_id:prospectId,
+      render_pack_id:renderPackId,
+      render_variant_id:selectedVariant?.id||null,
+      variant_key:selectedVariant?.variant_key||null,
+      status:"SITE_FACTORY_READY"
+    });
   }
 
   if (request.method === "POST" && pathname === "/ops/api/orchestrator/run") {
