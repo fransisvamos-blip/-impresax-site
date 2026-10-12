@@ -146,5 +146,10 @@ jobs:
           git add ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop-preview.jpg                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile-preview.jpg                   ops/render-packs/CZ-063/v3/manifest-v3.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Render DEDIL-CZ063-V3 full desktop and mobile references"
-          git pull --rebase origin main
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push; then exit 0; fi
+            echo "push race, retry $i"
+            sleep 2
+          done
+          exit 1
