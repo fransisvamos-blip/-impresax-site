@@ -758,6 +758,26 @@ async function api(request, env, pathname) {
     }
   }
 
+  if (request.method === "GET" && pathname === "/ops/api/requests") {
+    const [rows, counts] = await Promise.all([
+      sql`select id,created_at,updated_at,status,name,company,sector,website,phone,email,
+                 improvement_area,diagnostic_area,message,source_page,
+                 utm_source,utm_medium,utm_campaign,utm_content,utm_term,source,
+                 notes,contacted_at,closed_at
+          from inbound_requests
+          order by created_at desc
+          limit 500`,
+      sql`select
+          count(*)::int as total,
+          count(*) filter (where status='NUOVA')::int as nuove,
+          count(*) filter (where status='IN_LAVORAZIONE')::int as in_lavorazione,
+          count(*) filter (where status='CONTATTATA')::int as contattate,
+          count(*) filter (where status='CHIUSA')::int as chiuse
+          from inbound_requests`
+    ]);
+    return json({ ok:true, requests:rows, counts:counts[0] || {} });
+  }
+
   if (request.method === "GET" && pathname === "/ops/api/events") {
     const rows = await sql`select * from site_events order by created_at desc limit 300`;
     return json({ ok:true, events:rows });
