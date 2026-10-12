@@ -346,7 +346,7 @@ document.querySelectorAll('input[name="improvement_area"]').forEach(radio=>{
   });
 });
 
-const LEAD_ENDPOINT="https://bvkeurkithmvodyjmnqi.supabase.co/functions/v1/impresax-lead";
+const LEAD_ENDPOINT="/api/richieste";
 
 form?.addEventListener("submit",async event=>{
   event.preventDefault();
