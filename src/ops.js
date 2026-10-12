@@ -502,6 +502,169 @@ async function ensureRenderPackForIngest(sql, code, version) {
   return {prospect,pack};
 }
 
+
+function decodeBase64UrlUtf8(value) {
+  const normalized=String(value || "").replace(/-/g,"+").replace(/_/g,"/");
+  const padded=normalized + "=".repeat((4 - normalized.length % 4) % 4);
+  return decodeBase64Utf8(padded);
+}
+
+function safeRenderHtml(html) {
+  const text=String(html || "").trim();
+  if (!/<html[\s>]/i.test(text) || !/<\/html>/i.test(text)) throw new Error("HTML_DOCUMENT_REQUIRED");
+  if (text.length<500 || text.length>250000) throw new Error("HTML_SIZE_INVALID");
+  if (/<script[\s>]/i.test(text) || /javascript\s*:/i.test(text)) throw new Error("ACTIVE_SCRIPT_NOT_ALLOWED");
+  if (/<iframe[\s>]/i.test(text) || /<object[\s>]/i.test(text) || /<embed[\s>]/i.test(text)) throw new Error("EMBED_NOT_ALLOWED");
+  return text;
+}
+
+async function renderAssetResponse(sql, variantId, mode) {
+  const rows=await sql`select s.desktop_image_base64,s.mobile_image_base64,s.image_mime
+    from render_variants rv
+    join render_staging_payloads s on s.render_pack_id=rv.render_pack_id and s.variant_key=rv.variant_key
+    where rv.id=${variantId}::uuid
+    limit 1`;
+  const row=rows[0];
+  if (!row) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  const encoded=mode==="desktop"?row.desktop_image_base64:row.mobile_image_base64;
+  if (!encoded) return new Response("Not ready",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  return new Response(base64ToBytesOps(encoded),{
+    status:200,
+    headers:{
+      "Content-Type":row.image_mime || "image/jpeg",
+      "Cache-Control":"public, max-age=300",
+      "X-Robots-Tag":"noindex, nofollow, noarchive",
+      "X-Content-Type-Options":"nosniff"
+    }
+  });
+}
+
+async function handleDirectRenderIngest(sql, env, url) {
+  const token=String(url.searchParams.get("token") || "").trim();
+  const variant=String(url.searchParams.get("variant") || "").trim().toUpperCase();
+  const part=Number(url.searchParams.get("part"));
+  const total=Number(url.searchParams.get("total"));
+  const data=String(url.searchParams.get("data") || "").trim();
+  const dry=url.searchParams.get("dry")==="1";
+
+  if (!/^[a-f0-9]{64}$/i.test(token)) return {ok:false,status:403,error:"INVALID_INGEST_TOKEN"};
+  if (!["A","B","C"].includes(variant)) return {ok:false,status:400,error:"INVALID_VARIANT"};
+  if (!Number.isInteger(part) || !Number.isInteger(total) || part<1 || total<1 || part>total || total>100) {
+    return {ok:false,status:400,error:"INVALID_CHUNK_INDEX"};
+  }
+  if (!data || data.length>7000 || !/^[A-Za-z0-9_-]+$/.test(data)) {
+    return {ok:false,status:400,error:"INVALID_CHUNK_DATA"};
+  }
+
+  const tokens=await sql`select t.render_pack_id,t.prospect_id,t.prospect_code,t.version,t.expires_at,
+      rp.status as pack_status,rp.approved_reference,p.pipeline_status
+    from render_ingest_tokens t
+    join render_packs rp on rp.id=t.render_pack_id
+    join prospects p on p.id=t.prospect_id
+    where t.token=${token}
+    limit 1`;
+  const gate=tokens[0];
+  if (!gate) return {ok:false,status:403,error:"INGEST_TOKEN_NOT_FOUND"};
+  if (new Date(gate.expires_at).getTime()<Date.now()) return {ok:false,status:403,error:"INGEST_TOKEN_EXPIRED"};
+  if (gate.approved_reference || /ARCHIVED|REJECT/i.test(String(gate.pack_status || ""))) {
+    return {ok:false,status:409,error:"RENDER_PACK_NOT_WRITABLE"};
+  }
+  if (dry) {
+    return {ok:true,status:200,dry_run:true,prospect:gate.prospect_code,version:gate.version,variant,part,total};
+  }
+
+  await sql`insert into render_ingest_chunks(render_pack_id,variant_key,part,total_parts,data)
+    values(${gate.render_pack_id}::uuid,${variant},${part},${total},${data})
+    on conflict(render_pack_id,variant_key,part) do update set
+      total_parts=excluded.total_parts,data=excluded.data,created_at=now()`;
+  await sql`update render_ingest_tokens set last_used_at=now() where render_pack_id=${gate.render_pack_id}::uuid`;
+
+  const chunks=await sql`select part,total_parts,data
+    from render_ingest_chunks
+    where render_pack_id=${gate.render_pack_id}::uuid and variant_key=${variant}
+    order by part asc`;
+  const consistent=chunks.length===total && chunks.every((row,index)=>Number(row.part)===index+1 && Number(row.total_parts)===total);
+  if (!consistent) {
+    return {ok:true,status:202,staged:false,prospect:gate.prospect_code,version:gate.version,variant,received:chunks.length,total};
+  }
+
+  const encoded=chunks.map(row=>String(row.data)).join("");
+  let html;
+  try { html=safeRenderHtml(decodeBase64UrlUtf8(encoded)); }
+  catch (error) {
+    return {ok:false,status:422,error:String(error.message || error)};
+  }
+  const digest=await sha256Ops(html);
+  const sourceRef="direct-ingest:"+gate.prospect_code+"/v"+gate.version+"/"+variant;
+
+  await sql`insert into render_staging_payloads(
+      render_pack_id,variant_key,status,html_source,design_notes,source_render_ref,
+      source_comment_id,source_sha256,desktop_image_base64,mobile_image_base64,render_error,rendered_at,updated_at
+    ) values(
+      ${gate.render_pack_id}::uuid,${variant},'STAGED_SOURCE',${html},
+      ${JSON.stringify({source:"IMPRESAX_RENDER_QUEUE_DIRECT",transport:"HTTPS_CHUNK_V1"})}::jsonb,
+      ${sourceRef},null,${digest},null,null,null,null,now()
+    )
+    on conflict(render_pack_id,variant_key) do update set
+      status='STAGED_SOURCE',
+      html_source=excluded.html_source,
+      design_notes=excluded.design_notes,
+      source_render_ref=excluded.source_render_ref,
+      source_comment_id=null,
+      source_sha256=excluded.source_sha256,
+      desktop_image_base64=null,
+      mobile_image_base64=null,
+      render_error=null,
+      rendered_at=null,
+      updated_at=now()`;
+
+  const contentMap=JSON.stringify({
+    implementation_html:html,
+    implementation_contract_version:"QUEUE_HTML_V1",
+    source_sha256:digest,
+    source_transport:"HTTPS_CHUNK_V1"
+  });
+  await sql`insert into render_variants(
+      render_pack_id,variant_key,name,status,content_map,source_references
+    ) values(
+      ${gate.render_pack_id}::uuid,${variant},${"Versione "+variant},'STAGED_SOURCE',
+      ${contentMap}::jsonb,${JSON.stringify([sourceRef])}::jsonb
+    )
+    on conflict(render_pack_id,variant_key) do update set
+      name=excluded.name,
+      status='STAGED_SOURCE',
+      desktop_render_url=null,
+      mobile_render_url=null,
+      content_map=excluded.content_map,
+      source_references=excluded.source_references,
+      updated_at=now()`;
+
+  await sql`delete from render_ingest_chunks
+    where render_pack_id=${gate.render_pack_id}::uuid and variant_key=${variant}`;
+  await sql`update render_packs set status='RENDERING' where id=${gate.render_pack_id}::uuid`;
+  await sql`update prospects set
+      pipeline_status='RENDERING'::pipeline_status,
+      render_status='RENDERING',
+      current_step='RENDER_INGEST',
+      next_action='AUTO_RENDER_STAGED_VARIANTS',
+      error=null,
+      updated_at=now()
+    where id=${gate.prospect_id}::uuid
+      and pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)`;
+
+  const staged=await sql`select count(*)::int as n from render_staging_payloads
+    where render_pack_id=${gate.render_pack_id}::uuid and html_source is not null and length(html_source)>0`;
+  let render={outcome:"waiting_for_variants",staged:Number(staged[0]?.n || 0)};
+  if (Number(staged[0]?.n || 0)===3) {
+    render=await renderNextStagedPack(sql,env);
+  }
+
+  return {
+    ok:true,status:200,staged:true,prospect:gate.prospect_code,version:gate.version,variant,
+    staged_variants:Number(staged[0]?.n || 0),render
+  };
+}
+
 async function ingestRenderIssueComments(sql) {
   const response=await fetch(
     "https://api.github.com/repos/"+RENDER_REPOSITORY+"/issues/5/comments?per_page=100&sort=created&direction=asc",
@@ -550,13 +713,20 @@ async function ingestRenderIssueComments(sql) {
         rendered_at=null,
         updated_at=now()`;
 
-      await sql`insert into render_variants(render_pack_id,variant_key,name,status,source_references)
+      const legacyContentMap=JSON.stringify({
+        implementation_html:payload.html,
+        implementation_contract_version:"QUEUE_HTML_V1",
+        source_sha256:digest,
+        source_transport:"GITHUB_ISSUE_V1"
+      });
+      await sql`insert into render_variants(render_pack_id,variant_key,name,status,content_map,source_references)
         values(${pack.id}::uuid,${payload.variant},${"Versione "+payload.variant},'STAGED_SOURCE',
-          ${JSON.stringify([comment?.html_url || "github-issue:5"])}::jsonb)
+          ${legacyContentMap}::jsonb,${JSON.stringify([comment?.html_url || "github-issue:5"])}::jsonb)
         on conflict(render_pack_id,variant_key) do update set
           status='STAGED_SOURCE',
           desktop_render_url=null,
           mobile_render_url=null,
+          content_map=excluded.content_map,
           source_references=excluded.source_references,
           updated_at=now()`;
 
@@ -633,7 +803,7 @@ async function renderNextStagedPack(sql, env) {
 
         const desktopB64=bytesToBase64Ops(desktop);
         const mobileB64=bytesToBase64Ops(mobile);
-        const base="https://"+ADMIN_HOST+"/ops/api/render-assets/"+variantId;
+        const base="https://"+ADMIN_HOST+"/ops/render-assets/"+variantId;
 
         await sql`update render_staging_payloads set
           status='RENDERED',
@@ -1457,6 +1627,37 @@ export async function handleOpsRequest(request, env) {
       return json({ok:false,error:error.message || String(error)},503,{
         "X-Robots-Tag":"noindex, nofollow, noarchive"
       });
+    }
+  }
+
+  // Capability-token render ingest used by the background Rendering Queue.
+  // GET is intentionally used because scheduled ChatGPT web fetches cannot POST; the random
+  // per-pack token limits the write scope to one non-approved render pack.
+  if (url.pathname === "/ops/render-ingest" && request.method === "GET") {
+    try {
+      const sql=db(env);
+      const result=await handleDirectRenderIngest(sql,env,url);
+      return json(result,result.status || (result.ok?200:400),{
+        "X-Robots-Tag":"noindex, nofollow, noarchive",
+        "Referrer-Policy":"no-referrer"
+      });
+    } catch (error) {
+      return json({ok:false,error:error.message || String(error)},503,{
+        "X-Robots-Tag":"noindex, nofollow, noarchive",
+        "Referrer-Policy":"no-referrer"
+      });
+    }
+  }
+
+  // Public immutable preview assets. URLs contain unguessable variant UUIDs and expose only
+  // generated render images, never admin data.
+  const publicRenderAsset=url.pathname.match(/^\/ops\/render-assets\/([0-9a-f-]{36})\/(desktop|mobile)$/i);
+  if (publicRenderAsset && request.method === "GET") {
+    try {
+      const sql=db(env);
+      return renderAssetResponse(sql,publicRenderAsset[1],publicRenderAsset[2].toLowerCase());
+    } catch (error) {
+      return new Response("Unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
     }
   }
 
