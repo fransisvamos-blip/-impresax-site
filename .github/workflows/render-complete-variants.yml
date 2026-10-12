@@ -217,3 +217,24 @@ jobs:
             sleep 2
           done
           exit 1
+
+
+      - name: Sync canonical manifest into Gestionale
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            prospect="$(basename "$(dirname "$d")")"
+            version_dir="$(basename "$d")"
+            version="${version_dir#v}"
+            echo "Syncing $prospect v$version"
+            for i in 1 2 3 4 5; do
+              if curl -fsS --connect-timeout 8 --max-time 30                 "https://admin.impresax.org/ops/render-sync?prospect=$prospect&version=$version"; then
+                echo
+                break
+              fi
+              sleep 4
+              test "$i" != "5"
+            done
+          done < /tmp/render_dirs.txt
