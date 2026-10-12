@@ -546,7 +546,15 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         render_error,rendered_at,updated_at
       ) values(
         ${row.render_pack_id}::uuid,${key},'STAGED_SOURCE',${html},
-        ${JSON.stringify({source:"CLOUDFLARE_WORKERS_AI",model:MODEL,direction:directions[key] || {}})}::jsonb,
+        ${JSON.stringify({
+          source:"RENDERING_STUDIO_V1_FROZEN",
+          execution_engine:"CLOUDFLARE_NATIVE",
+          rendering_studio_contract:"V6_BRAND_GATE_VISUAL_QA",
+          art_direction_model:"@cf/openai/gpt-oss-120b",
+          html_model:"@cf/zai-org/glm-4.7-flash",
+          visual_qa_model:VISUAL_QA_MODEL,
+          direction:directions[key] || {}
+        })}::jsonb,
         ${ref},null,${digest},null,null,null,null,now()
       )
       on conflict(render_pack_id,variant_key) do update set
@@ -586,7 +594,14 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
   }
 
   await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
-  await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({variants:["A","B","C"],model:MODEL})}::jsonb,
+  await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
+        variants:["A","B","C"],
+        department:"RENDERING_STUDIO",
+        contract:"V6_BRAND_GATE_VISUAL_QA",
+        art_direction_model:"@cf/openai/gpt-oss-120b",
+        html_model:"@cf/zai-org/glm-4.7-flash",
+        visual_qa_model:VISUAL_QA_MODEL
+      })}::jsonb,
       error=null,completed_at=now(),updated_at=now()
     where id=${jobId}::uuid`;
   await sql`update prospects set current_step='RENDERING_ASSETS',next_action='AUTO_RENDER_DESKTOP_MOBILE',error=null,updated_at=now()
