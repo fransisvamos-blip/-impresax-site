@@ -1365,11 +1365,9 @@ export async function runOrchestrator(env, workerId = "impresax-orchestrator-v1"
     sql`select ops_reconcile_orchestrator() as reconciled`
   ]);
 
+  // Rendering is Cloudflare-native and is intentionally NOT part of orchestrator_queue.
+  // The orchestrator owns the pipeline only after explicit Cabina approval.
   const supportedTasks = ["PREPARE_BUILD","BUILD","QA","QA_REWORK","SALES_HANDOFF"];
-  // RENDER is claimable only when a real backend executor exists.
-  // This prevents the cron from repeatedly claiming/releasing render jobs while
-  // Rendering Studio is operating through the external Queue ingest bridge.
-  if (env.RENDER_EXECUTOR_URL) supportedTasks.unshift("RENDER");
   const jobs = await sql`select * from ops_claim_job(${workerId}, ${supportedTasks}::text[])`;
   const job = jobs[0];
   if (!job || !job.id) {
@@ -1389,9 +1387,6 @@ export async function runOrchestrator(env, workerId = "impresax-orchestrator-v1"
 
   if (["PREPARE_BUILD","QA_REWORK","SALES_HANDOFF"].includes(job.task_type)) {
     return processInternal(sql, job, prospect);
-  }
-  if (job.task_type === "RENDER") {
-    return processExternal(sql, env, job, prospect, "RENDER", env.RENDER_EXECUTOR_URL, "RENDERING", "APPROVED_REFERENCE");
   }
   if (job.task_type === "BUILD") {
     if (prospect.pipeline_status !== "BUILDING") {
@@ -1539,116 +1534,235 @@ async function api(request, env, pathname) {
     const renderPackId=String(payload?.render_pack_id||"").trim();
     const renderVariantId=String(payload?.render_variant_id||"").trim();
     const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if(!uuid.test(prospectId)||!uuid.test(renderPackId)||(renderVariantId&&!uuid.test(renderVariantId))) {
+    if(!uuid.test(prospectId)||!uuid.test(renderPackId)||!uuid.test(renderVariantId)) {
       return json({ok:false,error:"INVALID_ID"},400);
     }
 
-    const rows=await sql`select rp.*,p.business_name,p.pipeline_status
+    const rows=await sql`select rp.*,p.business_name,p.pipeline_status,p.render_status
       from render_packs rp join prospects p on p.id=rp.prospect_id
       where rp.id=${renderPackId}::uuid and rp.prospect_id=${prospectId}::uuid limit 1`;
     const pack=rows[0];
     if(!pack) return json({ok:false,error:"RENDER_PACK_NOT_FOUND"},404);
-    if(String(pack.status||"").includes("REJECT")) return json({ok:false,error:"RENDER_PACK_REJECTED"},409);
-
-    if(!renderVariantId) {
-      return json({ok:false,error:"RENDER_VARIANT_SELECTION_REQUIRED"},409);
+    if(pack.approved_reference || String(pack.status||"").toUpperCase()==="APPROVED") {
+      return json({ok:false,error:"RENDER_PACK_ALREADY_APPROVED"},409);
+    }
+    if(/REJECT|ARCHIVED/i.test(String(pack.status||""))) {
+      return json({ok:false,error:"RENDER_PACK_NOT_SELECTABLE"},409);
     }
 
     const contractRows=await sql`
       select
         count(*)::int as total,
         count(distinct variant_key)::int as distinct_keys,
-        count(*) filter (where desktop_render_url is not null and mobile_render_url is not null)::int as complete
+        count(*) filter (
+          where desktop_render_url is not null
+            and mobile_render_url is not null
+            and upper(coalesce(status,'')) not like '%REJECT%'
+            and upper(coalesce(status,'')) not like '%ARCHIVED%'
+        )::int as complete
       from render_variants
       where render_pack_id=${renderPackId}::uuid
-        and variant_key in ('A','B','C')
-        and upper(coalesce(status,'')) not like '%REJECT%'
-        and upper(coalesce(status,'')) not like '%ARCHIVED%'`;
+        and variant_key in ('A','B','C')`;
     const contract=contractRows[0]||{};
     if(Number(contract.total)!==3 || Number(contract.distinct_keys)!==3 || Number(contract.complete)!==3) {
       return json({ok:false,error:"THREE_COMPLETE_VARIANTS_REQUIRED"},409);
     }
 
-    let selectedVariant=null;
-    {
-      const variants=await sql`select * from render_variants
-        where id=${renderVariantId}::uuid and render_pack_id=${renderPackId}::uuid limit 1`;
-      selectedVariant=variants[0]||null;
-      if(!selectedVariant) return json({ok:false,error:"RENDER_VARIANT_NOT_FOUND"},404);
-      if(!selectedVariant.desktop_render_url || !selectedVariant.mobile_render_url) {
-        return json({ok:false,error:"RENDER_VARIANT_INCOMPLETE"},409);
-      }
-      if(String(selectedVariant.status||"").includes("REJECT")) {
-        return json({ok:false,error:"RENDER_VARIANT_REJECTED"},409);
-      }
-
-      await sql`update render_variants set selected=false,updated_at=now()
-        where render_pack_id=${renderPackId}::uuid`;
-      await sql`update render_variants set selected=true,status='SELECTED',updated_at=now()
-        where id=${renderVariantId}::uuid`;
-
-      const mergedContent={
-        ...(selectedVariant.content_map||{}),
-        selected_variant:selectedVariant.variant_key,
-        selected_variant_id:selectedVariant.id,
-        selected_variant_name:selectedVariant.name
-      };
-      await sql`update render_packs set
-        desktop_render_url=${selectedVariant.desktop_render_url},
-        mobile_render_url=${selectedVariant.mobile_render_url},
-        brand_dna=${JSON.stringify(selectedVariant.brand_dna||{})}::jsonb,
-        palette=${JSON.stringify(selectedVariant.palette||{})}::jsonb,
-        typography=${JSON.stringify(selectedVariant.typography||{})}::jsonb,
-        image_asset_map=${JSON.stringify(selectedVariant.image_asset_map||{})}::jsonb,
-        section_map=${JSON.stringify(selectedVariant.section_map||[])}::jsonb,
-        cta_map=${JSON.stringify(selectedVariant.cta_map||{})}::jsonb,
-        content_map=${JSON.stringify(mergedContent)}::jsonb,
-        source_references=${JSON.stringify(selectedVariant.source_references||[])}::jsonb,
-        reference_score=${selectedVariant.reference_score ?? null},
-        approved_reference=true,status='APPROVED',approved_at=now()
-        where id=${renderPackId}::uuid`;
+    const variants=await sql`select * from render_variants
+      where id=${renderVariantId}::uuid and render_pack_id=${renderPackId}::uuid limit 1`;
+    const selectedVariant=variants[0]||null;
+    if(!selectedVariant) return json({ok:false,error:"RENDER_VARIANT_NOT_FOUND"},404);
+    if(!selectedVariant.desktop_render_url || !selectedVariant.mobile_render_url) {
+      return json({ok:false,error:"RENDER_VARIANT_INCOMPLETE"},409);
+    }
+    if(/REJECT|ARCHIVED/i.test(String(selectedVariant.status||""))) {
+      return json({ok:false,error:"RENDER_VARIANT_NOT_SELECTABLE"},409);
     }
 
+    await sql`update render_variants
+      set selected=false,
+          status=case when status='SELECTED' then 'RENDER_READY' else status end,
+          updated_at=now()
+      where render_pack_id=${renderPackId}::uuid`;
+    await sql`update render_variants set selected=true,status='SELECTED',updated_at=now()
+      where id=${renderVariantId}::uuid`;
+
+    const mergedContent={
+      ...(selectedVariant.content_map||{}),
+      selected_variant:selectedVariant.variant_key,
+      selected_variant_id:selectedVariant.id,
+      selected_variant_name:selectedVariant.name
+    };
+    await sql`update render_packs set
+      desktop_render_url=${selectedVariant.desktop_render_url},
+      mobile_render_url=${selectedVariant.mobile_render_url},
+      brand_dna=${JSON.stringify(selectedVariant.brand_dna||{})}::jsonb,
+      palette=${JSON.stringify(selectedVariant.palette||{})}::jsonb,
+      typography=${JSON.stringify(selectedVariant.typography||{})}::jsonb,
+      image_asset_map=${JSON.stringify(selectedVariant.image_asset_map||{})}::jsonb,
+      section_map=${JSON.stringify(selectedVariant.section_map||[])}::jsonb,
+      cta_map=${JSON.stringify(selectedVariant.cta_map||{})}::jsonb,
+      content_map=${JSON.stringify(mergedContent)}::jsonb,
+      source_references=${JSON.stringify(selectedVariant.source_references||[])}::jsonb,
+      reference_score=${selectedVariant.reference_score ?? null},
+      approved_reference=false,
+      approved_at=null,
+      status='AWAITING_IMPLEMENTATION'
+      where id=${renderPackId}::uuid`;
+
+    await sql`update orchestrator_queue
+      set status='CANCELLED',locked_at=null,heartbeat_at=null,locked_by=null,
+          error='SUPERSEDED_BY_RENDER_SELECTION',updated_at=now()
+      where prospect_id=${prospectId}::uuid
+        and status in ('QUEUED','RUNNING')
+        and task_type='RENDER'`;
+
+    await sql`update prospects set
+      pipeline_status='RENDERING'::pipeline_status,
+      render_status='RENDER_SELECTED',
+      current_step='AWAITING_RENDER_IMPLEMENTATION',
+      next_action='IMPLEMENT_SELECTED_RENDER',
+      error=null,
+      updated_at=now()
+      where id=${prospectId}::uuid`;
+
+    await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
+      values(
+        ${prospectId}::uuid,'RENDER_VARIANT_SELECTED','render_variant',${selectedVariant.id}::uuid,
+        'gestionale',${pack.pipeline_status},'RENDERING',
+        ${JSON.stringify({
+          source:"gestionale",
+          action:"select_render_only",
+          render_pack_id:renderPackId,
+          render_variant_id:selectedVariant.id,
+          variant_key:selectedVariant.variant_key,
+          variant_name:selectedVariant.name,
+          implementation_required:true
+        })}::jsonb
+      )`;
+
+    return json({
+      ok:true,
+      prospect_id:prospectId,
+      render_pack_id:renderPackId,
+      render_variant_id:selectedVariant.id,
+      variant_key:selectedVariant.variant_key,
+      status:"AWAITING_RENDER_IMPLEMENTATION",
+      approved_reference:false
+    });
+  }
+
+  if (request.method === "POST" && pathname === "/ops/api/render/implement") {
+    let payload;
+    try { payload = await request.json(); }
+    catch { return json({ ok:false, error:"INVALID_JSON" },400); }
+
+    const prospectId=String(payload?.prospect_id||"").trim();
+    const renderPackId=String(payload?.render_pack_id||"").trim();
+    const renderVariantId=String(payload?.render_variant_id||"").trim();
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(!uuid.test(prospectId)||!uuid.test(renderPackId)||!uuid.test(renderVariantId)) {
+      return json({ok:false,error:"INVALID_ID"},400);
+    }
+
+    const rows=await sql`select rp.*,p.business_name,p.pipeline_status,p.render_status
+      from render_packs rp join prospects p on p.id=rp.prospect_id
+      where rp.id=${renderPackId}::uuid and rp.prospect_id=${prospectId}::uuid limit 1`;
+    const pack=rows[0];
+    if(!pack) return json({ok:false,error:"RENDER_PACK_NOT_FOUND"},404);
+
+    const variants=await sql`select * from render_variants
+      where id=${renderVariantId}::uuid and render_pack_id=${renderPackId}::uuid limit 1`;
+    const selectedVariant=variants[0]||null;
+    if(!selectedVariant) return json({ok:false,error:"RENDER_VARIANT_NOT_FOUND"},404);
+
+    if(pack.approved_reference && String(pack.status||"").toUpperCase()==="APPROVED") {
+      if(!selectedVariant.selected) return json({ok:false,error:"ANOTHER_VARIANT_ALREADY_IMPLEMENTED"},409);
+      return json({
+        ok:true,
+        idempotent:true,
+        prospect_id:prospectId,
+        render_pack_id:renderPackId,
+        render_variant_id:selectedVariant.id,
+        variant_key:selectedVariant.variant_key,
+        status:"SITE_FACTORY_READY"
+      });
+    }
+
+    if(!selectedVariant.selected || String(selectedVariant.status||"").toUpperCase()!=="SELECTED") {
+      return json({ok:false,error:"RENDER_VARIANT_MUST_BE_SELECTED_FIRST"},409);
+    }
+    if(!selectedVariant.desktop_render_url || !selectedVariant.mobile_render_url) {
+      return json({ok:false,error:"RENDER_VARIANT_INCOMPLETE"},409);
+    }
+    if(/REJECT|ARCHIVED/i.test(String(pack.status||"")) || /REJECT|ARCHIVED/i.test(String(selectedVariant.status||""))) {
+      return json({ok:false,error:"RENDER_NOT_IMPLEMENTABLE"},409);
+    }
+
+    const contractRows=await sql`
+      select
+        count(*)::int as total,
+        count(distinct variant_key)::int as distinct_keys,
+        count(*) filter (
+          where desktop_render_url is not null
+            and mobile_render_url is not null
+            and upper(coalesce(status,'')) not like '%REJECT%'
+            and upper(coalesce(status,'')) not like '%ARCHIVED%'
+        )::int as complete
+      from render_variants
+      where render_pack_id=${renderPackId}::uuid
+        and variant_key in ('A','B','C')`;
+    const contract=contractRows[0]||{};
+    if(Number(contract.total)!==3 || Number(contract.distinct_keys)!==3 || Number(contract.complete)!==3) {
+      return json({ok:false,error:"THREE_COMPLETE_VARIANTS_REQUIRED"},409);
+    }
+
+    await sql`update render_packs set
+      approved_reference=true,status='APPROVED',approved_at=now()
+      where id=${renderPackId}::uuid`;
     await sql`update render_packs set approved_reference=false
       where prospect_id=${prospectId}::uuid and id<>${renderPackId}::uuid`;
 
     await sql`update orchestrator_queue
-      set status='CANCELLED',locked_at=null,heartbeat_at=null,locked_by=null,error='SUPERSEDED_BY_RENDER_SELECTION'
+      set status='CANCELLED',locked_at=null,heartbeat_at=null,locked_by=null,
+          error='SUPERSEDED_BY_EXPLICIT_RENDER_IMPLEMENTATION',updated_at=now()
       where prospect_id=${prospectId}::uuid
         and status in ('QUEUED','RUNNING')
-        and task_type in ('PREPARE_BUILD','BUILD','QA','QA_REWORK')`;
+        and task_type in ('RENDER','PREPARE_BUILD','BUILD','QA','QA_REWORK')`;
 
     await sql`update prospects set
       pipeline_status='APPROVED_REFERENCE'::pipeline_status,
       render_status='APPROVED_REFERENCE',
-      build_status=null,qa_status=null,
+      build_status=null,
+      qa_status=null,
       current_step='SITE_FACTORY_READY',
       next_action='SITE_FACTORY',
-      error=null,hold_reason=null,updated_at=now()
+      error=null,
+      hold_reason=null,
+      updated_at=now()
       where id=${prospectId}::uuid`;
 
-    const selectionPayload={
-      source:"gestionale",
-      action:"implement_selected_render",
-      render_variant_id:selectedVariant?.id||null,
-      variant_key:selectedVariant?.variant_key||null,
-      variant_name:selectedVariant?.name||null
-    };
     await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
-      values(${prospectId}::uuid,'RENDER_SELECTED_BY_CABINA',
-        ${selectedVariant ? "render_variant" : "render_pack"},
-        ${selectedVariant ? selectedVariant.id : renderPackId}::uuid,
-        'gestionale',
-        ${pack.pipeline_status},'APPROVED_REFERENCE',
-        ${JSON.stringify(selectionPayload)}::jsonb)`;
+      values(
+        ${prospectId}::uuid,'RENDER_IMPLEMENTATION_CONFIRMED','render_variant',${selectedVariant.id}::uuid,
+        'gestionale',${pack.pipeline_status},'APPROVED_REFERENCE',
+        ${JSON.stringify({
+          source:"gestionale",
+          action:"implement_selected_render",
+          render_pack_id:renderPackId,
+          render_variant_id:selectedVariant.id,
+          variant_key:selectedVariant.variant_key,
+          variant_name:selectedVariant.name
+        })}::jsonb
+      )`;
 
     await sql`select ops_enqueue_for_status(${prospectId}::uuid,'APPROVED_REFERENCE'::pipeline_status)`;
     return json({
       ok:true,
       prospect_id:prospectId,
       render_pack_id:renderPackId,
-      render_variant_id:selectedVariant?.id||null,
-      variant_key:selectedVariant?.variant_key||null,
+      render_variant_id:selectedVariant.id,
+      variant_key:selectedVariant.variant_key,
       status:"SITE_FACTORY_READY"
     });
   }
