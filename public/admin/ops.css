@@ -22,3 +22,33 @@
 #email-delivery-tracking.pass{color:var(--good)}#email-delivery-tracking.fail{color:var(--bad)}#email-delivery-tracking.pending{color:var(--warn)}
 @media(max-width:1100px){.email-summary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:620px){.email-summary{grid-template-columns:1fr}.email-meta{align-items:flex-start;flex-direction:column}.email-meta #email-delivery-note{margin-left:0;text-align:left}}
+
+
+/* Render Studio — full reference visibility */
+.reference-studio{padding-top:18px}
+.reference-title{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:10px}
+.reference-title h4{margin:0}
+.reference-note{margin:0 0 14px;color:var(--muted);font-size:10px;line-height:1.55}
+.cta-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.cta-preview span{display:grid;gap:4px;padding:10px;border:1px solid var(--line);background:#0f1210;font-size:10px}
+.cta-preview b{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.reference-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:start}
+.reference-card{border:1px solid var(--line);background:#0f1210;overflow:hidden}
+.reference-card-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line);font-size:9px}
+.reference-card-head a{font-size:8px;color:var(--good);text-decoration:none}
+.reference-card>a{display:block;background:#ece9e3}
+.reference-shot{display:block;width:100%;height:auto}
+.desktop-shot{max-height:620px;object-fit:contain;object-position:top;background:#ece9e3}
+.mobile-shot{max-height:620px;object-fit:contain;object-position:top;background:#ece9e3}
+.directions-block{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.direction-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.direction-card{display:grid;gap:6px;color:var(--text)!important;text-decoration:none!important;font-size:8px;text-transform:uppercase;letter-spacing:.06em}
+.direction-card img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid var(--line);background:#0f1210}
+@media(max-width:1100px){.reference-grid{grid-template-columns:minmax(0,1fr) 180px}}
+@media(max-width:620px){
+  .cta-preview{grid-template-columns:1fr}
+  .reference-grid{grid-template-columns:1fr}
+  .desktop-shot,.mobile-shot{max-height:none}
+  .mobile-shot{width:min(390px,100%);margin:0 auto}
+  .direction-grid{grid-template-columns:1fr}
+}
