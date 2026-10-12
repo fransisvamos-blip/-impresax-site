@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s);
-let state={prospects:[],selected:null};
+let state={prospects:[],queue:[],selected:null,currentView:"home",renderingSelected:null};
 
 const labels={
  total_prospects:"Aziende totali",
@@ -307,6 +307,129 @@ function renderEvents(events){
     <span>${esc(e.prospect_id?smallId(e.prospect_id):e.entity_type||"sistema")}</span>
   </div>`).join("");
 }
+
+function setView(view){
+  state.currentView=view;
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  document.querySelectorAll("[data-view-panel]").forEach(p=>p.classList.toggle("active",p.dataset.viewPanel===view));
+}
+function renderHome(counts){
+  const active=state.prospects.filter(p=>["RENDERING","READY_FOR_BUILD","BUILDING","QA_RUNNING","BUILD_REWORK"].includes(p.pipeline_status));
+  const ready=state.prospects.filter(p=>p.pipeline_status==="DEMO_READY");
+  $("#home-status").innerHTML=`
+    <div class="home-status-row"><span>Attività in corso</span><strong>${active.length}</strong></div>
+    <div class="home-status-row"><span>Demo pronte</span><strong>${ready.length}</strong></div>
+    <div class="home-status-row"><span>Render approvati</span><strong>${Number(counts.approved_reference||0)}</strong></div>
+  `;
+  const escs=state.prospects.filter(p=>p.pipeline_status==="ESCALATION_REQUIRED");
+  $("#home-escalations").innerHTML=escs.length?escs.map(p=>`
+    <button class="mini-prospect" data-open-prospect="${esc(p.id_prospect)}">
+      <strong>${esc(p.azienda)}</strong><span>${esc(p.error||"Intervento richiesto")}</span>
+    </button>`).join(""):'<span class="id">Nessun intervento richiesto</span>';
+  document.querySelectorAll("[data-open-prospect]").forEach(b=>b.addEventListener("click",()=>{
+    setView("prospects");selectProspect(b.dataset.openProspect);
+  }));
+}
+function renderRenderingList(){
+  const allowed=["READY_FOR_RENDERING","RENDERING","RENDER_REWORK","APPROVED_REFERENCE","READY_FOR_BUILD","BUILDING","BUILD_REWORK","QA_RUNNING","QA_FAILED","ESCALATION_REQUIRED","DEMO_READY"];
+  const rows=state.prospects.filter(p=>allowed.includes(p.pipeline_status));
+  $("#rendering-list").innerHTML=rows.length?rows.map(p=>`
+    <button class="render-prospect-row ${state.renderingSelected===p.id_prospect?"selected":""}" data-render-prospect="${esc(p.id_prospect)}">
+      <span><strong>${esc(p.azienda)}</strong><small>${esc(tVertical(p.vertical))}</small></span>
+      <span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.render_status||p.pipeline_status))}</span>
+    </button>`).join(""):'<div class="empty">Nessun prospect con rendering disponibile.</div>';
+  document.querySelectorAll("[data-render-prospect]").forEach(b=>b.addEventListener("click",()=>openRenderingProspect(b.dataset.renderProspect)));
+}
+function renderPackCard(pack,assets){
+  const rejected=String(pack.status||"").includes("REJECT");
+  const complete=Boolean(pack.desktop_render_url&&pack.mobile_render_url);
+  const directions=(assets||[]).filter(a=>a.render_pack_id===pack.id&&/^DIRECTION_[ABC]$/.test(String(a.asset_type||""))).sort((a,b)=>String(a.asset_type).localeCompare(String(b.asset_type)));
+  return `
+    <article class="render-pack-card ${pack.approved_reference?"approved":""}">
+      <div class="render-pack-head">
+        <div><span class="kicker">RENDER PACK</span><h3>Versione ${esc(pack.version)}</h3></div>
+        <span class="${statusClass(pack.approved_reference?"APPROVED":pack.status)}">${pack.approved_reference?"SELEZIONATO":esc(tStatus(pack.status))}</span>
+      </div>
+      <div class="render-pair">
+        <div><div class="render-label">Desktop 1440</div>${pack.desktop_render_url?`<a href="${esc(pack.desktop_render_url)}" target="_blank" rel="noopener"><img src="${esc(pack.desktop_render_url)}" alt="Render desktop"></a>`:'<div class="missing-render">Mancante</div>'}</div>
+        <div><div class="render-label">Mobile 390</div>${pack.mobile_render_url?`<a href="${esc(pack.mobile_render_url)}" target="_blank" rel="noopener"><img src="${esc(pack.mobile_render_url)}" alt="Render mobile"></a>`:'<div class="missing-render">Mancante</div>'}</div>
+      </div>
+      ${directions.length?`<div class="direction-mini-grid">${directions.map(a=>`<a href="${esc(a.asset_url)}" target="_blank" rel="noopener"><img src="${esc(a.asset_url)}" alt="${esc(a.asset_type)}"><span>${esc(a.asset_type.replace("DIRECTION_","Direzione "))}</span></a>`).join("")}</div>`:""}
+      <div class="render-pack-actions">
+        <span class="id">${pack.reference_score!=null?"Score "+esc(pack.reference_score):""}</span>
+        <button class="select-render" data-prospect-id="${esc(pack.prospect_id)}" data-pack-id="${esc(pack.id)}" ${(!complete||rejected||pack.approved_reference)?"disabled":""}>
+          ${pack.approved_reference?"Render selezionato":"Implementa questo render"}
+        </button>
+      </div>
+    </article>`;
+}
+async function openRenderingProspect(id){
+  state.renderingSelected=id;renderRenderingList();
+  $("#rendering-detail").innerHTML='<div class="empty">Caricamento render…</div>';
+  try{
+    const d=await api("/ops/api/prospects/"+encodeURIComponent(id));
+    const p=d.prospect;
+    $("#rendering-detail").innerHTML=`
+      <div class="detail-head">
+        <span class="kicker">RENDERING</span>
+        <h3>${esc(p.business_name)}</h3>
+        <p class="reference-note">Scegli solo una reference completa desktop + mobile. La scelta invia automaticamente il prospect alla Site Factory.</p>
+      </div>
+      <div class="render-pack-stack">${(d.render_packs||[]).length?(d.render_packs||[]).map(pack=>renderPackCard(pack,d.render_assets||[])).join(""):'<div class="empty">Nessun Render Pack disponibile.</div>'}</div>
+    `;
+    document.querySelectorAll(".select-render").forEach(b=>b.addEventListener("click",()=>selectRender(b.dataset.prospectId,b.dataset.packId,b)));
+  }catch(e){
+    $("#rendering-detail").innerHTML='<div class="empty error">Impossibile caricare i render.</div>';console.error(e);
+  }
+}
+async function selectRender(prospectId,packId,button){
+  if(!confirm("Inviare questo render alla Site Factory?"))return;
+  button.disabled=true;button.textContent="Invio alla Site Factory…";
+  try{
+    await api("/ops/api/render/select",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prospect_id:prospectId,render_pack_id:packId})});
+    await load();await openRenderingProspect(prospectId);
+  }catch(e){
+    alert("Selezione render non riuscita.");console.error(e);button.disabled=false;button.textContent="Implementa questo render";
+  }
+}
+function renderFactoryList(){
+  const stages=["APPROVED_REFERENCE","READY_FOR_BUILD","BUILDING","BUILD_REWORK","QA_RUNNING","QA_FAILED","ESCALATION_REQUIRED","DEMO_READY"];
+  const rows=state.prospects.filter(p=>stages.includes(p.pipeline_status));
+  $("#factory-list").innerHTML=rows.length?rows.map(p=>`
+    <article class="factory-row">
+      <div><strong>${esc(p.azienda)}</strong><small>${esc(tVertical(p.vertical))}</small></div>
+      <div><span>Build</span><strong>${esc(tStatus(p.build_status))}</strong></div>
+      <div><span>QA</span><strong>${esc(tStatus(p.qa_status))}</strong></div>
+      <div><span>Fase</span><strong>${esc(tStatus(p.current_step))}</strong></div>
+      <div><span>Tentativo</span><strong>${esc(p.attempt??0)}</strong></div>
+      <div class="factory-actions">${p.live_url?`<a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a>`:""}<button data-factory-prospect="${esc(p.id_prospect)}">Dettaglio</button></div>
+    </article>`).join(""):'<div class="empty">Nessun sito in lavorazione.</div>';
+  document.querySelectorAll("[data-factory-prospect]").forEach(b=>b.addEventListener("click",()=>{setView("prospects");selectProspect(b.dataset.factoryProspect)}));
+}
+function renderSalesList(){
+  const salesStates=["DEMO_READY","SALES_READY","CONTACTED","WON","LOST"];
+  const rows=state.prospects.filter(p=>salesStates.includes(p.pipeline_status));
+  $("#sales-list").innerHTML=rows.length?rows.map(p=>`
+    <article class="sales-row">
+      <div><strong>${esc(p.azienda)}</strong><small>${esc(tVertical(p.vertical))}</small></div>
+      <span class="${statusClass(p.pipeline_status)}">${esc(tStatus(p.pipeline_status))}</span>
+      <div>${p.live_url?`<a href="${esc(p.live_url)}" target="_blank" rel="noopener">Demo ↗</a>`:"—"}</div>
+      <button data-sales-prospect="${esc(p.id_prospect)}">Apri scheda</button>
+    </article>`).join(""):'<div class="empty">Nessun prospect ancora pronto per Sales.</div>';
+  document.querySelectorAll("[data-sales-prospect]").forEach(b=>b.addEventListener("click",()=>{setView("prospects");selectProspect(b.dataset.salesProspect)}));
+}
+function renderSystemQueue(){
+  const q=state.queue||[];
+  $("#system-queue").innerHTML=q.length?q.map(job=>`
+    <article class="queue-row">
+      <div><strong>${esc(job.task_type)}</strong><small>${esc(smallId(job.prospect_id))}</small></div>
+      <span class="${statusClass(job.status)}">${esc(tStatus(job.status))}</span>
+      <span>Attempt ${esc(job.attempt_count||0)}/${esc(job.max_attempts||0)}</span>
+      <span class="${job.error?"error":"id"}">${esc(job.error||"—")}</span>
+      <time>${esc(fmtDate(job.updated_at))}</time>
+    </article>`).join(""):'<div class="empty">Coda orchestratore vuota.</div>';
+}
+
 function listBlock(title,items,formatter){
   return `<section class="detail-section"><h4>${esc(title)} · ${items?.length||0}</h4>${(items&&items.length)?items.slice(0,20).map(formatter).join(""):'<span class="id">Nessun record</span>'}</section>`;
 }
@@ -410,7 +533,15 @@ async function load(){
   try{
     const d=await api("/ops/api/dashboard");
     state.prospects=d.prospects||[];
-    renderMetrics(d.counts||{});renderRows();renderEvents(d.recent_events||[]);
+    state.queue=d.queue||[];
+    renderMetrics(d.counts||{});
+    renderHome(d.counts||{});
+    renderRows();
+    renderEvents(d.recent_events||[]);
+    renderRenderingList();
+    renderFactoryList();
+    renderSalesList();
+    renderSystemQueue();
     $("#updated").textContent="Aggiornato "+fmtDate(d.generated_at);
     await loadEmailSystem();
   }catch(e){
@@ -465,5 +596,6 @@ $("#run").addEventListener("click",async()=>{
   }
 });
 $("#search").addEventListener("input",renderRows);
+document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 load();
 setInterval(load,30000);
