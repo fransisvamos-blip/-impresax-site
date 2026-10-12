@@ -1,0 +1,174 @@
+name: Render complete variant pack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ops/render-packs/**/variant-*.html"
+      - ".github/workflows/render-complete-variants.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-complete-variants-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find render-pack directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            git diff --name-only "${{ github.event.before }}" "${{ github.sha }}"               | grep '^ops/render-packs/.*/variant-.*\.html$'               | xargs -r -n1 dirname               | sort -u > /tmp/render_dirs.txt || true
+          else
+            find ops/render-packs -type f -name 'variant-*.html' -printf '%h\n' | sort -u > /tmp/render_dirs.txt
+          fi
+
+          echo "Render directories:"
+          cat /tmp/render_dirs.txt || true
+
+          if [ ! -s /tmp/render_dirs.txt ]; then
+            echo "No render directories changed."
+          fi
+
+      - name: Install headless renderer
+        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+        shell: bash
+        run: |
+          npm install --no-save puppeteer-core@24
+
+      - name: Render all A/B/C desktop + mobile in one batch
+        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          export CHROME
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { pathToFileURL } = require('url');
+          const puppeteer = require('puppeteer-core');
+
+          const dirs = fs.existsSync('/tmp/render_dirs.txt')
+            ? fs.readFileSync('/tmp/render_dirs.txt','utf8').split(/\r?\n/).map(x=>x.trim()).filter(Boolean)
+            : [];
+
+          if (!dirs.length) process.exit(0);
+
+          async function renderOne(browser, file, output, width, height) {
+            const page = await browser.newPage();
+            await page.setViewport({width, height, deviceScaleFactor: 1});
+            await page.goto(pathToFileURL(path.resolve(file)).href, {
+              waitUntil: 'networkidle2',
+              timeout: 60000
+            });
+            await page.evaluate(async () => {
+              if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            });
+            await new Promise(r=>setTimeout(r,1200));
+            await page.screenshot({path: output, fullPage: true, type:'png'});
+            await page.close();
+          }
+
+          (async()=>{
+            const browser = await puppeteer.launch({
+              executablePath: process.env.CHROME,
+              headless: true,
+              args: ['--no-sandbox','--disable-gpu','--hide-scrollbars']
+            });
+
+            try {
+              for (const dir of dirs) {
+                const jobs = [];
+                for (const key of ['A','B','C']) {
+                  const html = path.join(dir, `variant-${key}.html`);
+                  if (!fs.existsSync(html)) continue;
+                  jobs.push(renderOne(browser, html, path.join(dir,`variant-${key}-desktop.png`), 1440, 900));
+                  jobs.push(renderOne(browser, html, path.join(dir,`variant-${key}-mobile.png`), 390, 844));
+                }
+                await Promise.all(jobs);
+              }
+            } finally {
+              await browser.close();
+            }
+          })().catch(err=>{ console.error(err); process.exit(1); });
+          NODE
+
+      - name: Build lightweight previews
+        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow
+          python <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          dirs=[Path(x.strip()) for x in Path('/tmp/render_dirs.txt').read_text().splitlines() if x.strip()]
+          for d in dirs:
+              for key in ('A','B','C'):
+                  desk=d/f'variant-{key}-desktop.png'
+                  mob=d/f'variant-{key}-mobile.png'
+                  if desk.exists():
+                      im=Image.open(desk).convert('RGB')
+                      w=900
+                      h=round(im.height*w/im.width)
+                      im.resize((w,h),Image.Resampling.LANCZOS).save(d/f'variant-{key}-desktop-preview.jpg','JPEG',quality=84,optimize=True,progressive=True)
+                  if mob.exists():
+                      im=Image.open(mob).convert('RGB')
+                      w=390
+                      h=round(im.height*w/im.width)
+                      im.resize((w,h),Image.Resampling.LANCZOS).save(d/f'variant-{key}-mobile-preview.jpg','JPEG',quality=82,optimize=True,progressive=True)
+          PY
+
+      - name: Validate full variant pack
+        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            for key in A B C; do
+              test -s "$d/variant-$key.html"
+              test -s "$d/variant-$key-desktop.png"
+              test -s "$d/variant-$key-mobile.png"
+            done
+          done < /tmp/render_dirs.txt
+
+      - name: Commit all six renders together
+        if: hashFiles('ops/render-packs/**/variant-*.html') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Studio"
+          git config user.email "actions@users.noreply.github.com"
+
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            git add "$d"/variant-*-desktop.png "$d"/variant-*-mobile.png                     "$d"/variant-*-desktop-preview.jpg "$d"/variant-*-mobile-preview.jpg
+          done < /tmp/render_dirs.txt
+
+          if git diff --cached --quiet; then
+            echo "No render changes"
+            exit 0
+          fi
+
+          git commit -m "Render complete A B C desktop and mobile variants"
+
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main
+            if git push; then exit 0; fi
+            sleep 2
+          done
+          exit 1
