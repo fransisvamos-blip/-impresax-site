@@ -318,6 +318,60 @@ function jsonBlock(title,value){
 function linkMaybe(url,label){
   return url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label||url)} ↗</a>`:"—";
 }
+function renderReferenceStudio(packs,assets){
+  const pack=(packs||[]).find(x=>x.approved_reference)||(packs||[])[0];
+  if(!pack)return '<section class="detail-section"><h4>Reference finale</h4><span class="id">Nessun Render Pack disponibile</span></section>';
+
+  const cta=pack.cta_map||{};
+  const directions=(assets||[])
+    .filter(x=>/^DIRECTION_[ABC]$/.test(String(x.asset_type||"")))
+    .sort((a,b)=>String(a.asset_type).localeCompare(String(b.asset_type)));
+
+  const desktop=pack.desktop_render_url||"";
+  const mobile=pack.mobile_render_url||"";
+
+  return `
+    <section class="detail-section reference-studio">
+      <div class="reference-title">
+        <div>
+          <span class="kicker">REFERENCE FINALE</span>
+          <h4>Home completa · v${esc(pack.version)}</h4>
+        </div>
+        <span class="${statusClass(pack.approved_reference?"APPROVED":"PENDING")}">${pack.approved_reference?"APPROVATA":"DA VALIDARE"}</span>
+      </div>
+      <p class="reference-note">Le tre direzioni creative sono concept di selezione. Qui sotto trovi invece la reference completa che la Site Factory deve riprodurre.</p>
+
+      <div class="cta-preview">
+        ${cta.primary?`<span><b>CTA primaria</b>${esc(cta.primary)}</span>`:""}
+        ${cta.secondary?`<span><b>CTA secondaria</b>${esc(cta.secondary)}</span>`:""}
+        ${cta.phone?`<span><b>Telefono</b>${esc(cta.phone)}</span>`:""}
+        ${cta.email?`<span><b>Email</b>${esc(cta.email)}</span>`:""}
+      </div>
+
+      <div class="reference-grid">
+        <article class="reference-card">
+          <div class="reference-card-head"><strong>DESKTOP · 1440</strong>${linkMaybe(desktop,"Apri a piena risoluzione")}</div>
+          ${desktop?`<a href="${esc(desktop)}" target="_blank" rel="noopener"><img class="reference-shot desktop-shot" src="${esc(desktop)}" alt="Reference desktop completa"></a>`:'<span class="id">Reference desktop mancante</span>'}
+        </article>
+        <article class="reference-card">
+          <div class="reference-card-head"><strong>MOBILE · 390</strong>${linkMaybe(mobile,"Apri a piena risoluzione")}</div>
+          ${mobile?`<a href="${esc(mobile)}" target="_blank" rel="noopener"><img class="reference-shot mobile-shot" src="${esc(mobile)}" alt="Reference mobile completa"></a>`:'<span class="id">Reference mobile mancante</span>'}
+        </article>
+      </div>
+
+      ${directions.length?`
+        <div class="directions-block">
+          <h4>Direzioni creative · concept di selezione</h4>
+          <p class="reference-note">A / B / C non sono home complete: servono solo a scegliere l'art direction. La home completa è quella mostrata sopra.</p>
+          <div class="direction-grid">
+            ${directions.map(x=>`<a class="direction-card" href="${esc(x.asset_url)}" target="_blank" rel="noopener">
+              <img src="${esc(x.asset_url)}" alt="${esc(x.asset_type)}">
+              <span>${esc(x.asset_type.replace("DIRECTION_","Direzione "))}</span>
+            </a>`).join("")}
+          </div>
+        </div>`:""}
+    </section>`;
+}
 async function selectProspect(id){
   state.selected=id;renderRows();
   $("#detail").innerHTML='<div class="empty">Caricamento…</div>';
@@ -335,6 +389,7 @@ async function selectProspect(id){
         <dt>Prossima azione</dt><dd>${esc(tAction(p.next_action))}</dd>
         <dt>Motivo pausa</dt><dd>${esc(p.hold_reason||"—")}</dd>\n        <dt>Errore</dt><dd class="${p.error?"error":""}">${esc(p.error||"—")}</dd>
       </dl></section>
+      ${renderReferenceStudio(d.render_packs,d.render_assets)}
       ${jsonBlock("Dati azienda / fonti",p.source_data)}
       ${jsonBlock("Logo",p.logo)}
       ${jsonBlock("DNA del brand",p.brand_dna)}
