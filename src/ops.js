@@ -1735,6 +1735,7 @@ export async function handleOpsRequest(request, env) {
         database_connected: true,
         render_pipeline: "CLOUDFLARE_NATIVE_V1",
         render_model: "@cf/zai-org/glm-4.7-flash",
+        render_engine_version: "CLOUDFLARE_NATIVE_V3",
         ai_binding: Boolean(env.AI),
         browser_binding: Boolean(env.BROWSER),
         control_room_asset: adminAsset.ok,
