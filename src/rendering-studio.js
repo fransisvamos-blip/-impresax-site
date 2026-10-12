@@ -133,6 +133,39 @@ function validDirections(parsed) {
   return true;
 }
 
+async function deriveIndependentDirection(env, master, prospect, key) {
+  const contrast = {
+    A: "Make this direction identity-led: let the verified brand DNA, material/visual signature and typographic composition determine the page architecture.",
+    B: "Make this direction evidence-and-imagery-led: build a cinematic but credible narrative around the prospect's real work, offer, territory and first-party evidence.",
+    C: "Make this direction precision-and-information-led: create a highly designed editorial system where hierarchy, verified detail and commercial clarity become the visual signature."
+  }[key];
+
+  const prompt = [
+    "Create ONE original premium full-home art-direction brief for ImpresaX Rendering Studio.",
+    "Variant: " + key,
+    contrast,
+    "This is NOT a template family. Every decision must be justified by THIS prospect's verified logo, Brand DNA, services, trust, local context and imagery evidence.",
+    "Specify hero logic, grid/composition, typography behavior, imagery language, visual rhythm, signature device, section progression, CTA treatment, desktop behavior and deliberate mobile reinterpretation.",
+    "Do not write HTML. Do not invent company facts. Do not use generic SaaS/card-grid/agency tropes.",
+    "Return only the detailed art-direction brief as plain text, without JSON.",
+    "",
+    "FROZEN MASTER:",
+    master,
+    "",
+    "VERIFIED PROSPECT:",
+    JSON.stringify(prospect)
+  ].join("\n");
+
+  const result = await runModel(env, ART_MODEL, [
+    { role:"system", content:"You are ImpresaX Rendering Studio senior art director. Produce a prospect-specific flagship direction, never a generic sector template." },
+    { role:"user", content:prompt }
+  ], 1800, 0.48);
+
+  const text = aiText(result).trim();
+  if (text.length < 180) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+  return text;
+}
+
 async function deriveDirections(env, master, prospect) {
   const prompt = [
     "Create three distinct art-direction briefs A/B/C for one premium business homepage.",
@@ -183,8 +216,16 @@ async function deriveDirections(env, master, prospect) {
   ], 2400, 0.2);
 
   parsed = extractJson(aiText(repaired));
-  if (!validDirections(parsed)) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
-  return parsed;
+  if (validDirections(parsed)) return parsed;
+
+  const [A,B,C] = await Promise.all([
+    deriveIndependentDirection(env,master,prospect,"A"),
+    deriveIndependentDirection(env,master,prospect,"B"),
+    deriveIndependentDirection(env,master,prospect,"C")
+  ]);
+  const independent = {A,B,C};
+  if (!validDirections(independent)) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+  return independent;
 }
 
 function buildVariantPrompt(master, prospect, key, direction, repairIssues, previousHtml) {
