@@ -28,7 +28,9 @@ jobs:
               && grep -q '"database_connected":true' /tmp/health.json \
               && grep -q '"render_pipeline":"CLOUDFLARE_NATIVE_V1"' /tmp/health.json \
               && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json \
-              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V3"' /tmp/health.json \
+              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V4"' /tmp/health.json \
+              && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
+              && grep -q '"render_selection_mode":"TWO_STEP_EXPLICIT"' /tmp/health.json \
               && grep -q '"ai_binding":true' /tmp/health.json \
               && grep -q '"browser_binding":true' /tmp/health.json; then
               exit 0
