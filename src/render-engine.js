@@ -308,14 +308,18 @@ async function recoverStaleClaims(sql) {
       )`;
 }
 
-async function ensureActivePacks(sql) {
-  const rows = await sql`select id from prospects
-    where pipeline_status='READY_FOR_RENDERING'::pipeline_status
-    order by rank nulls last
-    limit 100`;
-  for (const row of rows) {
-    await sql`select ops_enqueue_for_status(${row.id}::uuid,'READY_FOR_RENDERING'::pipeline_status)`;
-  }
+async function reconcileNativeRenderQueue(sql) {
+  const rows = await sql`update orchestrator_queue q
+    set status='CANCELLED',
+        locked_at=null,
+        heartbeat_at=null,
+        locked_by=null,
+        error='SUPERSEDED_BY_CLOUDFLARE_NATIVE_RENDER_ENGINE',
+        updated_at=now()
+    where q.task_type='RENDER'
+      and q.status in ('QUEUED','RUNNING')
+    returning q.id`;
+  return rows.length;
 }
 
 async function candidates(sql, limit) {
@@ -566,7 +570,7 @@ async function generateProspect(sql, env, master, row) {
   }
 }
 
-async function renderPack(sql, env, row) {
+async function renderPack(sql, env, row, sharedBrowser = null) {
   const claim = await sql`update render_packs set status='RENDERING_ASSETS'
     where id=${row.render_pack_id}::uuid and status='RENDERING'
     returning id`;
@@ -601,7 +605,7 @@ async function renderPack(sql, env, row) {
     return {ok:false,pack_id:row.render_pack_id,error:"THREE_STAGED_VARIANTS_REQUIRED"};
   }
 
-  const browser = await puppeteer.launch(env.BROWSER);
+  const browser = sharedBrowser || await puppeteer.launch(env.BROWSER);
   try {
     for (const item of rows) {
       const [desktop,mobile] = await Promise.all([
@@ -638,7 +642,7 @@ async function renderPack(sql, env, row) {
       where id=${row.prospect_id}::uuid`;
     return {ok:false,pack_id:row.render_pack_id,error:message};
   } finally {
-    await browser.close();
+    if (!sharedBrowser) await browser.close();
   }
 
   const complete = await sql`select count(*)::int as n
@@ -706,12 +710,21 @@ export async function runCloudflareRenderEngine(env) {
   const sql=db(env);
 
   await recoverStaleClaims(sql);
-  await ensureActivePacks(sql);
+  const cancelledLegacyRenderJobs=await reconcileNativeRenderQueue(sql);
 
   const readyToRender=await renderCandidates(sql,MAX_RENDER_PACKS_PER_TICK);
-  const rendered=[];
-  for (const row of readyToRender) {
-    rendered.push(await renderPack(sql,env,row));
+  let rendered=[];
+  if (readyToRender.length) {
+    if (!env.BROWSER) {
+      rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row)));
+    } else {
+      const sharedBrowser=await puppeteer.launch(env.BROWSER);
+      try {
+        rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,sharedBrowser)));
+      } finally {
+        await sharedBrowser.close();
+      }
+    }
   }
 
   const activeRows=await sql`select count(*)::int as n from render_jobs
@@ -731,6 +744,7 @@ export async function runCloudflareRenderEngine(env) {
 
   return {
     ok:true,
+    cancelled_legacy_render_jobs:cancelledLegacyRenderJobs,
     active_generation_jobs:active,
     generation_slots:slots,
     generated_count:generated.filter(x=>x.ok).length,
