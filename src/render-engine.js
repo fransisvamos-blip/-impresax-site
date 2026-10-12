@@ -209,7 +209,20 @@ function visibleTextFromHtml(html) {
     .slice(0, 18000);
 }
 
-async function discoverOfficialBrandEvidence(websiteUrl) {
+function expectedBrandTokens(row) {
+  const explicit = String(row?.logo?.brand || "").trim();
+  const base = explicit || String(row?.business_name || "");
+  const stop = new Set(["srl","srls","spa","sas","societa","responsabilita","limitata","costruzioni","costruzione","studio","legale","avv","avvocato","catanzaro","services","service"]);
+  return base
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g," ")
+    .split(/\s+/)
+    .filter(x => x.length >= 3 && !stop.has(x))
+    .slice(0,6);
+}
+
+async function discoverOfficialBrandEvidence(websiteUrl, row = null) {
   if (!websiteUrl) return null;
   try {
     const res = await fetch(websiteUrl, {
@@ -220,6 +233,7 @@ async function discoverOfficialBrandEvidence(websiteUrl) {
     const html = (await res.text()).slice(0, 700000);
     const base = new URL(res.url || websiteUrl);
     const logoCandidates = [];
+    const expectedTokens = expectedBrandTokens(row);
 
     for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
       const tag = m[0];
@@ -238,13 +252,29 @@ async function discoverOfficialBrandEvidence(websiteUrl) {
       ].join(" ").toLowerCase();
 
       let score = 0;
-      if (/\blogo\b|site-logo|custom-logo|brand-logo|navbar-brand/.test(signal)) score += 10;
+      const logoSignal = /\blogo\b|site-logo|custom-logo|brand-logo|navbar-brand/.test(signal);
+      if (logoSignal) score += 10;
       if (/header/.test(signal)) score += 2;
       if (/footer/.test(signal)) score -= 1;
       if (/icon|favicon|avatar|testimonial|partner|client/.test(signal)) score -= 5;
       if (/\.(svg|png|webp)(?:[?#]|$)/i.test(url.pathname)) score += 1;
       if (url.hostname === base.hostname || url.hostname.endsWith("." + base.hostname.replace(/^www\./,""))) score += 2;
-      logoCandidates.push({url:url.href,score,signal:signal.slice(0,400)});
+
+      const normalizedSignal = signal
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g," ");
+      const brandMatch = expectedTokens.length === 0 ||
+        expectedTokens.some(token => normalizedSignal.includes(token));
+      if (expectedTokens.length && brandMatch) score += 15;
+      if (expectedTokens.length && !brandMatch) score -= 30;
+
+      logoCandidates.push({
+        url:url.href,
+        score,
+        signal:signal.slice(0,400),
+        brand_match:brandMatch,
+        expected_tokens:expectedTokens
+      });
     }
 
     logoCandidates.sort((a,b) => b.score-a.score);
@@ -373,13 +403,13 @@ async function deriveBrandDna(env, row, evidence) {
 async function attemptAutomaticBrandGate(sql, env, row) {
   const originalLogo = row.logo || {};
   const status = String(originalLogo.status || "").toUpperCase();
-  let evidence = await discoverOfficialBrandEvidence(row.website_url);
+  let evidence = await discoverOfficialBrandEvidence(row.website_url,row);
   if (!evidence?.logo_candidate && originalLogo.store_page) {
-    const storeEvidence = await discoverOfficialBrandEvidence(originalLogo.store_page);
+    const storeEvidence = await discoverOfficialBrandEvidence(originalLogo.store_page,row);
     if (storeEvidence?.logo_candidate) evidence = storeEvidence;
   }
   if (!evidence?.logo_candidate && originalLogo.source_url) {
-    const sourceEvidence = await discoverOfficialBrandEvidence(originalLogo.source_url);
+    const sourceEvidence = await discoverOfficialBrandEvidence(originalLogo.source_url,row);
     if (sourceEvidence?.logo_candidate) evidence = sourceEvidence;
   }
 
