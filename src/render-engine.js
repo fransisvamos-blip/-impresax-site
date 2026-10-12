@@ -123,7 +123,7 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
         ],
         max_completion_tokens: 1800,
         temperature: 0.15,
-        reasoning_effort: "high"
+        reasoning_effort: "xhigh"
       });
       return normalizeVisualQa(extractJsonObject(extractModelText(out)));
     } catch (error) {
