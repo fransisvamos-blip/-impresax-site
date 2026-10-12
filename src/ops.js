@@ -2,6 +2,9 @@ import { neon } from "@neondatabase/serverless";
 import { buildApprovedReference, qaApprovedReference } from "./site-factory.js";
 
 const ADMIN_HOST = "admin.impresax.org";
+const RENDER_REPOSITORY = "fransisvamos-blip/-impresax-site";
+const RENDER_BRANCH = "main";
+const RENDER_MANIFEST_SCHEMA = "IMPRESAX_RENDER_MANIFEST_V1";
 
 function jsonReplacer(_key, value) {
   return typeof value === "bigint" ? value.toString() : value;
@@ -417,6 +420,126 @@ async function dashboard(sql) {
     recent_events: events,
     queue,
     generated_at: new Date().toISOString(),
+  };
+}
+
+
+function validRenderProspectCode(value) {
+  return /^[A-Z]{2,8}-[A-Z0-9-]{1,32}$/.test(String(value || ""));
+}
+
+function validRenderVersion(value) {
+  const n=Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 9999 ? n : null;
+}
+
+async function fetchCanonicalRenderManifest(code, version) {
+  const base="https://raw.githubusercontent.com/"+RENDER_REPOSITORY+"/"+RENDER_BRANCH+
+    "/ops/render-packs/"+encodeURIComponent(code)+"/v"+version;
+  const url=base+"/render-manifest.json";
+  const response=await fetch(url,{headers:{"Cache-Control":"no-cache"}});
+  if (response.status===404) return {ok:false,status:404,error:"MANIFEST_NOT_FOUND",url};
+  if (!response.ok) return {ok:false,status:response.status,error:"MANIFEST_FETCH_FAILED",url};
+  let manifest;
+  try { manifest=await response.json(); }
+  catch { return {ok:false,status:502,error:"MANIFEST_INVALID_JSON",url}; }
+  return {ok:true,manifest,url,base};
+}
+
+async function syncCanonicalRenderManifest(sql, code, version) {
+  if (!validRenderProspectCode(code)) return {ok:false,status:400,error:"INVALID_PROSPECT_CODE"};
+  const v=validRenderVersion(version);
+  if (!v) return {ok:false,status:400,error:"INVALID_RENDER_VERSION"};
+
+  const prospects=await sql`select id,business_name,pipeline_status,render_status,current_step,next_action,legacy_ids,source_data
+    from prospects
+    where legacy_ids->>'id_prospect'=${code} or source_data->>'id_prospect'=${code}
+    order by rank nulls last
+    limit 1`;
+  const prospect=prospects[0];
+  if (!prospect) return {ok:false,status:404,error:"PROSPECT_NOT_FOUND"};
+
+  const packs=await sql`select * from render_packs
+    where prospect_id=${prospect.id}::uuid and version=${v}
+    order by created_at desc limit 1`;
+  const pack=packs[0];
+  if (!pack) return {ok:false,status:404,error:"RENDER_PACK_NOT_FOUND"};
+
+  const fetched=await fetchCanonicalRenderManifest(code,v);
+  if (!fetched.ok) return fetched;
+  const manifest=fetched.manifest || {};
+  if (manifest.schema!==RENDER_MANIFEST_SCHEMA) {
+    return {ok:false,status:422,error:"MANIFEST_SCHEMA_INVALID"};
+  }
+  if (String(manifest.prospect_code||"")!==code || Number(manifest.version)!==v) {
+    return {ok:false,status:422,error:"MANIFEST_IDENTITY_MISMATCH"};
+  }
+
+  const variants=Array.isArray(manifest.variants)?manifest.variants:[];
+  const byKey=new Map();
+  for (const item of variants) {
+    if (!item || !["A","B","C"].includes(item.variant_key)) continue;
+    byKey.set(item.variant_key,item);
+  }
+  if (byKey.size!==3) return {ok:false,status:422,error:"THREE_VARIANTS_REQUIRED"};
+
+  const expectedPrefix=fetched.base+"/variant-";
+  for (const key of ["A","B","C"]) {
+    const item=byKey.get(key);
+    const desktop=String(item.desktop_render_url||"");
+    const mobile=String(item.mobile_render_url||"");
+    const html=String(item.html_source_url||"");
+    if (
+      !desktop.startsWith(expectedPrefix+key+"-desktop.png") ||
+      !mobile.startsWith(expectedPrefix+key+"-mobile.png") ||
+      !html.startsWith(expectedPrefix+key+".html")
+    ) {
+      return {ok:false,status:422,error:"MANIFEST_URL_MISMATCH",variant:key};
+    }
+
+    const refs=JSON.stringify([html,desktop,mobile]);
+    await sql`insert into render_variants(
+      render_pack_id,variant_key,name,status,desktop_render_url,mobile_render_url,source_references
+    ) values(
+      ${pack.id}::uuid,${key},${String(item.name||("Versione "+key))},'RENDER_READY',
+      ${desktop},${mobile},${refs}::jsonb
+    )
+    on conflict(render_pack_id,variant_key) do update set
+      name=excluded.name,
+      status='RENDER_READY',
+      desktop_render_url=excluded.desktop_render_url,
+      mobile_render_url=excluded.mobile_render_url,
+      source_references=excluded.source_references,
+      updated_at=now()`;
+  }
+
+  const previousPackStatus=String(pack.status||"");
+  await sql`update render_packs
+    set status='RENDER_READY',approved_reference=false,approved_at=null
+    where id=${pack.id}::uuid`;
+
+  if (prospect.pipeline_status==="RENDERING") {
+    await sql`update prospects
+      set render_status='RENDER_READY',
+          current_step='AWAITING_RENDER_SELECTION',
+          next_action='SELECT_RENDER_IN_GESTIONALE',
+          error=null,
+          updated_at=now()
+      where id=${prospect.id}::uuid`;
+  }
+
+  if (previousPackStatus!=="RENDER_READY") {
+    await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload)
+      values(
+        ${prospect.id}::uuid,'RENDER_MANIFEST_AUTO_SYNCED','render_pack',${pack.id}::uuid,'render-sync',
+        ${prospect.pipeline_status}::pipeline_status,${prospect.pipeline_status}::pipeline_status,
+        ${JSON.stringify({prospect_code:code,version:v,manifest_url:fetched.url,variants:["A","B","C"]})}::jsonb
+      )`;
+  }
+
+  return {
+    ok:true,status:200,prospect_id:prospect.id,prospect_code:code,version:v,
+    render_pack_id:pack.id,variants:["A","B","C"],render_status:"RENDER_READY"
   };
 }
 
@@ -926,6 +1049,25 @@ export function isOpsHost(hostname) {
 
 export async function handleOpsRequest(request, env) {
   const url = new URL(request.url);
+
+  // Public technical reconciliation endpoint.
+  // It can only import a manifest already committed in the fixed ImpresaX GitHub repository,
+  // so callers cannot inject arbitrary render URLs or content.
+  if (url.pathname === "/ops/render-sync" && request.method === "GET") {
+    try {
+      const sql=db(env);
+      const code=String(url.searchParams.get("prospect") || "").trim().toUpperCase();
+      const version=url.searchParams.get("version");
+      const result=await syncCanonicalRenderManifest(sql,code,version);
+      return json(result,result.status || (result.ok?200:400),{
+        "X-Robots-Tag":"noindex, nofollow, noarchive"
+      });
+    } catch (error) {
+      return json({ok:false,error:error.message || String(error)},503,{
+        "X-Robots-Tag":"noindex, nofollow, noarchive"
+      });
+    }
+  }
 
   // Public, non-sensitive health endpoint used only to verify Worker + Neon wiring.
   if (url.pathname === "/ops/healthz") {
