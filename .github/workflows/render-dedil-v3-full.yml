@@ -86,7 +86,7 @@ jobs:
             "render_version":"DEDIL-CZ063-V3",
             "selected_direction":"A — Transformation Grid",
             "official_logo":{
-              "source":"https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato-300x70.png",
+              "source":"https://www.dedildonato.it/wp-content/uploads/2023/10/dedildonato.png",
               "owner":"DEDIL DONATO S.R.L.",
               "role":"official_logo",
               "real_business_asset":true,
@@ -151,7 +151,8 @@ jobs:
           set -euo pipefail
           git config user.name "ImpresaX Rendering Studio"
           git config user.email "actions@users.noreply.github.com"
-          git add ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop-preview.jpg                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile-preview.jpg                   ops/render-packs/CZ-063/v3/manifest-v3.json
+          git add ops/render-packs/CZ-063/v3/dedil-logo-official.png \
+                  ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile.png                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-desktop-preview.jpg                   ops/render-packs/CZ-063/v3/DEDIL-CZ063-V3-mobile-preview.jpg                   ops/render-packs/CZ-063/v3/manifest-v3.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Render DEDIL-CZ063-V3 full desktop and mobile references"
           for i in 1 2 3 4 5; do
