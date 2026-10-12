@@ -280,6 +280,56 @@ async function discoverOfficialBrandEvidence(websiteUrl) {
   }
 }
 
+function evidenceBrandDna(row, evidence) {
+  const source = row.source_data || {};
+  const colors = Array.isArray(evidence?.top_colors) ? evidence.top_colors.map(x=>x.color).filter(Boolean).slice(0,6) : [];
+  const siteSummary = [evidence?.title,evidence?.description].filter(Boolean).join(" — ").slice(0,1600);
+  const services = safeText(source.verified_services,3000);
+  const trust = safeText(source.verified_trust,3000);
+  const contacts = safeText(source.verified_contacts,2000);
+  const address = safeText(source.address,1000);
+  const locality = [row.city,row.country,address].filter(Boolean).join(" · ");
+  const logoSignal = evidence?.logo_candidate?.url || row.logo?.url || row.logo?.official_source || null;
+
+  return {
+    business_identity: [row.business_name, row.vertical].filter(Boolean).join(" · "),
+    offer: services,
+    local_context: locality,
+    trust_signals: trust,
+    commercial_path: contacts,
+    first_party_site_language: siteSummary || "No first-party site copy available; use verified business data only.",
+    existing_colors: colors,
+    official_identity_asset: logoSignal || "No official graphic logo verified; use verified business name as text only when explicitly permitted.",
+    visual_cues: [
+      colors.length ? "Preserve first-party color evidence: " + colors.join(", ") : null,
+      evidence?.logo_candidate?.signal ? "Logo context: " + evidence.logo_candidate.signal : null,
+      evidence?.description ? "Site positioning cue: " + evidence.description.slice(0,500) : null
+    ].filter(Boolean),
+    imagery_cues: evidence?.visible_text
+      ? "Derive imagery from the real offering described by the official site; never invent staff, facilities or completed projects."
+      : "Use only verified/category imagery tied directly to the verified offering.",
+    tone: evidence?.description || services || row.business_name,
+    business_positioning: [row.business_name,services,trust].filter(Boolean).join(" — ").slice(0,3000),
+    commercial_behavior: contacts ? "Direct verified contact path: " + contacts : "Use only verified contact paths.",
+    visual_signature: [
+      row.business_name,
+      colors.length ? colors.slice(0,3).join("/") : null,
+      services ? services.slice(0,240) : null,
+      locality
+    ].filter(Boolean).join(" · ")
+  };
+}
+
+function validBrandDna(value) {
+  if (!value || typeof value !== "object") return false;
+  const meaningful = Object.entries(value).filter(([,v]) => {
+    if (Array.isArray(v)) return v.length > 0;
+    if (v && typeof v === "object") return Object.keys(v).length > 0;
+    return String(v || "").trim().length > 2;
+  });
+  return meaningful.length >= 8;
+}
+
 async function deriveBrandDna(env, row, evidence) {
   const source = row.source_data || {};
   const prompt = [
@@ -288,7 +338,7 @@ async function deriveBrandDna(env, row, evidence) {
     "Do not invent facts. Strategic/visual interpretation is allowed only when grounded in the supplied evidence.",
     "Return ONLY valid JSON with these keys:",
     "brand_personality, visual_cues, tone, audience, offer, local_context, trust_signals, existing_colors, typography_cues, imagery_cues, business_positioning, commercial_behavior, visual_signature.",
-    "Use arrays or strings. Every field must be meaningful and prospect-specific; no generic sector filler.",
+    "Every field must be meaningful and prospect-specific; no generic sector filler.",
     "",
     "BUSINESS:", row.business_name,
     "VERTICAL:", row.vertical || "",
@@ -301,29 +351,37 @@ async function deriveBrandDna(env, row, evidence) {
     "FIRST-PARTY WEBSITE EVIDENCE:", JSON.stringify(evidence || {})
   ].join("\n");
 
-  const out = await env.AI.run(MODEL, {
-    messages:[
-      {role:"system",content:"You are a strict brand researcher. Output JSON only. Never invent company facts."},
-      {role:"user",content:prompt}
-    ],
-    max_completion_tokens:2200,
-    temperature:0.25
-  });
-  const parsed = extractJsonObject(extractModelText(out));
-  if (!parsed || typeof parsed !== "object") throw new Error("BRAND_DNA_JSON_REQUIRED");
-  const meaningful = Object.entries(parsed).filter(([,v]) => {
-    if (Array.isArray(v)) return v.length > 0;
-    if (v && typeof v === "object") return Object.keys(v).length > 0;
-    return String(v || "").trim().length > 2;
-  });
-  if (meaningful.length < 8) throw new Error("BRAND_DNA_TOO_THIN");
-  return parsed;
+  try {
+    const out = await env.AI.run(MODEL, {
+      messages:[
+        {role:"system",content:"You are a strict brand researcher. Output valid JSON only. Never invent company facts."},
+        {role:"user",content:prompt}
+      ],
+      max_tokens:2200,
+      temperature:0.2,
+      top_p:0.9
+    });
+    const parsed = extractJsonObject(extractModelText(out));
+    if (validBrandDna(parsed)) return parsed;
+  } catch {}
+
+  const fallback = evidenceBrandDna(row,evidence);
+  if (!validBrandDna(fallback)) throw new Error("BRAND_DNA_TOO_THIN");
+  return fallback;
 }
 
 async function attemptAutomaticBrandGate(sql, env, row) {
   const originalLogo = row.logo || {};
   const status = String(originalLogo.status || "").toUpperCase();
-  const evidence = await discoverOfficialBrandEvidence(row.website_url);
+  let evidence = await discoverOfficialBrandEvidence(row.website_url);
+  if (!evidence?.logo_candidate && originalLogo.store_page) {
+    const storeEvidence = await discoverOfficialBrandEvidence(originalLogo.store_page);
+    if (storeEvidence?.logo_candidate) evidence = storeEvidence;
+  }
+  if (!evidence?.logo_candidate && originalLogo.source_url) {
+    const sourceEvidence = await discoverOfficialBrandEvidence(originalLogo.source_url);
+    if (sourceEvidence?.logo_candidate) evidence = sourceEvidence;
+  }
 
   let logo = originalLogo;
   const alreadyExact =
@@ -755,7 +813,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         ${JSON.stringify({
           source:"RENDERING_STUDIO_V1_FROZEN",
           execution_engine:"CLOUDFLARE_NATIVE",
-          rendering_studio_contract:"V6_BRAND_GATE_VISUAL_QA",
+          rendering_studio_contract:"V7_AUTO_BRAND_GATE_VISUAL_QA",
           art_direction_model:"@cf/openai/gpt-oss-120b",
           html_model:"@cf/zai-org/glm-4.7-flash",
           visual_qa_model:VISUAL_QA_MODEL,
@@ -803,7 +861,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
         variants:["A","B","C"],
         department:"RENDERING_STUDIO",
-        contract:"V6_BRAND_GATE_VISUAL_QA",
+        contract:"V7_AUTO_BRAND_GATE_VISUAL_QA",
         art_direction_model:"@cf/openai/gpt-oss-120b",
         html_model:"@cf/zai-org/glm-4.7-flash",
         visual_qa_model:VISUAL_QA_MODEL
