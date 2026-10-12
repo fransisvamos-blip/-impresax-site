@@ -3,6 +3,32 @@
 SOURCE OF TRUTH VISIVA RECUPERATA DAL PROJECT MEMORY
 Data lock originale: 2026-10-11
 
+## QUALITY BAR — LOVEFROM / FERRARI LUCE
+
+Regola recuperata dal Project Memory:
+
+- reference: **LoveFrom / Ferrari Luce**
+- status: **LOCKED**
+- principio: usare questo livello come quality bar permanente per l'art direction dei siti premium ImpresaX;
+- l'implementazione deve seguire la reference visiva approvata, NON prompt generici "premium";
+- principi associati: ART_DIRECTION_FIRST, ORIGINAL_VERTICAL_INTERPRETATION, VISUAL_CRITIQUE_BEFORE_DELIVERY, REFERENCE_LOCK_AFTER_APPROVAL, NO_TEMPLATE_FEEL.
+
+Questa è una **quality bar**, NON un invito a copiare Ferrari, LoveFrom o un loro layout.
+Il lavoro deve avere la stessa ambizione, precisione, cura, originalità e livello di art direction, ma restare originale e specifico per il prospect.
+
+## BUDGET MENTALITY — UNLIMITED
+
+Aggiunta/riconferma Cabina 2026-10-12:
+
+Il Rendering Studio deve ragionare come una top-tier agency con **budget creativo virtualmente illimitato**.
+
+Questo significa:
+- non scegliere una soluzione perché è più veloce o più economica;
+- non accontentarsi di stock mediocre, template, font generici o composizioni standard;
+- dedicare tutta la ricerca, art direction, image direction e refinement necessari per arrivare al miglior risultato possibile;
+- trattare ogni prospect come un incarico flagship;
+- il limite resta verità dei dati, copyright/licenze, coerenza del brand e fattibilità tecnica finale.
+
 ## LOGO-FIRST / BRAND GATE — REGOLA FROZEN
 
 Il Rendering Studio deve iniziare dal marchio reale del prospect.
