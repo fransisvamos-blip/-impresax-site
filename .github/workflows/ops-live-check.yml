@@ -25,7 +25,10 @@ jobs:
           for i in {1..6}; do
             code=$(curl -L -sS -o /tmp/health.json -w "%{http_code}" --connect-timeout 8 --max-time 15 "$health" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/health.json 2>/dev/null || true)"
-            if [ "$code" = "200" ] && grep -q '"database_connected":true' /tmp/health.json; then
+            if [ "$code" = "200" ] \
+              && grep -q '"database_connected":true' /tmp/health.json \
+              && grep -q '"render_pipeline":"CLOUDFLARE_NATIVE_V1"' /tmp/health.json \
+              && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json; then
               exit 0
             fi
             sleep 5
