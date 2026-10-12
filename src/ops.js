@@ -809,8 +809,27 @@ async function api(request, env, pathname) {
     if(!pack) return json({ok:false,error:"RENDER_PACK_NOT_FOUND"},404);
     if(String(pack.status||"").includes("REJECT")) return json({ok:false,error:"RENDER_PACK_REJECTED"},409);
 
+    if(!renderVariantId) {
+      return json({ok:false,error:"RENDER_VARIANT_SELECTION_REQUIRED"},409);
+    }
+
+    const contractRows=await sql`
+      select
+        count(*)::int as total,
+        count(distinct variant_key)::int as distinct_keys,
+        count(*) filter (where desktop_render_url is not null and mobile_render_url is not null)::int as complete
+      from render_variants
+      where render_pack_id=${renderPackId}::uuid
+        and variant_key in ('A','B','C')
+        and upper(coalesce(status,'')) not like '%REJECT%'
+        and upper(coalesce(status,'')) not like '%ARCHIVED%'`;
+    const contract=contractRows[0]||{};
+    if(Number(contract.total)!==3 || Number(contract.distinct_keys)!==3 || Number(contract.complete)!==3) {
+      return json({ok:false,error:"THREE_COMPLETE_VARIANTS_REQUIRED"},409);
+    }
+
     let selectedVariant=null;
-    if(renderVariantId){
+    {
       const variants=await sql`select * from render_variants
         where id=${renderVariantId}::uuid and render_pack_id=${renderPackId}::uuid limit 1`;
       selectedVariant=variants[0]||null;
@@ -846,12 +865,6 @@ async function api(request, env, pathname) {
         source_references=${JSON.stringify(selectedVariant.source_references||[])}::jsonb,
         reference_score=${selectedVariant.reference_score ?? null},
         approved_reference=true,status='APPROVED',approved_at=now()
-        where id=${renderPackId}::uuid`;
-    } else {
-      if(!pack.desktop_render_url || !pack.mobile_render_url) {
-        return json({ok:false,error:"RENDER_PACK_INCOMPLETE"},409);
-      }
-      await sql`update render_packs set approved_reference=true,status='APPROVED',approved_at=now()
         where id=${renderPackId}::uuid`;
     }
 
