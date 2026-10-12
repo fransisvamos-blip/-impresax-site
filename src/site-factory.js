@@ -197,6 +197,7 @@ function validateApprovedPack(pack) {
   if (!Array.isArray(pack.section_map) || !pack.section_map.length) missing.push("SECTION_MAP");
   if (!objectHasData(pack.cta_map)) missing.push("CTA_MAP");
   if (!objectHasData(pack.content_map)) missing.push("CONTENT_MAP");
+  if (!String(pack.content_map?.implementation_html || "").trim()) missing.push("IMPLEMENTATION_HTML");
   if (!Array.isArray(pack.source_references) || !pack.source_references.length) missing.push("SOURCE_REFERENCES");
   return missing;
 }
@@ -217,7 +218,13 @@ export async function buildApprovedReference(env, prospectId) {
   const collision=await sql`select id from prospects where slug=${slug} and id<>${prospectId}::uuid limit 1`;
   if (collision.length) slug=(slug.slice(0,54)+"-"+String(prospect.id).slice(0,8)).replace(/-+$/,"");
 
-  const html=renderFactoryHtml(prospect,pack);
+  const html=String(pack.content_map?.implementation_html || "").trim();
+  if (!html) {
+    const error="RENDER_PACK_INCOMPLETE: IMPLEMENTATION_HTML";
+    await sql`select * from ops_register_factory_failure(${prospectId}::uuid,'build',${error},
+      ${JSON.stringify({ missing:["IMPLEMENTATION_HTML"] })}::jsonb)`;
+    return { pass:false,error,missing:["IMPLEMENTATION_HTML"] };
+  }
   const referenceLock={
     render_pack_id:pack.id,
     desktop_reference:pack.desktop_render_url,
@@ -229,7 +236,9 @@ export async function buildApprovedReference(env, prospectId) {
     image_asset_map:pack.image_asset_map,
     section_map:pack.section_map,
     cta_map:pack.cta_map,
-    content_map:pack.content_map,
+    content_map:{...pack.content_map,implementation_html:"[LOCKED_BUILD_ARTIFACT]"},
+    implementation_contract_version:pack.content_map?.implementation_contract_version || null,
+    implementation_html_digest:await sha256(html),
     source_references:pack.source_references,
     assets:assets.map(a=>({type:a.asset_type,url:a.asset_url,source_type:a.source_type,rights_status:a.rights_status}))
   };
