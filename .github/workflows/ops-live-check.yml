@@ -28,7 +28,9 @@ jobs:
             if [ "$code" = "200" ] \
               && grep -q '"database_connected":true' /tmp/health.json \
               && grep -q '"render_pipeline":"CLOUDFLARE_NATIVE_V1"' /tmp/health.json \
-              && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json; then
+              && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json \
+              && grep -q '"ai_binding":true' /tmp/health.json \
+              && grep -q '"browser_binding":true' /tmp/health.json; then
               exit 0
             fi
             sleep 5
