@@ -1733,6 +1733,8 @@ export async function handleOpsRequest(request, env) {
         service: "impresax-ops",
         database: rows[0]?.database || "unknown",
         database_connected: true,
+        render_pipeline: "CLOUDFLARE_NATIVE_V1",
+        render_model: "@cf/zai-org/glm-4.7-flash",
         control_room_asset: adminAsset.ok,
         control_room_asset_status: adminAsset.status,
         checked_at: rows[0]?.checked_at || new Date().toISOString()
