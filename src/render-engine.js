@@ -254,7 +254,7 @@ async function recoverStaleClaims(sql) {
   await sql`update render_jobs
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
-      and status='RUNNING'
+      and status in ('RUNNING','COMPLETING')
       and started_at < now()-interval '6 minutes'`;
 
   await sql`update render_packs rp
@@ -264,7 +264,7 @@ async function recoverStaleClaims(sql) {
       and not exists (
         select 1 from render_jobs rj
         where rj.worker='cloudflare-workers-ai'
-          and rj.status='RUNNING'
+          and rj.status in ('RUNNING','COMPLETING')
           and rj.started_at >= now()-interval '6 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
@@ -381,6 +381,12 @@ async function claimPack(sql, row) {
 }
 
 async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
+  const gate=await sql`update render_jobs
+    set status='COMPLETING',updated_at=now()
+    where id=${jobId}::uuid and worker='cloudflare-workers-ai' and status='RUNNING'
+    returning id`;
+  if (!gate.length) return false;
+
   for (const key of ["A", "B", "C"]) {
     const html = htmlByKey[key];
     const digest = await sha256(html);
@@ -435,17 +441,29 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({variants:["A","B","C"],model:MODEL})}::jsonb,
       error=null,completed_at=now(),updated_at=now()
     where id=${jobId}::uuid`;
-  await sql`update prospects set current_step='RENDERING_ASSETS',next_action='AUTO_RENDER_DESKTOP_MOBILE',updated_at=now()
+  await sql`update prospects set current_step='RENDERING_ASSETS',next_action='AUTO_RENDER_DESKTOP_MOBILE',error=null,updated_at=now()
     where id=${row.prospect_id}::uuid`;
+  return true;
 }
 
-async function failGeneration(sql, row, jobId, error) {
-  const message = String(error?.message || error || "AI_RENDER_FAILED").slice(0, 600);
-  await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
-    where id=${jobId}::uuid`;
-  await sql`update render_packs set status='ART_DIRECTION' where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
-  await sql`update prospects set current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',error=${message},updated_at=now()
-    where id=${row.prospect_id}::uuid`;
+async function failGeneration(sql,row,jobId,error) {
+  const message=String(error?.message || error || "AI_RENDER_FAILED").slice(0,600);
+  const failed=await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
+    where id=${jobId}::uuid and worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
+    returning id`;
+  if (!failed.length) return;
+
+  const active=await sql`select count(*)::int as n from render_jobs
+    where worker='cloudflare-workers-ai'
+      and status in ('RUNNING','COMPLETING')
+      and id<>${jobId}::uuid
+      and input_data->>'render_pack_id'=${row.render_pack_id}`;
+  if (Number(active[0]?.n || 0)===0) {
+    await sql`update render_packs set status='ART_DIRECTION'
+      where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
+    await sql`update prospects set current_step='ART_DIRECTION',next_action='RETRY_AI_RENDER',error=${message},updated_at=now()
+      where id=${row.prospect_id}::uuid`;
+  }
 }
 
 
@@ -529,7 +547,8 @@ async function generateProspect(sql, env, master, row) {
     const firstPartyImages = await discoverFirstPartyImages(row.website_url);
     const payload = prospectPayload(row, firstPartyImages);
     const pack = await generatePackSingleCall(env, master, payload);
-    await persistGeneratedPack(sql, row, jobId, pack.htmlByKey, pack.directions);
+    const persisted=await persistGeneratedPack(sql,row,jobId,pack.htmlByKey,pack.directions);
+    if (!persisted) return {ok:false,code:row.prospect_code,error:"STALE_GENERATION_DISCARDED"};
     return {ok:true,code:row.prospect_code,pack_id:row.render_pack_id,version:row.version};
   } catch (error) {
     await failGeneration(sql, row, jobId, error);
@@ -686,7 +705,7 @@ export async function runCloudflareRenderEngine(env) {
   }
 
   const activeRows=await sql`select count(*)::int as n from render_jobs
-    where worker='cloudflare-workers-ai' and status='RUNNING'
+    where worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
       and started_at >= now()-interval '6 minutes'`;
   const active=Number(activeRows[0]?.n || 0);
   const slots=Math.max(0,MAX_PROSPECTS_PER_TICK-active);
