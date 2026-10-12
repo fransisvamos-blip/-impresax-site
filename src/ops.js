@@ -1910,6 +1910,9 @@ export async function handleOpsRequest(request, env) {
       return json({
         ok: true,
         service: "impresax-ops",
+        render_pipeline: "CLOUDFLARE_NATIVE_V1",
+        render_model: "@cf/zai-org/glm-4.7-flash",
+        render_master: "RENDERING_STUDIO_V1_FROZEN",
         database: rows[0]?.database || "unknown",
         database_connected: true,
         control_room_asset: adminAsset.ok,
