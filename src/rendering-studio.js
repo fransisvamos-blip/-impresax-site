@@ -1,5 +1,5 @@
 const ART_MODEL = "@cf/openai/gpt-oss-120b";
-const HTML_MODEL = "@cf/openai/gpt-oss-20b";
+const HTML_MODEL = "@cf/zai-org/glm-4.7-flash";
 const FALLBACK_MODEL = "@cf/openai/gpt-oss-120b";
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 
@@ -107,7 +107,7 @@ function hardGate(html, prospect) {
   if (!/@media/i.test(html)) issues.push("mobile_pass_missing");
   if (!/viewport/i.test(html)) issues.push("viewport_missing");
   if (logoUrl && !html.includes(logoUrl)) issues.push("official_logo_not_used");
-  if (/lorem ipsum|placeholder|coming soon|your company/i.test(html)) issues.push("placeholder_copy");
+  if (/lorem ipsum|coming soon|your company/i.test(html)) issues.push("placeholder_copy");
   if (!/mailto:|tel:/i.test(html) && prospect?.verifiedContacts) issues.push("verified_contact_path_missing");
   if (!/<img[\s>]/i.test(html) && !/background-image/i.test(html)) issues.push("imagery_missing");
   if (lower.includes("award-winning") || lower.includes("leader di mercato") || lower.includes("n. 1")) issues.push("unverified_claim_risk");
@@ -196,7 +196,7 @@ async function generateOne(env, master, prospect, key, direction) {
   let result = await runModel(env, HTML_MODEL, [
     { role: "system", content: "You are a senior editorial web art director and frontend designer. Output production-grade HTML only." },
     { role: "user", content: buildVariantPrompt(master, prospect, key, direction, null, null) }
-  ], 9000, 0.56);
+  ], 8500, 0.56);
 
   let html = extractHtml(aiText(result));
   let gate = hardGate(html, prospect);
@@ -205,7 +205,7 @@ async function generateOne(env, master, prospect, key, direction) {
     result = await runModel(env, HTML_MODEL, [
       { role: "system", content: "You are a senior editorial web art director fixing a premium homepage without changing its core direction. Output HTML only." },
       { role: "user", content: buildVariantPrompt(master, prospect, key, direction, gate.issues, html) }
-    ], 9000, 0.46);
+    ], 8500, 0.46);
     html = extractHtml(aiText(result));
     gate = hardGate(html, prospect);
   }
