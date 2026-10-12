@@ -337,7 +337,7 @@ async function candidates(sql, limit) {
         and upper(x.status) not like '%REJECT%'
       order by x.version desc limit 1
     ) rp on true
-    where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)
+    where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status,'RENDER_REWORK'::pipeline_status)
       and rp.status='ART_DIRECTION'
       and coalesce(p.source_data->>'id_prospect',p.legacy_ids->>'id_prospect') <> 'CZ-000'
     order by
@@ -379,7 +379,7 @@ async function claimPack(sql, row) {
       error=null,
       updated_at=now()
     where id=${row.prospect_id}::uuid
-      and pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status)`;
+      and pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status,'RENDER_REWORK'::pipeline_status)`;
 
   return job[0].id;
 }
