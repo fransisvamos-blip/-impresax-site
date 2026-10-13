@@ -28,7 +28,27 @@ async function writeControlEvent(sql,row,action,payload={}) {
 
 export default {
   async scheduled(controller,env,ctx) {
-    ctx.waitUntil(reconcileV2(env).catch(()=>null));
+    ctx.waitUntil((async()=>{
+      await reconcileV2(env).catch(()=>null);
+      const ref=String(env.V2_SHADOW_AUTOSTART||"").trim();
+      if(!ref || !env.RENDER_PROSPECT_WORKFLOW) return;
+      try {
+        const created=await createShadowInputPack(env,ref);
+        if(!created.input_pack || created.input_pack.certification_status!=="PASS") return;
+        if(!["INPUT_READY","PLANNING","GENERATING","PREVIEW_PARTIAL","PREVIEW_READY","QA_RUNNING","REWORK"].includes(String(created.pack.status||""))) return;
+        const instanceId="rpv2-"+created.pack.id;
+        try {
+          await env.RENDER_PROSPECT_WORKFLOW.create({
+            id:instanceId,
+            params:{prospectId:created.pack.prospect_id,packId:created.pack.id,inputPackId:created.input_pack.id}
+          });
+        } catch {
+          // Idempotent: an existing workflow with this deterministic ID is expected on later cron ticks.
+        }
+      } catch {
+        // Reconciler/health surfaces typed failures; cron must never create an uncontrolled retry loop.
+      }
+    })());
   },
 
   async fetch(request,env) {
