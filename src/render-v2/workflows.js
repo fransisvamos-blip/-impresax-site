@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
-import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
+import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
 import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS } from "./constants.js";
 import { createContentTruthPack, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
@@ -133,7 +133,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     let previewEmitted=false;
     for(let cycle=1;cycle<=MAX_VISUAL_REVISIONS;cycle++) {
       const revision=await step.do("r"+cycle+"-allocate",async()=>{
-        const r=await allocateRevision(sql,params.variantId,cycle===1?params.parentRevisionId:null);
+        const r=await allocateRevision(sql,params.variantId,cycle===1?params.parentRevisionId:null,event.instanceId+":cycle:"+cycle);
         await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"GENERATE",attempt:cycle,metadata:{revision:r.revision}});
         return r;
       });
@@ -372,6 +372,73 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     });
 
     const assetTokens=Object.entries(assets).filter(([,v])=>!v.unavailable).map(([k])=>k);
+    await step.do("mark-truth-and-creative-planning",async()=>{
+      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN"});
+      return {ok:true};
+    });
+
+    const [storedTruth,storedDirections]=await Promise.all([
+      step.do("load-content-truth-component",async()=>getContentTruth(sql,p.packId)),
+      step.do("load-creative-directions-component",async()=>getDirectionPlan(sql,p.packId))
+    ]);
+
+    const truth=storedTruth ? {
+      content_truth:storedTruth.payload,
+      generator_model:storedTruth.generator_model,
+      reviewer_model:storedTruth.reviewer_model,
+      verification:storedTruth.verification,
+      hash:storedTruth.content_hash,
+      reused:true
+    } : await step.do("content-truth-pack",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+      return createContentTruthPack(this.env,input.payload,{
+        beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH:"+role+":"+model)
+      });
+    });
+
+    if(!storedTruth) {
+      await step.do("persist-content-truth-component",async()=>{
+        return persistContentTruth(sql,{
+          packId:p.packId,inputPackId:p.inputPackId,result:truth,
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
+        });
+      });
+    }
+
+    await step.do("persist-content-truth-qa",async()=>{
+      await recordQa(sql,{
+        packId:p.packId,type:"CONTENT_TRUTH",status:"PASS",
+        scores:{truth_integrity:10},
+        issues:truth.verification?.issues||[],
+        actions:[],
+        artifactHashes:{content_truth_hash:truth.hash},
+        modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
+      });
+      return {ok:true,content_truth_hash:truth.hash};
+    });
+
+    const directions=storedDirections ? {
+      creative_strategy:storedDirections.creative_strategy,
+      directions:storedDirections.directions,
+      fingerprints:storedDirections.fingerprints,
+      diversity_precheck:storedDirections.diversity_precheck,
+      model:storedDirections.model,
+      hash:storedDirections.content_hash,
+      reused:true
+    } : await step.do("creative-directions",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+      return createCreativeDirections(this.env,input.payload,assetTokens,{
+        beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_DIRECTIONS:"+model)
+      });
+    });
+
+    if(!storedDirections) {
+      await step.do("persist-creative-directions-component",async()=>{
+        return persistDirectionPlan(sql,{
+          packId:p.packId,inputPackId:p.inputPackId,result:directions,
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
+        });
+      });
+    }
+
     const existingCreative=await step.do("load-existing-creative-plan",async()=>{
       const rows=await sql`select * from render_creative_plans_v2 where render_pack_id=${p.packId}::uuid and status='COMPLETED' limit 1`;
       return rows[0]||null;
@@ -379,45 +446,23 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
 
     let creative;
     if(existingCreative) {
+      if(existingCreative.content_truth_hash!==truth.hash || existingCreative.creative_directions_hash!==directions.hash) {
+        throw new Error("SYSTEM_INVARIANT:CREATIVE_PLAN_COMPONENT_HASH_MISMATCH");
+      }
       creative={
         plan:{
           content_truth:existingCreative.content_truth_pack,
           creative_strategy:existingCreative.creative_strategy,
           directions:existingCreative.directions,
           fingerprints:existingCreative.fingerprints,
-          diversity_precheck:existingCreative.diversity_precheck
+          diversity_precheck:existingCreative.diversity_precheck,
+          content_truth_hash:existingCreative.content_truth_hash,
+          creative_directions_hash:existingCreative.creative_directions_hash
         },
         hash:existingCreative.content_hash,
         reused:true
       };
     } else {
-      await step.do("mark-truth-and-creative-planning",async()=>{
-        await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN"});
-        return {ok:true};
-      });
-      const [truth,directions]=await Promise.all([
-        step.do("content-truth-pack",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-          return createContentTruthPack(this.env,input.payload,{
-            beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH:"+role+":"+model)
-          });
-        }),
-        step.do("creative-directions",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-          return createCreativeDirections(this.env,input.payload,assetTokens,{
-            beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_DIRECTIONS:"+model)
-          });
-        })
-      ]);
-      await step.do("persist-content-truth-qa",async()=>{
-        await recordQa(sql,{
-          packId:p.packId,type:"CONTENT_TRUTH",status:"PASS",
-          scores:{truth_integrity:10},
-          issues:truth.verification?.issues||[],
-          actions:[],
-          artifactHashes:{content_truth_hash:truth.hash},
-          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
-        });
-        return {ok:true,content_truth_hash:truth.hash};
-      });
       creative=await step.do("combine-creative-plan",async()=>combineCreativePlan(truth,directions));
     }
 
