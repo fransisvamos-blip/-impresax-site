@@ -11,9 +11,29 @@ const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const FACTORY_VERSION = "autonomous-site-factory-v1+pilot-001-reference-v4";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const host = normalizeHostname(url.hostname);
+
+    // ONE-SHOT CABINA TRIGGER — remove immediately after use.
+    if (
+      request.method === "GET" &&
+      host === ROOT_HOST &&
+      url.pathname === "/_ix/internal/run-render/9f5f98c1-e5a9-4e1c-b3cd-7ac2c14b3f7d"
+    ) {
+      ctx.waitUntil((async () => {
+        await runCloudflareRenderEngine(env);
+        await runOrchestrator(env, "cabina-one-shot");
+      })());
+      return new Response(JSON.stringify({ok:true,accepted:true,action:"RENDER_ENGINE_AND_ORCHESTRATOR"}), {
+        status:202,
+        headers:{
+          "Content-Type":"application/json; charset=UTF-8",
+          "Cache-Control":"no-store",
+          "X-Robots-Tag":"noindex,nofollow,noarchive"
+        }
+      });
+    }
 
     // Enforce the official HTTPS origin before serving the public domain.
     if ((host === ROOT_HOST || host === WWW_HOST) && url.protocol !== "https:") {
