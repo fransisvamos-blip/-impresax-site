@@ -249,7 +249,7 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
     "- If an official logo URL is supplied and marked verified, use that exact URL in <img>; never redraw, restyle, spell or approximate the logo.",
     "- Use credible real/category photography via stable HTTPS URLs only when it improves comprehension. Never fake company staff or facilities.",
     "- Typography and composition must do most of the design work. Avoid generic cards, gradients, glows, glassmorphism, blobs, dashboards and SaaS tropes.",
-    "- CTA language must match the verified business and contacts.",
+    "- CTA language must match the verified business and contacts.",\n    "- If verified contact data exists, include at least one clickable tel: and/or mailto: link using ONLY the verified phone/email values.",
     "- Include responsive @media rules that materially redesign mobile hierarchy and spacing.",
     "- Keep the HTML compact enough to render fast while looking like a flagship custom design."
   ];
