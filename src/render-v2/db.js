@@ -85,6 +85,14 @@ export async function updateWorkflow(sql,instanceId,{status,currentStep=null,err
 }
 
 export async function persistCreativePlan(sql,{packId,inputPackId,plan,modelRouteVersion,promptVersion,hash}) {
+  const existing=await sql`select * from render_creative_plans_v2 where render_pack_id=${packId}::uuid limit 1`;
+  if(existing.length) {
+    if(existing[0].status!=="COMPLETED" || existing[0].content_hash!==hash) {
+      throw new Error("SYSTEM_INVARIANT:CREATIVE_PLAN_IMMUTABILITY_MISMATCH");
+    }
+    return existing[0];
+  }
+
   const rows=await sql`
     insert into render_creative_plans_v2(
       render_pack_id,input_pack_id,status,content_truth_pack,creative_strategy,
@@ -95,19 +103,13 @@ export async function persistCreativePlan(sql,{packId,inputPackId,plan,modelRout
       ${JSON.stringify(plan.directions)}::jsonb,${JSON.stringify(plan.fingerprints)}::jsonb,
       ${JSON.stringify(plan.diversity_precheck||{})}::jsonb,${modelRouteVersion},${promptVersion},${hash},now()
     )
-    on conflict(render_pack_id) do update set
-      status='COMPLETED',
-      content_truth_pack=excluded.content_truth_pack,
-      creative_strategy=excluded.creative_strategy,
-      directions=excluded.directions,
-      fingerprints=excluded.fingerprints,
-      diversity_precheck=excluded.diversity_precheck,
-      model_route_version=excluded.model_route_version,
-      prompt_version=excluded.prompt_version,
-      content_hash=excluded.content_hash,
-      completed_at=now()
+    on conflict(render_pack_id) do nothing
     returning *`;
-  return rows[0];
+  if(rows.length) return rows[0];
+
+  const raced=await sql`select * from render_creative_plans_v2 where render_pack_id=${packId}::uuid limit 1`;
+  if(!raced.length || raced[0].content_hash!==hash) throw new Error("SYSTEM_INVARIANT:CREATIVE_PLAN_CONCURRENT_MISMATCH");
+  return raced[0];
 }
 
 export async function createVariants(sql,packId,directions) {
@@ -117,10 +119,17 @@ export async function createVariants(sql,packId,directions) {
     const rows=await sql`
       insert into render_v2_variants(render_pack_id,variant_key,status,direction_fingerprint)
       values(${packId}::uuid,${key},'PLANNED',${JSON.stringify(fp)}::jsonb)
-      on conflict(render_pack_id,variant_key) do update set
-        direction_fingerprint=excluded.direction_fingerprint,updated_at=now()
+      on conflict(render_pack_id,variant_key) do nothing
       returning *`;
-    out[key]=rows[0];
+    let row=rows[0];
+    if(!row) {
+      const existing=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid and variant_key=${key} limit 1`;
+      row=existing[0];
+      if(!row || JSON.stringify(row.direction_fingerprint||{})!==JSON.stringify(fp)) {
+        throw new Error("SYSTEM_INVARIANT:VARIANT_DIRECTION_IMMUTABILITY_MISMATCH:"+key);
+      }
+    }
+    out[key]=row;
   }
   return out;
 }
