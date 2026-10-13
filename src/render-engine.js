@@ -483,11 +483,11 @@ function evidenceBrandDna(row, evidence) {
     trust_signals: trust,
     commercial_path: contacts,
     first_party_site_language: siteSummary || "No first-party site copy available; use verified business data only.",
-    existing_colors: colors,
+    existing_colors: colors.length ? colors : "NOT_VERIFIED_FROM_FIRST_PARTY_EVIDENCE",
     official_identity_asset: logoSignal || "No official graphic logo verified; use verified business name as text only when explicitly permitted.",
     typography_cues: evidence?.visible_text
       ? "Derive hierarchy from first-party identity evidence; do not invent a branded typeface."
-      : "No verified existing type system; use a prospect-specific editorial system without claiming it is existing brand typography.",
+      : "NOT_VERIFIED_FROM_FIRST_PARTY_EVIDENCE — do not claim an existing branded typeface; choose typography as new art direction only.",
     imagery_cues: evidence?.visible_text
       ? "Derive imagery from the real offering described by the official site; never invent staff, facilities or completed projects."
       : "Use only verified/category imagery tied directly to the verified offering.",
