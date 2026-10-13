@@ -16,8 +16,8 @@ jobs:
         run: |
           set -euo pipefail
           url="https://impresax.org/_ix/internal/run-render/9f5f98c1-e5a9-4e1c-b3cd-7ac2c14b3f7d"
-          code=$(curl -L -sS -o /tmp/body -w "%{http_code}" --connect-timeout 8 --max-time 20 "$url")
+          code=$(curl -L -sS -o /tmp/body -w "%{http_code}" --connect-timeout 8 --max-time 840 "$url")
           cat /tmp/body
           echo "http_code=$code"
-          test "$code" = "202"
+          test "$code" = "200"
           grep -q '"accepted":true' /tmp/body
