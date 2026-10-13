@@ -653,27 +653,148 @@ async function attemptAutomaticBrandGate(sql, env, row) {
   return {...row,logo,brand_dna:brandDna};
 }
 
-async function discoverFirstPartyImages(websiteUrl) {
-  if (!websiteUrl) return [];
+function parseDim(tag,name) {
+  const raw=attrValue(tag,name);
+  const n=Number(String(raw || "").replace(/[^0-9.]/g,""));
+  return Number.isFinite(n) && n>0 ? n : null;
+}
+
+function assetRole(signal) {
+  const s=String(signal || "").toLowerCase();
+  if(/\blogo\b|site-logo|custom-logo|brand-logo|navbar-brand/.test(s)) return "identity";
+  if(/certif|badge|award|partner|client|fedex|ups|sda|mimit|rina/.test(s)) return "trust";
+  if(/project|portfolio|lavor|realizz|gallery|case[-_ ]?study/.test(s)) return "project";
+  if(/hero|banner|cover|masthead/.test(s)) return "hero";
+  if(/team|staff|persona|profile|founder/.test(s)) return "people";
+  if(/product|prodot|material|service|serviz|facility|sede|office|azienda/.test(s)) return "business";
+  return "editorial";
+}
+
+function scoreFirstPartyAsset(candidate) {
+  const signal=[candidate.url,candidate.alt,candidate.title,candidate.class_name,candidate.id,candidate.page_url].join(" ").toLowerCase();
+  let score=0;
+  const role=assetRole(signal);
+  if(role==="hero") score+=12;
+  if(role==="project") score+=10;
+  if(role==="business") score+=7;
+  if(role==="people") score+=5;
+  if(role==="trust") score+=1;
+  if(role==="identity") score-=8;
+  if(/icon|favicon|sprite|emoji|placeholder|woocommerce|payment|social|avatar/.test(signal)) score-=12;
+  if(/thumb|thumbnail|150x150|100x100|64x64/.test(signal)) score-=8;
+  if(/\.(jpe?g|webp|avif)(?:[?#]|$)/i.test(candidate.url)) score+=3;
+  if(/\.png(?:[?#]|$)/i.test(candidate.url)) score+=1;
+  const w=Number(candidate.width||0),h=Number(candidate.height||0);
+  const area=w*h;
+  if(area>=1200000) score+=8;
+  else if(area>=600000) score+=6;
+  else if(area>=250000) score+=4;
+  else if(area>0 && area<50000) score-=6;
+  if(w>=1200) score+=3;
+  if(h>=700) score+=2;
+  if(candidate.alt && String(candidate.alt).trim().length>=8) score+=2;
+  return {...candidate,role,score};
+}
+
+async function extractAssetsFromPage(pageUrl, rootHost) {
   try {
-    const res = await fetch(websiteUrl, {
-      redirect: "follow",
-      headers: { "User-Agent": "ImpresaX-RenderingStudio/1.0" }
-    });
-    if (!res.ok) return [];
-    const html = (await res.text()).slice(0, 500000);
-    const urls = new Set();
-    const base = new URL(res.url || websiteUrl);
-    for (const match of html.matchAll(/<(?:img|source)[^>]+(?:src|srcset)=["']([^"']+)["']/gi)) {
-      const raw = String(match[1] || "").split(/[\s,]/)[0];
-      if (!raw || raw.startsWith("data:") || raw.startsWith("blob:")) continue;
+    const res=await fetch(pageUrl,{redirect:"follow",headers:{"User-Agent":"ImpresaX-RenderingStudio/1.0"}});
+    if(!res.ok) return {assets:[],links:[]};
+    const html=(await res.text()).slice(0,700000);
+    const base=new URL(res.url || pageUrl);
+    const assets=[];
+    const seen=new Set();
+
+    const add=(raw,meta={})=>{
+      if(!raw) return;
+      const first=String(raw).split(",")[0].trim().split(/\s+/)[0];
+      if(!first || first.startsWith("data:") || first.startsWith("blob:")) return;
       try {
-        const u = new URL(raw, base).href;
-        if (/\.(?:png|jpe?g|webp|avif)(?:[?#].*)?$/i.test(u) || /wp-content\/uploads/i.test(u)) urls.add(u);
+        const u=new URL(first,base);
+        if(u.protocol!=="https:") return;
+        const host=u.hostname.replace(/^www\./,"").toLowerCase();
+        if(host!==rootHost && !host.endsWith("."+rootHost)) return;
+        const url=u.href;
+        if(seen.has(url)) return;
+        seen.add(url);
+        assets.push(scoreFirstPartyAsset({
+          url,
+          page_url:base.href,
+          alt:meta.alt||"",
+          title:meta.title||"",
+          class_name:meta.class_name||"",
+          id:meta.id||"",
+          width:meta.width||null,
+          height:meta.height||null
+        }));
       } catch {}
-      if (urls.size >= 8) break;
+    };
+
+    for(const m of html.matchAll(/<img\b[^>]*>/gi)) {
+      const tag=m[0];
+      add(attrValue(tag,"src")||attrValue(tag,"data-src")||attrValue(tag,"data-lazy-src"),{
+        alt:attrValue(tag,"alt"),
+        title:attrValue(tag,"title"),
+        class_name:attrValue(tag,"class"),
+        id:attrValue(tag,"id"),
+        width:parseDim(tag,"width"),
+        height:parseDim(tag,"height")
+      });
+      const srcset=attrValue(tag,"srcset")||attrValue(tag,"data-srcset");
+      if(srcset) {
+        const parts=srcset.split(",").map(x=>x.trim()).filter(Boolean);
+        const largest=parts[parts.length-1]?.split(/\s+/)[0];
+        add(largest,{
+          alt:attrValue(tag,"alt"),
+          title:attrValue(tag,"title"),
+          class_name:attrValue(tag,"class"),
+          id:attrValue(tag,"id"),
+          width:parseDim(tag,"width"),
+          height:parseDim(tag,"height")
+        });
+      }
     }
-    return [...urls].slice(0, 8);
+
+    const ogTags=[
+      ...html.matchAll(/<meta\b[^>]*(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*>/gi)
+    ];
+    for(const m of ogTags) add(attrValue(m[0],"content"),{class_name:"social-preview"});
+
+    const links=[];
+    for(const m of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+      const raw=m[1],text=String(m[2]||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+      try {
+        const u=new URL(raw,base);
+        const host=u.hostname.replace(/^www\./,"").toLowerCase();
+        if(u.protocol!=="https:" || (host!==rootHost && !host.endsWith("."+rootHost))) continue;
+        const signal=(u.pathname+" "+text).toLowerCase();
+        if(/portfolio|progett|lavor|realizz|gallery|chi[-_ ]?siamo|about|serviz|services|azienda|company|case[-_ ]?stud/.test(signal)) {
+          links.push(u.href);
+        }
+      } catch {}
+    }
+    return {assets,links:[...new Set(links)].slice(0,8)};
+  } catch {
+    return {assets:[],links:[]};
+  }
+}
+
+async function discoverFirstPartyImages(websiteUrl) {
+  if(!websiteUrl) return [];
+  try {
+    const root=new URL(websiteUrl);
+    const rootHost=root.hostname.replace(/^www\./,"").toLowerCase();
+    const home=await extractAssetsFromPage(websiteUrl,rootHost);
+    const childUrls=home.links.slice(0,4);
+    const children=await Promise.all(childUrls.map(url=>extractAssetsFromPage(url,rootHost)));
+    const byUrl=new Map();
+    for(const item of [...home.assets,...children.flatMap(x=>x.assets)]) {
+      const prev=byUrl.get(item.url);
+      if(!prev || item.score>prev.score) byUrl.set(item.url,item);
+    }
+    return [...byUrl.values()]
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,16);
   } catch {
     return [];
   }
@@ -743,7 +864,8 @@ function prospectPayload(row, firstPartyImages) {
     primary_cta: source.primary_cta || null,
     secondary_cta: source.secondary_cta || null,
     source_references: Array.isArray(source.source_references) ? source.source_references : [],
-    first_party_images: firstPartyImages
+    first_party_images: firstPartyImages,
+    approved_external_images: Array.isArray(source.approved_external_images) ? source.approved_external_images : []
   };
 }
 
@@ -1166,7 +1288,9 @@ async function generateProspect(sql, env, master, row) {
       secondaryCta: payload.secondary_cta,
       sourceReferences: payload.source_references,
       firstPartyImages: payload.first_party_images,
-      visualReworkFeedback: feedbackRows.map(x => ({variant:x.variant_key, critique:x.visual_qa}))
+      approvedExternalImages: payload.approved_external_images,
+      visualReworkFeedback: feedbackRows.map(x => ({variant:x.variant_key, critique:x.visual_qa})),
+      visualSetFeedback: row?.content_map?.visual_set_qa_last_run || null
     };
     const studio = await generateRenderVariants(env, studioProspect);
     const htmlByKey = {};
