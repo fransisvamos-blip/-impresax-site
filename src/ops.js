@@ -1263,6 +1263,8 @@ export async function handleOpsRequest(request, env) {
         zero_photo_premium_required: true,
         deterministic_html_sanitizer_required: true,
         generation_parallelism: 1,
+        v8_4_first_render_ready_proof_required: true,
+        v8_4_proof_prospect: "CZ-063",
         max_generation_failures: 3,
         cron_heavy_phase_separation_required: true,
         ai_stale_recovery_minutes: 16,
