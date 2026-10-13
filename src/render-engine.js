@@ -1282,7 +1282,7 @@ function buildVariantProvenance(row, html, ref) {
   };
 }
 
-async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
+async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preRenderGates) {
   const gate=await sql`update render_jobs
     set status='COMPLETING',updated_at=now()
     where id=${jobId}::uuid and worker='cloudflare-workers-ai' and status='RUNNING'
@@ -1309,7 +1309,8 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
           html_model_primary:"@cf/openai/gpt-oss-120b",
           html_model_repair:"@cf/zai-org/glm-4.7-flash",
           visual_qa_model:VISUAL_QA_MODEL,
-          direction:directions[key] || {}
+          direction:directions[key] || {},
+          pre_render_gate:preRenderGates?.[key] || {}
         })}::jsonb,
         ${ref},null,${digest},null,null,null,null,now()
       )
@@ -1337,7 +1338,8 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
           implementation_contract_version:"RENDERING_STUDIO_V1_HTML_REFERENCE",
           source_sha256:digest,
           source_transport:"CLOUDFLARE_INTERNAL",
-          provenance
+          provenance,
+          pre_render_gate:preRenderGates?.[key] || {}
         })}::jsonb,
         ${JSON.stringify([ref,...(row.source_data?.source_references || []),...provenance.image_urls])}::jsonb
       )
@@ -1362,7 +1364,9 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         art_direction_model:"@cf/openai/gpt-oss-120b",
         html_model_primary:"@cf/openai/gpt-oss-120b",
           html_model_repair:"@cf/zai-org/glm-4.7-flash",
-        visual_qa_model:VISUAL_QA_MODEL
+        visual_qa_model:VISUAL_QA_MODEL,
+        direction_set_gate_pass:true,
+        semantic_content_gate_pass:true
       })}::jsonb,
       error=null,completed_at=now(),updated_at=now()
     where id=${jobId}::uuid`;
@@ -1490,14 +1494,49 @@ async function generateProspect(sql, env, master, row) {
       visualSetFeedback: row?.pack_content_map?.visual_set_qa_last_run || null
     };
     const studio = await generateRenderVariants(env, studioProspect);
+
+    const directionGate=studio?.direction_set_gate || {};
+    const directionScores=directionGate?.scores || {};
+    const directionRequired=[
+      "specificity_A","specificity_B","specificity_C",
+      "feasibility_A","feasibility_B","feasibility_C",
+      "diversity_AB","diversity_AC","diversity_BC"
+    ];
+    const directionGateValid=
+      directionGate.pass===true &&
+      Array.isArray(directionGate.issues) &&
+      directionGate.issues.length===0 &&
+      directionRequired.every(k=>Number.isFinite(Number(directionScores[k])) && Number(directionScores[k])>=8);
+    if(!directionGateValid) throw new Error("DIRECTION_SET_GATE_EVIDENCE_REQUIRED");
+
     const htmlByKey = {};
     const directions = {};
+    const preRenderGates = {};
     for (const variant of studio.variants || []) {
-      htmlByKey[variant.key] = variant.html;
-      directions[variant.key] = variant.direction;
+      const key=String(variant.key || "").toUpperCase();
+      const semantic=variant?.gate?.semantic_content || {};
+      if(!["A","B","C"].includes(key)) continue;
+      if(variant?.gate?.pass!==true || semantic.pass!==true ||
+         !Array.isArray(semantic.issues) || semantic.issues.length!==0) {
+        throw new Error("SEMANTIC_PRE_RENDER_GATE_REQUIRED_"+key);
+      }
+      htmlByKey[key] = variant.html;
+      directions[key] = variant.direction;
+      preRenderGates[key] = variant.gate;
     }
     if (!htmlByKey.A || !htmlByKey.B || !htmlByKey.C) throw new Error("RENDERING_STUDIO_THREE_VARIANTS_REQUIRED");
-    const persisted=await persistGeneratedPack(sql,row,jobId,htmlByKey,directions);
+
+    await sql`update render_packs set
+        content_map=coalesce(content_map,'{}'::jsonb) ||
+          ${JSON.stringify({
+            creative_strategy:studio.creative_strategy || "",
+            direction_set_gate:directionGate,
+            creative_quality_revision:studio.creative_quality_revision || "V8.2_BESPOKE_DIRECTION_SET",
+            pre_render_semantic_gate_pass:true
+          })}::jsonb
+      where id=${row.render_pack_id}::uuid and approved_reference=false`;
+
+    const persisted=await persistGeneratedPack(sql,row,jobId,htmlByKey,directions,preRenderGates);
     if (!persisted) return {ok:false,code:row.prospect_code,error:"STALE_GENERATION_DISCARDED"};
     return {ok:true,code:row.prospect_code,pack_id:row.render_pack_id,version:row.version,studio:"RENDERING_STUDIO_V1_FROZEN"};
   } catch (error) {
