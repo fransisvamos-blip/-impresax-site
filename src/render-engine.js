@@ -1145,18 +1145,56 @@ async function inspectVisualAsset(env, prospect, asset) {
   }
 }
 
+function compactIdentityToken(value) {
+  return String(value || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,"");
+}
+
+function isIdentityAssetForProspect(prospect, asset) {
+  const logo=prospect?.official_logo || prospect?.logo || {};
+  const assetUrl=canonicalAssetUrl(asset?.url || "");
+  const officialUrls=[
+    canonicalAssetUrl(logo?.url || ""),
+    canonicalAssetUrl(logo?.official_source || "")
+  ].filter(Boolean);
+  if(assetUrl && officialUrls.includes(assetUrl)) return true;
+
+  const business=compactIdentityToken(prospect?.business_name || prospect?.businessName || "");
+  const alt=compactIdentityToken(asset?.alt || "");
+  const title=compactIdentityToken(asset?.title || "");
+  const file=compactIdentityToken(String(asset?.url || "").split("/").pop()?.split("?")[0] || "");
+  if(business.length>=6 && (alt===business || title===business)) return true;
+
+  for(const official of officialUrls) {
+    const officialFile=compactIdentityToken(String(official).split("/").pop()?.split("?")[0] || "")
+      .replace(/\d+x\d+$/,"");
+    const assetFile=file.replace(/\d+x\d+$/,"");
+    if(officialFile.length>=6 && assetFile.length>=6 &&
+       (assetFile.includes(officialFile) || officialFile.includes(assetFile))) return true;
+  }
+  return false;
+}
+
 async function analyzeVisualAssetInventory(env, prospect, assets) {
   const unique=[];
   const seen=new Set();
-  for(const item of assets || []) {
-    const url=String(item?.url || "");
+  for(const raw of assets || []) {
+    const url=String(raw?.url || "");
     if(!url || seen.has(url)) continue;
     seen.add(url);
+    const item=isIdentityAssetForProspect(prospect,raw)
+      ? {...raw,role:"identity",discovered_role:raw?.role || raw?.discovered_role || "identity"}
+      : raw;
     unique.push(item);
   }
 
-  const locked=unique.filter(x=>["identity","trust"].includes(String(x.role||"")));
-  const visual=unique.filter(x=>!["identity","trust"].includes(String(x.role||"")))
+  const locked=unique.filter(x=>{
+    const role=String(x.role||"").toLowerCase();
+    return role==="identity" || role==="trust" || role.includes("logo") || role.includes("badge");
+  });
+  const visual=unique.filter(x=>!locked.includes(x))
     .sort((a,b)=>Number(b.score||0)-Number(a.score||0));
   const reviewSet=visual.slice(0,10);
   const reviewed=await Promise.all(reviewSet.map(asset=>inspectVisualAsset(env,prospect,asset)));
@@ -1172,7 +1210,7 @@ async function analyzeVisualAssetInventory(env, prospect, assets) {
   const usable=all.filter(x=>x.vision_usable===true);
   return {
     pass:true,
-    revision:"ASSET_VISION_GATE_V1",
+    revision:"ASSET_VISION_GATE_V1_1_IDENTITY_LOCK",
     total:all.length,
     reviewed:all.filter(x=>x.vision_status==="REVIEWED").length,
     usable_count:usable.length,
