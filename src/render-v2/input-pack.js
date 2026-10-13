@@ -87,6 +87,10 @@ export function certifyInputPayload(payload) {
   const logoStatus=String(payload?.official_logo?.status||"").toUpperCase();
   if(!["PASS","OFFICIAL_LOGO_LOCKED","NO_OFFICIAL_LOGO_CONFIRMED"].includes(logoStatus)) issues.push("OFFICIAL_IDENTITY_NOT_CERTIFIED");
   if(["PASS","OFFICIAL_LOGO_LOCKED"].includes(logoStatus) && !payload.assets.some(x=>x.asset_id==="PRIMARY_LOGO")) issues.push("PRIMARY_LOGO_ASSET_MISSING");
+  if(logoStatus==="NO_OFFICIAL_LOGO_CONFIRMED") {
+    if(payload?.official_logo?.generated!==false) issues.push("NO_LOGO_IDENTITY_MUST_NOT_BE_GENERATED");
+    if(payload?.official_logo?.use_verified_name_as_text!==true) issues.push("NO_LOGO_VERIFIED_TEXT_IDENTITY_REQUIRED");
+  }
   for(const key of REQUIRED_DNA) if(!objectHasValue(payload?.brand_dna?.[key])) issues.push("BRAND_DNA_MISSING:"+key);
   if(!meaningfulVerifiedValue(payload?.verified_services)) issues.push("VERIFIED_SERVICES_REQUIRED");
   if(!meaningfulVerifiedValue(payload?.verified_contacts)) issues.push("VERIFIED_CONTACTS_REQUIRED");
