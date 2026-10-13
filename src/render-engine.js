@@ -1709,6 +1709,8 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
           'generation_failure_count',0,
           'last_generation_error',null,
           'generation_hold',false,
+          'generation_success_at',now(),
+          'generation_failure_source','RENDER_JOBS_SOURCE_OF_TRUTH',
           'creative_engine_revision',CREATIVE_ENGINE_REVISION,
           'v8_4_proof_candidate',true
         )
@@ -1734,16 +1736,30 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
 }
 
 async function applyGenerationFailureState(sql,row,message) {
-  const counterRows=await sql`update render_packs
+  const packRows=await sql`select content_map->>'generation_success_at' as generation_success_at
+    from render_packs where id=${row.render_pack_id}::uuid limit 1`;
+  const successAt=packRows[0]?.generation_success_at || null;
+
+  const countRows=await sql`select count(*)::int as n
+    from render_jobs
+    where worker='cloudflare-workers-ai'
+      and status='FAILED'
+      and input_data->>'render_pack_id'=${row.render_pack_id}
+      and input_data->>'engine_revision'=${CREATIVE_ENGINE_REVISION}
+      and coalesce(error,'') not like 'SUPERSEDED_BY%'
+      and coalesce(error,'') <> 'CANCELLED_BY_GENERATION_CIRCUIT_BREAKER'
+      and (${successAt}::timestamptz is null or started_at > ${successAt}::timestamptz)`;
+  const generationFailures=Number(countRows[0]?.n || 0);
+
+  await sql`update render_packs
     set content_map=coalesce(content_map,'{}'::jsonb) ||
       jsonb_build_object(
-        'generation_failure_count',coalesce((content_map->>'generation_failure_count')::int,0)+1,
-        'last_generation_error',${message}
+        'generation_failure_count',${generationFailures},
+        'last_generation_error',${message},
+        'generation_failure_source','RENDER_JOBS_SOURCE_OF_TRUTH'
       )
     where id=${row.render_pack_id}::uuid
-      and approved_reference=false
-    returning coalesce((content_map->>'generation_failure_count')::int,0) as failures`;
-  const generationFailures=Number(counterRows[0]?.failures || 1);
+      and approved_reference=false`;
   const hold=generationFailures>=MAX_GENERATION_FAILURES;
 
   if(hold) {
