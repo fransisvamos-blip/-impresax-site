@@ -79,6 +79,13 @@ BEGIN
     RAISE EXCEPTION 'FROZEN_COMPLIANCE: SOURCE_REFERENCES_REQUIRED';
   END IF;
 
+  IF coalesce(NEW.content_map->'asset_vision_gate'->>'pass','false')<>'true' THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: ASSET_VISION_GATE_REQUIRED';
+  END IF;
+  IF nullif(trim(coalesce(NEW.content_map->'asset_vision_gate'->>'revision','')),'') IS NULL THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: ASSET_VISION_REVISION_REQUIRED';
+  END IF;
+
   IF nullif(trim(coalesce(NEW.content_map->>'creative_strategy','')),'') IS NULL THEN
     RAISE EXCEPTION 'FROZEN_COMPLIANCE: CREATIVE_STRATEGY_REQUIRED';
   END IF;
