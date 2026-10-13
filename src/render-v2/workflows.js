@@ -66,6 +66,41 @@ async function recordTypedFailure(sql,{packId,workflowInstanceId,revisionId=null
 
 export class RenderVariantWorkflow extends WorkflowEntrypoint {
   async run(event,step) {
+    try {
+      return await this.runInternal(event,step);
+    } catch(error) {
+      const params=event.payload||{};
+      const eventPrefix=String(params.eventPrefix||"initial");
+      const previewType="preview-"+params.variantKey+"-"+eventPrefix;
+      const terminalType="terminal-"+params.variantKey+"-"+eventPrefix;
+      const message=String(error?.message||error||"UNHANDLED_VARIANT_FAILURE");
+      const failure=classifyFailure(error,{step:"VARIANT_UNHANDLED",variant_key:params.variantKey});
+      let sql=null;
+      try {
+        sql=db(this.env);
+        await persistWorkflow(sql,{
+          prospectId:params.prospectId,packId:params.packId,variantId:params.variantId,
+          type:"VARIANT",instanceId:event.instanceId,status:"FAILED",
+          metadata:{emergency_fail_safe:true,error:message}
+        });
+        await recordTypedFailure(sql,{
+          packId:params.packId,workflowInstanceId:event.instanceId,stepName:"VARIANT_UNHANDLED",
+          error:message,variantKey:params.variantKey,strategyVersion:EXECUTION_ENGINE_VERSION
+        });
+        if(params.variantId) await setVariantStatus(sql,params.variantId,{status:"QA_FAILED"});
+        await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"FAIL_SAFE_ESCALATION",errorCode:failure.failure_code});
+      } catch {}
+      try {
+        await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW",fail_safe:true});
+      } catch {}
+      try {
+        await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:failure.failure_domain,fail_safe:true});
+      } catch {}
+      return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:failure.failure_domain,fail_safe:true};
+    }
+  }
+
+  async runInternal(event,step) {
     const params=event.payload;
     const sql=db(this.env);
     const eventPrefix=String(params.eventPrefix||"initial");
@@ -289,6 +324,32 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
 export class RenderProspectWorkflow extends WorkflowEntrypoint {
   async run(event,step) {
+    try {
+      return await this.runInternal(event,step);
+    } catch(error) {
+      const p=event.payload||{};
+      const message=String(error?.message||error||"UNHANDLED_PARENT_FAILURE");
+      const failure=classifyFailure(error,{step:"PARENT_UNHANDLED"});
+      try {
+        const sql=db(this.env);
+        await persistWorkflow(sql,{
+          prospectId:p.prospectId,packId:p.packId,type:"PROSPECT",
+          instanceId:event.instanceId,status:"FAILED",
+          metadata:{emergency_fail_safe:true,error:message}
+        });
+        await recordTypedFailure(sql,{
+          packId:p.packId,workflowInstanceId:event.instanceId,stepName:"PARENT_UNHANDLED",
+          error:message,strategyVersion:EXECUTION_ENGINE_VERSION
+        });
+        const packStatus=["INPUT_DATA","ASSET"].includes(failure.failure_domain) ? "INPUT_BLOCKED" : "ESCALATION_REQUIRED";
+        await setPackStatus(sql,p.packId,packStatus,{fail_safe:true,error:message,failure_domain:failure.failure_domain});
+        await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"FAIL_SAFE_ESCALATION",errorCode:failure.failure_code});
+      } catch {}
+      return {status:["INPUT_DATA","ASSET"].includes(failure.failure_domain)?"INPUT_BLOCKED":"ESCALATION_REQUIRED",failure_domain:failure.failure_domain,fail_safe:true};
+    }
+  }
+
+  async runInternal(event,step) {
     const p=event.payload;
     const sql=db(this.env);
 
