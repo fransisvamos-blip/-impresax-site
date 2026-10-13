@@ -4,6 +4,7 @@ import { classifyFailure, failureFingerprint } from "../src/render-v2/failure-po
 import { recoveryDecision } from "../src/render-v2/recovery-policy.js";
 import { validateRenderSpec } from "../src/render-v2/compiler.js";
 import { certifyInputPayload } from "../src/render-v2/input-pack.js";
+import { validateContentTruthSources } from "../src/render-v2/ai.js";
 
 const dna={
   brand_personality:"Established and reliable",visual_cues:"Strong wordmark",tone:"Professional",
@@ -66,7 +67,7 @@ test("chaos: arbitrary network and script injection are impossible at compile ga
   assert.equal(gate.pass,false);
   assert.ok(gate.issues.includes("FORBIDDEN_TAG"));
   assert.ok(gate.issues.includes("ARBITRARY_URL_FORBIDDEN"));
-  assert.ok(gate.issues.includes("UNSAFE_CSS_URL_OR_IMPORT"));
+  assert.ok(gate.issues.includes("UNSAFE_CSS_URL_IMPORT_OR_CONTENT"));
 });
 
 test("chaos: local visual failure reworks only affected variant",()=>{
@@ -86,4 +87,28 @@ test("chaos: fingerprints are stable and variant scoped",async()=>{
   const c=classifyFailure(new Error("browser timeout 99999"),{step:"capture",variant_key:"B",revision:1});
   assert.equal(await failureFingerprint(a),await failureFingerprint(b));
   assert.notEqual(await failureFingerprint(a),await failureFingerprint(c));
+});
+
+test("chaos: content truth rejects invented source references",()=>{
+  const source="https://verified.example/source";
+  const truth={
+    hero_source_refs:[source],
+    locality_source_refs:[source],
+    services:[{title:"A",description:"B",source_refs:[source]}],
+    trust_points:[{text:"Trust",source_refs:["https://invented.example/fake"]}]
+  };
+  const gate=validateContentTruthSources(truth,{source_references:[source]});
+  assert.equal(gate.pass,false);
+  assert.ok(gate.issues.some(x=>x.startsWith("UNVERIFIED_SOURCE_REF:TRUST_1")));
+});
+
+test("chaos: content truth accepts only exact verified references",()=>{
+  const source="https://verified.example/source";
+  const truth={
+    hero_source_refs:[source],
+    locality_source_refs:[source],
+    services:[{title:"A",description:"B",source_refs:[source]}],
+    trust_points:[{text:"Trust",source_refs:[source]}]
+  };
+  assert.equal(validateContentTruthSources(truth,{source_references:[source]}).pass,true);
 });
