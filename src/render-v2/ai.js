@@ -87,16 +87,26 @@ const creativeSchema={
       type:"object",additionalProperties:false,
       properties:{
         hero_headline:{type:"string"},hero_body:{type:"string"},
+        hero_source_refs:{type:"array",minItems:1,items:{type:"string"}},
         services:{type:"array",minItems:1,maxItems:8,items:{
           type:"object",additionalProperties:false,
-          properties:{title:{type:"string"},description:{type:"string"}},
-          required:["title","description"]
+          properties:{
+            title:{type:"string"},description:{type:"string"},
+            source_refs:{type:"array",minItems:1,items:{type:"string"}}
+          },
+          required:["title","description","source_refs"]
         }},
-        trust_points:{type:"array",maxItems:8,items:{type:"string"}},
-        locality_line:{type:"string"},primary_cta_label:{type:"string"},secondary_cta_label:{type:"string"},
+        trust_points:{type:"array",maxItems:8,items:{
+          type:"object",additionalProperties:false,
+          properties:{text:{type:"string"},source_refs:{type:"array",minItems:1,items:{type:"string"}}},
+          required:["text","source_refs"]
+        }},
+        locality_line:{type:"string"},
+        locality_source_refs:{type:"array",minItems:1,items:{type:"string"}},
+        primary_cta_label:{type:"string"},secondary_cta_label:{type:"string"},
         footer_line:{type:"string"},prohibited_claims:{type:"array",items:{type:"string"}}
       },
-      required:["hero_headline","hero_body","services","trust_points","locality_line","primary_cta_label","secondary_cta_label","footer_line","prohibited_claims"]
+      required:["hero_headline","hero_body","hero_source_refs","services","trust_points","locality_line","locality_source_refs","primary_cta_label","secondary_cta_label","footer_line","prohibited_claims"]
     },
     directions:{
       type:"object",additionalProperties:false,
@@ -125,6 +135,21 @@ export function diversityPrecheck(directions) {
   return {pass,scores,threshold:0.5};
 }
 
+export function validateContentTruthSources(contentTruth,inputPayload) {
+  const allowed=new Set((inputPayload?.source_references||[]).map(String));
+  const issues=[];
+  const check=(label,refs)=>{
+    const list=Array.isArray(refs)?refs:[];
+    if(!list.length) issues.push("SOURCE_REFS_REQUIRED:"+label);
+    for(const ref of list) if(!allowed.has(String(ref))) issues.push("UNVERIFIED_SOURCE_REF:"+label+":"+String(ref));
+  };
+  check("HERO",contentTruth?.hero_source_refs);
+  check("LOCALITY",contentTruth?.locality_source_refs);
+  (contentTruth?.services||[]).forEach((s,i)=>check("SERVICE_"+(i+1),s?.source_refs));
+  (contentTruth?.trust_points||[]).forEach((s,i)=>check("TRUST_"+(i+1),s?.source_refs));
+  return {pass:issues.length===0,issues};
+}
+
 export async function createCreativePlan(env,inputPayload,assetTokens,{beforeModelAttempt=null}={}) {
   const prompt=[
     "Create the single definitive ImpresaX creative plan for this verified prospect.",
@@ -134,6 +159,7 @@ export async function createCreativePlan(env,inputPayload,assetTokens,{beforeMod
     "If only the identity asset is available, design in ZERO_PHOTO_PREMIUM mode using typography, composition, geometry and materiality instead of invented photography.",
     "A/B/C must differ in hero logic, grid, typography behavior, material language, signature device, section rhythm, CTA integration and mobile reinterpretation.",
     "Copy must be concise, natural Italian and commercially clear.",
+    "Every hero/service/trust/locality factual module MUST cite one or more exact URLs from VERIFIED INPUT source_references. Never invent or alter a source URL.",
     "VERIFIED INPUT:",
     JSON.stringify(inputPayload)
   ].join("\n");
@@ -144,6 +170,8 @@ export async function createCreativePlan(env,inputPayload,assetTokens,{beforeMod
     ],
     schema:creativeSchema,maxTokens:9000,temperature:0.35,beforeAttempt:beforeModelAttempt
   });
+  const truthGate=validateContentTruthSources(r.data.content_truth,inputPayload);
+  if(!truthGate.pass) throw new Error("CONTENT_TRUTH_SOURCE_INVALID:"+truthGate.issues.join("|"));
   const pre=diversityPrecheck(r.data.directions);
   if(!pre.pass) throw new Error("SET_DIVERSITY_PRECHECK_FAILED:"+JSON.stringify(pre.scores));
   const plan={...r.data,fingerprints:Object.fromEntries(["A","B","C"].map(k=>[k,r.data.directions[k].fingerprint])),diversity_precheck:pre};
@@ -163,7 +191,7 @@ export function buildCopyManifest(content) {
     out["SERVICE_"+(i+1)+"_TITLE"]=s.title;
     out["SERVICE_"+(i+1)+"_BODY"]=s.description;
   });
-  (content.trust_points||[]).forEach((s,i)=>{ out["TRUST_"+(i+1)]=s; });
+  (content.trust_points||[]).forEach((s,i)=>{ out["TRUST_"+(i+1)]=s.text; });
   return out;
 }
 
