@@ -94,6 +94,47 @@ function officialLogoUrl(prospect) {
   return null;
 }
 
+function verifiedImageHosts(prospect) {
+  const hosts=new Set();
+  const add=(value)=>{
+    try {
+      const u=new URL(String(value || ""));
+      if (u.protocol==="https:") hosts.add(u.hostname.replace(/^www\./,"").toLowerCase());
+    } catch {}
+  };
+  add(prospect?.websiteUrl || prospect?.website_url);
+  const logo=prospect?.logo || {};
+  add(logo.url || logo.official_source || logo.source_url);
+  for (const ref of prospect?.sourceReferences || prospect?.source_references || []) add(ref);
+  for (const img of prospect?.firstPartyImages || prospect?.first_party_images || []) add(img);
+  return hosts;
+}
+
+function htmlImageUrls(html) {
+  const urls=new Set();
+  for (const m of String(html || "").matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+    if (/^https:\/\//i.test(m[1])) urls.add(m[1]);
+  }
+  for (const m of String(html || "").matchAll(/url\(\s*["']?(https:\/\/[^"'\)\s]+)["']?\s*\)/gi)) {
+    urls.add(m[1]);
+  }
+  return [...urls];
+}
+
+function unverifiedImageUrls(html, prospect) {
+  const allowed=verifiedImageHosts(prospect);
+  const logo=officialLogoUrl(prospect);
+  return htmlImageUrls(html).filter(value => {
+    if (logo && value===logo) return false;
+    try {
+      const host=new URL(value).hostname.replace(/^www\./,"").toLowerCase();
+      return ![...allowed].some(a => host===a || host.endsWith("."+a));
+    } catch {
+      return true;
+    }
+  });
+}
+
 function hardGate(html, prospect) {
   const issues = [];
   const logoUrl = officialLogoUrl(prospect);
@@ -109,20 +150,20 @@ function hardGate(html, prospect) {
   if (logoUrl && !html.includes(logoUrl)) issues.push("official_logo_not_used");
   if (/lorem ipsum|coming soon|your company/i.test(html)) issues.push("placeholder_copy");
   if (!/mailto:|tel:/i.test(html) && prospect?.verifiedContacts) issues.push("verified_contact_path_missing");
-  if (!/<img[\s>]/i.test(html) && !/background-image/i.test(html)) issues.push("imagery_missing");
+  if (!/<img[\s>]/i.test(html) && !/background-image/i.test(html)) {
+    const imageryOptional = String(prospect?.logo?.status || "").toUpperCase()==="NO_OFFICIAL_LOGO_CONFIRMED";
+    if (!imageryOptional) issues.push("imagery_missing");
+  }
+  const unverifiedImages=unverifiedImageUrls(html,prospect);
+  if (unverifiedImages.length) issues.push("unverified_image_provenance:" + unverifiedImages.slice(0,4).join("|"));
+  if (String(prospect?.logo?.status || "").toUpperCase()==="NO_OFFICIAL_LOGO_CONFIRMED") {
+    if (/\b(?:logo|monogram|mark|emblem)\b/i.test(html) && !String(prospect?.businessName || prospect?.business_name || "").trim()) {
+      issues.push("invented_identity_mark_risk");
+    }
+  }
   if (lower.includes("award-winning") || lower.includes("leader di mercato") || lower.includes("n. 1")) issues.push("unverified_claim_risk");
 
-  return { pass: issues.length === 0, issues };
-}
-
-function directionFallbacks(prospect) {
-  const dna = prospect?.brandDna || {};
-  const signature = dna.visual_signature || dna.materiality || dna.local_character || prospect.vertical || "real business";
-  return {
-    A: "Editorial flagship direction built around the prospect-specific signature: " + signature + ". Monumental hierarchy, asymmetric composition, strong material evidence and restrained conversion.",
-    B: "Image-led operational narrative derived from the prospect's real work and territory. Immersive but credible photography, cinematic pacing, sparse typography, direct commercial path.",
-    C: "Precision architecture direction derived from the prospect's real business logic. Distinctive typographic system, structured information rhythm, measured technical details, high-end editorial restraint."
-  };
+  return { pass: issues.length === 0, issues, image_provenance:{verified_hosts:[...verifiedImageHosts(prospect)],image_urls:htmlImageUrls(html)} };
 }
 
 function validDirections(parsed) {
@@ -247,7 +288,8 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
     "- Complete header/navigation, distinctive hero, at least four meaningful body sections, verified offering, verified trust/evidence where available, conversion/contact section and footer.",
     "- Use ONLY verified facts in the supplied prospect data. Do not invent staff, projects, awards, branches, clients, metrics or capabilities.",
     "- If an official logo URL is supplied and marked verified, use that exact URL in <img>; never redraw, restyle, spell or approximate the logo.",
-    "- Use credible real/category photography via stable HTTPS URLs only when it improves comprehension. Never fake company staff or facilities.",
+    "- Use imagery ONLY from the supplied verified first-party/source URLs. Do not introduce Unsplash, Pexels, random stock, AI-image URLs or any unverified external image host.",
+    "- If verified imagery is insufficient, solve the page with typography, verified logo, material/color fields, geometry and negative space. Never fake company staff, facilities, projects or premises.",
     "- Typography and composition must do most of the design work. Avoid generic cards, gradients, glows, glassmorphism, blobs, dashboards and SaaS tropes.",
     "- CTA language must match the verified business and contacts.",
     "- If verified contact data exists, include at least one clickable tel: and/or mailto: link using ONLY the verified phone/email values.",
