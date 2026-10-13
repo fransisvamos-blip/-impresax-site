@@ -492,9 +492,9 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           prospectId:p.prospectId,packId:p.packId,inputPackId:p.inputPackId,
           variantId:persisted.variants[key],variantKey:key,parentInstanceId:event.instanceId,eventPrefix:"initial"
         };
+        await persistWorkflow(sql,{prospectId:p.prospectId,packId:p.packId,variantId:persisted.variants[key],type:"VARIANT",instanceId,status:"QUEUED",metadata:{variant_key:key,event_prefix:"initial"}});
         try { await this.env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
         catch { await this.env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
-        await persistWorkflow(sql,{prospectId:p.prospectId,packId:p.packId,variantId:persisted.variants[key],type:"VARIANT",instanceId,status:"QUEUED",metadata:{variant_key:key,event_prefix:"initial"}});
       }
       return {ok:true};
     });
@@ -619,9 +619,9 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           parentInstanceId:event.instanceId,eventPrefix:prefix,parentRevisionId:prior?.id||null,
           initialFeedback:{issues:setQa.issues,actions:setQa.actions,summary:setQa.summary,reason:"SET_DIVERSITY"}
         };
+        await persistWorkflow(sql,{prospectId:p.prospectId,packId:p.packId,variantId,type:"VARIANT",instanceId,status:"QUEUED",metadata:{variant_key:weakest,event_prefix:prefix,set_cycle:setCycle}});
         try { await this.env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
         catch { await this.env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
-        await persistWorkflow(sql,{prospectId:p.prospectId,packId:p.packId,variantId,type:"VARIANT",instanceId,status:"QUEUED",metadata:{variant_key:weakest,event_prefix:prefix,set_cycle:setCycle}});
         return {instanceId};
       });
       const replacement=await step.waitForEvent("set-"+setCycle+"-wait-"+weakest,{type:"terminal-"+weakest+"-"+prefix,timeout:"90 minutes"});
