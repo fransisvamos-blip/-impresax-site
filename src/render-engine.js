@@ -927,6 +927,206 @@ async function discoverFirstPartyImages(websiteUrl) {
   }
 }
 
+
+function normalizeApprovedExternalAssets(source) {
+  const rows=Array.isArray(source?.approved_external_images) ? source.approved_external_images : [];
+  return rows.map((item,index)=>{
+    if(typeof item==="string") return {
+      url:item,
+      page_url:"APPROVED_EXTERNAL",
+      source_type:"APPROVED_EXTERNAL",
+      role:"editorial",
+      score:5,
+      approved_external:true,
+      approval_index:index
+    };
+    return {
+      ...item,
+      url:item?.url || item?.src || item?.asset_url || "",
+      page_url:item?.page_url || "APPROVED_EXTERNAL",
+      source_type:item?.source_type || "APPROVED_EXTERNAL",
+      role:item?.role || "editorial",
+      score:Number(item?.score || 5),
+      approved_external:true,
+      approval_index:index
+    };
+  }).filter(x=>/^https:\/\//i.test(String(x.url||"")));
+}
+
+async function fetchAssetDataUrl(url) {
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),8000);
+  try {
+    const res=await fetch(url,{
+      redirect:"follow",
+      signal:controller.signal,
+      headers:{"User-Agent":"ImpresaX-RenderingStudio-AssetVision/1.0"}
+    });
+    if(!res.ok) throw new Error("ASSET_FETCH_"+res.status);
+    const mime=String(res.headers.get("content-type") || "").split(";")[0].toLowerCase();
+    if(!["image/jpeg","image/png","image/webp","image/avif"].includes(mime)) {
+      throw new Error("ASSET_VISION_UNSUPPORTED_MIME_"+mime);
+    }
+    const declared=Number(res.headers.get("content-length")||0);
+    if(declared>5_000_000) throw new Error("ASSET_VISION_TOO_LARGE");
+    const bytes=new Uint8Array(await res.arrayBuffer());
+    if(bytes.length>5_000_000) throw new Error("ASSET_VISION_TOO_LARGE");
+    return {data_url:"data:"+mime+";base64,"+bytesToBase64(bytes),bytes:bytes.length,mime};
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function inspectVisualAsset(env, prospect, asset) {
+  if(["identity","trust"].includes(String(asset?.role||""))) {
+    return {
+      ...asset,
+      vision_status:"ROLE_LOCKED",
+      vision_usable:true,
+      vision_role:asset.role,
+      relevance:10,
+      visual_quality:8,
+      hero_suitability:0,
+      body_suitability:asset.role==="trust" ? 8 : 0,
+      vision_risks:[],
+      vision_summary:"Verified "+asset.role+" asset; usage locked to that role."
+    };
+  }
+
+  try {
+    const encoded=await fetchAssetDataUrl(asset.url);
+    const parameters={
+      type:"object",
+      additionalProperties:false,
+      properties:{
+        usable:{type:"boolean"},
+        relevance:{type:"number"},
+        visual_quality:{type:"number"},
+        hero_suitability:{type:"number"},
+        body_suitability:{type:"number"},
+        role:{type:"string"},
+        summary:{type:"string"},
+        risks:{type:"array",items:{type:"string"}}
+      },
+      required:["usable","relevance","visual_quality","hero_suitability","body_suitability","role","summary","risks"]
+    };
+    const prompt=[
+      "Inspect this VERIFIED visual asset before art direction.",
+      "Judge what is ACTUALLY visible, not what the URL/filename suggests.",
+      "Score 0-10: relevance to this exact prospect, visual quality, hero suitability, body suitability.",
+      "Hard-risk: low resolution, watermarks, irrelevant subject, generic stock look, wrong business, misleading premises/staff/project implication, screenshot/UI clutter, text-heavy graphic, badge/logo misuse.",
+      "The asset can be usable for body but not hero. Be strict.",
+      "Return the verdict through the required tool.",
+      "PROSPECT:",JSON.stringify({
+        business_name:prospect.business_name,
+        vertical:prospect.vertical,
+        city:prospect.city,
+        verified_services:prospect.verified_services,
+        verified_trust:prospect.verified_trust,
+        brand_dna:prospect.brand_dna
+      }),
+      "ASSET METADATA:",JSON.stringify(asset)
+    ].join("\n");
+
+    const out=await env.AI.run(VISUAL_QA_MODEL,{
+      messages:[
+        {role:"system",content:"You are a senior photography and visual-asset editor. Reject weak or misleading imagery."},
+        {role:"user",content:[
+          {type:"text",text:prompt},
+          {type:"image_url",image_url:{url:encoded.data_url}}
+        ]}
+      ],
+      tools:[{name:"submit_asset_vision",description:"Submit the pre-art-direction asset verdict.",parameters}],
+      tool_choice:"required",
+      parallel_tool_calls:false,
+      max_completion_tokens:700,
+      temperature:0.02,
+      reasoning_effort:"medium"
+    });
+
+    const call=
+      out?.tool_calls?.[0] ??
+      out?.choices?.[0]?.message?.tool_calls?.[0] ??
+      out?.result?.tool_calls?.[0];
+    let args=call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
+    if(typeof args==="string") args=JSON.parse(args);
+    if(!args || typeof args!=="object") throw new Error("ASSET_VISION_TOOL_RESULT_REQUIRED");
+
+    const relevance=Number(args.relevance||0);
+    const visualQuality=Number(args.visual_quality||0);
+    const hero=Number(args.hero_suitability||0);
+    const body=Number(args.body_suitability||0);
+    if(![relevance,visualQuality,hero,body].every(Number.isFinite)) throw new Error("ASSET_VISION_SCORES_REQUIRED");
+    const risks=Array.isArray(args.risks)?args.risks.map(x=>String(x).slice(0,240)).slice(0,10):[];
+    const usable=args.usable===true && relevance>=6 && visualQuality>=6 && Math.max(hero,body)>=6;
+
+    return {
+      ...asset,
+      vision_status:"REVIEWED",
+      vision_usable:usable,
+      relevance,
+      visual_quality:visualQuality,
+      hero_suitability:hero,
+      body_suitability:body,
+      vision_role:String(args.role||asset.role||"editorial").slice(0,80),
+      vision_risks:risks,
+      vision_summary:String(args.summary||"").slice(0,500),
+      vision_bytes:encoded.bytes,
+      vision_mime:encoded.mime,
+      score:Number(asset.score||0)+relevance+visualQuality+Math.max(hero,body)
+    };
+  } catch(error) {
+    return {
+      ...asset,
+      vision_status:"REJECTED_UNVERIFIED_VISUAL",
+      vision_usable:false,
+      relevance:0,
+      visual_quality:0,
+      hero_suitability:0,
+      body_suitability:0,
+      vision_risks:[String(error?.message || error).slice(0,240)],
+      vision_summary:"Asset excluded because visual inspection could not be completed safely."
+    };
+  }
+}
+
+async function analyzeVisualAssetInventory(env, prospect, assets) {
+  const unique=[];
+  const seen=new Set();
+  for(const item of assets || []) {
+    const url=String(item?.url || "");
+    if(!url || seen.has(url)) continue;
+    seen.add(url);
+    unique.push(item);
+  }
+
+  const locked=unique.filter(x=>["identity","trust"].includes(String(x.role||"")));
+  const visual=unique.filter(x=>!["identity","trust"].includes(String(x.role||"")))
+    .sort((a,b)=>Number(b.score||0)-Number(a.score||0));
+  const reviewSet=visual.slice(0,10);
+  const reviewed=await Promise.all(reviewSet.map(asset=>inspectVisualAsset(env,prospect,asset)));
+  const skipped=visual.slice(10).map(asset=>({
+    ...asset,
+    vision_status:"NOT_SELECTED_FOR_VISION",
+    vision_usable:false,
+    vision_risks:["Lower-ranked asset; excluded from the creative inventory to preserve visual quality."]
+  }));
+  const lockedReviewed=await Promise.all(locked.map(asset=>inspectVisualAsset(env,prospect,asset)));
+  const all=[...reviewed,...lockedReviewed,...skipped]
+    .sort((a,b)=>Number(b.score||0)-Number(a.score||0));
+  const usable=all.filter(x=>x.vision_usable===true);
+  return {
+    pass:true,
+    revision:"ASSET_VISION_GATE_V1",
+    total:all.length,
+    reviewed:all.filter(x=>x.vision_status==="REVIEWED").length,
+    usable_count:usable.length,
+    rejected_count:all.filter(x=>x.vision_usable!==true).length,
+    assets:all,
+    usable
+  };
+}
+
 function evaluateBrandGate(row) {
   const logo = row?.logo || {};
   const status = String(logo.status || "").toUpperCase();
@@ -1480,14 +1680,33 @@ async function generateProspect(sql, env, master, row) {
   if (!jobId) return {ok:false,code:row.prospect_code,error:"CLAIMED_ELSEWHERE"};
 
   try {
-    const firstPartyImages = await discoverFirstPartyImages(row.website_url);
-    const payload = prospectPayload(row, firstPartyImages);
+    const discoveredFirstParty = await discoverFirstPartyImages(row.website_url);
+    const approvedExternal = normalizeApprovedExternalAssets(row.source_data || {});
+    const preVisionPayload = prospectPayload(row, discoveredFirstParty);
+    const assetVision = await analyzeVisualAssetInventory(
+      env,
+      preVisionPayload,
+      [...discoveredFirstParty,...approvedExternal]
+    );
+    const usableFirstParty=assetVision.usable.filter(x=>x.source_type!=="APPROVED_EXTERNAL");
+    const usableExternal=assetVision.usable.filter(x=>x.source_type==="APPROVED_EXTERNAL");
+    const payload = prospectPayload(row, usableFirstParty);
+    payload.approved_external_images=usableExternal;
+
     await sql`update render_packs set
         content_map=coalesce(content_map,'{}'::jsonb) ||
           ${JSON.stringify({
-            visual_asset_inventory:firstPartyImages,
-            visual_asset_inventory_count:firstPartyImages.length,
-            visual_asset_inventory_revision:"STRUCTURED_FIRST_PARTY_V2"
+            visual_asset_inventory:assetVision.assets,
+            visual_asset_inventory_count:assetVision.total,
+            visual_asset_inventory_revision:"STRUCTURED_FIRST_PARTY_V3_ASSET_VISION",
+            asset_vision_gate:{
+              pass:assetVision.pass,
+              revision:assetVision.revision,
+              total:assetVision.total,
+              reviewed:assetVision.reviewed,
+              usable_count:assetVision.usable_count,
+              rejected_count:assetVision.rejected_count
+            }
           })}::jsonb
       where id=${row.render_pack_id}::uuid and approved_reference=false`;
     const feedbackRows = await sql`select variant_key, design_notes->'visual_qa' as visual_qa
