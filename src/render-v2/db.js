@@ -84,6 +84,69 @@ export async function updateWorkflow(sql,instanceId,{status,currentStep=null,err
   return rows[0]||null;
 }
 
+export async function getContentTruth(sql,packId) {
+  const rows=await sql`select * from render_content_truth_v2 where render_pack_id=${packId}::uuid limit 1`;
+  return rows[0]||null;
+}
+
+export async function persistContentTruth(sql,{packId,inputPackId,result,modelRouteVersion,promptVersion}) {
+  const existing=await getContentTruth(sql,packId);
+  if(existing) {
+    if(existing.content_hash!==result.hash || existing.status!=="COMPLETED") {
+      throw new Error("SYSTEM_INVARIANT:CONTENT_TRUTH_IMMUTABILITY_MISMATCH");
+    }
+    return existing;
+  }
+  const rows=await sql`
+    insert into render_content_truth_v2(
+      render_pack_id,input_pack_id,status,payload,content_hash,verification,
+      generator_model,reviewer_model,model_route_version,prompt_version
+    ) values(
+      ${packId}::uuid,${inputPackId}::uuid,'COMPLETED',
+      ${JSON.stringify(result.content_truth)}::jsonb,${result.hash},
+      ${JSON.stringify(result.verification||{})}::jsonb,
+      ${result.generator_model||null},${result.reviewer_model||null},
+      ${modelRouteVersion},${promptVersion}
+    )
+    on conflict(render_pack_id) do nothing
+    returning *`;
+  if(rows.length) return rows[0];
+  const raced=await getContentTruth(sql,packId);
+  if(!raced || raced.content_hash!==result.hash) throw new Error("SYSTEM_INVARIANT:CONTENT_TRUTH_CONCURRENT_MISMATCH");
+  return raced;
+}
+
+export async function getDirectionPlan(sql,packId) {
+  const rows=await sql`select * from render_direction_plans_v2 where render_pack_id=${packId}::uuid limit 1`;
+  return rows[0]||null;
+}
+
+export async function persistDirectionPlan(sql,{packId,inputPackId,result,modelRouteVersion,promptVersion}) {
+  const existing=await getDirectionPlan(sql,packId);
+  if(existing) {
+    if(existing.content_hash!==result.hash || existing.status!=="COMPLETED") {
+      throw new Error("SYSTEM_INVARIANT:DIRECTION_PLAN_IMMUTABILITY_MISMATCH");
+    }
+    return existing;
+  }
+  const rows=await sql`
+    insert into render_direction_plans_v2(
+      render_pack_id,input_pack_id,status,creative_strategy,directions,fingerprints,
+      diversity_precheck,content_hash,model,model_route_version,prompt_version
+    ) values(
+      ${packId}::uuid,${inputPackId}::uuid,'COMPLETED',${result.creative_strategy},
+      ${JSON.stringify(result.directions)}::jsonb,${JSON.stringify(result.fingerprints)}::jsonb,
+      ${JSON.stringify(result.diversity_precheck||{})}::jsonb,${result.hash},${result.model||null},
+      ${modelRouteVersion},${promptVersion}
+    )
+    on conflict(render_pack_id) do nothing
+    returning *`;
+  if(rows.length) return rows[0];
+  const raced=await getDirectionPlan(sql,packId);
+  if(!raced || raced.content_hash!==result.hash) throw new Error("SYSTEM_INVARIANT:DIRECTION_PLAN_CONCURRENT_MISMATCH");
+  return raced;
+}
+
 export async function persistCreativePlan(sql,{packId,inputPackId,plan,modelRouteVersion,promptVersion,hash}) {
   const existing=await sql`select * from render_creative_plans_v2 where render_pack_id=${packId}::uuid limit 1`;
   if(existing.length) {
@@ -139,17 +202,32 @@ export async function createVariants(sql,packId,directions) {
   return out;
 }
 
-export async function allocateRevision(sql,variantId,parentRevisionId=null) {
+export async function allocateRevision(sql,variantId,parentRevisionId=null,allocationKey=null) {
+  if(allocationKey) {
+    const prior=await sql`select * from render_variant_revisions where allocation_key=${allocationKey} limit 1`;
+    if(prior.length) {
+      const r=prior[0];
+      if(String(r.variant_id)!==String(variantId)) throw new Error("SYSTEM_INVARIANT:REVISION_ALLOCATION_KEY_COLLISION");
+      await sql`update render_v2_variants set current_revision=greatest(current_revision,${r.revision}),status=case when status='RENDER_READY' then status else 'GENERATING' end,updated_at=now() where id=${variantId}::uuid`;
+      return r;
+    }
+  }
   const rows=await sql`
     with n as (
       select coalesce(max(revision),0)+1 as revision
       from render_variant_revisions where variant_id=${variantId}::uuid
     )
-    insert into render_variant_revisions(variant_id,revision,status,parent_revision_id)
-    select ${variantId}::uuid,n.revision,'GENERATING',${parentRevisionId}::uuid from n
+    insert into render_variant_revisions(variant_id,revision,status,parent_revision_id,allocation_key)
+    select ${variantId}::uuid,n.revision,'GENERATING',${parentRevisionId}::uuid,${allocationKey} from n
+    on conflict(allocation_key) where allocation_key is not null do nothing
     returning *`;
-  const r=rows[0];
-  await sql`update render_v2_variants set current_revision=${r.revision},status='GENERATING',updated_at=now() where id=${variantId}::uuid`;
+  let r=rows[0];
+  if(!r && allocationKey) {
+    const raced=await sql`select * from render_variant_revisions where allocation_key=${allocationKey} limit 1`;
+    r=raced[0];
+  }
+  if(!r) throw new Error("SYSTEM_INVARIANT:REVISION_ALLOCATION_FAILED");
+  await sql`update render_v2_variants set current_revision=greatest(current_revision,${r.revision}),status='GENERATING',updated_at=now() where id=${variantId}::uuid`;
   return r;
 }
 
@@ -190,18 +268,33 @@ export async function setVariantStatus(sql,variantId,{status,bestPreview=null,be
   return rows[0];
 }
 
-export async function recordQa(sql,{packId,revisionId=null,type,status,scores={},issues=[],actions=[],artifactHashes={},modelRouteVersion=null,promptVersion=null}) {
+export async function recordQa(sql,{packId,revisionId=null,type,status,scores={},issues=[],actions=[],artifactHashes={},modelRouteVersion=null,promptVersion=null,idempotencyKey=null}) {
+  const key=idempotencyKey || (
+    revisionId
+      ? "qa:"+type+":"+String(revisionId)
+      : type==="CONTENT_TRUTH"
+        ? "qa:CONTENT_TRUTH:"+String(packId)+":"+String(artifactHashes?.content_truth_hash||"")
+        : "qa:"+type+":"+String(packId)+":"+["A_revision_id","B_revision_id","C_revision_id"].map(k=>String(artifactHashes?.[k]||"")).join(":")
+  );
   const rows=await sql`
     insert into render_qa_results_v2(
       render_pack_id,variant_revision_id,qa_type,status,scores,issues,actions,
-      artifact_hashes,model_route_version,prompt_version
+      artifact_hashes,model_route_version,prompt_version,idempotency_key
     ) values(
       ${packId}::uuid,${revisionId}::uuid,${type},${status},
       ${JSON.stringify(scores)}::jsonb,${JSON.stringify(issues)}::jsonb,
       ${JSON.stringify(actions)}::jsonb,${JSON.stringify(artifactHashes)}::jsonb,
-      ${modelRouteVersion},${promptVersion}
-    ) returning *`;
-  return rows[0];
+      ${modelRouteVersion},${promptVersion},${key}
+    )
+    on conflict(idempotency_key) where idempotency_key is not null do nothing
+    returning *`;
+  if(rows.length) return rows[0];
+  const existing=await sql`select * from render_qa_results_v2 where idempotency_key=${key} limit 1`;
+  if(!existing.length) throw new Error("SYSTEM_INVARIANT:QA_IDEMPOTENCY_RECOVERY_FAILED");
+  if(existing[0].status!==status || JSON.stringify(existing[0].artifact_hashes||{})!==JSON.stringify(artifactHashes||{})) {
+    throw new Error("SYSTEM_INVARIANT:QA_IDEMPOTENCY_MISMATCH");
+  }
+  return existing[0];
 }
 
 export async function recordFailure(sql,{packId,workflowId=null,revisionId=null,step,failure,fingerprint,strategyVersion,attempt=1,details={}}) {
