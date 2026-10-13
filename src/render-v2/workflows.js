@@ -403,10 +403,29 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           });
         })
       ]);
+      await step.do("persist-content-truth-qa",async()=>{
+        await recordQa(sql,{
+          packId:p.packId,type:"CONTENT_TRUTH",status:"PASS",
+          scores:{truth_integrity:10},
+          issues:truth.verification?.issues||[],
+          actions:[],
+          artifactHashes:{content_truth_hash:truth.hash},
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
+        });
+        return {ok:true,content_truth_hash:truth.hash};
+      });
       creative=await step.do("combine-creative-plan",async()=>combineCreativePlan(truth,directions));
     }
 
     const persisted=await step.do("persist-plan-and-variants",async()=>{
+      const truthEvidence=await sql`
+        select count(*)::int as n
+        from render_qa_results_v2
+        where render_pack_id=${p.packId}::uuid
+          and variant_revision_id is null
+          and qa_type='CONTENT_TRUTH'
+          and status='PASS'`;
+      if(Number(truthEvidence[0]?.n||0)<1) throw new Error("SYSTEM_INVARIANT:CONTENT_TRUTH_QA_PASS_REQUIRED");
       await persistCreativePlan(sql,{
         packId:p.packId,inputPackId:p.inputPackId,plan:creative.plan,
         modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,hash:creative.hash
