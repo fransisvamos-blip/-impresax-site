@@ -1334,7 +1334,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     where id=${browserJobId}::uuid and status='RUNNING'`;
 
   try {
-    for (const frame of captured) {
+    const qaResults = await Promise.all(captured.map(async (frame) => {
       const item=frame.item;
       const qa = await critiqueVisibleRender(
         env,
@@ -1345,19 +1345,23 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
         frame.desktopB64,
         frame.mobileB64
       );
-      visualQa.push({ variant_key:item.variant_key, variant_id:item.variant_id, staging_id:item.id, qa });
+      return { variant_key:item.variant_key, variant_id:item.variant_id, staging_id:item.id, qa };
+    }));
 
+    visualQa.push(...qaResults);
+
+    await Promise.all(qaResults.map(async ({variant_id,staging_id,qa}) => {
       await sql`update render_staging_payloads set
           status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
           design_notes=coalesce(design_notes,'{}'::jsonb) || ${JSON.stringify({visual_qa:qa})}::jsonb,
           updated_at=now()
-        where id=${item.id}::uuid`;
+        where id=${staging_id}::uuid`;
 
       await sql`update render_variants set
           status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
           updated_at=now()
-        where id=${item.variant_id}::uuid`;
-    }
+        where id=${variant_id}::uuid`;
+    }));
   } catch (error) {
     return await failTechnical(error);
   }
