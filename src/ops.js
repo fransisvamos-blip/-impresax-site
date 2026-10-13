@@ -850,6 +850,7 @@ async function api(request, env, pathname) {
         and s.rendered_at is not null
         and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
         and coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
+        and coalesce(s.design_notes->>'creative_quality_runtime','')='V8.3_DETERMINISTIC_SIX_VIEW_QA'
         and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
         and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'`;
     if(Number(qaRows[0]?.passed||0)!==3) {
@@ -1035,6 +1036,7 @@ async function api(request, env, pathname) {
         and s.rendered_at is not null
         and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
         and coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
+        and coalesce(s.design_notes->>'creative_quality_runtime','')='V8.3_DETERMINISTIC_SIX_VIEW_QA'
         and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
         and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'`;
     if(Number(qaRows[0]?.passed||0)!==3) {
