@@ -8,12 +8,12 @@ const VISUAL_QA_REPAIR_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MAX_VISUAL_REWORK_CYCLES = 5;
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 const ADMIN_HOST = "admin.impresax.org";
-const MAX_PROSPECTS_PER_TICK = 3;
+const MAX_PROSPECTS_PER_TICK = 1;
 const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
 const MAX_GENERATION_FAILURES = 3;
-const CREATIVE_ENGINE_REVISION = "V8.3.3_ASSET_VISION_RESILIENT";
+const CREATIVE_ENGINE_REVISION = "V8.4_ZERO_PHOTO_DETERMINISTIC_REPAIR";
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -1382,11 +1382,20 @@ function deterministicFailQa(issues) {
 }
 
 async function recoverStaleClaims(sql) {
-  await sql`update render_jobs
+  const staleAi=await sql`update render_jobs
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
       and status in ('RUNNING','COMPLETING')
-      and started_at < now()-interval '16 minutes'`;
+      and started_at < now()-interval '16 minutes'
+    returning prospect_id,input_data->>'render_pack_id' as render_pack_id`;
+
+  for(const item of staleAi) {
+    if(!item.render_pack_id) continue;
+    await applyGenerationFailureState(sql,{
+      prospect_id:item.prospect_id,
+      render_pack_id:item.render_pack_id
+    },'STALE_CLOUDFLARE_AI_CLAIM');
+  }
 
   await sql`update render_packs rp
     set status='ART_DIRECTION'
@@ -1470,6 +1479,8 @@ async function candidates(sql, limit) {
     ) rp on true
     where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status,'RENDER_REWORK'::pipeline_status)
       and rp.status in ('ART_DIRECTION','BRAND_GATE_HOLD')
+      and coalesce((rp.content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
+      and coalesce((rp.content_map->>'generation_hold')::boolean,false)=false
       and coalesce(p.source_data->>'id_prospect',p.legacy_ids->>'id_prospect') <> 'CZ-000'
     order by
       case coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')
@@ -1488,7 +1499,17 @@ async function candidates(sql, limit) {
 
 async function claimPack(sql, row) {
   const claim = await sql`update render_packs set status='AI_RENDERING'
-    where id=${row.render_pack_id}::uuid and status='ART_DIRECTION' and approved_reference=false
+    where id=${row.render_pack_id}::uuid
+      and status='ART_DIRECTION'
+      and approved_reference=false
+      and coalesce((content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
+      and coalesce((content_map->>'generation_hold')::boolean,false)=false
+      and not exists (
+        select 1 from render_jobs j
+        where j.worker='cloudflare-workers-ai'
+          and j.status in ('RUNNING','COMPLETING')
+          and j.input_data->>'render_pack_id'=${row.render_pack_id}
+      )
     returning id`;
   if (!claim.length) return null;
 
@@ -1620,7 +1641,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
   await sql`update render_packs set
       status='RENDERING',
       content_map=coalesce(content_map,'{}'::jsonb) ||
-        jsonb_build_object('generation_failure_count',0,'last_generation_error',null)
+        jsonb_build_object('generation_failure_count',0,'last_generation_error',null,'generation_hold',false)
     where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
         variants:["A","B","C"],
@@ -1642,57 +1663,101 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
   return true;
 }
 
-async function failGeneration(sql,row,jobId,error) {
-  const message=String(error?.message || error || "AI_RENDER_FAILED").slice(0,600);
-  const failed=await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
-    where id=${jobId}::uuid and worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
-    returning id`;
-  if (!failed.length) return;
-
-  const active=await sql`select count(*)::int as n from render_jobs
-    where worker='cloudflare-workers-ai'
-      and status in ('RUNNING','COMPLETING')
-      and id<>${jobId}::uuid
-      and input_data->>'render_pack_id'=${row.render_pack_id}`;
-  if (Number(active[0]?.n || 0)!==0) return;
-
-  const counterRows=await sql`select coalesce((content_map->>'generation_failure_count')::int,0)+1 as n
-    from render_packs where id=${row.render_pack_id}::uuid limit 1`;
-  const generationFailures=Number(counterRows[0]?.n || 1);
+async function applyGenerationFailureState(sql,row,message) {
+  const counterRows=await sql`update render_packs
+    set content_map=coalesce(content_map,'{}'::jsonb) ||
+      jsonb_build_object(
+        'generation_failure_count',coalesce((content_map->>'generation_failure_count')::int,0)+1,
+        'last_generation_error',${message}
+      )
+    where id=${row.render_pack_id}::uuid
+      and approved_reference=false
+    returning coalesce((content_map->>'generation_failure_count')::int,0) as failures`;
+  const generationFailures=Number(counterRows[0]?.failures || 1);
   const hold=generationFailures>=MAX_GENERATION_FAILURES;
 
-  const reset=await sql`update render_packs set
-      status=${hold ? "ESCALATION_REQUIRED" : "ART_DIRECTION"},
-      content_map=coalesce(content_map,'{}'::jsonb) ||
-        jsonb_build_object(
-          'generation_failure_count',${generationFailures},
-          'last_generation_error',${message},
-          'generation_hold',${hold}
-        )
-    where id=${row.render_pack_id}::uuid and status='AI_RENDERING'
-    returning id`;
+  if(hold) {
+    await sql`update render_jobs
+      set status='FAILED',
+          error='CANCELLED_BY_GENERATION_CIRCUIT_BREAKER',
+          completed_at=now(),
+          updated_at=now()
+      where worker='cloudflare-workers-ai'
+        and status in ('RUNNING','COMPLETING')
+        and input_data->>'render_pack_id'=${row.render_pack_id}`;
 
-  if (reset.length) {
+    await sql`update render_packs set
+        status='ESCALATION_REQUIRED',
+        content_map=coalesce(content_map,'{}'::jsonb) ||
+          jsonb_build_object('generation_hold',true,'generation_failure_count',${generationFailures},'last_generation_error',${message})
+      where id=${row.render_pack_id}::uuid
+        and approved_reference=false`;
+
     await sql`update prospects set
-        pipeline_status=${hold ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
-        render_status=${hold ? "ESCALATION_REQUIRED" : "RENDER_REWORK"},
-        current_step=${hold ? "GENERATION_HOLD" : "ART_DIRECTION"},
-        next_action=${hold ? "CABINA_CREATIVE_GENERATION_REVIEW" : "RETRY_AI_RENDER"},
+        pipeline_status='RENDERING'::pipeline_status,
+        render_status='ESCALATION_REQUIRED',
+        current_step='GENERATION_HOLD',
+        next_action='CABINA_CREATIVE_GENERATION_REVIEW',
         error=${message},
         updated_at=now()
       where id=${row.prospect_id}::uuid
         and render_status<>'RENDER_READY'`;
-
-    await sql`insert into site_events(
-        prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload
-      ) values(
-        ${row.prospect_id}::uuid,
-        ${hold ? "CREATIVE_GENERATION_ESCALATION_REQUIRED" : "CREATIVE_GENERATION_RETRY"},
-        'render_pack',${row.render_pack_id}::uuid,'rendering-studio-generator',
-        'RENDERING'::pipeline_status,${hold ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
-        ${JSON.stringify({generation_failures:generationFailures,max_generation_failures:MAX_GENERATION_FAILURES,error:message})}::jsonb
-      )`;
+  } else {
+    const active=await sql`select count(*)::int as n from render_jobs
+      where worker='cloudflare-workers-ai'
+        and status in ('RUNNING','COMPLETING')
+        and input_data->>'render_pack_id'=${row.render_pack_id}`;
+    if(Number(active[0]?.n || 0)===0) {
+      const reset=await sql`update render_packs set
+          status='ART_DIRECTION',
+          content_map=coalesce(content_map,'{}'::jsonb) ||
+            jsonb_build_object('generation_hold',false,'generation_failure_count',${generationFailures},'last_generation_error',${message})
+        where id=${row.render_pack_id}::uuid
+          and status='AI_RENDERING'
+          and approved_reference=false
+        returning id`;
+      if(reset.length) {
+        await sql`update prospects set
+            pipeline_status='RENDER_REWORK'::pipeline_status,
+            render_status='RENDER_REWORK',
+            current_step='ART_DIRECTION',
+            next_action='RETRY_AI_RENDER',
+            error=${message},
+            updated_at=now()
+          where id=${row.prospect_id}::uuid
+            and render_status<>'RENDER_READY'`;
+      }
+    }
   }
+
+  await sql`insert into site_events(
+      prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload
+    ) values(
+      ${row.prospect_id}::uuid,
+      ${hold ? "CREATIVE_GENERATION_ESCALATION_REQUIRED" : "CREATIVE_GENERATION_RETRY"},
+      'render_pack',${row.render_pack_id}::uuid,'rendering-studio-generator',
+      'RENDERING'::pipeline_status,${hold ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
+      ${JSON.stringify({
+        generation_failures:generationFailures,
+        max_generation_failures:MAX_GENERATION_FAILURES,
+        error:message,
+        engine_revision:CREATIVE_ENGINE_REVISION
+      })}::jsonb
+    )`;
+
+  return {generationFailures,hold};
+}
+
+async function failGeneration(sql,row,jobId,error) {
+  const message=String(error?.message || error || "AI_RENDER_FAILED").slice(0,600);
+  const failed=await sql`update render_jobs set
+      status='FAILED',error=${message},completed_at=now(),updated_at=now()
+    where id=${jobId}::uuid
+      and worker='cloudflare-workers-ai'
+      and status in ('RUNNING','COMPLETING')
+    returning id`;
+  if(!failed.length) return;
+  await applyGenerationFailureState(sql,row,message);
 }
 
 async function generateProspect(sql, env, master, row) {
@@ -1747,8 +1812,15 @@ async function generateProspect(sql, env, master, row) {
     );
     const usableFirstParty=assetVision.usable.filter(x=>x.approved_external!==true);
     const usableExternal=assetVision.usable.filter(x=>x.approved_external===true);
+    const creativeVisualAssets=assetVision.usable.filter(x=>{
+      const role=String(x?.role || x?.vision_role || "").toLowerCase();
+      if(role==="identity" || role==="trust" || role.includes("logo") || role.includes("badge")) return false;
+      return Number(x?.hero_suitability || 0)>=6 || Number(x?.body_suitability || 0)>=6;
+    });
+    const assetMode=creativeVisualAssets.length ? "VERIFIED_VISUALS" : "ZERO_PHOTO_PREMIUM";
     const payload = prospectPayload(row, usableFirstParty);
     payload.approved_external_images=usableExternal;
+    payload.asset_mode=assetMode;
 
     await sql`update render_packs set
         content_map=coalesce(content_map,'{}'::jsonb) ||
@@ -1763,7 +1835,9 @@ async function generateProspect(sql, env, master, row) {
               reviewed:assetVision.reviewed,
               usable_count:assetVision.usable_count,
               rejected_count:assetVision.rejected_count
-            }
+            },
+            creative_asset_mode:assetMode,
+            creative_visual_asset_count:creativeVisualAssets.length
           })}::jsonb
       where id=${row.render_pack_id}::uuid and approved_reference=false`;
     const feedbackRows = await sql`select variant_key, design_notes->'visual_qa' as visual_qa
@@ -1798,6 +1872,8 @@ async function generateProspect(sql, env, master, row) {
       sourceReferences: payload.source_references,
       firstPartyImages: payload.first_party_images,
       approvedExternalImages: payload.approved_external_images,
+      assetMode,
+      asset_mode:assetMode,
       visualReworkFeedback: feedbackRows.map(x => ({variant:x.variant_key, critique:x.visual_qa})),
       visualSetFeedback: row?.pack_content_map?.visual_set_qa_last_run || null,
       generationFailureFeedback: row?.pack_content_map?.last_generation_error || null,
@@ -1841,7 +1917,8 @@ async function generateProspect(sql, env, master, row) {
           ${JSON.stringify({
             creative_strategy:studio.creative_strategy || "",
             direction_set_gate:directionGate,
-            creative_quality_revision:studio.creative_quality_revision || "V8.2_BESPOKE_DIRECTION_SET",
+            creative_quality_revision:studio.creative_quality_revision || "V8.4_ZERO_PHOTO_DETERMINISTIC_REPAIR",
+            creative_asset_mode:studio.asset_mode || assetMode,
             pre_render_semantic_gate_pass:true
           })}::jsonb
       where id=${row.render_pack_id}::uuid and approved_reference=false`;
