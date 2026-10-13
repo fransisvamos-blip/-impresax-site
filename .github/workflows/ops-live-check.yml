@@ -47,6 +47,8 @@ jobs:
               && grep -q '"six_view_set_qa_required":true' /tmp/health.json \
               && grep -q '"visual_asset_inventory_memory_required":true' /tmp/health.json \
               && grep -q '"flagship_first_pass_model":"@cf/openai/gpt-oss-120b"' /tmp/health.json \
+              && grep -q '"generation_circuit_breaker_required":true' /tmp/health.json \
+              && grep -q '"max_generation_failures":3' /tmp/health.json \
               && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
               && grep -q '"brand_gate_required":true' /tmp/health.json \
               && grep -q '"brand_gate_auto_recovery":true' /tmp/health.json \
