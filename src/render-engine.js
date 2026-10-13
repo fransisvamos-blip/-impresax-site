@@ -13,7 +13,7 @@ const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
 const MAX_GENERATION_FAILURES = 3;
-const CREATIVE_ENGINE_REVISION = "V8.4.3_CONTACT_SAFE_BREAKER_RECONCILE";
+const CREATIVE_ENGINE_REVISION = "V8.5_FAST_PREVIEW_FIRST";
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -1430,6 +1430,15 @@ function deterministicFailQa(issues) {
 }
 
 async function recoverStaleClaims(sql) {
+  await sql`update render_jobs
+    set status='FAILED',
+        error='SUPERSEDED_BY_V8_5_FAST_PREVIEW_FIRST',
+        completed_at=now(),
+        updated_at=now()
+    where worker='cloudflare-workers-ai'
+      and status in ('RUNNING','COMPLETING')
+      and coalesce(input_data->>'engine_revision','') <> ${CREATIVE_ENGINE_REVISION}`;
+
   const staleAi=await sql`update render_jobs
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
@@ -2210,10 +2219,11 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
           updated_at=now()
         where id=${item.id}::uuid`;
 
+      const previewBase="https://"+ADMIN_HOST+"/ops/render-assets/"+item.variant_id;
       await sql`update render_variants set
           status='VISUAL_QA_PENDING',
-          desktop_render_url=null,
-          mobile_render_url=null,
+          desktop_render_url=${previewBase+"/desktop"},
+          mobile_render_url=${previewBase+"/mobile"},
           updated_at=now()
         where id=${item.variant_id}::uuid`;
     }
@@ -2222,6 +2232,15 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
   } finally {
     if (!sharedBrowser) await browser.close();
   }
+
+  await sql`update render_packs set
+      content_map=coalesce(content_map,'{}'::jsonb) ||
+        jsonb_build_object(
+          'fast_preview_ready',true,
+          'fast_preview_ready_at',now(),
+          'fast_preview_revision',${CREATIVE_ENGINE_REVISION}::text
+        )
+    where id=${row.render_pack_id}::uuid and approved_reference=false`;
 
   await sql`update render_jobs set status='QA_RUNNING',updated_at=now()
     where id=${browserJobId}::uuid and status='RUNNING'`;
