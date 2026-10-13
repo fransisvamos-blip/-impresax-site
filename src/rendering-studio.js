@@ -545,6 +545,61 @@ async function deriveIndependentDirection(env, master, prospect, key, previous=[
   return text;
 }
 
+
+async function deriveDirectionsFast(env, master, prospect) {
+  const prompt=[
+    "FAST PREVIEW FIRST. Produce the creative plan for THREE genuinely different premium homepage directions in ONE response.",
+    "Ground everything in verified prospect data and available assets. Do not invent people, premises, awards, services, proof, photography or proprietary fonts.",
+    "A/B/C must materially differ in hero logic, grid/composition, typography behavior, signature device, section rhythm, CTA integration and mobile reinterpretation.",
+    "Each direction must be implementation-ready and at least 500 characters.",
+    "Also provide a concise creative_strategy memo and self-score the set.",
+    "Return ONLY strict JSON with this exact shape:",
+    "{\"creative_strategy\":\"...\",\"A\":\"...\",\"B\":\"...\",\"C\":\"...\",\"scores\":{\"specificity_A\":0,\"specificity_B\":0,\"specificity_C\":0,\"feasibility_A\":0,\"feasibility_B\":0,\"feasibility_C\":0,\"diversity_AB\":0,\"diversity_AC\":0,\"diversity_BC\":0},\"issues\":[]}",
+    "Every score must be >=8 only if deserved. If not, improve the directions before answering.",
+    "",
+    "VERIFIED PROSPECT:",JSON.stringify(prospect),
+    "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
+    "PREVIOUS QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
+    "SET QA HISTORY:",JSON.stringify(prospect?.visualSetFeedback || null),
+    "FROZEN MASTER:",master
+  ].join("\n");
+
+  const out=await runModel(env,HTML_MODEL,[
+    {role:"system",content:"You are a fast senior creative director. Produce three prospect-specific, implementation-ready routes in one strict JSON response."},
+    {role:"user",content:prompt}
+  ],6200,0.36);
+
+  const x=extractJson(aiText(out)) || {};
+  const directions={A:directionText(x.A),B:directionText(x.B),C:directionText(x.C)};
+  if(!validDirections(directions)) throw new Error("FAST_DIRECTION_SET_INVALID");
+
+  const required=[
+    "specificity_A","specificity_B","specificity_C",
+    "feasibility_A","feasibility_B","feasibility_C",
+    "diversity_AB","diversity_AC","diversity_BC"
+  ];
+  const scores=x?.scores && typeof x.scores==="object" ? x.scores : {};
+  const normalized=Object.fromEntries(required.map(k=>[k,Number(scores[k]||0)]));
+  const numeric=required.every(k=>Number.isFinite(normalized[k]));
+  const min=numeric ? Math.min(...required.map(k=>normalized[k])) : 0;
+  if(!numeric || min<8) throw new Error("FAST_DIRECTION_SET_GATE_FAILED");
+
+  const strategy=String(x.creative_strategy || "").trim();
+  if(strategy.length<220) throw new Error("FAST_CREATIVE_STRATEGY_TOO_THIN");
+
+  return {
+    directions,
+    strategy,
+    direction_set_gate:{
+      pass:true,
+      issues:Array.isArray(x.issues)?x.issues.map(String).slice(0,10):[],
+      scores:normalized,
+      mode:"FAST_PREVIEW_FIRST_SINGLE_PASS"
+    }
+  };
+}
+
 async function deriveDirections(env, master, prospect) {
   const strategy=await buildCreativeStrategy(env,master,prospect);
   let priorIssues=[];
@@ -651,7 +706,7 @@ async function semanticContentGate(env, prospect, key, html) {
     "VERIFIED PROSPECT:",JSON.stringify(prospect),
     "VISIBLE COPY:",visibleCopy(html)
   ].join("\n");
-  const out=await runModel(env,ART_MODEL,[
+  const out=await runModel(env,HTML_MODEL,[
     {role:"system",content:"You are a factual editorial QA reviewer. Be strict. Output JSON only."},
     {role:"user",content:prompt}
   ],1400,0.05);
@@ -736,7 +791,12 @@ async function loadMaster() {
 }
 export async function generateRenderVariants(env, prospect) {
   const master = await loadMaster();
-  const plan = await deriveDirections(env, master, prospect);
+  let plan;
+  try {
+    plan = await deriveDirectionsFast(env, master, prospect);
+  } catch {
+    plan = await deriveDirections(env, master, prospect);
+  }
   const directions=plan.directions;
 
   const variants = await Promise.all([
@@ -747,7 +807,7 @@ export async function generateRenderVariants(env, prospect) {
 
   return {
     master: "RENDERING_STUDIO_V1_FROZEN",
-    creative_quality_revision: "V8.4_ZERO_PHOTO_DETERMINISTIC_REPAIR",
+    creative_quality_revision: "V8.5_FAST_PREVIEW_FIRST",
     asset_mode: creativeAssetMode(prospect),
     master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
     model: ART_MODEL,
