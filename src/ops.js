@@ -1250,6 +1250,7 @@ export async function handleOpsRequest(request, env) {
         pre_render_evidence_required: true,
         creative_strategy_evidence_required: true,
         structured_asset_inventory_required: true,
+        asset_vision_gate_required: true,
         cross_variant_visual_qa_required: true,
         qa_rework_memory_required: true,
         deterministic_browser_qa_required: true,
