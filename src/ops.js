@@ -1205,6 +1205,7 @@ export async function handleOpsRequest(request, env) {
         render_engine_version: "CLOUDFLARE_NATIVE_V8_FROZEN_COMPLIANCE",
         frozen_master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
         frozen_contract: "RENDERING_STUDIO_V1_FROZEN",
+        frozen_runtime_revision: "V8.1_STRICT_AUDIT_20261013",
         frozen_db_guard: frozenDbGuard,
         exact_brand_dna_required: true,
         image_provenance_required: true,
