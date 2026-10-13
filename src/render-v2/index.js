@@ -72,6 +72,52 @@ export default {
       return json({ok:true,created:created.created,pack_id:created.pack.id,input_pack_id:created.input_pack.id,workflow_instance_id:instanceId,workflow_status:await instance.status()},202);
     }
 
+    if(request.method==="GET" && url.pathname==="/shadow/dashboard") {
+      const sql=db(env);
+      const rows=await sql`
+        select c.*,
+          (select count(*)::int from render_failures_v2 f where f.render_pack_id=c.render_pack_id and f.resolved_at is null) open_failures,
+          (select count(*)::int from render_variant_revisions r join render_v2_variants v on v.id=r.variant_id where v.render_pack_id=c.render_pack_id) revision_count,
+          (select count(*)::int from render_artifacts_v2 a where a.render_pack_id=c.render_pack_id) artifact_count,
+          (select count(*)::int from render_qa_results_v2 q where q.render_pack_id=c.render_pack_id and q.status='PASS') qa_pass_count,
+          (select max(w.last_event_at) from render_workflows_v2 w where w.render_pack_id=c.render_pack_id) workflow_last_event_at
+        from render_v2_control_room c
+        where c.render_pack_id is not null
+        order by c.rank nulls last,c.updated_at desc
+        limit 100`;
+      return json({ok:true,mode:"SHADOW",engine:EXECUTION_ENGINE_VERSION,rows});
+    }
+
+    if(request.method==="GET" && url.pathname.startsWith("/shadow/benchmark/")) {
+      const packId=url.pathname.split("/").pop();
+      const sql=db(env);
+      const packs=await sql`
+        select id,prospect_id,status,created_at,preview_ready_at,render_ready_at,metrics,metadata
+        from render_v2_packs where id=${packId}::uuid limit 1`;
+      if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
+      const pack=packs[0];
+      const counts=await sql`
+        select
+          (select count(*)::int from render_variant_revisions r join render_v2_variants v on v.id=r.variant_id where v.render_pack_id=${packId}::uuid) revisions,
+          (select count(*)::int from render_failures_v2 where render_pack_id=${packId}::uuid) failures,
+          (select count(*)::int from render_qa_results_v2 where render_pack_id=${packId}::uuid and qa_type='VARIANT_VISUAL' and status='PASS') variant_qa_passes,
+          (select count(*)::int from render_qa_results_v2 where render_pack_id=${packId}::uuid and qa_type='SET_VISUAL' and status='PASS') set_qa_passes,
+          (select count(*)::int from render_artifacts_v2 where render_pack_id=${packId}::uuid) artifacts`;
+      const c=counts[0]||{};
+      const created=new Date(pack.created_at).getTime();
+      const preview=pack.preview_ready_at?new Date(pack.preview_ready_at).getTime():null;
+      const ready=pack.render_ready_at?new Date(pack.render_ready_at).getTime():null;
+      return json({
+        ok:true,pack_id:packId,status:pack.status,
+        time_to_preview_ms:preview===null?null:Math.max(0,preview-created),
+        time_to_render_ready_ms:ready===null?null:Math.max(0,ready-created),
+        revisions:Number(c.revisions||0),failures:Number(c.failures||0),
+        variant_qa_passes:Number(c.variant_qa_passes||0),set_qa_passes:Number(c.set_qa_passes||0),
+        artifacts:Number(c.artifacts||0),budget:await budgetSnapshot(sql,packId,env),
+        metrics:pack.metrics||{}
+      });
+    }
+
     if(request.method==="GET" && url.pathname.startsWith("/shadow/status/")) {
       const packId=url.pathname.split("/").pop();
       const sql=db(env);
