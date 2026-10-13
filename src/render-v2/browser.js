@@ -23,8 +23,9 @@ async function renderPage(browser,html,width,height) {
         logo_height:logo?logo.getBoundingClientRect().height:0
       };
     });
-    const bytes=await page.screenshot({type:"jpeg",quality:92,fullPage:true});
-    return {bytes:new Uint8Array(bytes),diagnostics};
+    const bytes=await page.screenshot({type:"jpeg",quality:90,fullPage:true});
+    const qaBytes=await page.screenshot({type:"jpeg",quality:55,fullPage:true});
+    return {bytes:new Uint8Array(bytes),qaBytes:new Uint8Array(qaBytes),diagnostics};
   } finally {
     await page.close();
   }
