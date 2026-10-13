@@ -26,7 +26,6 @@
     }
   ],
   "vars": {
-    "AI_GATEWAY_ID": "default",
     "V2_MODEL_CREATIVE": "@cf/moonshotai/kimi-k2.7-code",
     "V2_MODEL_VARIANT_GENERATOR": "@cf/moonshotai/kimi-k2.7-code",
     "V2_MODEL_VARIANT_REPAIR": "@cf/moonshotai/kimi-k2.7-code",
