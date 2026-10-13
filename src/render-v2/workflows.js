@@ -199,6 +199,23 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let captured;
       try {
         captured=await step.do("r"+cycle+"-capture",{retries:{limit:1,delay:"3 seconds",backoff:"constant"},timeout:"5 minutes"},async()=>{
+          const existing=await sql`
+            select artifact_type,r2_key,sha256,mime,bytes
+            from render_artifacts_v2
+            where variant_revision_id=${revision.id}::uuid
+              and artifact_type in ('DESKTOP_1440','MOBILE_390','QA_DESKTOP','QA_MOBILE','BROWSER_DIAGNOSTICS')`;
+          const byType=Object.fromEntries(existing.map(x=>[x.artifact_type,x]));
+          if(["DESKTOP_1440","MOBILE_390","QA_DESKTOP","QA_MOBILE","BROWSER_DIAGNOSTICS"].every(k=>byType[k])) {
+            const diagBytes=await readArtifactBytes(this.env,byType.BROWSER_DIAGNOSTICS.r2_key);
+            const diag=JSON.parse(new TextDecoder().decode(diagBytes));
+            return {
+              ok:true,reused:true,
+              desktop:byType.DESKTOP_1440,mobile:byType.MOBILE_390,
+              qaDesktop:byType.QA_DESKTOP,qaMobile:byType.QA_MOBILE,
+              gate:diag.gate,diagnostics:diag.diagnostics
+            };
+          }
+
           await reserveBrowserCapture(sql,params.packId,this.env,params.variantKey,revision.id);
           const dataUrls=await materializeAssetDataUrls(this.env,context.assets);
           const captureHtml=buildCaptureHtml(compiled.html,dataUrls);
@@ -210,7 +227,14 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"QA_DESKTOP",key:base+"qa-desktop.jpg",body:result.desktop.qaBytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE_QA"}),
             putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"QA_MOBILE",key:base+"qa-mobile.jpg",body:result.mobile.qaBytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE_QA"})
           ]);
-          return {ok:true,desktop,mobile,qaDesktop,qaMobile,gate:result.gate,diagnostics:{desktop:result.desktop.diagnostics,mobile:result.mobile.diagnostics}};
+          const diagPayload={gate:result.gate,diagnostics:{desktop:result.desktop.diagnostics,mobile:result.mobile.diagnostics}};
+          await putArtifact(this.env,sql,{
+            packId:params.packId,revisionId:revision.id,type:"BROWSER_DIAGNOSTICS",
+            key:base+"browser-diagnostics.json",
+            body:new TextEncoder().encode(JSON.stringify(diagPayload)),
+            mime:"application/json",producerStep:"BROWSER_CAPTURE"
+          });
+          return {ok:true,desktop,mobile,qaDesktop,qaMobile,...diagPayload};
         });
       } catch(error) {
         captured={ok:false,error:String(error?.message||error)};
