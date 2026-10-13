@@ -47,6 +47,22 @@ function objectHasData(value) {
   return Boolean(value && typeof value === "object" && Object.keys(value).length);
 }
 
+const REQUIRED_BRAND_DNA_KEYS=Object.freeze([
+  "brand_personality","visual_cues","tone","business_type","audience","offer",
+  "local_context","trust_signals","existing_colors","typography_cues","imagery_cues",
+  "business_positioning","commercial_behavior"
+]);
+
+function brandDnaComplete(value) {
+  if (!value || typeof value!=="object") return false;
+  return REQUIRED_BRAND_DNA_KEYS.every(key => {
+    const v=value[key];
+    if (Array.isArray(v)) return v.length>0;
+    if (v && typeof v==="object") return Object.keys(v).length>0;
+    return String(v || "").trim().length>2;
+  });
+}
+
 function pick(obj, keys, fallback="") {
   for (const key of keys) {
     if (obj && obj[key] != null && obj[key] !== "") return obj[key];
@@ -189,19 +205,38 @@ function validateApprovedPack(pack) {
   const missing=[];
   if (!pack.desktop_render_url) missing.push("DESKTOP_REFERENCE");
   if (!pack.mobile_render_url) missing.push("MOBILE_REFERENCE");
-  if (!objectHasData(pack.official_logo)) missing.push("OFFICIAL_LOGO");
-  if (!objectHasData(pack.brand_dna)) missing.push("BRAND_DNA");
-  if (!objectHasData(pack.palette)) missing.push("PALETTE");
-  if (!objectHasData(pack.typography)) missing.push("TYPOGRAPHY");
-  if (!objectHasData(pack.image_asset_map)) missing.push("IMAGE_ASSET_MAP");
-  if (!Array.isArray(pack.section_map) || !pack.section_map.length) missing.push("SECTION_MAP");
-  if (!objectHasData(pack.cta_map)) missing.push("CTA_MAP");
+  if (!objectHasData(pack.official_logo)) missing.push("OFFICIAL_IDENTITY_RECORD");
+  if (!brandDnaComplete(pack.brand_dna)) missing.push("FROZEN_BRAND_DNA");
   if (!objectHasData(pack.content_map)) missing.push("CONTENT_MAP");
   if (!String(pack.content_map?.implementation_html || "").trim()) missing.push("IMPLEMENTATION_HTML");
+  if (!pack.content_map?.selected_variant || !pack.content_map?.selected_variant_id) missing.push("EXPLICIT_SELECTED_VARIANT");
   if (!Array.isArray(pack.source_references) || !pack.source_references.length) missing.push("SOURCE_REFERENCES");
   return missing;
 }
 
+async function validateApprovedVisualQa(sql, packId) {
+  const rows=await sql`
+    select
+      count(*) filter (
+        where rv.variant_key in ('A','B','C')
+          and rv.desktop_render_url is not null
+          and rv.mobile_render_url is not null
+          and s.status='RENDERED'
+          and s.desktop_image_base64 is not null
+          and s.mobile_image_base64 is not null
+          and s.rendered_at is not null
+          and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+          and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
+          and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'
+      )::int as qa_passed,
+      count(*) filter (where rv.selected=true)::int as selected_count
+    from render_variants rv
+    join render_staging_payloads s
+      on s.render_pack_id=rv.render_pack_id and s.variant_key=rv.variant_key
+    where rv.render_pack_id=${packId}::uuid`;
+  const state=rows[0] || {};
+  return Number(state.qa_passed||0)===3 && Number(state.selected_count||0)===1;
+}
 export async function buildApprovedReference(env, prospectId) {
   const sql=db(env);
   const { prospect,pack,assets }=await approvedContext(sql,prospectId);
@@ -228,6 +263,8 @@ export async function buildApprovedReference(env, prospectId) {
   }
 
   const missing=validateApprovedPack(pack);
+  const approvedVisualQa=await validateApprovedVisualQa(sql,pack.id);
+  if (!approvedVisualQa) missing.push("THREE_VISUAL_QA_PASSES_AND_ONE_SELECTED_VARIANT");
   if (missing.length) {
     const error="RENDER_PACK_INCOMPLETE: "+missing.join(",");
     await sql`select * from ops_register_factory_failure(${prospectId}::uuid,'build',${error},
@@ -258,7 +295,7 @@ export async function buildApprovedReference(env, prospectId) {
     image_asset_map:pack.image_asset_map,
     section_map:pack.section_map,
     cta_map:pack.cta_map,
-    content_map:{...pack.content_map,implementation_html:"[LOCKED_BUILD_ARTIFACT]"},
+    content_map:{...pack.content_map,verified_business_name:prospect.business_name,implementation_html:"[LOCKED_BUILD_ARTIFACT]"},
     implementation_contract_version:pack.content_map?.implementation_contract_version || null,
     implementation_html_digest:await sha256(html),
     source_references:pack.source_references,
@@ -360,11 +397,14 @@ function expectedPackLock(pack) {
   }
   const logo=safeUrl(pick(pack.official_logo,["url","asset_url","src"]));
   const bodyFont=String(pick(pack.typography || {},["body","text"],"")).split(",")[0].replace(/['"]/g,"").trim().toLowerCase();
+  const logoStatus=String(pack.official_logo?.status || "").toUpperCase();
   return {
     sections,
     images:[...new Set(images)],
     ctas:[...new Set(ctas)],
     logo,
+    no_logo_confirmed:logoStatus==="NO_OFFICIAL_LOGO_CONFIRMED",
+    business_name:String(pack.content_map?.business_name || ""),
     body_font:bodyFont
   };
 }
@@ -391,6 +431,7 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
         robots,
         logo_present:Boolean(logo),
         logo_src:logo?.getAttribute("src") || null,
+        body_text:(document.body?.innerText || "").replace(/\s+/g," ").slice(0,12000),
         images_total:images.length,
         image_srcs:images.map(img=>img.currentSrc || img.src),
         images_broken:images.filter(img=>!img.complete || img.naturalWidth===0).map(img=>img.src),
@@ -408,8 +449,14 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
     const normalize=u=>{ try{return new URL(u,liveUrl).href;}catch{return String(u||"");} };
     const actualImages=new Set((technical.image_srcs||[]).map(normalize));
     const actualCtas=new Set((technical.cta_hrefs||[]).map(normalize));
+    const verifiedBusinessName=String(pack.content_map?.verified_business_name || "").trim();
+    const identityPass=expected.logo
+      ? normalize(technical.logo_src)===normalize(expected.logo)
+      : expected.no_logo_confirmed
+        ? Boolean(verifiedBusinessName && String(technical.body_text||"").toLowerCase().includes(verifiedBusinessName.toLowerCase()))
+        : false;
     const lockChecks={
-      logo: Boolean(expected.logo) && normalize(technical.logo_src)===normalize(expected.logo),
+      identity: identityPass,
       images: expected.images.every(url=>actualImages.has(normalize(url))),
       ctas: expected.ctas.every(url=>actualCtas.has(normalize(url))),
       section_order: JSON.stringify(technical.section_ids||[])===JSON.stringify(expected.sections),
@@ -420,7 +467,7 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
       response && response.ok() &&
       new URL(page.url()).protocol==="https:" &&
       /noindex/i.test(technical.robots) &&
-      technical.logo_present &&
+      referenceLockPass &&
       technical.images_broken.length===0 &&
       technical.cta_count>0 &&
       technical.disclaimer_present &&
@@ -445,6 +492,7 @@ async function runViewportQa(browser,liveUrl,pack,viewport) {
 export async function qaApprovedReference(env, prospectId) {
   const sql=db(env);
   const { prospect,pack }=await approvedContext(sql,prospectId);
+  pack.content_map={...(pack.content_map||{}),verified_business_name:prospect.business_name};
   const builds=await sql`select * from site_builds where prospect_id=${prospectId}::uuid and status='COMPLETED' order by attempt desc,created_at desc limit 1`;
   const build=builds[0];
   if (!build) throw new Error("SITE_BUILD_NOT_FOUND");
@@ -470,7 +518,7 @@ export async function qaApprovedReference(env, prospectId) {
     viewports:Object.fromEntries(results.map(r=>[String(r.width),r.visual]))
   };
   const technicalResults={
-    pass:results.every(r=>r.http_status>=200&&r.http_status<300&&r.technical.logo_present&&r.technical.reference_lock_pass&&r.technical.images_broken.length===0&&r.technical.disclaimer_present&&r.console_errors.length===0&&r.broken_assets.length===0),
+    pass:results.every(r=>r.http_status>=200&&r.http_status<300&&r.technical.reference_lock_pass&&r.technical.images_broken.length===0&&r.technical.disclaimer_present&&r.console_errors.length===0&&r.broken_assets.length===0),
     checks:Object.fromEntries(results.map(r=>[String(r.width),{
       http_status:r.http_status,final_url:r.final_url,robots:r.technical.robots,logo_present:r.technical.logo_present,
       cta_count:r.technical.cta_count,body_font:r.technical.body_font,images_broken:r.technical.images_broken,
