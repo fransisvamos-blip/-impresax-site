@@ -1,0 +1,27 @@
+name: Rendering V2 Shadow Check
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - 'src/render-v2/**'
+      - 'test/render-v2.test.mjs'
+      - 'wrangler.render-v2.jsonc'
+      - 'ops/migrations/018_render_v2_shadow_foundation.sql'
+      - '.github/workflows/render-v2-shadow-check.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Contract tests
+        run: node --test test/render-v2.test.mjs
+      - name: Cloudflare dry build
+        run: npx wrangler deploy --dry-run --config wrangler.render-v2.jsonc --outdir dist-v2
