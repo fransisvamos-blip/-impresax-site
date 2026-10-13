@@ -13,11 +13,21 @@ const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
 const MAX_GENERATION_FAILURES = 3;
-const CREATIVE_ENGINE_REVISION = "V8.4_ZERO_PHOTO_DETERMINISTIC_REPAIR";
+const CREATIVE_ENGINE_REVISION = "V8.4.1_ZERO_PHOTO_BREAKER_SOT";
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
   return neon(env.OPS_DATABASE_URL);
+}
+
+function canonicalAssetUrl(value) {
+  try {
+    const u=new URL(String(value || ""));
+    u.hash="";
+    return u.href;
+  } catch {
+    return "";
+  }
 }
 
 function safeText(value, max = 12000) {
