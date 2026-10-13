@@ -1966,6 +1966,7 @@ async function generateProspect(sql, env, master, row) {
   if (!jobId) return {ok:false,code:row.prospect_code,error:"CLAIMED_ELSEWHERE"};
 
   try {
+    if (!master) master = await loadFrozenMaster();
     const discoveredFirstParty = await discoverFirstPartyImages(row.website_url);
     const approvedExternal = normalizeApprovedExternalAssets(row.source_data || {});
     const preVisionPayload = prospectPayload(row, discoveredFirstParty);
@@ -2427,8 +2428,7 @@ export async function runCloudflareRenderEngine(env) {
   if (slots>0) {
     const selected=await candidates(sql,slots);
     if (selected.length) {
-      const master=await loadFrozenMaster();
-      generated=await Promise.all(selected.map(row=>generateProspect(sql,env,master,row)));
+      generated=await Promise.all(selected.map(row=>generateProspect(sql,env,null,row)));
     }
   }
 
