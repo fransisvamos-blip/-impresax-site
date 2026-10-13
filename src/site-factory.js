@@ -226,6 +226,7 @@ async function validateApprovedVisualQa(sql, packId) {
           and s.mobile_image_base64 is not null
           and s.rendered_at is not null
           and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+          and coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
           and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
           and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'
       )::int as qa_passed,
@@ -235,7 +236,20 @@ async function validateApprovedVisualQa(sql, packId) {
       on s.render_pack_id=rv.render_pack_id and s.variant_key=rv.variant_key
     where rv.render_pack_id=${packId}::uuid`;
   const state=rows[0] || {};
-  return Number(state.qa_passed||0)===3 && Number(state.selected_count||0)===1;
+
+  const setRows=await sql`select content_map->'visual_set_qa_last_run' as set_qa
+    from render_packs where id=${packId}::uuid limit 1`;
+  const setQa=setRows[0]?.set_qa || {};
+  const scores=setQa.scores || {};
+  const required=["set_quality","diversity_ab","diversity_ac","diversity_bc","prospect_fit_a","prospect_fit_b","prospect_fit_c"];
+  const setPass=setQa.pass===true &&
+    Array.isArray(setQa.issues) &&
+    setQa.issues.length===0 &&
+    required.every(k=>Number.isFinite(Number(scores[k])) && Number(scores[k])>=8);
+
+  return Number(state.qa_passed||0)===3 &&
+    Number(state.selected_count||0)===1 &&
+    setPass;
 }
 export async function buildApprovedReference(env, prospectId) {
   const sql=db(env);
@@ -264,7 +278,7 @@ export async function buildApprovedReference(env, prospectId) {
 
   const missing=validateApprovedPack(pack);
   const approvedVisualQa=await validateApprovedVisualQa(sql,pack.id);
-  if (!approvedVisualQa) missing.push("THREE_VISUAL_QA_PASSES_AND_ONE_SELECTED_VARIANT");
+  if (!approvedVisualQa) missing.push("THREE_VISUAL_QA_PASSES_SET_QA_AND_ONE_SELECTED_VARIANT");
   if (missing.length) {
     const error="RENDER_PACK_INCOMPLETE: "+missing.join(",");
     await sql`select * from ops_register_factory_failure(${prospectId}::uuid,'build',${error},
