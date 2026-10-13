@@ -93,11 +93,29 @@ BEGIN
      AND s.mobile_image_base64 IS NOT NULL
      AND s.rendered_at IS NOT NULL
      AND coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+     AND coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
      AND coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
      AND coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b';
 
   IF qa_count<>3 THEN
     RAISE EXCEPTION 'FROZEN_COMPLIANCE: THREE_VISUAL_QA_PASSES_REQUIRED got %', qa_count;
+  END IF;
+
+  IF coalesce(NEW.content_map->'visual_set_qa_last_run'->>'pass','false')<>'true' THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: A_B_C_SET_QA_PASS_REQUIRED';
+  END IF;
+  IF jsonb_typeof(coalesce(NEW.content_map->'visual_set_qa_last_run'->'issues','[]'::jsonb))<>'array'
+     OR jsonb_array_length(coalesce(NEW.content_map->'visual_set_qa_last_run'->'issues','[]'::jsonb))<>0 THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: A_B_C_SET_QA_ISSUES_PRESENT';
+  END IF;
+  IF coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'set_quality')::numeric,0)<8
+     OR coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'diversity_ab')::numeric,0)<8
+     OR coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'diversity_ac')::numeric,0)<8
+     OR coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'diversity_bc')::numeric,0)<8
+     OR coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'prospect_fit_a')::numeric,0)<8
+     OR coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'prospect_fit_b')::numeric,0)<8
+     OR coalesce((NEW.content_map->'visual_set_qa_last_run'->'scores'->>'prospect_fit_c')::numeric,0)<8 THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: A_B_C_SET_QA_SCORE_BELOW_8';
   END IF;
 
   SELECT count(*)
