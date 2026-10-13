@@ -12,6 +12,18 @@ export async function putArtifact(env,sql,{packId,revisionId=null,type,key,body,
   if(!env.RENDER_ARTIFACTS) throw new Error("R2_BINDING_NOT_CONFIGURED");
   const bytes=bodyBytes(body);
   const hash=await sha256(bytes);
+
+  const prior=await sql`select * from render_artifacts_v2 where r2_key=${key} limit 1`;
+  if(prior.length) {
+    const existing=prior[0];
+    if(existing.sha256!==hash || existing.artifact_type!==type || String(existing.render_pack_id)!==String(packId)) {
+      throw new Error("SYSTEM_INVARIANT:ARTIFACT_KEY_HASH_MISMATCH:"+key);
+    }
+    const head=await env.RENDER_ARTIFACTS.head(key);
+    if(!head) throw new Error("SYSTEM_INVARIANT:ARTIFACT_DB_R2_MISMATCH:"+key);
+    return existing;
+  }
+
   await env.RENDER_ARTIFACTS.put(key,bytes,{httpMetadata:{contentType:mime},customMetadata:{sha256:hash,engine:EXECUTION_ENGINE_VERSION}});
   const rows=await sql`
     insert into render_artifacts_v2(
@@ -19,10 +31,13 @@ export async function putArtifact(env,sql,{packId,revisionId=null,type,key,body,
     ) values(
       ${packId}::uuid,${revisionId}::uuid,${type},${key},${hash},${mime},${bytes.byteLength},${producerStep},${EXECUTION_ENGINE_VERSION}
     )
-    on conflict(r2_key) do update set
-      sha256=excluded.sha256,mime=excluded.mime,bytes=excluded.bytes,producer_step=excluded.producer_step
+    on conflict(r2_key) do nothing
     returning *`;
-  return rows[0];
+  if(rows.length) return rows[0];
+
+  const raced=await sql`select * from render_artifacts_v2 where r2_key=${key} limit 1`;
+  if(!raced.length || raced[0].sha256!==hash) throw new Error("SYSTEM_INVARIANT:ARTIFACT_CONCURRENT_WRITE_MISMATCH:"+key);
+  return raced[0];
 }
 
 export async function ingestInputAssets(env,sql,{pack,inputPack}) {
