@@ -96,12 +96,14 @@ export async function persistCreativePlan(sql,{packId,inputPackId,plan,modelRout
   const rows=await sql`
     insert into render_creative_plans_v2(
       render_pack_id,input_pack_id,status,content_truth_pack,creative_strategy,
-      directions,fingerprints,diversity_precheck,model_route_version,prompt_version,content_hash,completed_at
+      directions,fingerprints,diversity_precheck,model_route_version,prompt_version,
+      content_truth_hash,creative_directions_hash,content_hash,completed_at
     ) values(
       ${packId}::uuid,${inputPackId}::uuid,'COMPLETED',
       ${JSON.stringify(plan.content_truth)}::jsonb,${plan.creative_strategy},
       ${JSON.stringify(plan.directions)}::jsonb,${JSON.stringify(plan.fingerprints)}::jsonb,
-      ${JSON.stringify(plan.diversity_precheck||{})}::jsonb,${modelRouteVersion},${promptVersion},${hash},now()
+      ${JSON.stringify(plan.diversity_precheck||{})}::jsonb,${modelRouteVersion},${promptVersion},
+      ${plan.content_truth_hash},${plan.creative_directions_hash},${hash},now()
     )
     on conflict(render_pack_id) do nothing
     returning *`;
