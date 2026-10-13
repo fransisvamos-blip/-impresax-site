@@ -113,30 +113,26 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-          try {
-            const result=await generateRenderSpec(this.env,{
-              inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
-              copyManifest:context.copyManifest,
-              assetTokens:Object.keys(context.assets).filter(k=>k!=="PRIMARY_LOGO"),
-              qaFeedback:feedback,previousSpec
-            });
-            return {ok:true,...result};
-          } catch(error) {
-            return {ok:false,error:String(error?.message||error)};
-          }
+          return generateRenderSpec(this.env,{
+            inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
+            copyManifest:context.copyManifest,
+            assetTokens:Object.keys(context.assets).filter(k=>k!=="PRIMARY_LOGO"),
+            qaFeedback:feedback,previousSpec
+          });
         });
       } catch(error) {
-        generated={ok:false,error:String(error?.message||error)};
-      }
-
-      if(!generated.ok) {
-        const fail=await step.do("r"+cycle+"-record-generation-failure",async()=>
-          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VARIANT_GENERATION",error:generated.error,variantKey:params.variantKey,revision:revision.revision,strategyVersion:PROMPT_VERSION})
+        const message=String(error?.message||error);
+        await step.do("r"+cycle+"-record-generation-provider-failure",async()=>
+          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VARIANT_GENERATION_PROVIDER",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:MODEL_ROUTE_VERSION})
         );
-        await updateRevision(sql,revision.id,{status:"QA_FAILED"});
-        if(fail.change_strategy) break;
-        feedback={issues:[generated.error],actions:["Regenerate this variant with a different implementation strategy."]};
-        continue;
+        await step.do("r"+cycle+"-generation-provider-escalation",async()=>{
+          await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+          if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"AI_PROVIDER_ESCALATION",errorCode:"VARIANT_GENERATION_PROVIDER_FAILED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"AI_PROVIDER"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"AI_PROVIDER"};
       }
 
       previousSpec=generated.spec;
@@ -184,13 +180,17 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       }
 
       if(!captured.ok) {
-        const fail=await step.do("r"+cycle+"-record-browser-failure",async()=>
+        await step.do("r"+cycle+"-record-browser-failure",async()=>
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"BROWSER_CAPTURE",error:captured.error,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BROWSER_V2"})
         );
-        await updateRevision(sql,revision.id,{status:"QA_FAILED"});
-        if(fail.change_strategy) break;
-        feedback={issues:[captured.error],actions:["Preserve the creative direction; repair capture-affecting structure only."]};
-        continue;
+        await step.do("r"+cycle+"-browser-escalation",async()=>{
+          await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+          if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BROWSER_ESCALATION",errorCode:"BROWSER_CAPTURE_FAILED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"BROWSER"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"BROWSER"};
       }
 
       if(!captured.gate.pass) {
@@ -219,26 +219,22 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         qa=await step.do("r"+cycle+"-visual-qa",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
           const desktopBytes=await readArtifactBytes(this.env,captured.desktop.r2_key);
           const mobileBytes=await readArtifactBytes(this.env,captured.mobile.r2_key);
-          try {
-            return await runVisualQa(this.env,{
-              inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
-              desktopB64:bytesToBase64(desktopBytes),mobileB64:bytesToBase64(mobileBytes)
-            });
-          } catch(error) {
-            return {provider_failure:true,error:String(error?.message||error)};
-          }
+          return runVisualQa(this.env,{
+            inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
+            desktopB64:bytesToBase64(desktopBytes),mobileB64:bytesToBase64(mobileBytes)
+          });
         });
       } catch(error) {
-        qa={provider_failure:true,error:String(error?.message||error)};
-      }
-
-      if(qa.provider_failure) {
-        const fail=await step.do("r"+cycle+"-record-qa-provider-failure",async()=>
-          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VISUAL_QA",error:qa.error,variantKey:params.variantKey,revision:revision.revision,strategyVersion:MODEL_ROUTE_VERSION})
+        const message=String(error?.message||error);
+        await step.do("r"+cycle+"-record-qa-provider-failure",async()=>
+          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VISUAL_QA_PROVIDER",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:MODEL_ROUTE_VERSION})
         );
-        if(fail.change_strategy) break;
-        cycle--;
-        continue;
+        await step.do("r"+cycle+"-qa-provider-escalation",async()=>{
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"QA_PROVIDER_ESCALATION",errorCode:"VISUAL_QA_PROVIDER_FAILED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"AI_OUTPUT_SCHEMA"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"AI_OUTPUT_SCHEMA",preview_preserved:true};
       }
 
       await step.do("r"+cycle+"-persist-qa",async()=>{
