@@ -44,9 +44,10 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       const inference={
         messages,
         response_format:{type:"json_schema",json_schema:schema},
-        max_completion_tokens:maxTokens,
         temperature
       };
+      if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
+      else inference.max_completion_tokens=maxTokens;
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="medium";
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
