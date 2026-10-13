@@ -274,6 +274,10 @@ async function buildCreativeStrategy(env, master, prospect) {
     "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
     "PREVIOUS QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
     "SET-LEVEL QA HISTORY:",JSON.stringify(prospect?.visualSetFeedback || null),
+    "PRE-RENDER GENERATION FAILURE:",JSON.stringify({
+      count:Number(prospect?.generationFailureCount || 0),
+      last_error:prospect?.generationFailureFeedback || null
+    }),
     "FROZEN MASTER:",master
   ].join("\n");
   const out=await runModel(env,ART_MODEL,[
@@ -436,6 +440,10 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
     "",
     "MANDATORY REWORK HISTORY FOR THIS VARIANT:",JSON.stringify(variantHistory),
     "MANDATORY SET-LEVEL REWORK HISTORY:",JSON.stringify(setHistory),
+    "MANDATORY PRE-RENDER FAILURE HISTORY:",JSON.stringify({
+      count:Number(prospect?.generationFailureCount || 0),
+      last_error:prospect?.generationFailureFeedback || null
+    }),
     "",
     "NON-NEGOTIABLE OUTPUT:",
     "- Return ONLY one complete standalone HTML document, starting with <!doctype html> and ending with </html>.",
