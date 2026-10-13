@@ -26,7 +26,7 @@ function assetCandidates(prospect) {
   const out=[];
   const logo=prospect.logo||{};
   const logoUrl=safeHttpUrl(logo.url||logo.official_source);
-  if(logoUrl) out.push({asset_id:"PRIMARY_LOGO",role:"identity",source_url:logoUrl,commercial_use_status:"OFFICIAL_IDENTITY",required:true});
+  if(logoUrl) out.push({asset_id:"PRIMARY_LOGO",role:"identity",source_url:logoUrl,source_type:"OFFICIAL_IDENTITY",commercial_use_status:"OFFICIAL_IDENTITY",required:true});
 
   const fields=["first_party_images","approved_external_images","visual_assets","image_assets"];
   let n=1;
@@ -34,12 +34,13 @@ function assetCandidates(prospect) {
     for(const raw of ensureArray(s[field])) {
       const url=safeHttpUrl(typeof raw==="string"?raw:(raw?.url||raw?.src||raw?.asset_url));
       if(!url) continue;
+      const approvedExternal=field==="approved_external_images";
       out.push({
         asset_id:"VISUAL_"+String(n++).padStart(2,"0"),
         role:String(raw?.role||"visual"),
         source_url:url,
-        source_type:field==="approved_external_images"?"APPROVED_EXTERNAL":"FIRST_PARTY",
-        commercial_use_status:String(raw?.commercial_use_status||"VERIFIED_SOURCE"),
+        source_type:approvedExternal?"APPROVED_EXTERNAL":"FIRST_PARTY",
+        commercial_use_status:String(raw?.commercial_use_status||(approvedExternal?"APPROVED_EXTERNAL":"FIRST_PARTY_REFERENCE")),
         required:false
       });
     }
@@ -52,6 +53,7 @@ export function buildInputPayload(prospect) {
   const s=prospect.source_data||{};
   const logo=prospect.logo||{};
   const status=String(logo.status||"").toUpperCase();
+  const assets=assetCandidates(prospect);
   return {
     prospect_id:prospect.id,
     prospect_code:prospect.legacy_ids?.id_prospect||s.id_prospect||prospect.id,
@@ -71,8 +73,8 @@ export function buildInputPayload(prospect) {
     primary_cta:s.primary_cta||"",
     secondary_cta:s.secondary_cta||"",
     source_references:ensureArray(s.source_references).map(safeHttpUrl).filter(Boolean),
-    assets:assetCandidates(prospect),
-    asset_mode:assetCandidates(prospect).some(x=>x.role!=="identity")?"VERIFIED_VISUALS":"ZERO_PHOTO_PREMIUM",
+    assets,
+    asset_mode:assets.some(x=>x.role!=="identity")?"VERIFIED_VISUALS":"ZERO_PHOTO_PREMIUM",
     locale:"it-IT",
     restrictions:{
       no_invented_claims:true,
@@ -98,6 +100,13 @@ export function certifyInputPayload(payload) {
   if(!payload?.source_references?.length) issues.push("SOURCE_REFERENCES_REQUIRED");
   const ids=payload?.assets?.map(x=>x.asset_id)||[];
   if(unique(ids).length!==ids.length) issues.push("DUPLICATE_ASSET_ID");
+  const allowedUse=new Set(["OFFICIAL_IDENTITY","FIRST_PARTY_REFERENCE","APPROVED_EXTERNAL","APPROVED_COMMERCIAL","LICENSED_COMMERCIAL"]);
+  for(const asset of payload?.assets||[]) {
+    if(!safeHttpUrl(asset?.source_url)) issues.push("ASSET_SOURCE_URL_INVALID:"+String(asset?.asset_id||"UNKNOWN"));
+    if(!allowedUse.has(String(asset?.commercial_use_status||"").toUpperCase())) {
+      issues.push("ASSET_COMMERCIAL_USE_UNRESOLVED:"+String(asset?.asset_id||"UNKNOWN"));
+    }
+  }
   return {pass:issues.length===0,issues};
 }
 
@@ -107,7 +116,36 @@ export async function createShadowInputPack(env,prospectRef) {
   const existing=await findActiveV2Pack(sql,prospect.id);
   if(existing) {
     const rows=await sql`select * from render_input_packs where render_pack_id=${existing.id}::uuid limit 1`;
-    return {created:false,pack:existing,input_pack:rows[0]||null};
+    if(rows.length) {
+      const input=rows[0];
+      if(String(existing.input_pack_id||"")!==String(input.id)) {
+        await sql`update render_v2_packs set input_pack_id=${input.id}::uuid,updated_at=now() where id=${existing.id}::uuid`;
+      }
+      return {created:false,pack:{...existing,input_pack_id:input.id},input_pack:input,recovered_pointer:String(existing.input_pack_id||"")!==String(input.id)};
+    }
+
+    const payload=buildInputPayload(prospect);
+    const certification=certifyInputPayload(payload);
+    const contentHash=await sha256(stableStringify(payload));
+    const versions=await sql`select coalesce(max(input_version),0)+1 as v from render_input_packs where prospect_id=${prospect.id}::uuid`;
+    const inputVersion=Number(versions[0]?.v||1);
+    const inserted=await sql`
+      insert into render_input_packs(
+        render_pack_id,prospect_id,input_version,quality_contract_version,content_hash,
+        certification_status,certification_issues,payload
+      ) values(
+        ${existing.id}::uuid,${prospect.id}::uuid,${inputVersion},${QUALITY_CONTRACT_VERSION},${contentHash},
+        ${certification.pass?"PASS":"FAIL"},${JSON.stringify(certification.issues)}::jsonb,${JSON.stringify(payload)}::jsonb
+      ) returning *`;
+    const input=inserted[0];
+    await sql`
+      update render_v2_packs
+      set input_pack_id=${input.id}::uuid,
+          status=${certification.pass?"INPUT_READY":"INPUT_BLOCKED"},
+          metadata=coalesce(metadata,'{}'::jsonb)||${JSON.stringify({input_recovered:true,input_hash:contentHash})}::jsonb,
+          updated_at=now()
+      where id=${existing.id}::uuid`;
+    return {created:false,recovered_input:true,pack:{...existing,input_pack_id:input.id,status:certification.pass?"INPUT_READY":"INPUT_BLOCKED"},input_pack:input,certification};
   }
 
   const payload=buildInputPayload(prospect);
