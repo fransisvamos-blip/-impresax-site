@@ -4,6 +4,7 @@ import { generateRenderVariants } from "./rendering-studio.js";
 
 const MODEL = "@cf/zai-org/glm-4.7-flash";
 const VISUAL_QA_MODEL = "@cf/qwen/qwen3.8-27b";
+const VISUAL_QA_REPAIR_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MAX_VISUAL_REWORK_CYCLES = 5;
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 const ADMIN_HOST = "admin.impresax.org";
@@ -90,6 +91,32 @@ function normalizeVisualQa(result) {
     model: VISUAL_QA_MODEL,
     checked_at: new Date().toISOString()
   };
+}
+
+async function repairVisualQaArguments(env, raw, parameters) {
+  const source = typeof raw === "string" ? raw : JSON.stringify(raw || {});
+  const out = await env.AI.run(VISUAL_QA_REPAIR_MODEL, {
+    messages: [
+      {
+        role: "system",
+        content: "Repair the supplied visual-QA payload into the exact JSON schema. Preserve the reviewer verdict and scores; do not improve or soften them."
+      },
+      {
+        role: "user",
+        content: source.slice(0, 12000)
+      }
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: parameters
+    },
+    max_tokens: 1400,
+    temperature: 0
+  });
+
+  const direct = out?.response ?? out?.result?.response ?? out?.parsed ?? null;
+  if (direct && typeof direct === "object") return direct;
+  return extractJsonObject(extractModelText(out));
 }
 
 async function critiqueVisibleRender(env, master, prospect, variantKey, direction, desktopB64, mobileB64) {
@@ -181,11 +208,25 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
         out?.choices?.[0]?.message?.tool_calls?.[0] ??
         out?.result?.tool_calls?.[0];
       let args = call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
-      if (typeof args === "string") args = JSON.parse(args);
+      if (typeof args === "string") {
+        try {
+          args = JSON.parse(args);
+        } catch {
+          args = await repairVisualQaArguments(env, args, parameters);
+        }
+      }
       if (args && typeof args === "object") return normalizeVisualQa(args);
 
-      const parsed = extractModelJson(out);
-      if (parsed && typeof parsed === "object") return normalizeVisualQa(parsed);
+      try {
+        const parsed = extractModelJson(out);
+        if (parsed && typeof parsed === "object") return normalizeVisualQa(parsed);
+      } catch {}
+
+      const rawFallback = extractModelText(out);
+      if (rawFallback) {
+        const repaired = await repairVisualQaArguments(env, rawFallback, parameters);
+        return normalizeVisualQa(repaired);
+      }
       throw new Error("VISUAL_QA_TOOL_RESULT_REQUIRED");
     } catch (error) {
       lastError = error;
