@@ -1,0 +1,106 @@
+name: Rendering V2 Shadow Deploy
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - '.github/workflows/render-v2-shadow-deploy.yml'
+      - 'wrangler.render-v2.jsonc'
+      - 'src/render-v2/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
+      V2_SHADOW_TOKEN: ${{ secrets.V2_SHADOW_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check deployment prerequisites
+        id: prereq
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || missing+=(CLOUDFLARE_API_TOKEN)
+          [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || missing+=(CLOUDFLARE_ACCOUNT_ID)
+          [ -n "${OPS_DATABASE_URL:-}" ] || missing+=(OPS_DATABASE_URL)
+          [ -n "${V2_SHADOW_TOKEN:-}" ] || missing+=(V2_SHADOW_TOKEN)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "missing=${missing[*]}" >> "$GITHUB_OUTPUT"
+            echo "### V2 shadow deployment blocked only by repository secrets" >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing: \`${missing[*]}\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.prereq.outputs.ready == 'true'
+        with:
+          node-version: "22"
+
+      - name: Install
+        if: steps.prereq.outputs.ready == 'true'
+        run: npm install --no-audit --no-fund
+
+      - name: Ensure private R2 artifact bucket
+        if: steps.prereq.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! npx wrangler r2 bucket list --json | grep -q '"name": *"impresax-render-v2-shadow"'; then
+            npx wrangler r2 bucket create impresax-render-v2-shadow
+          fi
+
+      - name: Deploy isolated V2 shadow Worker
+        if: steps.prereq.outputs.ready == 'true'
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config wrangler.render-v2.jsonc 2>&1 | tee /tmp/v2-deploy.log
+          url=$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/v2-deploy.log | tail -1 || true)
+          if [ -z "$url" ]; then
+            echo "Could not resolve workers.dev URL from Wrangler output."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Install Worker secrets
+        if: steps.prereq.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$OPS_DATABASE_URL" | npx wrangler secret put OPS_DATABASE_URL --config wrangler.render-v2.jsonc
+          printf '%s' "$V2_SHADOW_TOKEN" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc
+
+      - name: Verify deployed V2 health
+        if: steps.prereq.outputs.ready == 'true'
+        shell: bash
+        env:
+          V2_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          for i in {1..24}; do
+            code=$(curl -L -sS -o /tmp/v2-health.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$V2_URL/healthz" || true)
+            echo "attempt=$i code=$code body=$(cat /tmp/v2-health.json 2>/dev/null || true)"
+            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_0"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
+              echo "### V2 shadow deployed and healthy" >> "$GITHUB_STEP_SUMMARY"
+              echo "$V2_URL" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "V2 shadow health did not become fully healthy."
+          exit 1
+
+      - name: Deployment prerequisite status
+        if: steps.prereq.outputs.ready != 'true'
+        run: |
+          echo "V2 implementation/build remains complete; deployment was not attempted because required secrets are not present in GitHub Actions."
