@@ -1,0 +1,128 @@
+import { db, getProspect, findActiveV2Pack } from "./db.js";
+import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION } from "./constants.js";
+import { ensureArray, safeHttpUrl, stableStringify, sha256, unique } from "./utils.js";
+
+const REQUIRED_DNA=[
+  "brand_personality","visual_cues","tone","business_type","audience","offer",
+  "local_context","trust_signals","existing_colors","typography_cues","imagery_cues",
+  "business_positioning","commercial_behavior"
+];
+
+function objectHasValue(v) {
+  if(Array.isArray(v)) return v.length>0;
+  if(v && typeof v==="object") return Object.keys(v).length>0;
+  return String(v??"").trim().length>2;
+}
+
+function assetCandidates(prospect) {
+  const s=prospect.source_data||{};
+  const out=[];
+  const logo=prospect.logo||{};
+  const logoUrl=safeHttpUrl(logo.url||logo.official_source);
+  if(logoUrl) out.push({asset_id:"PRIMARY_LOGO",role:"identity",source_url:logoUrl,commercial_use_status:"OFFICIAL_IDENTITY",required:true});
+
+  const fields=["first_party_images","approved_external_images","visual_assets","image_assets"];
+  let n=1;
+  for(const field of fields) {
+    for(const raw of ensureArray(s[field])) {
+      const url=safeHttpUrl(typeof raw==="string"?raw:(raw?.url||raw?.src||raw?.asset_url));
+      if(!url) continue;
+      out.push({
+        asset_id:"VISUAL_"+String(n++).padStart(2,"0"),
+        role:String(raw?.role||"visual"),
+        source_url:url,
+        source_type:field==="approved_external_images"?"APPROVED_EXTERNAL":"FIRST_PARTY",
+        commercial_use_status:String(raw?.commercial_use_status||"VERIFIED_SOURCE"),
+        required:false
+      });
+    }
+  }
+  const seen=new Set();
+  return out.filter(x=>{ if(seen.has(x.source_url)) return false; seen.add(x.source_url); return true; }).slice(0,20);
+}
+
+export function buildInputPayload(prospect) {
+  const s=prospect.source_data||{};
+  const logo=prospect.logo||{};
+  const status=String(logo.status||"").toUpperCase();
+  return {
+    prospect_id:prospect.id,
+    prospect_code:prospect.legacy_ids?.id_prospect||s.id_prospect||prospect.id,
+    business_name:prospect.business_name,
+    vertical:prospect.vertical,
+    city:prospect.city,
+    country:prospect.country,
+    website_url:prospect.website_url,
+    address:s.address||prospect.city||"",
+    official_logo:logo,
+    identity_mode:status==="NO_OFFICIAL_LOGO_CONFIRMED"?"TEXT_IDENTITY":"OFFICIAL_LOGO",
+    brand_dna:prospect.brand_dna||{},
+    verified_services:s.verified_services||"",
+    verified_contacts:s.verified_contacts||"",
+    verified_trust:s.verified_trust||"",
+    commercial_goal:s.commercial_goal||"",
+    primary_cta:s.primary_cta||"",
+    secondary_cta:s.secondary_cta||"",
+    source_references:ensureArray(s.source_references).map(safeHttpUrl).filter(Boolean),
+    assets:assetCandidates(prospect),
+    asset_mode:assetCandidates(prospect).some(x=>x.role!=="identity")?"VERIFIED_VISUALS":"ZERO_PHOTO_PREMIUM",
+    locale:"it-IT",
+    restrictions:{
+      no_invented_claims:true,
+      no_unverified_assets:true,
+      no_logo_reinterpretation:true
+    }
+  };
+}
+
+export function certifyInputPayload(payload) {
+  const issues=[];
+  const logoStatus=String(payload?.official_logo?.status||"").toUpperCase();
+  if(!["PASS","OFFICIAL_LOGO_LOCKED","NO_OFFICIAL_LOGO_CONFIRMED"].includes(logoStatus)) issues.push("OFFICIAL_IDENTITY_NOT_CERTIFIED");
+  if(["PASS","OFFICIAL_LOGO_LOCKED"].includes(logoStatus) && !payload.assets.some(x=>x.asset_id==="PRIMARY_LOGO")) issues.push("PRIMARY_LOGO_ASSET_MISSING");
+  for(const key of REQUIRED_DNA) if(!objectHasValue(payload?.brand_dna?.[key])) issues.push("BRAND_DNA_MISSING:"+key);
+  if(!String(payload?.verified_services||"").trim()) issues.push("VERIFIED_SERVICES_REQUIRED");
+  if(!String(payload?.verified_contacts||"").trim()) issues.push("VERIFIED_CONTACTS_REQUIRED");
+  if(!String(payload?.address||"").trim()) issues.push("VERIFIED_LOCATION_REQUIRED");
+  if(!payload?.source_references?.length) issues.push("SOURCE_REFERENCES_REQUIRED");
+  const ids=payload?.assets?.map(x=>x.asset_id)||[];
+  if(unique(ids).length!==ids.length) issues.push("DUPLICATE_ASSET_ID");
+  return {pass:issues.length===0,issues};
+}
+
+export async function createShadowInputPack(env,prospectRef) {
+  const sql=db(env);
+  const prospect=await getProspect(sql,prospectRef);
+  const existing=await findActiveV2Pack(sql,prospect.id);
+  if(existing) {
+    const rows=await sql\`select * from render_input_packs where render_pack_id=\${existing.id}::uuid limit 1\`;
+    return {created:false,pack:existing,input_pack:rows[0]||null};
+  }
+
+  const payload=buildInputPayload(prospect);
+  const certification=certifyInputPayload(payload);
+  const contentHash=await sha256(stableStringify(payload));
+  const versions=await sql\`select coalesce(max(input_version),0)+1 as v from render_input_packs where prospect_id=\${prospect.id}::uuid\`;
+  const inputVersion=Number(versions[0]?.v||1);
+  const packRows=await sql\`
+    insert into render_v2_packs(
+      prospect_id,status,quality_contract_version,execution_engine_version,model_route_version,priority,shadow_mode,metadata
+    ) values(
+      \${prospect.id}::uuid,\${certification.pass?"INPUT_READY":"INPUT_BLOCKED"},
+      \${QUALITY_CONTRACT_VERSION},\${EXECUTION_ENGINE_VERSION},\${MODEL_ROUTE_VERSION},
+      \${prospect.priority==="A"?10:prospect.priority==="B"?50:100},true,
+      \${JSON.stringify({source:"V2_SHADOW",input_hash:contentHash})}::jsonb
+    ) returning *\`;
+  const pack=packRows[0];
+  const inputRows=await sql\`
+    insert into render_input_packs(
+      render_pack_id,prospect_id,input_version,quality_contract_version,content_hash,
+      certification_status,certification_issues,payload
+    ) values(
+      \${pack.id}::uuid,\${prospect.id}::uuid,\${inputVersion},\${QUALITY_CONTRACT_VERSION},\${contentHash},
+      \${certification.pass?"PASS":"FAIL"},\${JSON.stringify(certification.issues)}::jsonb,\${JSON.stringify(payload)}::jsonb
+    ) returning *\`;
+  const input=inputRows[0];
+  await sql\`update render_v2_packs set input_pack_id=\${input.id}::uuid,updated_at=now() where id=\${pack.id}::uuid\`;
+  return {created:true,pack:{...pack,input_pack_id:input.id},input_pack:input,certification};
+}
