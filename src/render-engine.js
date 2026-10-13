@@ -8,7 +8,9 @@ const MAX_VISUAL_REWORK_CYCLES = 5;
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 const ADMIN_HOST = "admin.impresax.org";
 const MAX_PROSPECTS_PER_TICK = 3;
-const MAX_RENDER_PACKS_PER_TICK = 2;
+const MAX_RENDER_PACKS_PER_TICK = 1;
+const MAX_ACTIVE_BROWSER_JOBS = 2;
+const MAX_TECH_RETRIES = 3;
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -100,8 +102,6 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
     "FAIL if logo integration, hierarchy, spacing, rhythm, image direction, footer, CTA integration, desktop quality or mobile quality is visibly weak.",
     "FAIL on any visible unverified/fake claim risk.",
     "Do not reward a page merely because it is complete or functional.",
-    "Return ONLY strict JSON:",
-    '{"pass":true|false,"summary":"...","issues":["..."],"rework_instructions":["..."],"scores":{"art_direction":0,"prospect_specificity":0,"brand_fidelity":0,"typography":0,"imagery":0,"desktop_quality":0,"mobile_quality":0,"no_template_feel":0,"truth_integrity":0}}',
     "A pass requires every visible dimension to meet a flagship-level bar. Be demanding.",
     "",
     "VARIANT: " + variantKey,
@@ -114,8 +114,37 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
     "FROZEN MASTER:",
     master.slice(0, 30000),
     "",
-    "IMAGE 1 = desktop 1440 full homepage. IMAGE 2 = mobile 390 full homepage."
+    "IMAGE 1 = desktop 1440 full homepage. IMAGE 2 = mobile 390 full homepage.",
+    "You MUST call submit_visual_qa exactly once with your final verdict."
   ].join("\n");
+
+  const parameters = {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      pass: { type: "boolean" },
+      summary: { type: "string" },
+      issues: { type: "array", items: { type: "string" } },
+      rework_instructions: { type: "array", items: { type: "string" } },
+      scores: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          art_direction: { type: "number" },
+          prospect_specificity: { type: "number" },
+          brand_fidelity: { type: "number" },
+          typography: { type: "number" },
+          imagery: { type: "number" },
+          desktop_quality: { type: "number" },
+          mobile_quality: { type: "number" },
+          no_template_feel: { type: "number" },
+          truth_integrity: { type: "number" }
+        },
+        required: ["art_direction","prospect_specificity","brand_fidelity","typography","imagery","desktop_quality","mobile_quality","no_template_feel","truth_integrity"]
+      }
+    },
+    required: ["pass","summary","issues","rework_instructions","scores"]
+  };
 
   let lastError = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -124,7 +153,7 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
         messages: [
           {
             role: "system",
-            content: "You are a strict senior visual design reviewer. Output valid JSON only. Never pass mediocre work."
+            content: "You are a strict senior visual design reviewer. Never pass mediocre work. Submit the final verdict through the required tool."
           },
           {
             role: "user",
@@ -135,48 +164,35 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
             ]
           }
         ],
+        tools: [{
+          name: "submit_visual_qa",
+          description: "Submit the final visual QA verdict for this exact desktop/mobile variant.",
+          parameters
+        }],
+        tool_choice: "required",
+        parallel_tool_calls: false,
         max_completion_tokens: 1800,
-        temperature: 0.1,
-        reasoning_effort: "medium",
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              pass: { type: "boolean" },
-              summary: { type: "string" },
-              issues: { type: "array", items: { type: "string" } },
-              rework_instructions: { type: "array", items: { type: "string" } },
-              scores: {
-                type: "object",
-                additionalProperties: false,
-                properties: {
-                  art_direction: { type: "number" },
-                  prospect_specificity: { type: "number" },
-                  brand_fidelity: { type: "number" },
-                  typography: { type: "number" },
-                  imagery: { type: "number" },
-                  desktop_quality: { type: "number" },
-                  mobile_quality: { type: "number" },
-                  no_template_feel: { type: "number" },
-                  truth_integrity: { type: "number" }
-                },
-                required: ["art_direction","prospect_specificity","brand_fidelity","typography","imagery","desktop_quality","mobile_quality","no_template_feel","truth_integrity"]
-              }
-            },
-            required: ["pass","summary","issues","rework_instructions","scores"]
-          }
-        }
+        temperature: 0.05,
+        reasoning_effort: "medium"
       });
-      return normalizeVisualQa(extractModelJson(out));
+
+      const call =
+        out?.tool_calls?.[0] ??
+        out?.choices?.[0]?.message?.tool_calls?.[0] ??
+        out?.result?.tool_calls?.[0];
+      let args = call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
+      if (typeof args === "string") args = JSON.parse(args);
+      if (args && typeof args === "object") return normalizeVisualQa(args);
+
+      const parsed = extractModelJson(out);
+      if (parsed && typeof parsed === "object") return normalizeVisualQa(parsed);
+      throw new Error("VISUAL_QA_TOOL_RESULT_REQUIRED");
     } catch (error) {
       lastError = error;
     }
   }
   throw lastError || new Error("VISUAL_QA_FAILED_TO_RUN");
 }
-
 function validateHtml(value, logoUrl) {
   const html = stripCodeFence(value);
   if (!/<html[\s>]/i.test(html) || !/<\/html>/i.test(html)) throw new Error("HTML_DOCUMENT_REQUIRED");
@@ -737,7 +753,7 @@ async function recoverStaleClaims(sql) {
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
       and status in ('RUNNING','COMPLETING')
-      and started_at < now()-interval '6 minutes'`;
+      and started_at < now()-interval '12 minutes'`;
 
   await sql`update render_packs rp
     set status='ART_DIRECTION'
@@ -747,7 +763,7 @@ async function recoverStaleClaims(sql) {
         select 1 from render_jobs rj
         where rj.worker='cloudflare-workers-ai'
           and rj.status in ('RUNNING','COMPLETING')
-          and rj.started_at >= now()-interval '6 minutes'
+          and rj.started_at >= now()-interval '12 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
 
@@ -764,7 +780,7 @@ async function recoverStaleClaims(sql) {
     set status='FAILED',error='STALE_BROWSER_RENDER_CLAIM',completed_at=now(),updated_at=now()
     where worker='cloudflare-browser-renderer'
       and status='RUNNING'
-      and started_at < now()-interval '3 minutes'`;
+      and started_at < now()-interval '10 minutes'`;
 
   await sql`update render_packs rp
     set status='RENDERING'
@@ -774,7 +790,7 @@ async function recoverStaleClaims(sql) {
         select 1 from render_jobs rj
         where rj.worker='cloudflare-browser-renderer'
           and rj.status='RUNNING'
-          and rj.started_at >= now()-interval '3 minutes'
+          and rj.started_at >= now()-interval '10 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
 
@@ -1231,6 +1247,12 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     const message = String(error?.message || error || "BROWSER_RENDER_FAILED").slice(0, 600);
     await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
       where id=${browserJobId}::uuid`;
+
+    const retryRows = await sql`select coalesce((content_map->>'technical_retry_count')::int,0)+1 as retry
+      from render_packs where id=${row.render_pack_id}::uuid`;
+    const technicalRetry = Number(retryRows[0]?.retry || 1);
+    const technicalHold = technicalRetry >= MAX_TECH_RETRIES;
+
     await sql`update render_staging_payloads
       set status='RENDER_ERROR',render_error=${message},updated_at=now()
       where render_pack_id=${row.render_pack_id}::uuid
@@ -1242,13 +1264,25 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
         and variant_key in ('A','B','C')
         and upper(coalesce(status,'')) not like '%REJECT%'
         and upper(coalesce(status,'')) not like '%ARCHIVED%'`;
-    await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
-    await sql`update prospects set current_step='RENDERING_ASSETS',next_action='RETRY_BROWSER_RENDER',error=${message},updated_at=now()
+    await sql`update render_packs set
+        status=${technicalHold ? "TECHNICAL_HOLD" : "RENDERING"},
+        content_map=coalesce(content_map,'{}'::jsonb) ||
+          jsonb_build_object('technical_retry_count',${technicalRetry},'last_technical_error',${message})
+      where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
+    await sql`update prospects set
+        render_status=${technicalHold ? "ESCALATION_REQUIRED" : "RENDERING"},
+        current_step=${technicalHold ? "TECHNICAL_HOLD" : "RENDERING_ASSETS"},
+        next_action=${technicalHold ? "CABINA_TECHNICAL_REVIEW" : "RETRY_BROWSER_RENDER"},
+        error=${message},updated_at=now()
       where id=${row.prospect_id}::uuid`;
-    return {ok:false,pack_id:row.render_pack_id,error:message};
+    return {ok:false,pack_id:row.render_pack_id,error:message,technical_retry:technicalRetry,technical_hold:technicalHold};
   } finally {
     if (!sharedBrowser) await browser.close();
   }
+
+  await sql`update render_packs set
+      content_map=coalesce(content_map,'{}'::jsonb) || '{"technical_retry_count":0}'::jsonb
+    where id=${row.render_pack_id}::uuid`;
 
   const failedVisualQa = visualQa.filter(x => !x.qa.pass);
   if (visualQa.length !== 3 || failedVisualQa.length) {
@@ -1375,26 +1409,25 @@ export async function runCloudflareRenderEngine(env) {
   await recoverStaleClaims(sql);
   const cancelledLegacyRenderJobs=await reconcileNativeRenderQueue(sql);
 
-  const readyToRender=await renderCandidates(sql,MAX_RENDER_PACKS_PER_TICK);
+  const activeBrowserRows=await sql`select count(*)::int as n from render_jobs
+    where worker='cloudflare-browser-renderer'
+      and status='RUNNING'
+      and started_at >= now()-interval '10 minutes'`;
+  const activeBrowserJobs=Number(activeBrowserRows[0]?.n || 0);
+  const browserSlots=Math.max(0,MAX_ACTIVE_BROWSER_JOBS-activeBrowserJobs);
+  const readyToRender=browserSlots>0
+    ? await renderCandidates(sql,Math.min(MAX_RENDER_PACKS_PER_TICK,browserSlots))
+    : [];
   let rendered=[];
   let renderMaster="";
   if (readyToRender.length) {
     renderMaster=await loadFrozenMaster();
-    if (!env.BROWSER) {
-      rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,null,renderMaster)));
-    } else {
-      const sharedBrowser=await puppeteer.launch(env.BROWSER);
-      try {
-        rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,sharedBrowser,renderMaster)));
-      } finally {
-        await sharedBrowser.close();
-      }
-    }
+    rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,null,renderMaster)));
   }
 
   const activeRows=await sql`select count(*)::int as n from render_jobs
     where worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
-      and started_at >= now()-interval '6 minutes'`;
+      and started_at >= now()-interval '12 minutes'`;
   const active=Number(activeRows[0]?.n || 0);
   const slots=Math.max(0,MAX_PROSPECTS_PER_TICK-active);
 
@@ -1410,6 +1443,8 @@ export async function runCloudflareRenderEngine(env) {
   return {
     ok:true,
     cancelled_legacy_render_jobs:cancelledLegacyRenderJobs,
+    active_browser_jobs:activeBrowserJobs,
+    browser_slots:browserSlots,
     active_generation_jobs:active,
     generation_slots:slots,
     generated_count:generated.filter(x=>x.ok).length,
