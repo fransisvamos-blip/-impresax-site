@@ -1165,7 +1165,7 @@ async function claimPack(sql, row) {
       prospect_id,status,attempt,worker,input_data,started_at
     ) values(
       ${row.prospect_id}::uuid,'RUNNING',${attempt},'cloudflare-workers-ai',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_FROZEN_COMPLIANCE"})}::jsonb,now()
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_2_CREATIVE_QUALITY"})}::jsonb,now()
     ) returning id`;
 
   await sql`update prospects set
@@ -1225,7 +1225,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         ${JSON.stringify({
           source:"RENDERING_STUDIO_V1_FROZEN",
           execution_engine:"CLOUDFLARE_NATIVE",
-          rendering_studio_contract:"V8_FROZEN_COMPLIANCE",
+          rendering_studio_contract:"V8_2_CREATIVE_QUALITY",
           art_direction_model:"@cf/openai/gpt-oss-120b",
           html_model:"@cf/zai-org/glm-4.7-flash",
           visual_qa_model:VISUAL_QA_MODEL,
@@ -1277,7 +1277,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
         variants:["A","B","C"],
         department:"RENDERING_STUDIO",
-        contract:"V8_FROZEN_COMPLIANCE",
+        contract:"V8_2_CREATIVE_QUALITY",
         art_direction_model:"@cf/openai/gpt-oss-120b",
         html_model:"@cf/zai-org/glm-4.7-flash",
         visual_qa_model:VISUAL_QA_MODEL
@@ -1532,6 +1532,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
   await sql`update render_jobs set status='QA_RUNNING',updated_at=now()
     where id=${browserJobId}::uuid and status='RUNNING'`;
 
+  let setQa=null;
   try {
     const qaResults = await Promise.all(captured.map(async (frame) => {
       const item=frame.item;
@@ -1548,6 +1549,12 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     }));
 
     visualQa.push(...qaResults);
+    setQa=await critiqueVariantSet(env,visualQaProspect,captured,qaResults);
+
+    await sql`update render_packs set
+        content_map=coalesce(content_map,'{}'::jsonb) ||
+          ${JSON.stringify({visual_set_qa_last_run:setQa})}::jsonb
+      where id=${row.render_pack_id}::uuid`;
 
     await Promise.all(qaResults.map(async ({variant_id,staging_id,qa}) => {
       await sql`update render_staging_payloads set
@@ -1570,12 +1577,14 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     where id=${row.render_pack_id}::uuid`;
 
   const failedVisualQa = visualQa.filter(x => !x.qa.pass);
-  if (visualQa.length !== 3 || failedVisualQa.length) {
+  const setQaFailed = !setQa || setQa.pass!==true;
+  if (visualQa.length !== 3 || failedVisualQa.length || setQaFailed) {
     const cycleRows = await sql`select coalesce((content_map->>'visual_rework_cycle')::int,0)+1 as cycle
       from render_packs where id=${row.render_pack_id}::uuid`;
     const cycle = Number(cycleRows[0]?.cycle || 1);
     const escalation = cycle >= MAX_VISUAL_REWORK_CYCLES;
     const qaSummary = visualQa.map(x => ({variant:x.variant_key, ...x.qa}));
+    const combinedQa={variants:qaSummary,set:setQa};
 
     await sql`update render_packs set
         status=${escalation ? "ESCALATION_REQUIRED" : "ART_DIRECTION"},
@@ -1585,7 +1594,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
 
     await sql`update render_jobs set
         status='COMPLETED',
-        output_data=${JSON.stringify({variants:["A","B","C"],desktop_mobile:true,visual_qa_pass:false,visual_rework_cycle:cycle})}::jsonb,
+        output_data=${JSON.stringify({variants:["A","B","C"],desktop_mobile:true,visual_qa_pass:false,set_qa_pass:false,visual_rework_cycle:cycle})}::jsonb,
         error=null,completed_at=now(),updated_at=now()
       where id=${browserJobId}::uuid`;
 
@@ -1604,7 +1613,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
         ${escalation ? "VISUAL_QA_ESCALATION_REQUIRED" : "VISUAL_QA_REWORK_REQUIRED"},
         'render_pack',${row.render_pack_id}::uuid,'rendering-studio-visual-qa',
         'RENDERING'::pipeline_status,${escalation ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
-        ${JSON.stringify({cycle,qa:qaSummary,model:VISUAL_QA_MODEL})}::jsonb
+        ${JSON.stringify({cycle,qa:combinedQa,model:VISUAL_QA_MODEL})}::jsonb
       )`;
 
     return {
@@ -1641,7 +1650,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     return {ok:false,pack_id:row.render_pack_id,error:"RENDER_COMPLETION_CHECK_FAILED"};
   }
 
-  await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({variants:["A","B","C"],desktop_mobile:true})}::jsonb,
+  await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({variants:["A","B","C"],desktop_mobile:true,visual_qa_pass:true,set_qa_pass:true})}::jsonb,
       error=null,completed_at=now(),updated_at=now()
     where id=${browserJobId}::uuid`;
 
