@@ -1,0 +1,23 @@
+name: ImpresaX Render One Shot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/render-one-shot.yml"
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger production render engine once
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://impresax.org/_ix/internal/run-render/9f5f98c1-e5a9-4e1c-b3cd-7ac2c14b3f7d"
+          code=$(curl -L -sS -o /tmp/body -w "%{http_code}" --connect-timeout 8 --max-time 20 "$url")
+          cat /tmp/body
+          echo "http_code=$code"
+          test "$code" = "202"
+          grep -q '"accepted":true' /tmp/body
