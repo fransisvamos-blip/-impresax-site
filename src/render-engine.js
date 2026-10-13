@@ -364,12 +364,23 @@ async function critiqueVariantSet(env, prospect, captured, individualQa) {
         out?.choices?.[0]?.message?.tool_calls?.[0] ??
         out?.result?.tool_calls?.[0];
       let args=call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
-      if(typeof args==="string") args=JSON.parse(args);
-      if(!args || typeof args!=="object") throw new Error("SET_QA_TOOL_RESULT_REQUIRED");
+      const rawArgs=args;
+      if(typeof args==="string") {
+        try { args=JSON.parse(args); }
+        catch { args=await repairVisualQaArguments(env,args,parameters); }
+      }
+      if(!args || typeof args!=="object") {
+        args=await repairVisualQaArguments(env,rawArgs || extractModelText(out),parameters);
+      }
 
-      const scores=args.scores || {};
+      let scores=args?.scores || {};
       const required=["set_quality","diversity_ab","diversity_ac","diversity_bc","prospect_fit_a","prospect_fit_b","prospect_fit_c"];
-      const complete=required.every(k=>Number.isFinite(Number(scores[k])));
+      let complete=required.every(k=>Number.isFinite(Number(scores[k])));
+      if(!complete) {
+        args=await repairVisualQaArguments(env,args,parameters);
+        scores=args?.scores || {};
+        complete=required.every(k=>Number.isFinite(Number(scores[k])));
+      }
       if(!complete) throw new Error("SET_QA_SCORES_INCOMPLETE");
       const issues=Array.isArray(args.issues)?args.issues.map(x=>String(x).slice(0,400)).slice(0,16):[];
       const rework=Array.isArray(args.rework_instructions)?args.rework_instructions.map(x=>String(x).slice(0,500)).slice(0,16):[];
@@ -1037,20 +1048,25 @@ async function renderHtml(browser, html, width, height) {
       });
       const broken_images=images.filter(x=>x.visible && (!x.natural_width || !x.natural_height)).map(x=>x.src || x.alt).slice(0,12);
       const logo_images=images.filter(x=>/logo/i.test((x.src||"")+" "+(x.alt||"")));
-      const tiny_logo=logo_images.some(x=>x.visible && (x.rendered_width<48 || x.rendered_height<18));
+      const visible_logos=logo_images.filter(x=>x.visible);
+      const tiny_logo=visible_logos.length>0 && visible_logos.every(x=>x.rendered_width<48 || x.rendered_height<18);
       const horizontal_overflow=Math.max(root.scrollWidth,document.body?.scrollWidth||0) > viewportWidth + 4;
       const overflowing_elements=[...document.querySelectorAll("body *")].filter(el=>{
         const r=el.getBoundingClientRect();
-        return r.width>0 && (r.right>viewportWidth+4 || r.left<-4);
+        const s=getComputedStyle(el);
+        return r.width>0 && s.position!=="fixed" && (r.right>viewportWidth+4 || r.left<-4);
       }).slice(0,10).map(el=>({
         tag:el.tagName.toLowerCase(),
         class_name:String(el.className||"").slice(0,120),
         text:String(el.textContent||"").replace(/\s+/g," ").trim().slice(0,120)
       }));
-      const interactive=[...document.querySelectorAll("a,button,input,textarea,select")].filter(el=>{
+      const interactive=[...document.querySelectorAll("button,input,textarea,select,a")].filter(el=>{
         const r=el.getBoundingClientRect();
         const s=getComputedStyle(el);
-        return r.width>0 && r.height>0 && s.display!=="none" && s.visibility!=="hidden";
+        if(!(r.width>0 && r.height>0 && s.display!=="none" && s.visibility!=="hidden")) return false;
+        if(el.tagName!=="A") return true;
+        const signal=(String(el.className||"")+" "+String(el.getAttribute("role")||"")).toLowerCase();
+        return /btn|button|cta|call|contact|action/.test(signal) || ["block","inline-block","flex","inline-flex"].includes(s.display);
       }).map(el=>{
         const r=el.getBoundingClientRect();
         return {w:Math.round(r.width),h:Math.round(r.height),text:String(el.textContent||el.getAttribute("aria-label")||"").trim().slice(0,80)};
@@ -1426,6 +1442,14 @@ async function generateProspect(sql, env, master, row) {
   try {
     const firstPartyImages = await discoverFirstPartyImages(row.website_url);
     const payload = prospectPayload(row, firstPartyImages);
+    await sql`update render_packs set
+        content_map=coalesce(content_map,'{}'::jsonb) ||
+          ${JSON.stringify({
+            visual_asset_inventory:firstPartyImages,
+            visual_asset_inventory_count:firstPartyImages.length,
+            visual_asset_inventory_revision:"STRUCTURED_FIRST_PARTY_V2"
+          })}::jsonb
+      where id=${row.render_pack_id}::uuid and approved_reference=false`;
     const feedbackRows = await sql`select variant_key, design_notes->'visual_qa' as visual_qa
       from render_staging_payloads
       where render_pack_id=${row.render_pack_id}::uuid
@@ -1513,7 +1537,12 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
       coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect') as prospect_code
     from prospects p where p.id=${row.prospect_id}::uuid limit 1`;
   if (!prospectRows.length) throw new Error("VISUAL_QA_PROSPECT_REQUIRED");
-  const visualQaProspect = prospectPayload(prospectRows[0], []);
+  const packAssetRows=await sql`select content_map->'visual_asset_inventory' as asset_inventory
+    from render_packs where id=${row.render_pack_id}::uuid limit 1`;
+  const visualQaProspect = prospectPayload(
+    prospectRows[0],
+    Array.isArray(packAssetRows[0]?.asset_inventory) ? packAssetRows[0].asset_inventory : []
+  );
   if (rows.length !== 3) {
     await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='RENDERING_ASSETS'`;
     return {ok:false,pack_id:row.render_pack_id,error:"THREE_STAGED_VARIANTS_REQUIRED"};
