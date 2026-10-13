@@ -844,8 +844,8 @@ async function recoverStaleClaims(sql) {
   await sql`update render_jobs
     set status='FAILED',error='STALE_BROWSER_RENDER_CLAIM',completed_at=now(),updated_at=now()
     where worker='cloudflare-browser-renderer'
-      and status='RUNNING'
-      and started_at < now()-interval '10 minutes'`;
+      and status in ('RUNNING','QA_RUNNING')
+      and started_at < now()-interval '12 minutes'`;
 
   await sql`update render_packs rp
     set status='RENDERING'
@@ -854,8 +854,8 @@ async function recoverStaleClaims(sql) {
       and not exists (
         select 1 from render_jobs rj
         where rj.worker='cloudflare-browser-renderer'
-          and rj.status='RUNNING'
-          and rj.started_at >= now()-interval '10 minutes'
+          and rj.status in ('RUNNING','QA_RUNNING')
+          and rj.started_at >= now()-interval '12 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
 
@@ -1329,6 +1329,9 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
   } finally {
     if (!sharedBrowser) await browser.close();
   }
+
+  await sql`update render_jobs set status='QA_RUNNING',updated_at=now()
+    where id=${browserJobId}::uuid and status='RUNNING'`;
 
   try {
     for (const frame of captured) {
