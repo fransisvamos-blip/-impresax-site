@@ -20,6 +20,10 @@ function bindingFor(env,type) {
 
 export async function startOrRecoverParent(env,sql,pack) {
   const instanceId="rpv2-"+pack.id;
+  await persistWorkflow(sql,{
+    prospectId:pack.prospect_id,packId:pack.id,type:"PROSPECT",instanceId,status:"QUEUED",
+    metadata:{reconciler_started:true,input_pack_id:pack.input_pack_id}
+  });
   let instance;
   try {
     instance=await env.RENDER_PROSPECT_WORKFLOW.create({
@@ -29,10 +33,6 @@ export async function startOrRecoverParent(env,sql,pack) {
   } catch {
     instance=await env.RENDER_PROSPECT_WORKFLOW.get(instanceId);
   }
-  await persistWorkflow(sql,{
-    prospectId:pack.prospect_id,packId:pack.id,type:"PROSPECT",instanceId,status:"QUEUED",
-    metadata:{reconciler_started:true,input_pack_id:pack.input_pack_id}
-  });
   return {instance_id:instanceId,status:await instance.status()};
 }
 
