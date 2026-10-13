@@ -7,6 +7,7 @@
   "upload_source_maps": true,
   "keep_vars": true,
   "observability": { "enabled": true },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "ai": { "binding": "AI" },
   "browser": { "binding": "BROWSER" },
   "r2_buckets": [
@@ -32,6 +33,8 @@
     "V2_MODEL_VISUAL_QA": "@cf/qwen/qwen3.8-27b",
     "V2_MODEL_SET_QA": "@cf/qwen/qwen3.8-27b",
     "V2_MODEL_TEXT_FALLBACK": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    "V2_MODEL_VISION_FALLBACK": "@cf/moonshotai/kimi-k2.7-code"
+    "V2_MODEL_VISION_FALLBACK": "@cf/moonshotai/kimi-k2.7-code",
+    "V2_MAX_AI_CALLS_PER_PACK": "40",
+    "V2_MAX_BROWSER_CAPTURES_PER_PACK": "18"
   }
 }
