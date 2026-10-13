@@ -38,6 +38,7 @@ function stripCodeFence(value) {
 }
 
 function extractJsonObject(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
   let text = String(value || "").trim()
     .replace(/^\`\`\`(?:json)?\s*/i, "")
     .replace(/\s*\`\`\`$/i, "");
@@ -45,6 +46,19 @@ function extractJsonObject(value) {
   const last = text.lastIndexOf("}");
   if (first < 0 || last <= first) throw new Error("VISUAL_QA_JSON_REQUIRED");
   return JSON.parse(text.slice(first, last + 1));
+}
+
+function extractModelJson(result) {
+  const direct = [
+    result?.choices?.[0]?.message?.parsed,
+    result?.response,
+    result?.result?.response,
+    result?.parsed
+  ];
+  for (const value of direct) {
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  }
+  return extractJsonObject(extractModelText(result));
 }
 
 function normalizeVisualQa(result) {
@@ -122,10 +136,40 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
           }
         ],
         max_completion_tokens: 1800,
-        temperature: 0.15,
-        reasoning_effort: "xhigh"
+        temperature: 0.1,
+        reasoning_effort: "medium",
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              pass: { type: "boolean" },
+              summary: { type: "string" },
+              issues: { type: "array", items: { type: "string" } },
+              rework_instructions: { type: "array", items: { type: "string" } },
+              scores: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  art_direction: { type: "number" },
+                  prospect_specificity: { type: "number" },
+                  brand_fidelity: { type: "number" },
+                  typography: { type: "number" },
+                  imagery: { type: "number" },
+                  desktop_quality: { type: "number" },
+                  mobile_quality: { type: "number" },
+                  no_template_feel: { type: "number" },
+                  truth_integrity: { type: "number" }
+                },
+                required: ["art_direction","prospect_specificity","brand_fidelity","typography","imagery","desktop_quality","mobile_quality","no_template_feel","truth_integrity"]
+              }
+            },
+            required: ["pass","summary","issues","rework_instructions","scores"]
+          }
+        }
       });
-      return normalizeVisualQa(extractJsonObject(extractModelText(out)));
+      return normalizeVisualQa(extractModelJson(out));
     } catch (error) {
       lastError = error;
     }
