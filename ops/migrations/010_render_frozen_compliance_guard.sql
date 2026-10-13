@@ -14,6 +14,7 @@ DECLARE
   qa_count integer;
   selected_count integer;
   provenance_count integer;
+  pre_render_count integer;
 BEGIN
   IF NOT (
     NEW.status IN ('RENDER_READY','AWAITING_IMPLEMENTATION','APPROVED')
@@ -76,6 +77,47 @@ BEGIN
   IF jsonb_typeof(coalesce(p_source->'source_references','[]'::jsonb))<>'array'
      OR jsonb_array_length(coalesce(p_source->'source_references','[]'::jsonb))=0 THEN
     RAISE EXCEPTION 'FROZEN_COMPLIANCE: SOURCE_REFERENCES_REQUIRED';
+  END IF;
+
+  IF nullif(trim(coalesce(NEW.content_map->>'creative_strategy','')),'') IS NULL THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: CREATIVE_STRATEGY_REQUIRED';
+  END IF;
+
+  IF coalesce(NEW.content_map->'direction_set_gate'->>'pass','false')<>'true' THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: DIRECTION_SET_GATE_PASS_REQUIRED';
+  END IF;
+  IF jsonb_typeof(coalesce(NEW.content_map->'direction_set_gate'->'issues','[]'::jsonb))<>'array'
+     OR jsonb_array_length(coalesce(NEW.content_map->'direction_set_gate'->'issues','[]'::jsonb))<>0 THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: DIRECTION_SET_GATE_ISSUES_PRESENT';
+  END IF;
+  IF coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'specificity_A')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'specificity_B')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'specificity_C')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'feasibility_A')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'feasibility_B')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'feasibility_C')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'diversity_AB')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'diversity_AC')::numeric,0)<8
+     OR coalesce((NEW.content_map->'direction_set_gate'->'scores'->>'diversity_BC')::numeric,0)<8 THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: DIRECTION_SET_SCORE_BELOW_8';
+  END IF;
+
+  IF coalesce(NEW.content_map->>'pre_render_semantic_gate_pass','false')<>'true' THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: PRE_RENDER_SEMANTIC_GATE_REQUIRED';
+  END IF;
+
+  SELECT count(*)
+    INTO pre_render_count
+    FROM render_staging_payloads s
+   WHERE s.render_pack_id=NEW.id
+     AND s.variant_key IN ('A','B','C')
+     AND coalesce(s.design_notes->'pre_render_gate'->>'pass','false')='true'
+     AND coalesce(s.design_notes->'pre_render_gate'->'semantic_content'->>'pass','false')='true'
+     AND jsonb_typeof(coalesce(s.design_notes->'pre_render_gate'->'semantic_content'->'issues','[]'::jsonb))='array'
+     AND jsonb_array_length(coalesce(s.design_notes->'pre_render_gate'->'semantic_content'->'issues','[]'::jsonb))=0;
+
+  IF pre_render_count<>3 THEN
+    RAISE EXCEPTION 'FROZEN_COMPLIANCE: THREE_PRE_RENDER_TRUTH_PASSES_REQUIRED got %', pre_render_count;
   END IF;
 
   SELECT count(*)
