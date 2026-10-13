@@ -105,7 +105,6 @@ function verifiedImageHosts(prospect) {
   add(prospect?.websiteUrl || prospect?.website_url);
   const logo=prospect?.logo || {};
   add(logo.url || logo.official_source || logo.source_url);
-  for (const ref of prospect?.sourceReferences || prospect?.source_references || []) add(ref);
   for (const img of prospect?.firstPartyImages || prospect?.first_party_images || []) add(img);
   return hosts;
 }
@@ -135,6 +134,36 @@ function unverifiedImageUrls(html, prospect) {
   });
 }
 
+function officialLogoImmutable(html, prospect) {
+  const logoUrl=officialLogoUrl(prospect);
+  if (!logoUrl) return true;
+  const tags=[...String(html || "").matchAll(/<img\\b[^>]*>/gi)].map(m=>m[0]);
+  const tag=tags.find(t => {
+    const m=t.match(/\\bsrc=["']([^"']+)["']/i);
+    return m && m[1]===logoUrl;
+  });
+  if (!tag) return false;
+  if (/\\bstyle=["'][^"']*(?:filter|mix-blend-mode|opacity)\\s*:/i.test(tag)) return false;
+  const classMatch=tag.match(/\\bclass=["']([^"']+)["']/i);
+  const classes=classMatch ? classMatch[1].split(/\\s+/).filter(Boolean) : [];
+  for (const cls of classes) {
+    const safe=cls.replace(/[^a-zA-Z0-9_-]/g,"");
+    if (!safe) continue;
+    const re=new RegExp("\\\\."+safe+"(?:[^,{]*)\\\\{([^}]*)\\\\}","gi");
+    for (const m of String(html || "").matchAll(re)) {
+      if (/(?:filter|mix-blend-mode|opacity)\\s*:/i.test(m[1])) return false;
+    }
+  }
+  return true;
+}
+
+function noLogoIdentitySafe(html, prospect) {
+  if (String(prospect?.logo?.status || "").toUpperCase()!=="NO_OFFICIAL_LOGO_CONFIRMED") return true;
+  const businessName=String(prospect?.businessName || prospect?.business_name || "").trim();
+  if (!businessName || !String(html || "").toLowerCase().includes(businessName.toLowerCase())) return false;
+  const suspiciousTag=/<(?:img|svg)\\b[^>]*(?:class|id|alt)=["'][^"']*(?:logo|monogram|brand[-_ ]?mark|emblem)[^"']*["'][^>]*>/i.test(html);
+  return !suspiciousTag;
+}
 function hardGate(html, prospect) {
   const issues = [];
   const logoUrl = officialLogoUrl(prospect);
@@ -147,7 +176,7 @@ function hardGate(html, prospect) {
   if ((html.match(/<h[12][\s>]/gi) || []).length < 3) issues.push("hierarchy_too_thin");
   if (!/@media/i.test(html)) issues.push("mobile_pass_missing");
   if (!/viewport/i.test(html)) issues.push("viewport_missing");
-  if (logoUrl && !html.includes(logoUrl)) issues.push("official_logo_not_used");
+  if (logoUrl && !officialLogoImmutable(html,prospect)) issues.push("official_logo_not_exact_or_modified");
   if (/lorem ipsum|coming soon|your company/i.test(html)) issues.push("placeholder_copy");
   if (!/mailto:|tel:/i.test(html) && prospect?.verifiedContacts) issues.push("verified_contact_path_missing");
   if (!/<img[\s>]/i.test(html) && !/background-image/i.test(html)) {
@@ -156,11 +185,8 @@ function hardGate(html, prospect) {
   }
   const unverifiedImages=unverifiedImageUrls(html,prospect);
   if (unverifiedImages.length) issues.push("unverified_image_provenance:" + unverifiedImages.slice(0,4).join("|"));
-  if (String(prospect?.logo?.status || "").toUpperCase()==="NO_OFFICIAL_LOGO_CONFIRMED") {
-    if (/\b(?:logo|monogram|mark|emblem)\b/i.test(html) && !String(prospect?.businessName || prospect?.business_name || "").trim()) {
-      issues.push("invented_identity_mark_risk");
-    }
-  }
+  if (!noLogoIdentitySafe(html,prospect)) issues.push("invented_or_missing_no_logo_identity");
+  if (/data:image\//i.test(html)) issues.push("unverified_embedded_image");
   if (lower.includes("award-winning") || lower.includes("leader di mercato") || lower.includes("n. 1")) issues.push("unverified_claim_risk");
 
   return { pass: issues.length === 0, issues, image_provenance:{verified_hosts:[...verifiedImageHosts(prospect)],image_urls:htmlImageUrls(html)} };
@@ -294,7 +320,7 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
     "- CTA language must match the verified business and contacts.",
     "- If verified contact data exists, include at least one clickable tel: and/or mailto: link using ONLY the verified phone/email values.",
     "- Include responsive @media rules that materially redesign mobile hierarchy and spacing.",
-    "- Keep the HTML compact enough to render fast while looking like a flagship custom design."
+    "- Quality is more important than brevity. Do not simplify composition, typography, imagery discipline or mobile art direction merely to make generation faster."
   ];
 
   if (repairIssues?.length && previousHtml) {
@@ -345,7 +371,7 @@ async function generateOne(env, master, prospect, key, direction) {
             previousHtml
           ) + retryNote
         }
-      ], 9000, attempt === 1 ? 0.52 : 0.32);
+      ], 12000, attempt === 1 ? 0.52 : 0.32);
 
       const html = extractHtml(aiText(result));
       const gate = hardGate(html, prospect);
@@ -363,16 +389,14 @@ async function generateOne(env, master, prospect, key, direction) {
   throw lastError || new Error("VARIANT_" + key + "_GENERATION_FAILED");
 }
 async function loadMaster() {
-  try {
-    const r = await fetch(MASTER_URL, { headers: { "Cache-Control": "no-cache" } });
-    if (r.ok) {
-      const text = await r.text();
-      if (text && text.length > 1000) return text;
-    }
-  } catch {}
-  return MASTER_FALLBACK;
+  const r = await fetch(MASTER_URL, { headers: { "Cache-Control": "no-cache" } });
+  if (!r.ok) throw new Error("FROZEN_MASTER_FETCH_" + r.status);
+  const text = await r.text();
+  if (!text || text.length < 1000 || !text.includes("RENDERING STUDIO V1") || !text.includes("STATUS: FROZEN")) {
+    throw new Error("FROZEN_MASTER_INVALID");
+  }
+  return text;
 }
-
 export async function generateRenderVariants(env, prospect) {
   const master = await loadMaster();
   const directions = await deriveDirections(env, master, prospect);
