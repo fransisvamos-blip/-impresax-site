@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
-import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
+import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
 import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS } from "./constants.js";
-import { createCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa } from "./ai.js";
+import { createContentTruthPack, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant } from "./browser.js";
@@ -248,7 +248,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       await step.do("r"+cycle+"-publish-preview",async()=>{
         await updateRevision(sql,revision.id,{status:"PREVIEW_READY",desktopKey:captured.desktop.r2_key,mobileKey:captured.mobile.r2_key});
-        await setVariantStatus(sql,params.variantId,{status:"PREVIEW_READY",bestPreview:revision.revision});
+        await ensureBestPreview(sql,params.variantId,revision.revision);
+        await setVariantStatus(sql,params.variantId,{status:"PREVIEW_READY"});
         if(!previewEmitted) {
           await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"PREVIEW_READY",revision:revision.revision,revision_id:revision.id});
         }
@@ -295,7 +296,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       if(qa.pass) {
         await step.do("r"+cycle+"-certify",async()=>{
           await updateRevision(sql,revision.id,{status:"RENDER_READY",score:qa.min_score});
-          await setVariantStatus(sql,params.variantId,{status:"RENDER_READY",bestQa:revision.revision,certified:revision.revision});
+          await setVariantStatus(sql,params.variantId,{status:"RENDER_READY",bestPreview:revision.revision,bestQa:revision.revision,certified:revision.revision});
           await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"RENDER_READY",attempt:cycle});
           await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"RENDER_READY",revision:revision.revision,revision_id:revision.id});
           return {ok:true};
@@ -304,7 +305,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       }
 
       await updateRevision(sql,revision.id,{status:"QA_FAILED",score:qa.min_score});
-      await setVariantStatus(sql,params.variantId,{status:"REWORKING",bestPreview:revision.revision});
+      await setVariantStatus(sql,params.variantId,{status:"REWORKING"});
       await step.do("r"+cycle+"-record-visual-failure",async()=>
         recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VISUAL_QUALITY",error:"VISUAL_QUALITY_BELOW_BAR:"+qa.summary,variantKey:params.variantKey,revision:revision.revision,strategyVersion:PROMPT_VERSION})
       );
@@ -380,22 +381,38 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return rows[0]||null;
     });
 
-    const creative=existingCreative ? {
-      plan:{
-        content_truth:existingCreative.content_truth_pack,
-        creative_strategy:existingCreative.creative_strategy,
-        directions:existingCreative.directions,
-        fingerprints:existingCreative.fingerprints,
-        diversity_precheck:existingCreative.diversity_precheck
-      },
-      hash:existingCreative.content_hash,
-      reused:true
-    } : await step.do("creative-plan",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"CREATIVE_PLAN"});
-      return createCreativePlan(this.env,input.payload,assetTokens,{
-        beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_PLAN:"+model)
+    let creative;
+    if(existingCreative) {
+      creative={
+        plan:{
+          content_truth:existingCreative.content_truth_pack,
+          creative_strategy:existingCreative.creative_strategy,
+          directions:existingCreative.directions,
+          fingerprints:existingCreative.fingerprints,
+          diversity_precheck:existingCreative.diversity_precheck
+        },
+        hash:existingCreative.content_hash,
+        reused:true
+      };
+    } else {
+      await step.do("mark-truth-and-creative-planning",async()=>{
+        await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN"});
+        return {ok:true};
       });
-    });
+      const [truth,directions]=await Promise.all([
+        step.do("content-truth-pack",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+          return createContentTruthPack(this.env,input.payload,{
+            beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH:"+role+":"+model)
+          });
+        }),
+        step.do("creative-directions",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+          return createCreativeDirections(this.env,input.payload,assetTokens,{
+            beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_DIRECTIONS:"+model)
+          });
+        })
+      ]);
+      creative=await step.do("combine-creative-plan",async()=>combineCreativePlan(truth,directions));
+    }
 
     const persisted=await step.do("persist-plan-and-variants",async()=>{
       await persistCreativePlan(sql,{
