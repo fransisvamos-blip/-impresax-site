@@ -48,7 +48,9 @@ export function validateRenderSpec(spec, manifests) {
 
   for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
   for(const key of tokenSet(main,ASSET_TOKEN)) if(!assetKeys.has(key)) issues.push("UNKNOWN_ASSET_TOKEN:"+key);
-  for(const key of tokenSet(main,CTA_TOKEN)) if(!ctaKeys.has(key)) issues.push("UNKNOWN_CTA_TOKEN:"+key);
+  const ctaUsed=tokenSet(main,CTA_TOKEN);
+  for(const key of ctaUsed) if(!ctaKeys.has(key)) issues.push("UNKNOWN_CTA_TOKEN:"+key);
+  if(!ctaUsed.length) issues.push("VERIFIED_CONTACT_PATH_REQUIRED");
 
   return {pass:issues.length===0,issues};
 }
@@ -71,6 +73,9 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   main=replaceAllTokens(main,CTA_TOKEN,ctaManifest,"CTA");
 
   const logo=logoToken ? '<img class="ix-v2-logo" data-official-logo src="'+esc(logoToken)+'" alt="'+esc(businessName)+'">' : '<strong class="ix-v2-wordmark">'+esc(businessName)+'</strong>';
+  const primaryHref=esc(ctaManifest.PRIMARY||"#");
+  const primaryLabel=esc(copyManifest.PRIMARY_CTA_LABEL||"Contatti");
+  const headerContact='<a class="ix-v2-header-cta" data-verified-contact href="'+primaryHref+'">'+primaryLabel+'</a>';
   const baseCss=[
     "*{box-sizing:border-box}",
     "html,body{margin:0;padding:0}",
@@ -79,11 +84,12 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     ".ix-v2-header,.ix-v2-footer{padding:20px clamp(20px,5vw,72px)}",
     ".ix-v2-header{display:flex;align-items:center;justify-content:space-between;gap:20px}",
     ".ix-v2-logo{max-width:min(220px,52vw);max-height:76px;object-fit:contain}",
+    ".ix-v2-header-cta{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:inherit;border-bottom:1px solid currentColor}",
     ".ix-v2-footer{min-height:96px}",
     "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:16px 20px}}"
   ].join("");
 
-  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span></footer></body></html>';
+  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span></footer></body></html>';
   const sourceHash=await sha256(html);
   return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(spec))};
 }
