@@ -112,3 +112,27 @@ test("chaos: content truth accepts only exact verified references",()=>{
   };
   assert.equal(validateContentTruthSources(truth,{source_references:[source]}).pass,true);
 });
+
+
+test("chaos: unresolved asset commercial-use state blocks input before AI",()=>{
+  const x=validInput();
+  x.assets.push({
+    asset_id:"VISUAL_01",role:"visual",source_url:"https://example.com/photo.jpg",
+    source_type:"APPROVED_EXTERNAL",commercial_use_status:"UNKNOWN"
+  });
+  const cert=certifyInputPayload(x);
+  assert.equal(cert.pass,false);
+  assert.ok(cert.issues.includes("ASSET_COMMERCIAL_USE_UNRESOLVED:VISUAL_01"));
+});
+
+test("chaos: compiler blocks protocol-relative assets and font-face injection",()=>{
+  const gate=validateRenderSpec({
+    main_html:'<section><img src="//evil.example/a.jpg">{{copy:HERO}}<a href="{{cta:PRIMARY}}"></a></section>'.repeat(12),
+    custom_css:"@font-face{font-family:X;src:local(X)} @media(max-width:700px){.x{display:block}}".repeat(8)
+  },{
+    copy:{HERO:"Verified"},assets:{},cta:{PRIMARY:"tel:+390000000"}
+  });
+  assert.equal(gate.pass,false);
+  assert.ok(gate.issues.includes("ARBITRARY_URL_FORBIDDEN"));
+  assert.ok(gate.issues.includes("UNSAFE_CSS_URL_IMPORT_OR_CONTENT"));
+});
