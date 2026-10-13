@@ -66,11 +66,15 @@ function extractHtml(text) {
   if (start < 0) start = raw.toLowerCase().indexOf("<html");
   const end = raw.toLowerCase().lastIndexOf("</html>");
   if (start < 0 || end < start) throw new Error("AI_HTML_DOCUMENT_REQUIRED");
-  const html = raw.slice(start, end + 7).trim();
+  let html = raw.slice(start, end + 7).trim();
+  html = html
+    .replace(/<script\b[\s\S]*?<\/script>/gi,"")
+    .replace(/<iframe\b[\s\S]*?<\/iframe>/gi,"")
+    .replace(/<object\b[\s\S]*?<\/object>/gi,"")
+    .replace(/<embed\b[^>]*>/gi,"")
+    .replace(/javascript\s*:/gi,"");
   if (html.length < 4500) throw new Error("AI_HTML_TOO_SHORT");
   if (html.length > 180000) throw new Error("AI_HTML_TOO_LARGE");
-  if (/<script[\s>]/i.test(html) || /javascript\s*:/i.test(html)) throw new Error("AI_ACTIVE_SCRIPT_NOT_ALLOWED");
-  if (/<iframe[\s>]/i.test(html) || /<object[\s>]/i.test(html) || /<embed[\s>]/i.test(html)) throw new Error("AI_EMBED_NOT_ALLOWED");
   return html;
 }
 
@@ -186,7 +190,9 @@ function hardGate(html, prospect) {
   if (/lorem ipsum|coming soon|your company/i.test(html)) issues.push("placeholder_copy");
   if (!/mailto:|tel:/i.test(html) && prospect?.verifiedContacts) issues.push("verified_contact_path_missing");
   if (!/<img[\s>]/i.test(html) && !/background-image/i.test(html)) {
-    const imageryOptional = String(prospect?.logo?.status || "").toUpperCase()==="NO_OFFICIAL_LOGO_CONFIRMED";
+    const imageryOptional =
+      String(prospect?.logo?.status || "").toUpperCase()==="NO_OFFICIAL_LOGO_CONFIRMED" ||
+      creativeAssetMode(prospect)==="ZERO_PHOTO_PREMIUM";
     if (!imageryOptional) issues.push("imagery_missing");
   }
   const unverifiedImages=unverifiedImageUrls(html,prospect);
@@ -261,6 +267,105 @@ function assetInventory(prospect) {
   return [...byUrl.values()];
 }
 
+function creativeAssetMode(prospect) {
+  const explicit=String(prospect?.assetMode || prospect?.asset_mode || "").toUpperCase();
+  if (explicit) return explicit;
+  const usable=assetInventory(prospect).filter(x=>{
+    const role=String(x?.role || x?.vision_role || "").toLowerCase();
+    if (role==="identity" || role==="trust" || role.includes("logo") || role.includes("badge")) return false;
+    const hero=Number(x?.hero_suitability || 0);
+    const body=Number(x?.body_suitability || 0);
+    return hero>=6 || body>=6;
+  });
+  return usable.length ? "VERIFIED_VISUALS" : "ZERO_PHOTO_PREMIUM";
+}
+
+function assetPolicyText(prospect) {
+  const mode=creativeAssetMode(prospect);
+  if(mode==="ZERO_PHOTO_PREMIUM") {
+    return [
+      "ASSET MODE: ZERO_PHOTO_PREMIUM.",
+      "Do NOT propose, mention, commission, fetch or use photography, stock imagery, maps, external icons, icon libraries, public-domain imagery, illustrations from external URLs or any unverified visual asset.",
+      "Allowed visual assets are ONLY the exact official logo/name and verified trust assets already present in the inventory.",
+      "Build visual richness through typography, spacing, rules, grids, CSS-only geometry, abstract inline SVG authored inside the document, material surfaces, verified data and precise composition."
+    ].join(" ");
+  }
+  return [
+    "ASSET MODE: VERIFIED_VISUALS.",
+    "Use ONLY exact URLs from the verified asset inventory and only in their verified role. Never supplement with stock, maps, external icons or invented photography."
+  ].join(" ");
+}
+
+function sanitizeGeneratedHtml(html, prospect) {
+  let out=String(html || "");
+  const allowed=verifiedImageUrls(prospect);
+  const logoUrl=officialLogoUrl(prospect);
+  const businessName=String(prospect?.businessName || prospect?.business_name || "").trim();
+  const safeName=businessName.replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  out=out.replace(/<img\b[^>]*>/gi,tag=>{
+    const srcMatch=tag.match(/\bsrc=["']([^"']+)["']/i);
+    const src=canonicalAssetUrl(srcMatch?.[1] || "");
+    const signal=tag.toLowerCase();
+    const looksLikeIdentity=/logo|brand[-_ ]?mark|emblem/.test(signal);
+
+    if(logoUrl && looksLikeIdentity) {
+      return '<img src="'+logoUrl+'" alt="'+safeName+'" class="ix-official-logo" style="display:block;max-width:240px;width:auto;height:auto;filter:none;mix-blend-mode:normal;opacity:1">';
+    }
+    if(!src || !allowed.has(src)) {
+      return '<div class="ix-sanitized-visual" aria-hidden="true"></div>';
+    }
+    return tag.replace(/\sloading=["'][^"']*["']/i,"");
+  });
+
+  out=out.replace(/<source\b[^>]*\bsrcset=["']([^"']+)["'][^>]*>/gi,(tag,srcset)=>{
+    const first=canonicalAssetUrl(String(srcset||"").split(",")[0].trim().split(/\s+/)[0]);
+    return first && allowed.has(first) ? tag : "";
+  });
+
+  out=out.replace(/(?:background|background-image)\s*:\s*([^;{}]*?)url\(\s*["']?(https:\/\/[^"'\)\s]+)["']?\s*\)([^;{}]*)(;?)/gi,(full,before,url,after,semi)=>{
+    const canonical=canonicalAssetUrl(url);
+    if(allowed.has(canonical)) return full;
+    return "background-image:none"+(semi||";");
+  });
+  out=out.replace(/url\(\s*["']?data:image\/[^\)]*\)/gi,"none");
+
+  if(logoUrl) {
+    const escaped=logoUrl.replace(/[.*+?^$()|[\]\\]/g,"\\$&");
+    const hasExact=new RegExp('<img\\b[^>]*\\bsrc=["\\\']'+escaped+'["\\\']','i').test(out);
+    if(!hasExact) {
+      const identity='<img src="'+logoUrl+'" alt="'+safeName+'" class="ix-official-logo" style="display:block;max-width:240px;width:auto;height:auto;filter:none;mix-blend-mode:normal;opacity:1">';
+      if(/<header\b[^>]*>/i.test(out)) out=out.replace(/<header\b([^>]*)>/i,'<header$1>'+identity);
+      else out=out.replace(/<body\b([^>]*)>/i,'<body$1><header class="ix-recovered-header">'+identity+'</header>');
+    }
+    out=out.replace(/\.ix-official-logo\s*\{[^}]*\}/gi,"");
+  } else if(String(prospect?.logo?.status || "").toUpperCase()==="NO_OFFICIAL_LOGO_CONFIRMED") {
+    out=out.replace(/<img\b[^>]*(?:class|id|alt)=["'][^"']*(?:logo|monogram|brand[-_ ]?mark|emblem)[^"']*["'][^>]*>/gi,"");
+    if(businessName && !out.toLowerCase().includes(businessName.toLowerCase())) {
+      const identity='<div class="ix-verified-name">'+safeName+'</div>';
+      if(/<header\b[^>]*>/i.test(out)) out=out.replace(/<header\b([^>]*)>/i,'<header$1>'+identity);
+    }
+  }
+
+  if(!/<header[\s>]/i.test(out)) {
+    const identity=logoUrl
+      ? '<img src="'+logoUrl+'" alt="'+safeName+'" class="ix-official-logo" style="display:block;max-width:240px;width:auto;height:auto">'
+      : '<div class="ix-verified-name">'+safeName+'</div>';
+    out=out.replace(/<body\b([^>]*)>/i,'<body$1><header class="ix-recovered-header">'+identity+'</header>');
+  }
+  if(!/<footer[\s>]/i.test(out)) {
+    out=out.replace(/<\/body>/i,'<footer class="ix-recovered-footer"><span>'+safeName+'</span></footer></body>');
+  }
+  if(!/<main[\s>]/i.test(out) && /<\/header>/i.test(out) && /<footer\b/i.test(out)) {
+    out=out.replace(/<\/header>/i,'</header><main>');
+    out=out.replace(/<footer\b/i,'</main><footer');
+  }
+
+  const recoveryCss='<style id="ix-v84-recovery">.ix-sanitized-visual{min-height:160px;border:1px solid currentColor;opacity:.14;background:transparent}.ix-official-logo{filter:none!important;mix-blend-mode:normal!important;opacity:1!important}.ix-recovered-header,.ix-recovered-footer{padding:24px}.ix-verified-name{font:inherit;font-weight:700}</style>';
+  out=out.replace(/<\/head>/i,recoveryCss+'</head>');
+  return out;
+}
+
 async function buildCreativeStrategy(env, master, prospect) {
   const prompt=[
     "Create a concise CREATIVE STRATEGY MEMO for one prospect before any visual direction is invented.",
@@ -272,6 +377,7 @@ async function buildCreativeStrategy(env, master, prospect) {
     "",
     "VERIFIED PROSPECT:",JSON.stringify(prospect),
     "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
     "PREVIOUS QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
     "SET-LEVEL QA HISTORY:",JSON.stringify(prospect?.visualSetFeedback || null),
     "PRE-RENDER GENERATION FAILURE:",JSON.stringify({
@@ -314,6 +420,7 @@ async function generateDirectionCandidates(env, master, prospect, strategy, prio
     "PRIOR DIRECTION-SET ISSUES:",JSON.stringify(priorIssues),
     "VERIFIED PROSPECT:",JSON.stringify(prospect),
     "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
     "PREVIOUS QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
     "FROZEN MASTER:",master
   ].join("\n");
@@ -340,6 +447,7 @@ async function curateDirections(env, master, prospect, strategy, candidates) {
     "CANDIDATES:",JSON.stringify(candidates),
     "VERIFIED PROSPECT:",JSON.stringify(prospect),
     "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
     "FROZEN MASTER:",master
   ].join("\n");
   const out=await runModel(env,ART_MODEL,[
@@ -360,6 +468,7 @@ async function directionSetGate(env, prospect, directions) {
     "",
     "PROSPECT:",JSON.stringify(prospect),
     "ASSETS:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
     "PREVIOUS QA:",JSON.stringify(reworkHistory(prospect)),
     "DIRECTIONS:",JSON.stringify(directions)
   ].join("\n");
@@ -386,6 +495,7 @@ async function deriveIndependentDirection(env, master, prospect, key, previous=[
     "PREVIOUS DIRECTIONS TO DIFFER FROM:",JSON.stringify(previous),
     "PROSPECT:",JSON.stringify(prospect),
     "ASSETS:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
     "QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
     "FROZEN MASTER:",master
   ].join("\n");
@@ -437,6 +547,8 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
     "VERIFIED PROSPECT DATA:",JSON.stringify(prospect),
     "",
     "VERIFIED VISUAL ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "CREATIVE ASSET MODE:",creativeAssetMode(prospect),
+    "CREATIVE ASSET POLICY:",assetPolicyText(prospect),
     "",
     "MANDATORY REWORK HISTORY FOR THIS VARIANT:",JSON.stringify(variantHistory),
     "MANDATORY SET-LEVEL REWORK HISTORY:",JSON.stringify(setHistory),
@@ -528,13 +640,13 @@ async function generateOne(env, master, prospect, key, direction) {
           ].join("\n")
         : "";
 
-      const generationModel = attempt===1 ? ART_MODEL : HTML_MODEL;
+      const generationModel = HTML_MODEL;
       const result = await runModel(env, generationModel, [
         {
           role: "system",
           content: attempt === 1
-            ? "You are a senior editorial web art director and frontend designer. Output production-grade HTML only."
-            : "You are repairing a failed homepage generation. Output one complete standalone HTML document only."
+            ? "You are a senior frontend implementation specialist. Implement the already-approved art direction exactly. Output production-grade standalone HTML only."
+            : "You are repairing a failed homepage implementation without changing its approved art direction. Output one complete standalone HTML document only."
         },
         {
           role: "user",
@@ -547,9 +659,10 @@ async function generateOne(env, master, prospect, key, direction) {
             previousHtml
           ) + retryNote
         }
-      ], 12000, attempt === 1 ? 0.52 : 0.32);
+      ], 14000, attempt === 1 ? 0.22 : 0.14);
 
-      const html = extractHtml(aiText(result));
+      const extractedHtml = extractHtml(aiText(result));
+      const html = sanitizeGeneratedHtml(extractedHtml, prospect);
       const gate = hardGate(html, prospect);
       if (!gate.pass) {
         previousHtml=html;
@@ -597,7 +710,8 @@ export async function generateRenderVariants(env, prospect) {
 
   return {
     master: "RENDERING_STUDIO_V1_FROZEN",
-    creative_quality_revision: "V8.2_BESPOKE_DIRECTION_SET",
+    creative_quality_revision: "V8.4_ZERO_PHOTO_DETERMINISTIC_REPAIR",
+    asset_mode: creativeAssetMode(prospect),
     master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
     model: ART_MODEL,
     repair_model: HTML_MODEL,
