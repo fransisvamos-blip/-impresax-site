@@ -1523,7 +1523,9 @@ async function generateProspect(sql, env, master, row) {
       firstPartyImages: payload.first_party_images,
       approvedExternalImages: payload.approved_external_images,
       visualReworkFeedback: feedbackRows.map(x => ({variant:x.variant_key, critique:x.visual_qa})),
-      visualSetFeedback: row?.pack_content_map?.visual_set_qa_last_run || null
+      visualSetFeedback: row?.pack_content_map?.visual_set_qa_last_run || null,
+      generationFailureFeedback: row?.pack_content_map?.last_generation_error || null,
+      generationFailureCount: Number(row?.pack_content_map?.generation_failure_count || 0)
     };
     const studio = await generateRenderVariants(env, studioProspect);
 
