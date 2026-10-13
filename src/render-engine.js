@@ -906,6 +906,20 @@ async function extractAssetsFromPage(pageUrl, rootHost) {
   }
 }
 
+function visualAssetFamilyKey(value) {
+  try {
+    const u=new URL(String(value || ""));
+    let path=u.pathname.toLowerCase();
+    path=path.replace(/-\d+x\d+(?=\.[a-z0-9]+$)/i,"");
+    if(/\/wp-content\/uploads\//i.test(path)) {
+      return u.hostname.replace(/^www\./,"").toLowerCase()+path;
+    }
+    return u.hostname.replace(/^www\./,"").toLowerCase()+path;
+  } catch {
+    return String(value || "").split("?")[0].toLowerCase();
+  }
+}
+
 async function discoverFirstPartyImages(websiteUrl) {
   if(!websiteUrl) return [];
   try {
@@ -914,12 +928,18 @@ async function discoverFirstPartyImages(websiteUrl) {
     const home=await extractAssetsFromPage(websiteUrl,rootHost);
     const childUrls=home.links.slice(0,4);
     const children=await Promise.all(childUrls.map(url=>extractAssetsFromPage(url,rootHost)));
-    const byUrl=new Map();
+    const byFamily=new Map();
     for(const item of [...home.assets,...children.flatMap(x=>x.assets)]) {
-      const prev=byUrl.get(item.url);
-      if(!prev || item.score>prev.score) byUrl.set(item.url,item);
+      const key=visualAssetFamilyKey(item.url);
+      const prev=byFamily.get(key);
+      const prevArea=Number(prev?.width||0)*Number(prev?.height||0);
+      const nextArea=Number(item?.width||0)*Number(item?.height||0);
+      if(!prev || Number(item.score||0)>Number(prev.score||0) ||
+         (Number(item.score||0)===Number(prev.score||0) && nextArea>prevArea)) {
+        byFamily.set(key,item);
+      }
     }
-    return [...byUrl.values()]
+    return [...byFamily.values()]
       .sort((a,b)=>b.score-a.score)
       .slice(0,16);
   } catch {
@@ -1058,17 +1078,21 @@ async function inspectVisualAsset(env, prospect, asset) {
     const body=Number(args.body_suitability||0);
     if(![relevance,visualQuality,hero,body].every(Number.isFinite)) throw new Error("ASSET_VISION_SCORES_REQUIRED");
     const risks=Array.isArray(args.risks)?args.risks.map(x=>String(x).slice(0,240)).slice(0,10):[];
-    const usable=args.usable===true && relevance>=6 && visualQuality>=6 && Math.max(hero,body)>=6;
+    const visionRole=String(args.role||asset.role||"editorial").toLowerCase().slice(0,80);
+    const roleLocked=["identity","trust"].includes(visionRole);
+    const usable=args.usable===true && relevance>=6 && visualQuality>=6 && (roleLocked || Math.max(hero,body)>=6);
 
     return {
       ...asset,
+      discovered_role:asset.role,
+      role:visionRole,
       vision_status:"REVIEWED",
       vision_usable:usable,
       relevance,
       visual_quality:visualQuality,
       hero_suitability:hero,
       body_suitability:body,
-      vision_role:String(args.role||asset.role||"editorial").slice(0,80),
+      vision_role:visionRole,
       vision_risks:risks,
       vision_summary:String(args.summary||"").slice(0,500),
       vision_bytes:encoded.bytes,
