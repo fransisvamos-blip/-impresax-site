@@ -130,7 +130,7 @@ function repeatedImageUrls(html, prospect) {
     if (!u || u===logo) continue;
     counts.set(u,(counts.get(u)||0)+1);
   }
-  const inventoryCount=[...(prospect?.firstPartyImages || prospect?.first_party_images || [])].length;
+  const inventoryCount=assetInventory(prospect).length;
   const limit=inventoryCount>=3 ? 1 : 2;
   return [...counts.entries()].filter(([,n])=>n>limit).map(([u,n])=>({url:u,count:n}));
 }
@@ -240,10 +240,20 @@ function reworkHistory(prospect, key=null) {
 }
 
 function assetInventory(prospect) {
-  return (prospect?.firstPartyImages || prospect?.first_party_images || []).map(item=>{
-    if(typeof item==="string") return {url:item,role:"unclassified_verified_first_party"};
+  const first=(prospect?.firstPartyImages || prospect?.first_party_images || []).map(item=>{
+    if(typeof item==="string") return {url:item,role:"unclassified_verified_first_party",source_type:"FIRST_PARTY"};
     return item;
   });
+  const external=(prospect?.approvedExternalImages || prospect?.approved_external_images || []).map(item=>{
+    if(typeof item==="string") return {url:item,role:"approved_external",source_type:"APPROVED_EXTERNAL"};
+    return {...item,source_type:item?.source_type || "APPROVED_EXTERNAL"};
+  });
+  const byUrl=new Map();
+  for(const item of [...first,...external]) {
+    const url=String(item?.url || item?.src || item?.asset_url || "");
+    if(url && !byUrl.has(url)) byUrl.set(url,{...item,url});
+  }
+  return [...byUrl.values()];
 }
 
 async function buildCreativeStrategy(env, master, prospect) {
