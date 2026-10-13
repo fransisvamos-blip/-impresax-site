@@ -12,6 +12,8 @@ on:
       - 'ops/migrations/019_render_v2_invariants.sql'
       - 'ops/migrations/020_render_v2_input_truth_guards.sql'
       - 'ops/migrations/021_render_v2_component_hash_guards.sql'
+      - 'ops/migrations/022_render_v2_durable_planning_idempotency.sql'
+      - 'ops/migrations/023_render_v2_failure_idempotency.sql'
       - '.github/workflows/render-v2-shadow-check.yml'
   workflow_dispatch:
 
