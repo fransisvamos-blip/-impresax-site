@@ -4,6 +4,7 @@ import { createShadowInputPack } from "./input-pack.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 import { reconcileV2 } from "./reconcile.js";
 import { budgetSnapshot } from "./metrics.js";
+import { selectCertifiedVariant, buildReferenceManifest } from "./manifest.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -84,6 +85,30 @@ export default {
       const id=url.pathname.split("/").pop();
       const instance=await env.RENDER_PROSPECT_WORKFLOW.get(id);
       return json({ok:true,id,status:await instance.status()});
+    }
+
+    if(request.method==="POST" && url.pathname==="/shadow/select") {
+      const body=await request.json().catch(()=>({}));
+      const packId=String(body.pack_id||"").trim();
+      const variantKey=String(body.variant_key||"").toUpperCase();
+      if(!packId || !["A","B","C"].includes(variantKey)) return json({ok:false,error:"pack_id_and_variant_key_required"},400);
+      const sql=db(env);
+      try {
+        const selected=await selectCertifiedVariant(sql,{packId,variantKey});
+        return json({ok:true,pack_id:packId,variant_key:variantKey,selected_variant_revision_id:selected.revision_id});
+      } catch(error) {
+        return json({ok:false,error:String(error?.message||error)},409);
+      }
+    }
+
+    if(request.method==="GET" && url.pathname.startsWith("/shadow/reference-manifest/")) {
+      const packId=url.pathname.split("/").pop();
+      const sql=db(env);
+      try {
+        return json({ok:true,manifest:await buildReferenceManifest(sql,packId)});
+      } catch(error) {
+        return json({ok:false,error:String(error?.message||error)},409);
+      }
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/reconcile") {
