@@ -1254,6 +1254,8 @@ export async function handleOpsRequest(request, env) {
         six_view_set_qa_required: true,
         visual_asset_inventory_memory_required: true,
         flagship_first_pass_model: "@cf/openai/gpt-oss-120b",
+        generation_circuit_breaker_required: true,
+        max_generation_failures: 3,
         render_owner: "CLOUDFLARE_NATIVE_ONLY",
         brand_gate_required: true,
         brand_gate_auto_recovery: true,
