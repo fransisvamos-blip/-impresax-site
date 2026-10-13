@@ -12,6 +12,7 @@ const MAX_PROSPECTS_PER_TICK = 3;
 const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
+const MAX_GENERATION_FAILURES = 3;
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -1355,7 +1356,11 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
         updated_at=now()`;
   }
 
-  await sql`update render_packs set status='RENDERING' where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
+  await sql`update render_packs set
+      status='RENDERING',
+      content_map=coalesce(content_map,'{}'::jsonb) ||
+        jsonb_build_object('generation_failure_count',0,'last_generation_error',null)
+    where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
         variants:["A","B","C"],
         department:"RENDERING_STUDIO",
@@ -1387,24 +1392,46 @@ async function failGeneration(sql,row,jobId,error) {
       and status in ('RUNNING','COMPLETING')
       and id<>${jobId}::uuid
       and input_data->>'render_pack_id'=${row.render_pack_id}`;
-  if (Number(active[0]?.n || 0)===0) {
-    const reset=await sql`update render_packs set status='ART_DIRECTION'
-      where id=${row.render_pack_id}::uuid and status='AI_RENDERING'
-      returning id`;
-    if (reset.length) {
-      await sql`update prospects set
-          render_status='RENDERING',
-          current_step='ART_DIRECTION',
-          next_action='RETRY_AI_RENDER',
-          error=${message},
-          updated_at=now()
-        where id=${row.prospect_id}::uuid
-          and pipeline_status='RENDERING'::pipeline_status
-          and render_status<>'RENDER_READY'`;
-    }
+  if (Number(active[0]?.n || 0)!==0) return;
+
+  const counterRows=await sql`select coalesce((content_map->>'generation_failure_count')::int,0)+1 as n
+    from render_packs where id=${row.render_pack_id}::uuid limit 1`;
+  const generationFailures=Number(counterRows[0]?.n || 1);
+  const hold=generationFailures>=MAX_GENERATION_FAILURES;
+
+  const reset=await sql`update render_packs set
+      status=${hold ? "ESCALATION_REQUIRED" : "ART_DIRECTION"},
+      content_map=coalesce(content_map,'{}'::jsonb) ||
+        jsonb_build_object(
+          'generation_failure_count',${generationFailures},
+          'last_generation_error',${message},
+          'generation_hold',${hold}
+        )
+    where id=${row.render_pack_id}::uuid and status='AI_RENDERING'
+    returning id`;
+
+  if (reset.length) {
+    await sql`update prospects set
+        pipeline_status=${hold ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
+        render_status=${hold ? "ESCALATION_REQUIRED" : "RENDER_REWORK"},
+        current_step=${hold ? "GENERATION_HOLD" : "ART_DIRECTION"},
+        next_action=${hold ? "CABINA_CREATIVE_GENERATION_REVIEW" : "RETRY_AI_RENDER"},
+        error=${message},
+        updated_at=now()
+      where id=${row.prospect_id}::uuid
+        and render_status<>'RENDER_READY'`;
+
+    await sql`insert into site_events(
+        prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload
+      ) values(
+        ${row.prospect_id}::uuid,
+        ${hold ? "CREATIVE_GENERATION_ESCALATION_REQUIRED" : "CREATIVE_GENERATION_RETRY"},
+        'render_pack',${row.render_pack_id}::uuid,'rendering-studio-generator',
+        'RENDERING'::pipeline_status,${hold ? "RENDERING" : "RENDER_REWORK"}::pipeline_status,
+        ${JSON.stringify({generation_failures:generationFailures,max_generation_failures:MAX_GENERATION_FAILURES,error:message})}::jsonb
+      )`;
   }
 }
-
 
 async function generateProspect(sql, env, master, row) {
   let workingRow = row;
