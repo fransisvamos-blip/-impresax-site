@@ -15,15 +15,27 @@ export async function selectCertifiedVariant(sql,{packId,variantKey}) {
     limit 1`;
   if(!rows.length) throw new Error("CERTIFIED_VARIANT_REQUIRED");
   const selected=rows[0];
-  await sql`
-    update render_v2_packs
-    set selected_variant_revision_id=${selected.revision_id}::uuid,
-        status='SELECTED',
-        metadata=coalesce(metadata,'{}'::jsonb) ||
-          jsonb_build_object('selected_variant_key',${variantKey},'selected_at',to_jsonb(now())),
-        updated_at=now()
-    where id=${packId}::uuid`;
-  return selected;
+  const packRows=await sql`
+    select status,selected_variant_revision_id,metadata
+    from render_v2_packs where id=${packId}::uuid limit 1`;
+  const pack=packRows[0];
+  if(!pack) throw new Error("RENDER_V2_PACK_NOT_FOUND");
+
+  const sameSelection=
+    pack.status==="SELECTED" &&
+    String(pack.selected_variant_revision_id||"")===String(selected.revision_id);
+
+  if(!sameSelection) {
+    await sql`
+      update render_v2_packs
+      set selected_variant_revision_id=${selected.revision_id}::uuid,
+          status='SELECTED',
+          metadata=coalesce(metadata,'{}'::jsonb) ||
+            jsonb_build_object('selected_variant_key',${variantKey},'selected_at',to_jsonb(now())),
+          updated_at=now()
+      where id=${packId}::uuid`;
+  }
+  return {...selected,selection_reused:sameSelection};
 }
 
 export async function buildReferenceManifest(sql,packId) {
@@ -106,6 +118,9 @@ export async function buildReferenceManifest(sql,packId) {
     order by created_at desc limit 1`;
   if(!truthQaRows.length) throw new Error("CONTENT_TRUTH_QA_PASS_REQUIRED");
   const truthQa=truthQaRows[0];
+  if(String(truthQa.artifact_hashes?.content_truth_hash||"")!==String(pack.content_truth_hash||"")) {
+    throw new Error("CONTENT_TRUTH_QA_HASH_MISMATCH");
+  }
 
   const setQaRows=await sql`
     select id,status,scores,issues,actions,artifact_hashes,model_route_version,prompt_version,created_at
