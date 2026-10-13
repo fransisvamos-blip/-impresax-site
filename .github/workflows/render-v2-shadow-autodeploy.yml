@@ -1,0 +1,92 @@
+name: Rendering V2 Shadow Autodeploy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+
+concurrency:
+  group: rendering-v2-shadow-autodeploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
+    steps:
+      - name: Check credential gate
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${OPS_DATABASE_URL:-}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "V2 shadow autodeploy is armed but waiting for CLOUDFLARE_API_TOKEN." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          ref: rendering-v2-shadow
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          node-version: "22"
+
+      - name: Install
+        if: steps.gate.outputs.ready == 'true'
+        run: npm install --no-audit --no-fund
+
+      - name: Validate V2 before deploy
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          node --test test/render-v2*.test.mjs
+          npx wrangler deploy --dry-run --config wrangler.render-v2.jsonc --outdir dist-v2
+
+      - name: Deploy isolated V2 shadow
+        if: steps.gate.outputs.ready == 'true'
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config wrangler.render-v2.jsonc 2>&1 | tee /tmp/v2-deploy.log
+          url=$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/v2-deploy.log | tail -1 || true)
+          if [ -z "$url" ]; then
+            echo "Unable to resolve the workers.dev URL from Wrangler output."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Install Neon runtime secret
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$OPS_DATABASE_URL" | npx wrangler secret put OPS_DATABASE_URL --config wrangler.render-v2.jsonc
+
+      - name: Verify healthy V2 shadow
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        env:
+          V2_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          for i in {1..24}; do
+            code=$(curl -L -sS -o /tmp/v2-health.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$V2_URL/healthz" || true)
+            echo "attempt=$i code=$code body=$(cat /tmp/v2-health.json 2>/dev/null || true)"
+            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_0"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
+              echo "V2_URL=$V2_URL" >> "$GITHUB_ENV"
+              echo "V2 shadow is deployed and healthy. CZ-063 autostart is armed." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "V2 shadow failed health validation."
+          exit 1
