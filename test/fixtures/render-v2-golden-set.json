@@ -1,0 +1,143 @@
+{
+  "version": "RENDER_V2_GOLDEN_SET_1",
+  "frozen_at": "2026-10-13",
+  "cases": [
+    {
+      "code": "CZ-063",
+      "name": "DEDIL DONATO S.R.L.",
+      "archetypes": [
+        "severe_failure_history",
+        "official_identity",
+        "zero_photo_capable",
+        "b2b_industrial"
+      ],
+      "expected_input": "PASS"
+    },
+    {
+      "code": "CZ-031",
+      "name": "B.L. Costruzioni S.R.L.",
+      "archetypes": [
+        "official_identity",
+        "existing_site",
+        "construction",
+        "brand_fidelity"
+      ],
+      "expected_input": "PASS"
+    },
+    {
+      "code": "CZ-209",
+      "name": "KiPoint Catanzaro — Francesco Maiuolo",
+      "archetypes": [
+        "warm_strategic",
+        "dense_site",
+        "logistics",
+        "multi_contact"
+      ],
+      "expected_input": "PASS"
+    },
+    {
+      "code": "CZ-210",
+      "name": "Studio Legale Avv. Danila Gullì",
+      "archetypes": [
+        "warm_strategic",
+        "no_site",
+        "no_official_logo_confirmed",
+        "professional_services"
+      ],
+      "expected_input": "PASS"
+    },
+    {
+      "code": "CZ-097",
+      "name": "Genovese Costruzioni S.R.L.",
+      "archetypes": [
+        "no_site",
+        "no_official_logo_confirmed",
+        "text_identity",
+        "construction"
+      ],
+      "expected_input": "PASS"
+    },
+    {
+      "code": "CZ-183",
+      "name": "Studio Dentistico Dott. Francesco Giardinelli",
+      "archetypes": [
+        "site_factory_reference_lock_lesson",
+        "medical",
+        "known_visual_history"
+      ],
+      "expected_input": "INPUT_BLOCKED_UNTIL_IDENTITY_VERIFIED"
+    },
+    {
+      "code": "CZ-089",
+      "name": "Fisioexpress - Fisioterapia Catanzaro",
+      "archetypes": [
+        "premium_local_trust_reference",
+        "medical",
+        "known_positive_visual_preference"
+      ],
+      "expected_input": "INPUT_BLOCKED_UNTIL_PROSPECT_DATA_VERIFIED"
+    },
+    {
+      "code": "CZ-013",
+      "name": "Alva Beauty Centro Estetico",
+      "archetypes": [
+        "no_site",
+        "beauty",
+        "missing_verified_identity",
+        "missing_verified_offer"
+      ],
+      "expected_input": "INPUT_BLOCKED"
+    },
+    {
+      "code": "CZ-016",
+      "name": "Angel Catering Manfredi",
+      "archetypes": [
+        "no_site",
+        "catering",
+        "partial_contacts",
+        "missing_verified_offer"
+      ],
+      "expected_input": "INPUT_BLOCKED"
+    },
+    {
+      "code": "CZ-098",
+      "name": "Gentleman Barber Shop Catanzaro",
+      "archetypes": [
+        "no_site",
+        "barber",
+        "missing_verified_identity",
+        "missing_verified_contacts"
+      ],
+      "expected_input": "INPUT_BLOCKED"
+    },
+    {
+      "code": "CZ-042",
+      "name": "CARDAMONE ANTONIO & C. S.r.l.",
+      "archetypes": [
+        "no_site",
+        "home_furnishing",
+        "missing_verified_identity",
+        "cross_vertical"
+      ],
+      "expected_input": "INPUT_BLOCKED"
+    },
+    {
+      "code": "CZ-142",
+      "name": "OsteoFit - Fisioterapia & Riabilitazione",
+      "archetypes": [
+        "existing_site",
+        "medical",
+        "incomplete_prospect_data",
+        "cross_check_against_fisioexpress"
+      ],
+      "expected_input": "INPUT_BLOCKED"
+    }
+  ],
+  "pass_requirements": {
+    "no_uncontrolled_retry_loops": true,
+    "no_sibling_regeneration_for_local_failure": true,
+    "preview_before_deep_qa": true,
+    "certified_output_requires_three_distinct_variants": true,
+    "blocked_input_spends_zero_creative_calls": true
+  }
+}
