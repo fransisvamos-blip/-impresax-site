@@ -7,6 +7,7 @@ on:
       - 'src/render-v2/**'
       - 'test/render-v2*.test.mjs'
       - 'test/fixtures/render-v2-golden-set.json'
+      - 'scripts/render-v2-golden-input-audit.mjs'
       - 'wrangler.render-v2.jsonc'
       - 'ops/migrations/018_render_v2_shadow_foundation.sql'
       - 'ops/migrations/019_render_v2_invariants.sql'
@@ -28,5 +29,9 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Contract tests
         run: node --test test/render-v2*.test.mjs
+      - name: Golden Set live-input audit
+        env:
+          OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
+        run: node scripts/render-v2-golden-input-audit.mjs
       - name: Cloudflare dry build
         run: npx wrangler deploy --dry-run --config wrangler.render-v2.jsonc --outdir dist-v2
