@@ -32,7 +32,7 @@ jobs:
               && grep -q '"frozen_master_commit":"9578da3fa1b173283bf5c748b0e7d89497537e76"' /tmp/health.json \
               && grep -q '"frozen_contract":"RENDERING_STUDIO_V1_FROZEN"' /tmp/health.json \
               && grep -q '"frozen_runtime_revision":"V8.3_DETERMINISTIC_SIX_VIEW_QA_20261013"' /tmp/health.json \
-              && grep -q '"creative_engine_revision":"V8.4.1_ZERO_PHOTO_BREAKER_SOT"' /tmp/health.json \
+              && grep -q '"creative_engine_revision":"V8.4.2_LOGO_SAFE_BREAKER_SOT"' /tmp/health.json \
               && grep -q '"frozen_db_guard":true' /tmp/health.json \
               && grep -q '"frozen_db_guard_current":true' /tmp/health.json \
               && grep -q '"exact_brand_dna_required":true' /tmp/health.json \
