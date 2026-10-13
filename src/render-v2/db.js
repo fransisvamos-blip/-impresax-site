@@ -166,6 +166,16 @@ export async function updateRevision(sql,revisionId,{status,renderSpec=null,sour
   return rows[0];
 }
 
+export async function ensureBestPreview(sql,variantId,revision) {
+  const rows=await sql`
+    update render_v2_variants
+    set best_preview_revision=coalesce(best_preview_revision,${revision}),
+        updated_at=now()
+    where id=${variantId}::uuid
+    returning *`;
+  return rows[0]||null;
+}
+
 export async function setVariantStatus(sql,variantId,{status,bestPreview=null,bestQa=null,certified=null}) {
   const rows=await sql`
     update render_v2_variants set
