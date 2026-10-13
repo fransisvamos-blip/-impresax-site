@@ -95,6 +95,17 @@ export async function buildReferenceManifest(sql,packId) {
     };
   });
 
+  const truthQaRows=await sql`
+    select id,status,scores,issues,actions,artifact_hashes,model_route_version,prompt_version,created_at
+    from render_qa_results_v2
+    where render_pack_id=${packId}::uuid
+      and variant_revision_id is null
+      and qa_type='CONTENT_TRUTH'
+      and status='PASS'
+    order by created_at desc limit 1`;
+  if(!truthQaRows.length) throw new Error("CONTENT_TRUTH_QA_PASS_REQUIRED");
+  const truthQa=truthQaRows[0];
+
   const setQaRows=await sql`
     select id,status,scores,issues,actions,artifact_hashes,model_route_version,prompt_version,created_at
     from render_qa_results_v2
@@ -174,6 +185,7 @@ export async function buildReferenceManifest(sql,packId) {
     desktop_reference:{r2_key:byType.DESKTOP_1440.r2_key,sha256:byType.DESKTOP_1440.sha256},
     mobile_reference:{r2_key:byType.MOBILE_390.r2_key,sha256:byType.MOBILE_390.sha256},
     qa_evidence:{
+      content_truth:truthQa,
       set_qa:setQa,
       variant_qa:variantQa
     },
