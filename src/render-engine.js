@@ -93,6 +93,20 @@ function normalizeVisualQa(result) {
   };
 }
 
+function isCompleteVisualQaPayload(value) {
+  if (!value || typeof value !== "object") return false;
+  if (typeof value.pass !== "boolean") return false;
+  if (typeof value.summary !== "string" || value.summary.trim().length < 20) return false;
+  if (!Array.isArray(value.issues) || !Array.isArray(value.rework_instructions)) return false;
+  const scores=value.scores;
+  if (!scores || typeof scores !== "object") return false;
+  const required=[
+    "art_direction","prospect_specificity","brand_fidelity","typography","imagery",
+    "desktop_quality","mobile_quality","no_template_feel","truth_integrity"
+  ];
+  return required.every(k => Number.isFinite(Number(scores[k])));
+}
+
 async function repairVisualQaArguments(env, raw, parameters) {
   const source = typeof raw === "string" ? raw : JSON.stringify(raw || {});
   const out = await env.AI.run(VISUAL_QA_REPAIR_MODEL, {
@@ -209,25 +223,35 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
         out?.result?.tool_calls?.[0];
       let args = call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
       if (typeof args === "string") {
+        const rawArgs=args;
         try {
           args = JSON.parse(args);
         } catch {
-          args = await repairVisualQaArguments(env, args, parameters);
+          args = await repairVisualQaArguments(env, rawArgs, parameters);
         }
+        if (!isCompleteVisualQaPayload(args)) {
+          args = await repairVisualQaArguments(env, rawArgs, parameters);
+        }
+      } else if (args && typeof args === "object" && !isCompleteVisualQaPayload(args)) {
+        args = await repairVisualQaArguments(env, args, parameters);
       }
-      if (args && typeof args === "object") return normalizeVisualQa(args);
+      if (isCompleteVisualQaPayload(args)) return normalizeVisualQa(args);
 
       try {
         const parsed = extractModelJson(out);
-        if (parsed && typeof parsed === "object") return normalizeVisualQa(parsed);
+        if (isCompleteVisualQaPayload(parsed)) return normalizeVisualQa(parsed);
+        if (parsed && typeof parsed === "object") {
+          const repaired = await repairVisualQaArguments(env, parsed, parameters);
+          if (isCompleteVisualQaPayload(repaired)) return normalizeVisualQa(repaired);
+        }
       } catch {}
 
       const rawFallback = extractModelText(out);
       if (rawFallback) {
         const repaired = await repairVisualQaArguments(env, rawFallback, parameters);
-        return normalizeVisualQa(repaired);
+        if (isCompleteVisualQaPayload(repaired)) return normalizeVisualQa(repaired);
       }
-      throw new Error("VISUAL_QA_TOOL_RESULT_REQUIRED");
+      throw new Error("VISUAL_QA_COMPLETE_TOOL_RESULT_REQUIRED");
     } catch (error) {
       lastError = error;
     }
