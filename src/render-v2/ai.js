@@ -48,9 +48,10 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         temperature
       };
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="medium";
-      const result=await env.AI.run(model,inference,{
-        gateway:{id:env.AI_GATEWAY_ID||"default",skipCache:true}
-      });
+      const runOptions=env.AI_GATEWAY_ID
+        ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
+        : undefined;
+      const result=await env.AI.run(model,inference,runOptions);
       return {data:extractStructured(result),model,fallback:Boolean(fallback)};
     } catch(error) {
       lastError=error;
