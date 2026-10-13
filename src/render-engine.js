@@ -13,7 +13,7 @@ const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
 const MAX_GENERATION_FAILURES = 3;
-const CREATIVE_ENGINE_REVISION = "V8.3.2_ASSET_VISION_DEDUPED_PRE_RENDER_EVIDENCE";
+const CREATIVE_ENGINE_REVISION = "V8.3.3_ASSET_VISION_RESILIENT";
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -1070,8 +1070,38 @@ async function inspectVisualAsset(env, prospect, asset) {
       out?.choices?.[0]?.message?.tool_calls?.[0] ??
       out?.result?.tool_calls?.[0];
     let args=call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
-    if(typeof args==="string") args=JSON.parse(args);
-    if(!args || typeof args!=="object") throw new Error("ASSET_VISION_TOOL_RESULT_REQUIRED");
+    const rawArgs=args;
+    const complete=(value)=>{
+      if(!value || typeof value!=="object") return false;
+      const numeric=["relevance","visual_quality","hero_suitability","body_suitability"];
+      return typeof value.usable==="boolean" &&
+        typeof value.role==="string" &&
+        typeof value.summary==="string" &&
+        Array.isArray(value.risks) &&
+        numeric.every(k=>Number.isFinite(Number(value[k])));
+    };
+
+    if(typeof args==="string") {
+      try { args=JSON.parse(args); }
+      catch {
+        try { args=extractJsonObject(args); }
+        catch { args=await repairVisualQaArguments(env,args,parameters); }
+      }
+    }
+    if(!complete(args)) {
+      try {
+        const parsed=extractModelJson(out);
+        if(complete(parsed)) args=parsed;
+      } catch {}
+    }
+    if(!complete(args)) {
+      const rawFallback=
+        rawArgs ||
+        extractModelText(out) ||
+        JSON.stringify(args || {});
+      args=await repairVisualQaArguments(env,rawFallback,parameters);
+    }
+    if(!complete(args)) throw new Error("ASSET_VISION_STRUCTURED_RESULT_REQUIRED");
 
     const relevance=Number(args.relevance||0);
     const visualQuality=Number(args.visual_quality||0);
