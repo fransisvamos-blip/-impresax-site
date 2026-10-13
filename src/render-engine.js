@@ -1305,7 +1305,8 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
           execution_engine:"CLOUDFLARE_NATIVE",
           rendering_studio_contract:"V8_2_CREATIVE_QUALITY",
           art_direction_model:"@cf/openai/gpt-oss-120b",
-          html_model:"@cf/zai-org/glm-4.7-flash",
+          html_model_primary:"@cf/openai/gpt-oss-120b",
+          html_model_repair:"@cf/zai-org/glm-4.7-flash",
           visual_qa_model:VISUAL_QA_MODEL,
           direction:directions[key] || {}
         })}::jsonb,
@@ -1357,7 +1358,8 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         department:"RENDERING_STUDIO",
         contract:"V8_2_CREATIVE_QUALITY",
         art_direction_model:"@cf/openai/gpt-oss-120b",
-        html_model:"@cf/zai-org/glm-4.7-flash",
+        html_model_primary:"@cf/openai/gpt-oss-120b",
+          html_model_repair:"@cf/zai-org/glm-4.7-flash",
         visual_qa_model:VISUAL_QA_MODEL
       })}::jsonb,
       error=null,completed_at=now(),updated_at=now()
