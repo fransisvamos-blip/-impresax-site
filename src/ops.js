@@ -1169,6 +1169,11 @@ export async function handleOpsRequest(request, env) {
         ) as false_render_ready_count,
         (select count(*)::int from orchestrator_queue
           where task_type='RENDER' and status in ('QUEUED','RUNNING')) as legacy_render_queue_active,
+        (select exists(
+          select 1 from pg_trigger
+           where tgname='render_packs_frozen_compliance_guard'
+             and not tgisinternal
+        )) as frozen_db_guard,
         now() as checked_at`;
       const adminAssetUrl = new URL("/admin/", request.url);
       const adminAsset = await env.ASSETS.fetch(new Request(adminAssetUrl));
@@ -1182,10 +1187,12 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("/ops/api/render/implement");
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
+      const frozenDbGuard=Boolean(rows[0]?.frozen_db_guard);
       const healthy =
         adminAsset.ok &&
         renderUiAsset.ok &&
         renderUiTwoStep &&
+        frozenDbGuard &&
         falseRenderReady===0 &&
         legacyRenderQueueActive===0;
       return json({
@@ -1195,7 +1202,13 @@ export async function handleOpsRequest(request, env) {
         database_connected: true,
         render_pipeline: "CLOUDFLARE_NATIVE_V1",
         render_model: "@cf/zai-org/glm-4.7-flash",
-        render_engine_version: "CLOUDFLARE_NATIVE_V7_AUTO_BRAND_GATE_VISUAL_QA",
+        render_engine_version: "CLOUDFLARE_NATIVE_V8_FROZEN_COMPLIANCE",
+        frozen_master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
+        frozen_contract: "RENDERING_STUDIO_V1_FROZEN",
+        frozen_db_guard: frozenDbGuard,
+        exact_brand_dna_required: true,
+        image_provenance_required: true,
+        site_factory_reference_lock_required: true,
         render_owner: "CLOUDFLARE_NATIVE_ONLY",
         brand_gate_required: true,
         brand_gate_auto_recovery: true,
