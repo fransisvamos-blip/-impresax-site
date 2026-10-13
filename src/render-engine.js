@@ -1891,8 +1891,8 @@ async function reconcileGenerationCircuitBreakers(sql) {
             )
         ),
         'generation_failure_source','RENDER_JOBS_RECONCILED_EACH_CRON',
-        'creative_engine_revision',${CREATIVE_ENGINE_REVISION},
-        'generation_breaker_reconciled_at',now()
+        'creative_engine_revision',${CREATIVE_ENGINE_REVISION}::text,
+        'generation_breaker_reconciled_at',to_jsonb(now())
       )
     where rp.approved_reference=false
       and rp.status in ('ART_DIRECTION','AI_RENDERING','ESCALATION_REQUIRED','BRAND_GATE_HOLD')`;
