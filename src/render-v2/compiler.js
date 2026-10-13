@@ -1,9 +1,11 @@
 import { COMPILER_VERSION } from "./constants.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
-const FORBIDDEN_TAGS=/<\s*(script|iframe|object|embed|form|base|meta|link)\b/i;
-const FORBIDDEN_URL=/\b(?:src|href)\s*=\s*["']\s*(?:https?:|javascript:|data:)/i;
-const FORBIDDEN_CSS=/@import|expression\s*\(|javascript:|url\s*\(/i;
+const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
+const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']\s*(?:https?:|javascript:|data:)/i;
+const FORBIDDEN_CSS=/@import|expression\s*\(|javascript:|url\s*\(|\bcontent\s*:/i;
+const INLINE_STYLE=/\sstyle\s*=/i;
+const EVENT_HANDLER=/\son[a-z]+\s*=/i;
 const COPY_TOKEN=/\{\{copy:([A-Z0-9_]+)\}\}/g;
 const ASSET_TOKEN=/\{\{asset:([A-Z0-9_]+)\}\}/g;
 const CTA_TOKEN=/\{\{cta:([A-Z0-9_]+)\}\}/g;
@@ -34,7 +36,9 @@ export function validateRenderSpec(spec, manifests) {
   if(css.length<400) issues.push("CUSTOM_CSS_TOO_THIN");
   if(FORBIDDEN_TAGS.test(main)) issues.push("FORBIDDEN_TAG");
   if(FORBIDDEN_URL.test(main)) issues.push("ARBITRARY_URL_FORBIDDEN");
-  if(FORBIDDEN_CSS.test(css)) issues.push("UNSAFE_CSS_URL_OR_IMPORT");
+  if(FORBIDDEN_CSS.test(css)) issues.push("UNSAFE_CSS_URL_IMPORT_OR_CONTENT");
+  if(INLINE_STYLE.test(main)) issues.push("INLINE_STYLE_FORBIDDEN");
+  if(EVENT_HANDLER.test(main)) issues.push("EVENT_HANDLER_FORBIDDEN");
   if(/<svg\b/i.test(main)) issues.push("INLINE_SVG_NOT_ALLOWED_V2_0");
   if(!/<section\b/i.test(main)) issues.push("SECTION_REQUIRED");
   if(!/@media/i.test(css)) issues.push("MOBILE_RULES_REQUIRED");
@@ -89,7 +93,8 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:16px 20px}}"
   ].join("");
 
-  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span></footer></body></html>';
+  const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
+  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span></footer></body></html>';
   const sourceHash=await sha256(html);
   return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(spec))};
 }
