@@ -1,6 +1,6 @@
 import { db, getProspect, findActiveV2Pack } from "./db.js";
 import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION } from "./constants.js";
-import { ensureArray, safeHttpUrl, stableStringify, sha256, unique } from "./utils.js";
+import { ensureArray, safeHttpUrl, safeExternalHttpUrl, stableStringify, sha256, unique } from "./utils.js";
 
 const REQUIRED_DNA=[
   "brand_personality","visual_cues","tone","business_type","audience","offer",
@@ -102,7 +102,7 @@ export function certifyInputPayload(payload) {
   if(unique(ids).length!==ids.length) issues.push("DUPLICATE_ASSET_ID");
   const allowedUse=new Set(["OFFICIAL_IDENTITY","FIRST_PARTY_REFERENCE","APPROVED_EXTERNAL","APPROVED_COMMERCIAL","LICENSED_COMMERCIAL"]);
   for(const asset of payload?.assets||[]) {
-    if(!safeHttpUrl(asset?.source_url)) issues.push("ASSET_SOURCE_URL_INVALID:"+String(asset?.asset_id||"UNKNOWN"));
+    if(!safeExternalHttpUrl(asset?.source_url)) issues.push("ASSET_SOURCE_URL_INVALID_OR_PRIVATE:"+String(asset?.asset_id||"UNKNOWN"));
     if(!allowedUse.has(String(asset?.commercial_use_status||"").toUpperCase())) {
       issues.push("ASSET_COMMERCIAL_USE_UNRESOLVED:"+String(asset?.asset_id||"UNKNOWN"));
     }
