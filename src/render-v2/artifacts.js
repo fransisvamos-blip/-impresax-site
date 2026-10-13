@@ -14,17 +14,35 @@ export async function putArtifact(env,sql,{packId,revisionId=null,type,key,body,
   const hash=await sha256(bytes);
 
   const prior=await sql`select * from render_artifacts_v2 where r2_key=${key} limit 1`;
+  const head=await env.RENDER_ARTIFACTS.head(key);
+
   if(prior.length) {
     const existing=prior[0];
     if(existing.sha256!==hash || existing.artifact_type!==type || String(existing.render_pack_id)!==String(packId)) {
       throw new Error("SYSTEM_INVARIANT:ARTIFACT_KEY_HASH_MISMATCH:"+key);
     }
-    const head=await env.RENDER_ARTIFACTS.head(key);
     if(!head) throw new Error("SYSTEM_INVARIANT:ARTIFACT_DB_R2_MISMATCH:"+key);
+    const r2Hash=String(head.customMetadata?.sha256||"");
+    if(r2Hash && r2Hash!==hash) throw new Error("SYSTEM_INVARIANT:ARTIFACT_R2_HASH_MISMATCH:"+key);
     return existing;
   }
 
-  await env.RENDER_ARTIFACTS.put(key,bytes,{httpMetadata:{contentType:mime},customMetadata:{sha256:hash,engine:EXECUTION_ENGINE_VERSION}});
+  if(head) {
+    const r2Hash=String(head.customMetadata?.sha256||"");
+    if(!r2Hash || r2Hash!==hash) throw new Error("SYSTEM_INVARIANT:ARTIFACT_ORPHAN_KEY_CONFLICT:"+key);
+  } else {
+    await env.RENDER_ARTIFACTS.put(key,bytes,{
+      httpMetadata:{contentType:mime},
+      customMetadata:{
+        sha256:hash,
+        engine:EXECUTION_ENGINE_VERSION,
+        render_pack_id:String(packId),
+        artifact_type:String(type),
+        producer_step:String(producerStep)
+      }
+    });
+  }
+
   const rows=await sql`
     insert into render_artifacts_v2(
       render_pack_id,variant_revision_id,artifact_type,r2_key,sha256,mime,bytes,producer_step,execution_engine_version
