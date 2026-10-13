@@ -48,6 +48,8 @@ test("valid tokenized render compiles with mandatory shell",async()=>{
   assert.match(result.html,/<main>/);
   assert.match(result.html,/data-official-logo/);
   assert.match(result.html,/viewport/);
+  assert.match(result.html,/Content-Security-Policy/);
+  assert.match(result.html,/default-src/);
 });
 
 test("same failure fingerprint forces strategy change after two",()=>{
