@@ -2,8 +2,8 @@ import { COMPILER_VERSION } from "./constants.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
-const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']\s*(?:https?:|javascript:|data:)/i;
-const FORBIDDEN_CSS=/@import|expression\s*\(|javascript:|url\s*\(|\bcontent\s*:/i;
+const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']?\s*(?:https?:|javascript:|data:|\/\/)/i;
+const FORBIDDEN_CSS=/@import|@font-face|expression\s*\(|javascript:|url\s*\(|\bcontent\s*:/i;
 const INLINE_STYLE=/\sstyle\s*=/i;
 const EVENT_HANDLER=/\son[a-z]+\s*=/i;
 const COPY_TOKEN=/\{\{copy:([A-Z0-9_]+)\}\}/g;
