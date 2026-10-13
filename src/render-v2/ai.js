@@ -34,11 +34,12 @@ function extractStructured(result) {
   throw new Error("AI_OUTPUT_SCHEMA_INVALID");
 }
 
-async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false}) {
+async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null}) {
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
   for(let fallback=0;fallback<2;fallback++) {
     const model=modelFor(env,role,Boolean(fallback));
+    if(beforeAttempt) await beforeAttempt({role,model,fallback:Boolean(fallback)});
     try {
       const result=await env.AI.run(model,{
         messages,
@@ -124,7 +125,7 @@ export function diversityPrecheck(directions) {
   return {pass,scores,threshold:0.5};
 }
 
-export async function createCreativePlan(env,inputPayload,assetTokens) {
+export async function createCreativePlan(env,inputPayload,assetTokens,{beforeModelAttempt=null}={}) {
   const prompt=[
     "Create the single definitive ImpresaX creative plan for this verified prospect.",
     "Return THREE materially different flagship routes A/B/C and one factual Content Truth Pack.",
@@ -141,7 +142,7 @@ export async function createCreativePlan(env,inputPayload,assetTokens) {
       {role:"system",content:"You are the senior creative director of ImpresaX. Originality, truth, premium art direction and implementation feasibility are mandatory."},
       {role:"user",content:prompt}
     ],
-    schema:creativeSchema,maxTokens:9000,temperature:0.35
+    schema:creativeSchema,maxTokens:9000,temperature:0.35,beforeAttempt:beforeModelAttempt
   });
   const pre=diversityPrecheck(r.data.directions);
   if(!pre.pass) throw new Error("SET_DIVERSITY_PRECHECK_FAILED:"+JSON.stringify(pre.scores));
@@ -179,7 +180,7 @@ const renderSpecSchema={
   required:["main_html","custom_css","section_ids","used_copy_tokens","used_asset_tokens","implementation_notes"]
 };
 
-export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null}) {
+export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null}) {
   const prompt=[
     "Implement variant "+variantKey+" as a premium full-home visual RenderSpec.",
     "OUTPUT CONTRACT:",
@@ -204,7 +205,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
       {role:"system",content:"You are a world-class frontend art director. Follow the tokenized RenderSpec contract exactly; never invent facts or external assets."},
       {role:"user",content:prompt}
     ],
-    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.16:0.28
+    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.16:0.28,beforeAttempt:beforeModelAttempt
   });
   return {spec:r.data,model:r.model};
 }
@@ -225,7 +226,7 @@ const visualQaSchema={
   required:["pass","summary","issues","actions","scores"]
 };
 
-export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64}) {
+export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,beforeModelAttempt=null}) {
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     "PASS only when every score is >=8 and there are no critical/major unresolved issues.",
@@ -243,7 +244,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
         {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+mobileB64}}
       ]}
     ],
-    schema:visualQaSchema,maxTokens:2600,temperature:0.05,vision:true
+    schema:visualQaSchema,maxTokens:2600,temperature:0.05,vision:true,beforeAttempt:beforeModelAttempt
   });
   const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(r.data.scores?.[k]??0)));
   const hardIssues=(r.data.issues||[]).filter(x=>x.severity==="critical"||x.severity==="major");
@@ -270,7 +271,7 @@ const setQaSchema={
   required:["pass","summary","weakest_variant","issues","actions","scores"]
 };
 
-export async function runSetQa(env,{inputPayload,frames}) {
+export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}) {
   const content=[{type:"text",text:"Judge A/B/C as a SET. PASS only if all are premium, prospect-specific and materially different. Identify the weaker conflicting variant if diversity fails. VERIFIED INPUT:"+JSON.stringify(inputPayload)}];
   for(const key of ["A","B","C"]) {
     content.push({type:"text",text:"VARIANT "+key+" DESKTOP"});
@@ -283,7 +284,7 @@ export async function runSetQa(env,{inputPayload,frames}) {
       {role:"system",content:"You are the ImpresaX cross-variant jury. Detect cosmetic variations, reused composition and generic template families."},
       {role:"user",content}
     ],
-    schema:setQaSchema,maxTokens:2200,temperature:0.04,vision:true
+    schema:setQaSchema,maxTokens:2200,temperature:0.04,vision:true,beforeAttempt:beforeModelAttempt
   });
   const vals=Object.values(r.data.scores||{}).map(Number);
   const pass=r.data.pass===true && vals.length===7 && vals.every(v=>Number.isFinite(v)&&v>=8) && (r.data.issues||[]).length===0;
