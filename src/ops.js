@@ -1203,6 +1203,7 @@ export async function handleOpsRequest(request, env) {
              and position('V8_2_CREATIVE_QUALITY' in pg_get_functiondef(p.oid))>0
              and position('A_B_C_SET_QA_PASS_REQUIRED' in pg_get_functiondef(p.oid))>0
              and position('A_B_C_SET_QA_SCORE_BELOW_8' in pg_get_functiondef(p.oid))>0
+             and position('V8.3_DETERMINISTIC_SIX_VIEW_QA' in pg_get_functiondef(p.oid))>0
         )) as frozen_db_guard_current,
         now() as checked_at`;
       const adminAssetUrl = new URL("/admin/", request.url);
