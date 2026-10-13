@@ -447,7 +447,15 @@ function evidenceBrandDna(row, evidence) {
   const logoSignal = evidence?.logo_candidate?.url || row.logo?.url || row.logo?.official_source || null;
 
   return {
-    business_identity: [row.business_name, row.vertical].filter(Boolean).join(" · "),
+    brand_personality: [row.business_name, trust || services].filter(Boolean).join(" — ").slice(0,1400),
+    visual_cues: [
+      colors.length ? "Preserve first-party color evidence: " + colors.join(", ") : null,
+      evidence?.logo_candidate?.signal ? "Logo context: " + evidence.logo_candidate.signal : null,
+      evidence?.description ? "Site positioning cue: " + evidence.description.slice(0,500) : null
+    ].filter(Boolean),
+    tone: evidence?.description || services || row.business_name,
+    business_type: row.vertical || source.verified_services || row.business_name,
+    audience: [source.commercial_goal, services, locality].filter(Boolean).join(" — ").slice(0,1800),
     offer: services,
     local_context: locality,
     trust_signals: trust,
@@ -455,15 +463,12 @@ function evidenceBrandDna(row, evidence) {
     first_party_site_language: siteSummary || "No first-party site copy available; use verified business data only.",
     existing_colors: colors,
     official_identity_asset: logoSignal || "No official graphic logo verified; use verified business name as text only when explicitly permitted.",
-    visual_cues: [
-      colors.length ? "Preserve first-party color evidence: " + colors.join(", ") : null,
-      evidence?.logo_candidate?.signal ? "Logo context: " + evidence.logo_candidate.signal : null,
-      evidence?.description ? "Site positioning cue: " + evidence.description.slice(0,500) : null
-    ].filter(Boolean),
+    typography_cues: evidence?.visible_text
+      ? "Derive hierarchy from first-party identity evidence; do not invent a branded typeface."
+      : "No verified existing type system; use a prospect-specific editorial system without claiming it is existing brand typography.",
     imagery_cues: evidence?.visible_text
       ? "Derive imagery from the real offering described by the official site; never invent staff, facilities or completed projects."
       : "Use only verified/category imagery tied directly to the verified offering.",
-    tone: evidence?.description || services || row.business_name,
     business_positioning: [row.business_name,services,trust].filter(Boolean).join(" — ").slice(0,3000),
     commercial_behavior: contacts ? "Direct verified contact path: " + contacts : "Use only verified contact paths.",
     visual_signature: [
@@ -475,24 +480,41 @@ function evidenceBrandDna(row, evidence) {
   };
 }
 
-function validBrandDna(value) {
-  if (!value || typeof value !== "object") return false;
-  const meaningful = Object.entries(value).filter(([,v]) => {
-    if (Array.isArray(v)) return v.length > 0;
-    if (v && typeof v === "object") return Object.keys(v).length > 0;
-    return String(v || "").trim().length > 2;
-  });
-  return meaningful.length >= 8;
+const REQUIRED_BRAND_DNA_KEYS = Object.freeze([
+  "brand_personality",
+  "visual_cues",
+  "tone",
+  "business_type",
+  "audience",
+  "offer",
+  "local_context",
+  "trust_signals",
+  "existing_colors",
+  "typography_cues",
+  "imagery_cues",
+  "business_positioning",
+  "commercial_behavior"
+]);
+
+function meaningfulBrandValue(v) {
+  if (Array.isArray(v)) return v.length > 0;
+  if (v && typeof v === "object") return Object.keys(v).length > 0;
+  return String(v || "").trim().length > 2;
 }
 
+function validBrandDna(value) {
+  if (!value || typeof value !== "object") return false;
+  return REQUIRED_BRAND_DNA_KEYS.every(key => meaningfulBrandValue(value[key]));
+}
 async function deriveBrandDna(env, row, evidence) {
   const source = row.source_data || {};
   const prompt = [
     "You are the Brand Gate analyst for ImpresaX Rendering Studio.",
     "Extract REAL Brand DNA from the verified company data and first-party website evidence below.",
     "Do not invent facts. Strategic/visual interpretation is allowed only when grounded in the supplied evidence.",
-    "Return ONLY valid JSON with these keys:",
-    "brand_personality, visual_cues, tone, audience, offer, local_context, trust_signals, existing_colors, typography_cues, imagery_cues, business_positioning, commercial_behavior, visual_signature.",
+    "Return ONLY valid JSON with these mandatory keys:",
+    "brand_personality, visual_cues, tone, business_type, audience, offer, local_context, trust_signals, existing_colors, typography_cues, imagery_cues, business_positioning, commercial_behavior.",
+    "You may also include visual_signature as an extra field.",
     "Every field must be meaningful and prospect-specific; no generic sector filler.",
     "",
     "BUSINESS:", row.business_name,
@@ -558,12 +580,7 @@ async function attemptAutomaticBrandGate(sql, env, row) {
   }
 
   let brandDna = row.brand_dna || {};
-  const meaningfulDna = Object.entries(brandDna).filter(([,v]) => {
-    if (Array.isArray(v)) return v.length > 0;
-    if (v && typeof v === "object") return Object.keys(v).length > 0;
-    return String(v || "").trim().length > 2;
-  });
-  if (meaningfulDna.length < 4) {
+  if (!validBrandDna(brandDna)) {
     try {
       brandDna = await deriveBrandDna(env,row,evidence);
     } catch {}
@@ -621,24 +638,22 @@ function evaluateBrandGate(row) {
     typeof (logo.url || logo.official_source) === "string";
   const verifiedNoLogo =
     status === "NO_OFFICIAL_LOGO_CONFIRMED" &&
-    (logo.generated === false || logo.use_verified_name_as_text === true);
-  const dna = row?.brand_dna && typeof row.brand_dna === "object" ? row.brand_dna : {};
-  const meaningfulDna = Object.entries(dna).filter(([,v]) => {
-    if (Array.isArray(v)) return v.length > 0;
-    if (v && typeof v === "object") return Object.keys(v).length > 0;
-    return String(v || "").trim().length > 2;
-  });
+    logo.generated === false &&
+    logo.use_verified_name_as_text === true;
   const source = row?.source_data || {};
   const refs = Array.isArray(source.source_references) ? source.source_references.filter(Boolean) : [];
   const issues = [];
   if (!exactLogoLocked && !verifiedNoLogo) issues.push("OFFICIAL_LOGO_NOT_LOCKED_OR_NO_LOGO_NOT_VERIFIED");
-  if (meaningfulDna.length < 4) issues.push("BRAND_DNA_INCOMPLETE");
+  if (!validBrandDna(row?.brand_dna || {})) {
+    const missing=REQUIRED_BRAND_DNA_KEYS.filter(k => !meaningfulBrandValue(row?.brand_dna?.[k]));
+    issues.push("BRAND_DNA_MISSING:" + missing.join("|"));
+  }
   if (!source.verified_services) issues.push("VERIFIED_SERVICES_MISSING");
   if (!source.verified_contacts) issues.push("VERIFIED_CONTACTS_MISSING");
+  if (!source.address && !row.city) issues.push("VERIFIED_LOCATION_MISSING");
   if (!refs.length) issues.push("SOURCE_REFERENCES_MISSING");
   return { pass: issues.length === 0, issues };
 }
-
 async function holdBrandGate(sql, row, issues) {
   await sql`update render_packs set status='BRAND_GATE_HOLD'
     where id=${row.render_pack_id}::uuid and approved_reference=false`;
@@ -681,65 +696,6 @@ function prospectPayload(row, firstPartyImages) {
     source_references: Array.isArray(source.source_references) ? source.source_references : [],
     first_party_images: firstPartyImages
   };
-}
-
-function fallbackDirections() {
-  return {
-    A: {
-      concept: "Editorial flagship",
-      composition: "Bold editorial hierarchy, asymmetric grid, strong negative space, one unmistakable signature device.",
-      typography: "High-contrast display + neutral grotesk body.",
-      imagery: "One dominant credible image or first-party evidence, never decorative stock overload.",
-      conversion: "Direct CTA integrated into the composition."
-    },
-    B: {
-      concept: "Immersive material story",
-      composition: "Image-led, cinematic pacing, large crops, restrained text, strong section rhythm.",
-      typography: "Condensed or architectural display paired with calm body typography.",
-      imagery: "Material/process/detail photography with clear provenance.",
-      conversion: "Commercial action appears after evidence, not as aggressive card UI."
-    },
-    C: {
-      concept: "Precision system",
-      composition: "Technical/editorial grid, measured rules, data-like visual language, modular but not card-heavy.",
-      typography: "Precise grotesk/mono accents with strong display hierarchy.",
-      imagery: "Selective evidence images combined with structured information.",
-      conversion: "Clear request/contact path anchored to verified facts."
-    }
-  };
-}
-
-async function planDirections(env, master, payload) {
-  const prompt = [
-    "You are the ImpresaX Rendering Studio art director.",
-    "Study the frozen master and the verified prospect data.",
-    "Return ONLY valid JSON with keys A, B, C.",
-    "Each key must contain concept, composition, typography, imagery, conversion.",
-    "The three directions must be unmistakably different and specific to this prospect, not generic sector templates.",
-    "Do not invent facts, services, awards, staff, branches, projects, numbers or testimonials.",
-    "Official logo is immutable.",
-    "",
-    "FROZEN MASTER:",
-    master,
-    "",
-    "PROSPECT:",
-    JSON.stringify(payload)
-  ].join("\n");
-
-  try {
-    const out = await env.AI.run(MODEL, {
-      messages: [
-        { role: "system", content: "You are a senior digital art director. Output strict JSON only." },
-        { role: "user", content: prompt }
-      ],
-      max_completion_tokens: 2200,
-      temperature: 0.45
-    });
-    const raw = extractModelText(out).replace(/^\`\`\`json\s*/i, "").replace(/\s*\`\`\`$/i, "");
-    const parsed = JSON.parse(raw);
-    if (parsed?.A && parsed?.B && parsed?.C) return parsed;
-  } catch {}
-  return fallbackDirections();
 }
 
 function htmlPrompt(master, payload, direction, key) {
@@ -947,6 +903,29 @@ async function claimPack(sql, row) {
   return job[0].id;
 }
 
+function extractHtmlImageUrls(html) {
+  const urls=new Set();
+  for (const m of String(html || "").matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+    if (/^https:\/\//i.test(m[1])) urls.add(m[1]);
+  }
+  for (const m of String(html || "").matchAll(/url\(\s*["']?(https:\/\/[^"'\)\s]+)["']?\s*\)/gi)) {
+    urls.add(m[1]);
+  }
+  return [...urls];
+}
+
+function buildVariantProvenance(row, html, ref) {
+  const verifiedRefs=Array.isArray(row?.source_data?.source_references) ? row.source_data.source_references.filter(Boolean) : [];
+  const images=extractHtmlImageUrls(html);
+  return {
+    verified_sources: verifiedRefs,
+    render_source: ref,
+    image_urls: images,
+    official_logo: row?.logo || {},
+    brand_dna_keys: Object.keys(row?.brand_dna || {})
+  };
+}
+
 async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
   const gate=await sql`update render_jobs
     set status='COMPLETING',updated_at=now()
@@ -989,17 +968,20 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         rendered_at=null,
         updated_at=now()`;
 
+    const provenance=buildVariantProvenance(row,html,ref);
     await sql`insert into render_variants(
-        render_pack_id,variant_key,name,status,content_map,source_references
+        render_pack_id,variant_key,name,status,brand_dna,content_map,source_references
       ) values(
         ${row.render_pack_id}::uuid,${key},${"Versione "+key},'STAGED_SOURCE',
+        ${JSON.stringify(row.brand_dna || {})}::jsonb,
         ${JSON.stringify({
           implementation_html:html,
-          implementation_contract_version:"CLOUDFLARE_AI_HTML_V1",
+          implementation_contract_version:"RENDERING_STUDIO_V1_HTML_REFERENCE",
           source_sha256:digest,
-          source_transport:"CLOUDFLARE_INTERNAL"
+          source_transport:"CLOUDFLARE_INTERNAL",
+          provenance
         })}::jsonb,
-        ${JSON.stringify([ref])}::jsonb
+        ${JSON.stringify([ref,...(row.source_data?.source_references || []),...provenance.image_urls])}::jsonb
       )
       on conflict(render_pack_id,variant_key) do update set
         name=excluded.name,
@@ -1007,6 +989,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         desktop_render_url=null,
         mobile_render_url=null,
         selected=false,
+        brand_dna=excluded.brand_dna,
         content_map=excluded.content_map,
         source_references=excluded.source_references,
         updated_at=now()`;
@@ -1058,78 +1041,6 @@ async function failGeneration(sql,row,jobId,error) {
   }
 }
 
-
-function splitVariantPack(raw) {
-  const text=String(raw || "");
-  const a=text.indexOf("<<<A>>>");
-  const b=text.indexOf("<<<B>>>");
-  const cc=text.indexOf("<<<C>>>");
-  if (a<0 || b<=a || cc<=b) throw new Error("AI_VARIANT_MARKERS_REQUIRED");
-  return {
-    A:text.slice(a+7,b).trim(),
-    B:text.slice(b+7,cc).trim(),
-    C:text.slice(cc+7).trim()
-  };
-}
-
-async function generatePackSingleCall(env, master, payload) {
-  const logoUrl=payload?.official_logo?.url || payload?.official_logo?.official_source || "";
-  const direction=fallbackDirections();
-  const prompt=[
-    "You are ImpresaX Rendering Studio. Produce THREE complete premium homepage variants for the same prospect in ONE response.",
-    "Return exactly three blocks using these markers and nothing else:",
-    "<<<A>>>",
-    "<!doctype html>...complete A...</html>",
-    "<<<B>>>",
-    "<!doctype html>...complete B...</html>",
-    "<<<C>>>",
-    "<!doctype html>...complete C...</html>",
-    "",
-    "All three must obey the frozen master and use VERIFIED DATA ONLY.",
-    "Do not invent services, awards, staff, branches, projects, testimonials, numbers or capabilities.",
-    "Use the exact official logo URL when supplied; never redraw or approximate the logo.",
-    "Each variant must be standalone HTML+CSS, no JavaScript, no iframe/object/embed, full desktop 1440 + mobile 390.",
-    "Each must include header/navigation, strong hero, complete body, verified services/offering, verified trust where available, conversion/contact and footer.",
-    "A/B/C must be visibly and structurally different: different hero logic, grid, typography, image language, rhythm, signature device, hierarchy and CTA treatment.",
-    "No generic SaaS, no template feel, no card-grid inflation, no gradients/glows/glassmorphism.",
-    "Prefer supplied first-party images. If they are insufficient, use typography/material composition rather than fake company photography.",
-    "Keep each HTML compact (roughly 4k-12k characters) so the whole pack renders fast.",
-    "",
-    "DIRECTION A:",JSON.stringify(direction.A),
-    "DIRECTION B:",JSON.stringify(direction.B),
-    "DIRECTION C:",JSON.stringify(direction.C),
-    "",
-    "EXACT LOGO:",logoUrl || "NO_OFFICIAL_LOGO_CONFIRMED",
-    "PROSPECT:",JSON.stringify(payload),
-    "FROZEN MASTER:",master
-  ].join("\n");
-
-  let lastError=null;
-  for (let attempt=1;attempt<=2;attempt++) {
-    try {
-      const out=await env.AI.run(MODEL,{
-        messages:[
-          {role:"system",content:"You are a senior digital art director and frontend designer. Output only the three marked HTML blocks."},
-          {role:"user",content:prompt+(attempt===2?"\nREWORK: previous pack failed validation. Return all three complete marked HTML documents, compact and valid.":"")}
-        ],
-        max_completion_tokens:15000,
-        temperature:0.5
-      });
-      const parts=splitVariantPack(extractModelText(out));
-      return {
-        htmlByKey:{
-          A:validateHtml(parts.A,logoUrl),
-          B:validateHtml(parts.B,logoUrl),
-          C:validateHtml(parts.C,logoUrl)
-        },
-        directions:direction
-      };
-    } catch (error) {
-      lastError=error;
-    }
-  }
-  throw lastError || new Error("AI_PACK_GENERATION_FAILED");
-}
 
 async function generateProspect(sql, env, master, row) {
   let workingRow = row;
