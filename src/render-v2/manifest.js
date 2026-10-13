@@ -29,7 +29,8 @@ export async function selectCertifiedVariant(sql,{packId,variantKey}) {
 export async function buildReferenceManifest(sql,packId) {
   const packs=await sql`
     select p.*,i.id input_pack_id,i.input_version,i.content_hash input_hash,i.payload input_payload,
-           c.id creative_plan_id,c.content_hash creative_plan_hash,c.content_truth_pack,c.directions,c.fingerprints
+           c.id creative_plan_id,c.content_hash creative_plan_hash,c.content_truth_hash,c.creative_directions_hash,
+           c.content_truth_pack,c.directions,c.fingerprints
     from render_v2_packs p
     join render_input_packs i on i.id=p.input_pack_id
     join render_creative_plans_v2 c on c.render_pack_id=p.id
@@ -157,6 +158,8 @@ export async function buildReferenceManifest(sql,packId) {
     creative_plan:{
       id:pack.creative_plan_id,
       sha256:pack.creative_plan_hash,
+      content_truth_sha256:pack.content_truth_hash,
+      creative_directions_sha256:pack.creative_directions_hash,
       content_truth_pack:pack.content_truth_pack,
       directions:pack.directions,
       fingerprints:pack.fingerprints
