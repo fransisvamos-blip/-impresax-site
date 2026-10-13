@@ -1239,7 +1239,7 @@ export async function handleOpsRequest(request, env) {
         frozen_master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
         frozen_contract: "RENDERING_STUDIO_V1_FROZEN",
         frozen_runtime_revision: "V8.3_DETERMINISTIC_SIX_VIEW_QA_20261013",
-        creative_engine_revision: "V8.3.2_ASSET_VISION_DEDUPED_PRE_RENDER_EVIDENCE",
+        creative_engine_revision: "V8.3.3_ASSET_VISION_RESILIENT",
         frozen_db_guard: frozenDbGuard,
         frozen_db_guard_current: frozenDbGuardCurrent,
         exact_brand_dna_required: true,
