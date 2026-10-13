@@ -1192,6 +1192,16 @@ export async function handleOpsRequest(request, env) {
            where tgname='render_packs_frozen_compliance_guard'
              and not tgisinternal
         )) as frozen_db_guard,
+        (select exists(
+          select 1
+            from pg_proc p
+            join pg_namespace n on n.oid=p.pronamespace
+           where n.nspname='public'
+             and p.proname='ops_render_frozen_compliance_guard'
+             and position('V8_2_CREATIVE_QUALITY' in pg_get_functiondef(p.oid))>0
+             and position('A_B_C_SET_QA_PASS_REQUIRED' in pg_get_functiondef(p.oid))>0
+             and position('A_B_C_SET_QA_SCORE_BELOW_8' in pg_get_functiondef(p.oid))>0
+        )) as frozen_db_guard_current,
         now() as checked_at`;
       const adminAssetUrl = new URL("/admin/", request.url);
       const adminAsset = await env.ASSETS.fetch(new Request(adminAssetUrl));
@@ -1206,11 +1216,13 @@ export async function handleOpsRequest(request, env) {
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
       const frozenDbGuard=Boolean(rows[0]?.frozen_db_guard);
+      const frozenDbGuardCurrent=Boolean(rows[0]?.frozen_db_guard_current);
       const healthy =
         adminAsset.ok &&
         renderUiAsset.ok &&
         renderUiTwoStep &&
         frozenDbGuard &&
+        frozenDbGuardCurrent &&
         falseRenderReady===0 &&
         legacyRenderQueueActive===0;
       return json({
@@ -1225,6 +1237,7 @@ export async function handleOpsRequest(request, env) {
         frozen_contract: "RENDERING_STUDIO_V1_FROZEN",
         frozen_runtime_revision: "V8.3_DETERMINISTIC_SIX_VIEW_QA_20261013",
         frozen_db_guard: frozenDbGuard,
+        frozen_db_guard_current: frozenDbGuardCurrent,
         exact_brand_dna_required: true,
         image_provenance_required: true,
         site_factory_reference_lock_required: true,
