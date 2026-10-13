@@ -16,7 +16,7 @@ test("stableStringify is deterministic",()=>{
 
 test("compiler blocks arbitrary remote assets",()=>{
   const x=validateRenderSpec({
-    main_html:'<section><img src="https://evil.example/x.jpg">{{copy:HERO_HEADLINE}}</section>',
+    main_html:'<section><img src="https://evil.example/x.jpg">{{copy:HERO_HEADLINE}}<a href="{{cta:PRIMARY}}"></a></section>',
     custom_css:"@media(max-width:700px){.x{display:block}}".repeat(12)
   },manifests);
   assert.equal(x.pass,false);
@@ -25,7 +25,7 @@ test("compiler blocks arbitrary remote assets",()=>{
 
 test("compiler blocks literal unverified copy",()=>{
   const x=validateRenderSpec({
-    main_html:'<section><h1>Invented claim</h1>{{copy:HERO_BODY}}</section>'.repeat(20),
+    main_html:'<section><h1>Invented claim</h1>{{copy:HERO_BODY}}<a href="{{cta:PRIMARY}}"></a></section>'.repeat(20),
     custom_css:"@media(max-width:700px){.x{display:block}}".repeat(12)
   },manifests);
   assert.equal(x.pass,false);
@@ -58,4 +58,13 @@ test("same failure fingerprint forces strategy change after two",()=>{
 test("QA schema failures are isolated from browser failures",()=>{
   assert.equal(classifyFailure(new Error("JSON Mode couldn't be met"),{step:"visual-qa"}).failure_domain,"AI_OUTPUT_SCHEMA");
   assert.equal(classifyFailure(new Error("browser connection closed"),{step:"capture"}).failure_domain,"BROWSER");
+});
+
+test("compiler requires a verified contact token in generated main",()=>{
+  const x=validateRenderSpec({
+    main_html:'<section><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p></section>'.repeat(20),
+    custom_css:".x{display:block} @media(max-width:700px){.x{display:block}}".repeat(12)
+  },manifests);
+  assert.equal(x.pass,false);
+  assert.ok(x.issues.includes("VERIFIED_CONTACT_PATH_REQUIRED"));
 });
