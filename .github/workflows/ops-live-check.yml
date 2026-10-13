@@ -31,6 +31,7 @@ jobs:
               && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V8_FROZEN_COMPLIANCE"' /tmp/health.json \
               && grep -q '"frozen_master_commit":"9578da3fa1b173283bf5c748b0e7d89497537e76"' /tmp/health.json \
               && grep -q '"frozen_contract":"RENDERING_STUDIO_V1_FROZEN"' /tmp/health.json \
+              && grep -q '"frozen_runtime_revision":"V8.1_STRICT_AUDIT_20261013"' /tmp/health.json \
               && grep -q '"frozen_db_guard":true' /tmp/health.json \
               && grep -q '"exact_brand_dna_required":true' /tmp/health.json \
               && grep -q '"image_provenance_required":true' /tmp/health.json \
