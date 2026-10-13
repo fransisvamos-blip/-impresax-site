@@ -138,21 +138,21 @@ function repeatedImageUrls(html, prospect) {
 function officialLogoImmutable(html, prospect) {
   const logoUrl=officialLogoUrl(prospect);
   if (!logoUrl) return true;
-  const tags=[...String(html || "").matchAll(/<img\\b[^>]*>/gi)].map(m=>m[0]);
+  const tags=[...String(html || "").matchAll(/<img\b[^>]*>/gi)].map(m=>m[0]);
   const tag=tags.find(t => {
-    const m=t.match(/\\bsrc=["']([^"']+)["']/i);
+    const m=t.match(/\bsrc=["']([^"']+)["']/i);
     return m && m[1]===logoUrl;
   });
   if (!tag) return false;
-  if (/\\bstyle=["'][^"']*(?:filter|mix-blend-mode|opacity)\\s*:/i.test(tag)) return false;
-  const classMatch=tag.match(/\\bclass=["']([^"']+)["']/i);
-  const classes=classMatch ? classMatch[1].split(/\\s+/).filter(Boolean) : [];
+  if (/\bstyle=["'][^"']*(?:filter|mix-blend-mode|opacity)\s*:/i.test(tag)) return false;
+  const classMatch=tag.match(/\bclass=["']([^"']+)["']/i);
+  const classes=classMatch ? classMatch[1].split(/\s+/).filter(Boolean) : [];
   for (const cls of classes) {
     const safe=cls.replace(/[^a-zA-Z0-9_-]/g,"");
     if (!safe) continue;
-    const re=new RegExp("\\\\."+safe+"(?:[^,{]*)\\\\{([^}]*)\\\\}","gi");
+    const re=new RegExp("\\."+safe+"(?:[^,{]*)\\{([^}]*)\\}","gi");
     for (const m of String(html || "").matchAll(re)) {
-      if (/(?:filter|mix-blend-mode|opacity)\\s*:/i.test(m[1])) return false;
+      if (/(?:filter|mix-blend-mode|opacity)\s*:/i.test(m[1])) return false;
     }
   }
   return true;
@@ -162,7 +162,7 @@ function noLogoIdentitySafe(html, prospect) {
   if (String(prospect?.logo?.status || "").toUpperCase()!=="NO_OFFICIAL_LOGO_CONFIRMED") return true;
   const businessName=String(prospect?.businessName || prospect?.business_name || "").trim();
   if (!businessName || !String(html || "").toLowerCase().includes(businessName.toLowerCase())) return false;
-  const suspiciousTag=/<(?:img|svg)\\b[^>]*(?:class|id|alt)=["'][^"']*(?:logo|monogram|brand[-_ ]?mark|emblem)[^"']*["'][^>]*>/i.test(html);
+  const suspiciousTag=/<(?:img|svg)\b[^>]*(?:class|id|alt)=["'][^"']*(?:logo|monogram|brand[-_ ]?mark|emblem)[^"']*["'][^>]*>/i.test(html);
   return !suspiciousTag;
 }
 function hardGate(html, prospect) {
