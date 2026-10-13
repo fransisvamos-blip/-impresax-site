@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { validateRenderSpec, compileRenderSpec } from "../src/render-v2/compiler.js";
 import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-policy.js";
-import { stableStringify } from "../src/render-v2/utils.js";
+import { stableStringify, safeExternalHttpUrl } from "../src/render-v2/utils.js";
 import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
 
 const manifests={
@@ -101,4 +101,14 @@ test("contact manifest prefers verified phone and keeps verified email fallback"
 
 test("contact manifest refuses an unresolved verified contact path",()=>{
   assert.throws(()=>buildContactManifest({country:"IT",verified_contacts:"NON_DISPONIBILE"}),/VERIFIED_CONTACT_PATH_UNRESOLVED/);
+});
+
+
+test("external asset URL validator blocks private and metadata networks",()=>{
+  assert.equal(safeExternalHttpUrl("http://127.0.0.1/a.png"),"");
+  assert.equal(safeExternalHttpUrl("http://10.0.0.1/a.png"),"");
+  assert.equal(safeExternalHttpUrl("http://169.254.169.254/latest/meta-data"),"");
+  assert.equal(safeExternalHttpUrl("http://192.168.1.5/a.png"),"");
+  assert.equal(safeExternalHttpUrl("https://metadata.google.internal/a"),"");
+  assert.equal(safeExternalHttpUrl("https://example.com/a.png"),"https://example.com/a.png");
 });
