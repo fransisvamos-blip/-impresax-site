@@ -43,6 +43,7 @@ jobs:
               && grep -q '"pre_render_evidence_required":true' /tmp/health.json \
               && grep -q '"creative_strategy_evidence_required":true' /tmp/health.json \
               && grep -q '"structured_asset_inventory_required":true' /tmp/health.json \
+              && grep -q '"asset_vision_gate_required":true' /tmp/health.json \
               && grep -q '"cross_variant_visual_qa_required":true' /tmp/health.json \
               && grep -q '"qa_rework_memory_required":true' /tmp/health.json \
               && grep -q '"deterministic_browser_qa_required":true' /tmp/health.json \
