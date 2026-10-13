@@ -21,18 +21,39 @@ export default {
       host === ROOT_HOST &&
       url.pathname === "/_ix/internal/run-render/9f5f98c1-e5a9-4e1c-b3cd-7ac2c14b3f7d"
     ) {
-      ctx.waitUntil((async () => {
-        await runCloudflareRenderEngine(env);
-        await runOrchestrator(env, "cabina-one-shot");
-      })());
-      return new Response(JSON.stringify({ok:true,accepted:true,action:"RENDER_ENGINE_AND_ORCHESTRATOR"}), {
-        status:202,
-        headers:{
-          "Content-Type":"application/json; charset=UTF-8",
-          "Cache-Control":"no-store",
-          "X-Robots-Tag":"noindex,nofollow,noarchive"
-        }
-      });
+      try {
+        const renderResult = await runCloudflareRenderEngine(env);
+        const orchestratorResult = await runOrchestrator(env, "cabina-one-shot-sync");
+        return new Response(JSON.stringify({
+          ok:true,
+          accepted:true,
+          action:"RENDER_ENGINE_AND_ORCHESTRATOR_SYNC",
+          render:renderResult,
+          orchestrator:orchestratorResult
+        }), {
+          status:200,
+          headers:{
+            "Content-Type":"application/json; charset=UTF-8",
+            "Cache-Control":"no-store",
+            "X-Robots-Tag":"noindex,nofollow,noarchive"
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          ok:false,
+          accepted:false,
+          action:"RENDER_ENGINE_AND_ORCHESTRATOR_SYNC",
+          error:String(error?.message || error),
+          stack:String(error?.stack || "").slice(0,3000)
+        }), {
+          status:500,
+          headers:{
+            "Content-Type":"application/json; charset=UTF-8",
+            "Cache-Control":"no-store",
+            "X-Robots-Tag":"noindex,nofollow,noarchive"
+          }
+        });
+      }
     }
 
     // Enforce the official HTTPS origin before serving the public domain.
