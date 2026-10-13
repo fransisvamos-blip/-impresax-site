@@ -1,9 +1,6 @@
 const ART_MODEL = "@cf/openai/gpt-oss-120b";
 const HTML_MODEL = "@cf/zai-org/glm-4.7-flash";
-const FALLBACK_MODEL = "@cf/openai/gpt-oss-120b";
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
-
-;
 
 function aiText(result) {
   if (typeof result === "string") return result;
@@ -31,6 +28,7 @@ function aiText(result) {
 
 async function runModel(env, model, messages, maxTokens, temperature) {
   if (!env.AI || typeof env.AI.run !== "function") throw new Error("WORKERS_AI_BINDING_NOT_CONFIGURED");
+  const fallbackModel = model===ART_MODEL ? HTML_MODEL : ART_MODEL;
   try {
     return await env.AI.run(model, {
       messages,
@@ -39,13 +37,16 @@ async function runModel(env, model, messages, maxTokens, temperature) {
       top_p: 0.92
     });
   } catch (primaryError) {
-    if (model === FALLBACK_MODEL) throw primaryError;
-    return await env.AI.run(FALLBACK_MODEL, {
-      messages,
-      max_tokens: maxTokens,
-      temperature,
-      top_p: 0.92
-    });
+    try {
+      return await env.AI.run(fallbackModel, {
+        messages,
+        max_tokens: maxTokens,
+        temperature,
+        top_p: 0.92
+      });
+    } catch {
+      throw primaryError;
+    }
   }
 }
 
@@ -504,7 +505,8 @@ async function generateOne(env, master, prospect, key, direction) {
           ].join("\n")
         : "";
 
-      const result = await runModel(env, HTML_MODEL, [
+      const generationModel = attempt===1 ? ART_MODEL : HTML_MODEL;
+      const result = await runModel(env, generationModel, [
         {
           role: "system",
           content: attempt === 1
@@ -573,7 +575,8 @@ export async function generateRenderVariants(env, prospect) {
     master: "RENDERING_STUDIO_V1_FROZEN",
     creative_quality_revision: "V8.2_BESPOKE_DIRECTION_SET",
     master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
-    model: HTML_MODEL,
+    model: ART_MODEL,
+    repair_model: HTML_MODEL,
     variants
   };
 }
