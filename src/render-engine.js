@@ -1243,7 +1243,7 @@ async function claimPack(sql, row) {
       prospect_id,status,attempt,worker,input_data,started_at
     ) values(
       ${row.prospect_id}::uuid,'RUNNING',${attempt},'cloudflare-workers-ai',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_2_CREATIVE_QUALITY"})}::jsonb,now()
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA"})}::jsonb,now()
     ) returning id`;
 
   await sql`update prospects set
@@ -1304,6 +1304,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
           source:"RENDERING_STUDIO_V1_FROZEN",
           execution_engine:"CLOUDFLARE_NATIVE",
           rendering_studio_contract:"V8_2_CREATIVE_QUALITY",
+          creative_quality_runtime:"V8.3_DETERMINISTIC_SIX_VIEW_QA",
           art_direction_model:"@cf/openai/gpt-oss-120b",
           html_model_primary:"@cf/openai/gpt-oss-120b",
           html_model_repair:"@cf/zai-org/glm-4.7-flash",
@@ -1357,6 +1358,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         variants:["A","B","C"],
         department:"RENDERING_STUDIO",
         contract:"V8_2_CREATIVE_QUALITY",
+        runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA",
         art_direction_model:"@cf/openai/gpt-oss-120b",
         html_model_primary:"@cf/openai/gpt-oss-120b",
           html_model_repair:"@cf/zai-org/glm-4.7-flash",
@@ -1517,7 +1519,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
       prospect_id,status,attempt,worker,input_data,started_at
     ) values(
       ${row.prospect_id}::uuid,'RUNNING',${browserAttempt},'cloudflare-browser-renderer',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version})}::jsonb,now()
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA"})}::jsonb,now()
     ) returning id`;
   const browserJobId=browserJobs[0].id;
 
@@ -1772,7 +1774,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     values(
       ${row.prospect_id}::uuid,'CLOUDFLARE_RENDER_READY','render_pack',${row.render_pack_id}::uuid,
       'cloudflare-render-engine','RENDERING'::pipeline_status,'RENDERING'::pipeline_status,
-      ${JSON.stringify({version:row.version,variants:["A","B","C"],model:MODEL,selection_required:true})}::jsonb
+      ${JSON.stringify({version:row.version,variants:["A","B","C"],model:MODEL,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA",selection_required:true})}::jsonb
     )`;
 
   return {ok:true,pack_id:row.render_pack_id,prospect_id:row.prospect_id,version:row.version};
