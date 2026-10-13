@@ -48,12 +48,13 @@ async function recordTypedFailure(sql,{packId,workflowInstanceId,revisionId=null
   const wf=await sql`select id from render_workflows_v2 where workflow_instance_id=${workflowInstanceId} limit 1`;
   const failure=classifyFailure(error,{step:stepName,variant_key:variantKey,revision});
   const fingerprint=await failureFingerprint(failure);
-  const current=await countFailureFingerprint(sql,packId,fingerprint);
+  const before=await countFailureFingerprint(sql,packId,fingerprint);
   const rec=await recordFailure(sql,{
     packId,workflowId:wf[0]?.id||null,revisionId,step:stepName,failure,fingerprint,
-    strategyVersion,attempt:current+1,details:{variant_key:variantKey,revision}
+    strategyVersion,attempt:before+1,details:{variant_key:variantKey,revision}
   });
-  return {failure,fingerprint,count:current+1,record:rec,change_strategy:shouldChangeStrategy(current+1)};
+  const total=await countFailureFingerprint(sql,packId,fingerprint);
+  return {failure,fingerprint,count:total,record:rec,change_strategy:shouldChangeStrategy(total)};
 }
 
 export class RenderVariantWorkflow extends WorkflowEntrypoint {
