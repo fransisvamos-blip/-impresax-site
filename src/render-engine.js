@@ -1907,6 +1907,37 @@ async function reconcileGenerationCircuitBreakers(sql) {
       and rp.status in ('ART_DIRECTION','AI_RENDERING','ESCALATION_REQUIRED','BRAND_GATE_HOLD')`;
 
   await sql`update render_packs rp
+    set status='ART_DIRECTION',
+        content_map=coalesce(rp.content_map,'{}'::jsonb) ||
+          jsonb_build_object(
+            'generation_hold',false,
+            'last_generation_error',null,
+            'generation_reopened_for_revision',${CREATIVE_ENGINE_REVISION}::text,
+            'generation_reopened_at',to_jsonb(now())
+          )
+    where rp.approved_reference=false
+      and rp.status='ESCALATION_REQUIRED'
+      and coalesce((rp.content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
+      and coalesce(rp.content_map->>'creative_engine_revision','')=${CREATIVE_ENGINE_REVISION}`;
+
+  await sql`update prospects p
+    set pipeline_status='RENDER_REWORK'::pipeline_status,
+        render_status='RENDER_REWORK',
+        current_step='ART_DIRECTION',
+        next_action='AUTO_RENDER_A_B_C',
+        error=null,
+        updated_at=now()
+    where p.render_status='ESCALATION_REQUIRED'
+      and exists (
+        select 1 from render_packs rp
+        where rp.prospect_id=p.id
+          and rp.approved_reference=false
+          and rp.status='ART_DIRECTION'
+          and coalesce((rp.content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
+          and coalesce(rp.content_map->>'creative_engine_revision','')=${CREATIVE_ENGINE_REVISION}
+      )`;
+
+  await sql`update render_packs rp
     set status='ESCALATION_REQUIRED',
         content_map=coalesce(rp.content_map,'{}'::jsonb) ||
           jsonb_build_object('generation_hold',true,'generation_failure_source','RENDER_JOBS_RECONCILED_EACH_CRON')
