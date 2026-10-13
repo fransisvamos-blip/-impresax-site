@@ -95,16 +95,16 @@ export async function createShadowInputPack(env,prospectRef) {
   const prospect=await getProspect(sql,prospectRef);
   const existing=await findActiveV2Pack(sql,prospect.id);
   if(existing) {
-    const rows=await sql\`select * from render_input_packs where render_pack_id=\${existing.id}::uuid limit 1\`;
+    const rows=await sql`select * from render_input_packs where render_pack_id=\${existing.id}::uuid limit 1`;
     return {created:false,pack:existing,input_pack:rows[0]||null};
   }
 
   const payload=buildInputPayload(prospect);
   const certification=certifyInputPayload(payload);
   const contentHash=await sha256(stableStringify(payload));
-  const versions=await sql\`select coalesce(max(input_version),0)+1 as v from render_input_packs where prospect_id=\${prospect.id}::uuid\`;
+  const versions=await sql`select coalesce(max(input_version),0)+1 as v from render_input_packs where prospect_id=\${prospect.id}::uuid`;
   const inputVersion=Number(versions[0]?.v||1);
-  const packRows=await sql\`
+  const packRows=await sql`
     insert into render_v2_packs(
       prospect_id,status,quality_contract_version,execution_engine_version,model_route_version,priority,shadow_mode,metadata
     ) values(
@@ -112,17 +112,17 @@ export async function createShadowInputPack(env,prospectRef) {
       \${QUALITY_CONTRACT_VERSION},\${EXECUTION_ENGINE_VERSION},\${MODEL_ROUTE_VERSION},
       \${prospect.priority==="A"?10:prospect.priority==="B"?50:100},true,
       \${JSON.stringify({source:"V2_SHADOW",input_hash:contentHash})}::jsonb
-    ) returning *\`;
+    ) returning *`;
   const pack=packRows[0];
-  const inputRows=await sql\`
+  const inputRows=await sql`
     insert into render_input_packs(
       render_pack_id,prospect_id,input_version,quality_contract_version,content_hash,
       certification_status,certification_issues,payload
     ) values(
       \${pack.id}::uuid,\${prospect.id}::uuid,\${inputVersion},\${QUALITY_CONTRACT_VERSION},\${contentHash},
       \${certification.pass?"PASS":"FAIL"},\${JSON.stringify(certification.issues)}::jsonb,\${JSON.stringify(payload)}::jsonb
-    ) returning *\`;
+    ) returning *`;
   const input=inputRows[0];
-  await sql\`update render_v2_packs set input_pack_id=\${input.id}::uuid,updated_at=now() where id=\${pack.id}::uuid\`;
+  await sql`update render_v2_packs set input_pack_id=\${input.id}::uuid,updated_at=now() where id=\${pack.id}::uuid`;
   return {created:true,pack:{...pack,input_pack_id:input.id},input_pack:input,certification};
 }

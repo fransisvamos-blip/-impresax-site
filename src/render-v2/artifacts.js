@@ -13,7 +13,7 @@ export async function putArtifact(env,sql,{packId,revisionId=null,type,key,body,
   const bytes=bodyBytes(body);
   const hash=await sha256(bytes);
   await env.RENDER_ARTIFACTS.put(key,bytes,{httpMetadata:{contentType:mime},customMetadata:{sha256:hash,engine:EXECUTION_ENGINE_VERSION}});
-  const rows=await sql\`
+  const rows=await sql`
     insert into render_artifacts_v2(
       render_pack_id,variant_revision_id,artifact_type,r2_key,sha256,mime,bytes,producer_step,execution_engine_version
     ) values(
@@ -21,7 +21,7 @@ export async function putArtifact(env,sql,{packId,revisionId=null,type,key,body,
     )
     on conflict(r2_key) do update set
       sha256=excluded.sha256,mime=excluded.mime,bytes=excluded.bytes,producer_step=excluded.producer_step
-    returning *\`;
+    returning *`;
   return rows[0];
 }
 
