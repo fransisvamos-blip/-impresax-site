@@ -1331,7 +1331,7 @@ async function recoverStaleClaims(sql) {
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
       and status in ('RUNNING','COMPLETING')
-      and started_at < now()-interval '25 minutes'`;
+      and started_at < now()-interval '16 minutes'`;
 
   await sql`update render_packs rp
     set status='ART_DIRECTION'
@@ -1341,7 +1341,7 @@ async function recoverStaleClaims(sql) {
         select 1 from render_jobs rj
         where rj.worker='cloudflare-workers-ai'
           and rj.status in ('RUNNING','COMPLETING')
-          and rj.started_at >= now()-interval '25 minutes'
+          and rj.started_at >= now()-interval '16 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
 
@@ -2119,9 +2119,10 @@ export async function runCloudflareRenderEngine(env) {
 
   const activeRows=await sql`select count(*)::int as n from render_jobs
     where worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
-      and started_at >= now()-interval '25 minutes'`;
+      and started_at >= now()-interval '16 minutes'`;
   const active=Number(activeRows[0]?.n || 0);
-  const slots=Math.max(0,MAX_PROSPECTS_PER_TICK-active);
+  const generationPhaseAllowed=readyToRender.length===0;
+  const slots=generationPhaseAllowed ? Math.max(0,MAX_PROSPECTS_PER_TICK-active) : 0;
 
   let generated=[];
   if (slots>0) {
@@ -2139,6 +2140,8 @@ export async function runCloudflareRenderEngine(env) {
     browser_slots:browserSlots,
     active_generation_jobs:active,
     generation_slots:slots,
+    generation_phase_allowed:generationPhaseAllowed,
+    heavy_phase:readyToRender.length ? "BROWSER_QA" : (generated.length ? "AI_GENERATION" : "IDLE"),
     generated_count:generated.filter(x=>x.ok).length,
     render_ready_count:rendered.filter(x=>x.ok).length,
     generated,
