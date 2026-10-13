@@ -2396,53 +2396,119 @@ async function renderCandidates(sql, limit) {
 export async function runCloudflareRenderEngine(env) {
   if (!env.AI) return {ok:false,error:"AI_BINDING_NOT_CONFIGURED"};
   const sql=db(env);
+  const tickStartedAt=Date.now();
+  const TICK_SOFT_BUDGET_MS=10*60*1000;
+  const MAX_ACCELERATED_PASSES=2;
 
   await recoverStaleClaims(sql);
   await reconcileGenerationCircuitBreakers(sql);
   const cancelledLegacyRenderJobs=await reconcileNativeRenderQueue(sql);
 
-  const activeBrowserRows=await sql`select count(*)::int as n from render_jobs
-    where worker='cloudflare-browser-renderer'
-      and status='RUNNING'
-      and started_at >= now()-interval '10 minutes'`;
-  const activeBrowserJobs=Number(activeBrowserRows[0]?.n || 0);
-  const browserSlots=Math.max(0,MAX_ACTIVE_BROWSER_JOBS-activeBrowserJobs);
-  const readyToRender=browserSlots>0
-    ? await renderCandidates(sql,Math.min(MAX_RENDER_PACKS_PER_TICK,browserSlots))
-    : [];
-  let rendered=[];
+  let pinnedProspectId=null;
   let renderMaster="";
-  if (readyToRender.length) {
-    renderMaster=await loadFrozenMaster();
-    rendered=await Promise.all(readyToRender.map(row=>renderPack(sql,env,row,null,renderMaster)));
-  }
+  const generated=[];
+  const rendered=[];
+  const phaseTrace=[];
+  let lastActiveBrowserJobs=0;
+  let lastBrowserSlots=0;
+  let lastActiveGenerationJobs=0;
+  let lastGenerationSlots=0;
 
-  const activeRows=await sql`select count(*)::int as n from render_jobs
-    where worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
-      and started_at >= now()-interval '16 minutes'`;
-  const active=Number(activeRows[0]?.n || 0);
-  const generationPhaseAllowed=readyToRender.length===0;
-  const slots=generationPhaseAllowed ? Math.max(0,MAX_PROSPECTS_PER_TICK-active) : 0;
+  for (let pass=1; pass<=MAX_ACCELERATED_PASSES; pass++) {
+    if (Date.now()-tickStartedAt >= TICK_SOFT_BUDGET_MS) {
+      phaseTrace.push({pass,phase:"SOFT_BUDGET_STOP"});
+      break;
+    }
 
-  let generated=[];
-  if (slots>0) {
-    const selected=await candidates(sql,slots);
+    const activeBrowserRows=await sql`select count(*)::int as n from render_jobs
+      where worker='cloudflare-browser-renderer'
+        and status in ('RUNNING','QA_RUNNING')
+        and started_at >= now()-interval '10 minutes'`;
+    lastActiveBrowserJobs=Number(activeBrowserRows[0]?.n || 0);
+    lastBrowserSlots=Math.max(0,MAX_ACTIVE_BROWSER_JOBS-lastActiveBrowserJobs);
+
+    let readyToRender=lastBrowserSlots>0
+      ? await renderCandidates(sql,Math.min(MAX_RENDER_PACKS_PER_TICK,lastBrowserSlots))
+      : [];
+
+    if (pinnedProspectId) {
+      readyToRender=readyToRender.filter(row=>String(row.prospect_id)===pinnedProspectId);
+    } else if (readyToRender.length) {
+      pinnedProspectId=String(readyToRender[0].prospect_id);
+      readyToRender=readyToRender.slice(0,1);
+    }
+
+    if (readyToRender.length) {
+      if (!renderMaster) renderMaster=await loadFrozenMaster();
+      const passRendered=await Promise.all(
+        readyToRender.map(row=>renderPack(sql,env,row,null,renderMaster))
+      );
+      rendered.push(...passRendered);
+      phaseTrace.push({
+        pass,
+        phase:"BROWSER_QA",
+        prospect_id:pinnedProspectId,
+        results:passRendered.map(x=>({ok:x.ok,error:x.error || null}))
+      });
+
+      if (Date.now()-tickStartedAt >= TICK_SOFT_BUDGET_MS) {
+        phaseTrace.push({pass,phase:"SOFT_BUDGET_STOP_AFTER_BROWSER_QA"});
+        break;
+      }
+    }
+
+    const activeRows=await sql`select count(*)::int as n from render_jobs
+      where worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
+        and started_at >= now()-interval '16 minutes'`;
+    lastActiveGenerationJobs=Number(activeRows[0]?.n || 0);
+    lastGenerationSlots=Math.max(0,MAX_PROSPECTS_PER_TICK-lastActiveGenerationJobs);
+
+    let selected=[];
+    if (lastGenerationSlots>0) {
+      selected=await candidates(sql,lastGenerationSlots);
+      if (pinnedProspectId) {
+        selected=selected.filter(row=>String(row.prospect_id)===pinnedProspectId);
+      } else if (selected.length) {
+        pinnedProspectId=String(selected[0].prospect_id);
+        selected=selected.slice(0,1);
+      }
+    }
+
     if (selected.length) {
-      generated=await Promise.all(selected.map(row=>generateProspect(sql,env,null,row)));
+      const passGenerated=await Promise.all(
+        selected.map(row=>generateProspect(sql,env,null,row))
+      );
+      generated.push(...passGenerated);
+      phaseTrace.push({
+        pass,
+        phase:"AI_GENERATION",
+        prospect_id:pinnedProspectId,
+        results:passGenerated.map(x=>({ok:x.ok,error:x.error || null}))
+      });
+    }
+
+    if (!readyToRender.length && !selected.length) {
+      phaseTrace.push({pass,phase:"IDLE"});
+      break;
     }
   }
 
   return {
     ok:true,
+    accelerated_pipeline:true,
+    max_accelerated_passes:MAX_ACCELERATED_PASSES,
+    soft_budget_ms:TICK_SOFT_BUDGET_MS,
+    elapsed_ms:Date.now()-tickStartedAt,
+    pinned_prospect_id:pinnedProspectId,
     cancelled_legacy_render_jobs:cancelledLegacyRenderJobs,
-    active_browser_jobs:activeBrowserJobs,
-    browser_slots:browserSlots,
-    active_generation_jobs:active,
-    generation_slots:slots,
-    generation_phase_allowed:generationPhaseAllowed,
-    heavy_phase:readyToRender.length ? "BROWSER_QA" : (generated.length ? "AI_GENERATION" : "IDLE"),
+    active_browser_jobs:lastActiveBrowserJobs,
+    browser_slots:lastBrowserSlots,
+    active_generation_jobs:lastActiveGenerationJobs,
+    generation_slots:lastGenerationSlots,
+    heavy_phase:phaseTrace.length ? phaseTrace[phaseTrace.length-1].phase : "IDLE",
     generated_count:generated.filter(x=>x.ok).length,
     render_ready_count:rendered.filter(x=>x.ok).length,
+    phase_trace:phaseTrace,
     generated,
     rendered
   };
