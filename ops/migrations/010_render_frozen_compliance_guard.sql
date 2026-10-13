@@ -144,6 +144,7 @@ BEGIN
      AND coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
      AND coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
      AND coalesce(s.design_notes->>'creative_quality_runtime','')='V8.3_DETERMINISTIC_SIX_VIEW_QA'
+     AND coalesce(s.design_notes->>'engine_revision','')='V8.3.2_ASSET_VISION_DEDUPED_PRE_RENDER_EVIDENCE'
      AND coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
      AND coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b';
 
