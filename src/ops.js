@@ -1205,6 +1205,29 @@ export async function handleOpsRequest(request, env) {
              and position('A_B_C_SET_QA_SCORE_BELOW_8' in pg_get_functiondef(p.oid))>0
              and position('V8.3_DETERMINISTIC_SIX_VIEW_QA' in pg_get_functiondef(p.oid))>0
         )) as frozen_db_guard_current,
+        (select p.pipeline_status::text from prospects p
+          where coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+          limit 1) as proof_pipeline_status,
+        (select p.render_status from prospects p
+          where coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+          limit 1) as proof_render_status,
+        (select p.current_step from prospects p
+          where coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+          limit 1) as proof_current_step,
+        (select rp.status from render_packs rp
+          join prospects p on p.id=rp.prospect_id
+          where coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+            and rp.approved_reference=false
+          order by rp.version desc limit 1) as proof_pack_status,
+        (select coalesce((rp.content_map->>'visual_rework_cycle')::int,0) from render_packs rp
+          join prospects p on p.id=rp.prospect_id
+          where coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+            and rp.approved_reference=false
+          order by rp.version desc limit 1) as proof_visual_rework_cycle,
+        (select count(*)::int from render_jobs rj
+          join prospects p on p.id=rj.prospect_id
+          where coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+            and rj.status in ('RUNNING','COMPLETING','QA_RUNNING')) as proof_active_jobs,
         now() as checked_at`;
       const adminAssetUrl = new URL("/admin/", request.url);
       const adminAsset = await env.ASSETS.fetch(new Request(adminAssetUrl));
@@ -1235,7 +1258,7 @@ export async function handleOpsRequest(request, env) {
         database_connected: true,
         render_pipeline: "CLOUDFLARE_NATIVE_V1",
         render_model: "@cf/zai-org/glm-4.7-flash",
-        render_engine_version: "CLOUDFLARE_NATIVE_V8_4_CREATIVE_RECOVERY",
+        render_engine_version: "CLOUDFLARE_NATIVE_V8_4_4_ACCELERATED_PHASE_CHAINING",
         frozen_master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
         frozen_contract: "RENDERING_STUDIO_V1_FROZEN",
         frozen_runtime_revision: "V8.3_DETERMINISTIC_SIX_VIEW_QA_20261013",
@@ -1269,7 +1292,17 @@ export async function handleOpsRequest(request, env) {
         v8_4_first_render_ready_proof_required: true,
         v8_4_proof_prospect: "CZ-063",
         max_generation_failures: 3,
-        cron_heavy_phase_separation_required: true,
+        render_phase_acceleration: "GENERATION_BROWSER_QA_REWORK_SAME_TICK",
+        accelerated_pipeline_passes: 2,
+        render_tick_soft_budget_minutes: 10,
+        cron_heavy_phase_separation_required: false,
+        cron_phase_chaining_enabled: true,
+        proof_pipeline_status: rows[0]?.proof_pipeline_status || null,
+        proof_render_status: rows[0]?.proof_render_status || null,
+        proof_current_step: rows[0]?.proof_current_step || null,
+        proof_pack_status: rows[0]?.proof_pack_status || null,
+        proof_visual_rework_cycle: Number(rows[0]?.proof_visual_rework_cycle || 0),
+        proof_active_jobs: Number(rows[0]?.proof_active_jobs || 0),
         ai_stale_recovery_minutes: 16,
         cloudflare_cron_duration_limit_minutes: 15,
         render_owner: "CLOUDFLARE_NATIVE_ONLY",
