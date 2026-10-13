@@ -310,7 +310,7 @@ function sanitizeGeneratedHtml(html, prospect) {
     const looksLikeIdentity=/logo|brand[-_ ]?mark|emblem/.test(signal);
 
     if(logoUrl && looksLikeIdentity) {
-      return '<img src="'+logoUrl+'" alt="'+safeName+'" class="ix-official-logo" style="display:block;max-width:240px;width:auto;height:auto;filter:none;mix-blend-mode:normal;opacity:1">';
+      return '<img src="'+logoUrl+'" alt="'+safeName+'" style="display:block;max-width:240px;width:auto;height:auto">';
     }
     if(!src || !allowed.has(src)) {
       return '<div class="ix-sanitized-visual" aria-hidden="true"></div>';
@@ -334,7 +334,7 @@ function sanitizeGeneratedHtml(html, prospect) {
     const escaped=logoUrl.replace(/[.*+?^$()|[\]\\]/g,"\\$&");
     const hasExact=new RegExp('<img\\b[^>]*\\bsrc=["\\\']'+escaped+'["\\\']','i').test(out);
     if(!hasExact) {
-      const identity='<img src="'+logoUrl+'" alt="'+safeName+'" class="ix-official-logo" style="display:block;max-width:240px;width:auto;height:auto;filter:none;mix-blend-mode:normal;opacity:1">';
+      const identity='<img src="'+logoUrl+'" alt="'+safeName+'" style="display:block;max-width:240px;width:auto;height:auto">';
       if(/<header\b[^>]*>/i.test(out)) out=out.replace(/<header\b([^>]*)>/i,'<header$1>'+identity);
       else out=out.replace(/<body\b([^>]*)>/i,'<body$1><header class="ix-recovered-header">'+identity+'</header>');
     }
@@ -349,7 +349,7 @@ function sanitizeGeneratedHtml(html, prospect) {
 
   if(!/<header[\s>]/i.test(out)) {
     const identity=logoUrl
-      ? '<img src="'+logoUrl+'" alt="'+safeName+'" class="ix-official-logo" style="display:block;max-width:240px;width:auto;height:auto">'
+      ? '<img src="'+logoUrl+'" alt="'+safeName+'" style="display:block;max-width:240px;width:auto;height:auto">'
       : '<div class="ix-verified-name">'+safeName+'</div>';
     out=out.replace(/<body\b([^>]*)>/i,'<body$1><header class="ix-recovered-header">'+identity+'</header>');
   }
@@ -361,7 +361,7 @@ function sanitizeGeneratedHtml(html, prospect) {
     out=out.replace(/<footer\b/i,'</main><footer');
   }
 
-  const recoveryCss='<style id="ix-v84-recovery">.ix-sanitized-visual{min-height:160px;border:1px solid currentColor;opacity:.14;background:transparent}.ix-official-logo{filter:none!important;mix-blend-mode:normal!important;opacity:1!important}.ix-recovered-header,.ix-recovered-footer{padding:24px}.ix-verified-name{font:inherit;font-weight:700}</style>';
+  const recoveryCss='<style id="ix-v84-recovery">.ix-sanitized-visual{min-height:160px;border:1px solid currentColor;opacity:.14;background:transparent}.ix-recovered-header,.ix-recovered-footer{padding:24px}.ix-verified-name{font:inherit;font-weight:700}</style>';
   out=out.replace(/<\/head>/i,recoveryCss+'</head>');
   return out;
 }
