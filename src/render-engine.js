@@ -1234,58 +1234,11 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
     return {ok:false,pack_id:row.render_pack_id,error:"THREE_STAGED_VARIANTS_REQUIRED"};
   }
 
-  const browser = sharedBrowser || await puppeteer.launch(env.BROWSER);
   const visualQa = [];
-  try {
-    for (const item of rows) {
-      const [desktop,mobile] = await Promise.all([
-        renderHtml(browser,item.html_source,1440,900),
-        renderHtml(browser,item.html_source,390,844)
-      ]);
-      const desktopB64=bytesToBase64(desktop);
-      const mobileB64=bytesToBase64(mobile);
+  const captured = [];
 
-      await sql`update render_staging_payloads set
-          status='VISUAL_QA_PENDING',
-          desktop_image_base64=${desktopB64},
-          mobile_image_base64=${mobileB64},
-          image_mime='image/jpeg',
-          render_error=null,
-          rendered_at=now(),
-          updated_at=now()
-        where id=${item.id}::uuid`;
-
-      await sql`update render_variants set
-          status='VISUAL_QA_PENDING',
-          desktop_render_url=null,
-          mobile_render_url=null,
-          updated_at=now()
-        where id=${item.variant_id}::uuid`;
-
-      const qa = await critiqueVisibleRender(
-        env,
-        master,
-        visualQaProspect,
-        item.variant_key,
-        item.design_notes?.direction || {},
-        desktopB64,
-        mobileB64
-      );
-      visualQa.push({ variant_key:item.variant_key, variant_id:item.variant_id, staging_id:item.id, qa });
-
-      await sql`update render_staging_payloads set
-          status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
-          design_notes=coalesce(design_notes,'{}'::jsonb) || ${JSON.stringify({visual_qa:qa})}::jsonb,
-          updated_at=now()
-        where id=${item.id}::uuid`;
-
-      await sql`update render_variants set
-          status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
-          updated_at=now()
-        where id=${item.variant_id}::uuid`;
-    }
-  } catch (error) {
-    const message = String(error?.message || error || "BROWSER_RENDER_FAILED").slice(0, 600);
+  const failTechnical = async (error) => {
+    const message = String(error?.message || error || "RENDER_QA_TECHNICAL_FAILURE").slice(0, 600);
     await sql`update render_jobs set status='FAILED',error=${message},completed_at=now(),updated_at=now()
       where id=${browserJobId}::uuid`;
 
@@ -1317,8 +1270,69 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
         error=${message},updated_at=now()
       where id=${row.prospect_id}::uuid`;
     return {ok:false,pack_id:row.render_pack_id,error:message,technical_retry:technicalRetry,technical_hold:technicalHold};
+  };
+
+  const browser = sharedBrowser || await puppeteer.launch(env.BROWSER);
+  try {
+    for (const item of rows) {
+      const [desktop,mobile] = await Promise.all([
+        renderHtml(browser,item.html_source,1440,900),
+        renderHtml(browser,item.html_source,390,844)
+      ]);
+      const desktopB64=bytesToBase64(desktop);
+      const mobileB64=bytesToBase64(mobile);
+      captured.push({item,desktopB64,mobileB64});
+
+      await sql`update render_staging_payloads set
+          status='VISUAL_QA_PENDING',
+          desktop_image_base64=${desktopB64},
+          mobile_image_base64=${mobileB64},
+          image_mime='image/jpeg',
+          render_error=null,
+          rendered_at=now(),
+          updated_at=now()
+        where id=${item.id}::uuid`;
+
+      await sql`update render_variants set
+          status='VISUAL_QA_PENDING',
+          desktop_render_url=null,
+          mobile_render_url=null,
+          updated_at=now()
+        where id=${item.variant_id}::uuid`;
+    }
+  } catch (error) {
+    return await failTechnical(error);
   } finally {
     if (!sharedBrowser) await browser.close();
+  }
+
+  try {
+    for (const frame of captured) {
+      const item=frame.item;
+      const qa = await critiqueVisibleRender(
+        env,
+        master,
+        visualQaProspect,
+        item.variant_key,
+        item.design_notes?.direction || {},
+        frame.desktopB64,
+        frame.mobileB64
+      );
+      visualQa.push({ variant_key:item.variant_key, variant_id:item.variant_id, staging_id:item.id, qa });
+
+      await sql`update render_staging_payloads set
+          status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
+          design_notes=coalesce(design_notes,'{}'::jsonb) || ${JSON.stringify({visual_qa:qa})}::jsonb,
+          updated_at=now()
+        where id=${item.id}::uuid`;
+
+      await sql`update render_variants set
+          status=${qa.pass ? "VISUAL_QA_PASS" : "VISUAL_QA_FAILED"},
+          updated_at=now()
+        where id=${item.variant_id}::uuid`;
+    }
+  } catch (error) {
+    return await failTechnical(error);
   }
 
   await sql`update render_packs set
