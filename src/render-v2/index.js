@@ -1,5 +1,5 @@
 export { RenderProspectWorkflow, RenderVariantWorkflow } from "./workflows.js";
-import { db, packSnapshot } from "./db.js";
+import { db, packSnapshot, persistWorkflow } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 import { reconcileV2 } from "./reconcile.js";
@@ -60,6 +60,11 @@ export default {
         return json({ok:false,status:"INPUT_BLOCKED",pack_id:created.pack.id,issues:created.input_pack.certification_issues},409);
       }
       const instanceId="rpv2-"+created.pack.id;
+      const sql=db(env);
+      await persistWorkflow(sql,{
+        prospectId:created.pack.prospect_id,packId:created.pack.id,type:"PROSPECT",
+        instanceId,status:"QUEUED",metadata:{input_pack_id:created.input_pack.id,api_started:true}
+      });
       let instance;
       try {
         instance=await env.RENDER_PROSPECT_WORKFLOW.create({
@@ -129,8 +134,11 @@ export default {
 
     if(request.method==="GET" && url.pathname.startsWith("/shadow/workflow/")) {
       const id=url.pathname.split("/").pop();
-      const instance=await env.RENDER_PROSPECT_WORKFLOW.get(id);
-      return json({ok:true,id,status:await instance.status()});
+      const sql=db(env);
+      const rows=await sql`select workflow_type from render_workflows_v2 where workflow_instance_id=${id} limit 1`;
+      if(!rows.length) return json({ok:false,error:"WORKFLOW_NOT_FOUND"},404);
+      const instance=await workflowBinding(env,rows[0].workflow_type).get(id);
+      return json({ok:true,id,workflow_type:rows[0].workflow_type,status:await instance.status()});
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/select") {
