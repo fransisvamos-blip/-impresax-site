@@ -15,47 +15,6 @@ export default {
     const url = new URL(request.url);
     const host = normalizeHostname(url.hostname);
 
-    // ONE-SHOT CABINA TRIGGER — remove immediately after use.
-    if (
-      request.method === "GET" &&
-      host === ROOT_HOST &&
-      url.pathname === "/_ix/internal/run-render/9f5f98c1-e5a9-4e1c-b3cd-7ac2c14b3f7d"
-    ) {
-      try {
-        const renderResult = await runCloudflareRenderEngine(env);
-        const orchestratorResult = await runOrchestrator(env, "cabina-one-shot-sync");
-        return new Response(JSON.stringify({
-          ok:true,
-          accepted:true,
-          action:"RENDER_ENGINE_AND_ORCHESTRATOR_SYNC",
-          render:renderResult,
-          orchestrator:orchestratorResult
-        }), {
-          status:200,
-          headers:{
-            "Content-Type":"application/json; charset=UTF-8",
-            "Cache-Control":"no-store",
-            "X-Robots-Tag":"noindex,nofollow,noarchive"
-          }
-        });
-      } catch (error) {
-        return new Response(JSON.stringify({
-          ok:false,
-          accepted:false,
-          action:"RENDER_ENGINE_AND_ORCHESTRATOR_SYNC",
-          error:String(error?.message || error),
-          stack:String(error?.stack || "").slice(0,3000)
-        }), {
-          status:500,
-          headers:{
-            "Content-Type":"application/json; charset=UTF-8",
-            "Cache-Control":"no-store",
-            "X-Robots-Tag":"noindex,nofollow,noarchive"
-          }
-        });
-      }
-    }
-
     // Enforce the official HTTPS origin before serving the public domain.
     if ((host === ROOT_HOST || host === WWW_HOST) && url.protocol !== "https:") {
       const target = new URL(request.url);
