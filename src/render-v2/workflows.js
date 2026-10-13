@@ -7,6 +7,7 @@ import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant } from "./browser.js";
 import { classifyFailure, failureFingerprint, shouldChangeStrategy } from "./failure-policy.js";
 import { bytesToBase64 } from "./utils.js";
+import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 
 function parseContacts(input) {
   const text=String(input?.verified_contacts||"");
@@ -110,6 +111,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return r;
       });
 
+      try {
+        await step.do("r"+cycle+"-reserve-generation-budget",async()=>
+          reserveAiCall(sql,params.packId,this.env,"VARIANT_GENERATION",revision.id)
+        );
+      } catch(error) {
+        const message=String(error?.message||error);
+        await step.do("r"+cycle+"-record-generation-budget-failure",async()=>
+          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COST_BUDGET",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BUDGET_V1"})
+        );
+        await step.do("r"+cycle+"-generation-budget-escalation",async()=>{
+          await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+          if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BUDGET_ESCALATION",errorCode:"HARD_BUDGET_EXCEEDED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"SYSTEM_INVARIANT"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"SYSTEM_INVARIANT"};
+      }
+
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
@@ -164,6 +184,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       });
       await updateRevision(sql,revision.id,{status:"CAPTURING",renderSpec:generated.spec,sourceHash:compiled.source_hash,htmlKey:htmlKey});
 
+      try {
+        await step.do("r"+cycle+"-reserve-browser-budget",async()=>
+          reserveBrowserCapture(sql,params.packId,this.env,params.variantKey,revision.id)
+        );
+      } catch(error) {
+        const message=String(error?.message||error);
+        await step.do("r"+cycle+"-record-browser-budget-failure",async()=>
+          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COST_BUDGET",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BUDGET_V1"})
+        );
+        await step.do("r"+cycle+"-browser-budget-escalation",async()=>{
+          await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+          if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BUDGET_ESCALATION",errorCode:"HARD_BUDGET_EXCEEDED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"SYSTEM_INVARIANT"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"SYSTEM_INVARIANT"};
+      }
+
       let captured;
       try {
         captured=await step.do("r"+cycle+"-capture",{retries:{limit:1,delay:"3 seconds",backoff:"constant"},timeout:"5 minutes"},async()=>{
@@ -213,6 +252,23 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return {ok:true};
       });
       previewEmitted=true;
+
+      try {
+        await step.do("r"+cycle+"-reserve-qa-budget",async()=>
+          reserveAiCall(sql,params.packId,this.env,"VARIANT_VISUAL_QA",revision.id)
+        );
+      } catch(error) {
+        const message=String(error?.message||error);
+        await step.do("r"+cycle+"-record-qa-budget-failure",async()=>
+          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COST_BUDGET",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BUDGET_V1"})
+        );
+        await step.do("r"+cycle+"-qa-budget-escalation",async()=>{
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BUDGET_ESCALATION",errorCode:"HARD_BUDGET_EXCEEDED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"SYSTEM_INVARIANT"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"SYSTEM_INVARIANT",preview_preserved:true};
+      }
 
       let qa;
       try {
@@ -304,6 +360,16 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     });
 
     const assetTokens=Object.entries(assets).filter(([,v])=>!v.unavailable).map(([k])=>k);
+    try {
+      await step.do("reserve-creative-budget",async()=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_PLAN"));
+    } catch(error) {
+      await step.do("creative-budget-escalation",async()=>{
+        await setPackStatus(sql,p.packId,"ESCALATION_REQUIRED",{error:"HARD_BUDGET_EXCEEDED"});
+        await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BUDGET_ESCALATION",errorCode:"HARD_BUDGET_EXCEEDED"});
+        return {ok:true};
+      });
+      return {status:"ESCALATION_REQUIRED",failure_domain:"SYSTEM_INVARIANT"};
+    }
     const creative=await step.do("creative-plan",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
       await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"CREATIVE_PLAN"});
       return createCreativePlan(this.env,input.payload,assetTokens);
@@ -367,6 +433,16 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         }
         return out;
       });
+      try {
+        await step.do("set-"+setCycle+"-reserve-qa-budget",async()=>reserveAiCall(sql,p.packId,this.env,"SET_VISUAL_QA"));
+      } catch(error) {
+        await step.do("set-"+setCycle+"-budget-escalation",async()=>{
+          await setPackStatus(sql,p.packId,"ESCALATION_REQUIRED",{error:"HARD_BUDGET_EXCEEDED",set_cycle:setCycle});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BUDGET_ESCALATION",errorCode:"HARD_BUDGET_EXCEEDED"});
+          return {ok:true};
+        });
+        return {status:"ESCALATION_REQUIRED",failure_domain:"SYSTEM_INVARIANT"};
+      }
       const setQa=await step.do("set-"+setCycle+"-qa",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"10 minutes"},async()=>{
         return runSetQa(this.env,{inputPayload:input.payload,frames});
       });
