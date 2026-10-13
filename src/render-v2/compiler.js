@@ -1,0 +1,98 @@
+import { COMPILER_VERSION } from "./constants.js";
+import { esc, stableStringify, sha256 } from "./utils.js";
+
+const FORBIDDEN_TAGS=/<\s*(script|iframe|object|embed|form|base|meta|link)\b/i;
+const FORBIDDEN_URL=/\b(?:src|href)\s*=\s*["']\s*(?:https?:|javascript:|data:)/i;
+const FORBIDDEN_CSS=/@import|expression\s*\(|javascript:|url\s*\(/i;
+const COPY_TOKEN=/\{\{copy:([A-Z0-9_]+)\}\}/g;
+const ASSET_TOKEN=/\{\{asset:([A-Z0-9_]+)\}\}/g;
+const CTA_TOKEN=/\{\{cta:([A-Z0-9_]+)\}\}/g;
+
+function visibleLiteralText(html) {
+  let x=String(html||"")
+    .replace(/<!--[\s\S]*?-->/g," ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi," ")
+    .replace(/<[^>]+>/g," ")
+    .replace(/\{\{(?:copy|asset|cta):[A-Z0-9_]+\}\}/g," ")
+    .replace(/&(?:nbsp|amp|lt|gt|quot|#39);/g," ")
+    .replace(/\s+/g," ").trim();
+  return x;
+}
+
+function tokenSet(source,re) {
+  const out=[];
+  for(const m of String(source||"").matchAll(re)) out.push(m[1]);
+  return [...new Set(out)];
+}
+
+export function validateRenderSpec(spec, manifests) {
+  const issues=[];
+  if(!spec || typeof spec!=="object") issues.push("RENDER_SPEC_OBJECT_REQUIRED");
+  const main=String(spec?.main_html||"");
+  const css=String(spec?.custom_css||"");
+  if(main.length<1200) issues.push("MAIN_HTML_TOO_THIN");
+  if(css.length<400) issues.push("CUSTOM_CSS_TOO_THIN");
+  if(FORBIDDEN_TAGS.test(main)) issues.push("FORBIDDEN_TAG");
+  if(FORBIDDEN_URL.test(main)) issues.push("ARBITRARY_URL_FORBIDDEN");
+  if(FORBIDDEN_CSS.test(css)) issues.push("UNSAFE_CSS_URL_OR_IMPORT");
+  if(/<svg\b/i.test(main)) issues.push("INLINE_SVG_NOT_ALLOWED_V2_0");
+  if(!/<section\b/i.test(main)) issues.push("SECTION_REQUIRED");
+  if(!/@media/i.test(css)) issues.push("MOBILE_RULES_REQUIRED");
+
+  const literal=visibleLiteralText(main);
+  if(literal) issues.push("UNAUTHORIZED_LITERAL_COPY:"+literal.slice(0,120));
+
+  const copyKeys=new Set(Object.keys(manifests?.copy||{}));
+  const assetKeys=new Set(Object.keys(manifests?.assets||{}));
+  const ctaKeys=new Set(Object.keys(manifests?.cta||{}));
+
+  for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
+  for(const key of tokenSet(main,ASSET_TOKEN)) if(!assetKeys.has(key)) issues.push("UNKNOWN_ASSET_TOKEN:"+key);
+  for(const key of tokenSet(main,CTA_TOKEN)) if(!ctaKeys.has(key)) issues.push("UNKNOWN_CTA_TOKEN:"+key);
+
+  return {pass:issues.length===0,issues};
+}
+
+function replaceAllTokens(source,re,map,kind) {
+  return String(source||"").replace(re,(_,key)=>{
+    if(!(key in map)) throw new Error("UNRESOLVED_"+kind+"_TOKEN:"+key);
+    return esc(map[key]);
+  });
+}
+
+export async function compileRenderSpec(spec,{businessName,logoToken,copyManifest,assetManifest,ctaManifest}) {
+  const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest};
+  const gate=validateRenderSpec(spec,manifests);
+  if(!gate.pass) return {ok:false,issues:gate.issues};
+
+  let main=String(spec.main_html);
+  main=replaceAllTokens(main,COPY_TOKEN,copyManifest,"COPY");
+  main=replaceAllTokens(main,ASSET_TOKEN,assetManifest,"ASSET");
+  main=replaceAllTokens(main,CTA_TOKEN,ctaManifest,"CTA");
+
+  const logo=logoToken ? '<img class="ix-v2-logo" data-official-logo src="'+esc(logoToken)+'" alt="'+esc(businessName)+'">' : '<strong class="ix-v2-wordmark">'+esc(businessName)+'</strong>';
+  const baseCss=[
+    "*{box-sizing:border-box}",
+    "html,body{margin:0;padding:0}",
+    "body{overflow-x:hidden}",
+    "img{max-width:100%;height:auto;display:block}",
+    ".ix-v2-header,.ix-v2-footer{padding:20px clamp(20px,5vw,72px)}",
+    ".ix-v2-header{display:flex;align-items:center;justify-content:space-between;gap:20px}",
+    ".ix-v2-logo{max-width:min(220px,52vw);max-height:76px;object-fit:contain}",
+    ".ix-v2-footer{min-height:96px}",
+    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:16px 20px}}"
+  ].join("");
+
+  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span></footer></body></html>';
+  const sourceHash=await sha256(html);
+  return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(spec))};
+}
+
+export function buildCaptureHtml(compiledHtml,materializedAssets) {
+  let html=String(compiledHtml||"");
+  for(const [token,dataUrl] of Object.entries(materializedAssets||{})) {
+    html=html.split(esc("asset://"+token)).join(dataUrl);
+    html=html.split(esc("identity://"+token)).join(dataUrl);
+  }
+  return html;
+}
