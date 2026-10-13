@@ -203,9 +203,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           const captureHtml=buildCaptureHtml(compiled.html,dataUrls);
           const result=await captureVariant(this.env,captureHtml,context.inputPayload);
           const base="render-v2/"+context.inputPayload.prospect_code+"/"+params.packId+"/"+params.variantKey+"/r"+revision.revision+"/";
-          const desktop=await putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"DESKTOP_1440",key:base+"desktop-1440.jpg",body:result.desktop.bytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE"});
-          const mobile=await putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"MOBILE_390",key:base+"mobile-390.jpg",body:result.mobile.bytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE"});
-          return {ok:true,desktop,mobile,gate:result.gate,diagnostics:{desktop:result.desktop.diagnostics,mobile:result.mobile.diagnostics}};
+          const [desktop,mobile,qaDesktop,qaMobile]=await Promise.all([
+            putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"DESKTOP_1440",key:base+"desktop-1440.jpg",body:result.desktop.bytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE"}),
+            putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"MOBILE_390",key:base+"mobile-390.jpg",body:result.mobile.bytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE"}),
+            putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"QA_DESKTOP",key:base+"qa-desktop.jpg",body:result.desktop.qaBytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE_QA"}),
+            putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"QA_MOBILE",key:base+"qa-mobile.jpg",body:result.mobile.qaBytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE_QA"})
+          ]);
+          return {ok:true,desktop,mobile,qaDesktop,qaMobile,gate:result.gate,diagnostics:{desktop:result.desktop.diagnostics,mobile:result.mobile.diagnostics}};
         });
       } catch(error) {
         captured={ok:false,error:String(error?.message||error)};
@@ -252,8 +256,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let qa;
       try {
         qa=await step.do("r"+cycle+"-visual-qa",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
-          const desktopBytes=await readArtifactBytes(this.env,captured.desktop.r2_key);
-          const mobileBytes=await readArtifactBytes(this.env,captured.mobile.r2_key);
+          const desktopBytes=await readArtifactBytes(this.env,captured.qaDesktop.r2_key);
+          const mobileBytes=await readArtifactBytes(this.env,captured.qaMobile.r2_key);
           return runVisualQa(this.env,{
             inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
             desktopB64:bytesToBase64(desktopBytes),mobileB64:bytesToBase64(mobileBytes),
@@ -509,8 +513,14 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           const variantId=persisted.variants[key];
           const rev=await latestCertifiedRevision(sql,variantId);
           if(!rev) throw new Error("SYSTEM_INVARIANT:CERTIFIED_REVISION_MISSING:"+key);
-          const d=await readArtifactBytes(this.env,rev.desktop_r2_key);
-          const m=await readArtifactBytes(this.env,rev.mobile_r2_key);
+          const qaArtifacts=await sql`
+            select artifact_type,r2_key
+            from render_artifacts_v2
+            where variant_revision_id=${rev.id}::uuid
+              and artifact_type in ('QA_DESKTOP','QA_MOBILE')`;
+          const qaByType=Object.fromEntries(qaArtifacts.map(x=>[x.artifact_type,x.r2_key]));
+          const d=await readArtifactBytes(this.env,qaByType.QA_DESKTOP||rev.desktop_r2_key);
+          const m=await readArtifactBytes(this.env,qaByType.QA_MOBILE||rev.mobile_r2_key);
           out[key]={desktop:bytesToBase64(d),mobile:bytesToBase64(m),revision_id:rev.id};
         }
         return out;
