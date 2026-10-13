@@ -375,7 +375,22 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     });
 
     const assetTokens=Object.entries(assets).filter(([,v])=>!v.unavailable).map(([k])=>k);
-    const creative=await step.do("creative-plan",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+    const existingCreative=await step.do("load-existing-creative-plan",async()=>{
+      const rows=await sql`select * from render_creative_plans_v2 where render_pack_id=${p.packId}::uuid and status='COMPLETED' limit 1`;
+      return rows[0]||null;
+    });
+
+    const creative=existingCreative ? {
+      plan:{
+        content_truth:existingCreative.content_truth_pack,
+        creative_strategy:existingCreative.creative_strategy,
+        directions:existingCreative.directions,
+        fingerprints:existingCreative.fingerprints,
+        diversity_precheck:existingCreative.diversity_precheck
+      },
+      hash:existingCreative.content_hash,
+      reused:true
+    } : await step.do("creative-plan",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
       await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"CREATIVE_PLAN"});
       return createCreativePlan(this.env,input.payload,assetTokens,{
         beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_PLAN:"+model)
@@ -408,14 +423,46 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
 
     const previewEvents={};
     for(const key of ["A","B","C"]) {
-      previewEvents[key]=await step.waitForEvent("wait-preview-"+key,{type:"preview-"+key+"-initial",timeout:"30 minutes"});
+      const state=await step.do("check-preview-state-"+key,async()=>{
+        const rows=await sql`
+          select v.best_preview_revision,v.status,
+                 (select w.status from render_workflows_v2 w
+                  where w.variant_id=v.id and w.workflow_type='VARIANT'
+                  order by w.created_at desc limit 1) workflow_status
+          from render_v2_variants v
+          where v.id=${persisted.variants[key]}::uuid limit 1`;
+        return rows[0]||{};
+      });
+      if(state.best_preview_revision) {
+        previewEvents[key]={payload:{status:"PREVIEW_READY",revision:state.best_preview_revision,reused:true}};
+      } else if(["FAILED","CANCELLED"].includes(state.workflow_status)) {
+        previewEvents[key]={payload:{status:"NO_PREVIEW",reused:true}};
+      } else {
+        previewEvents[key]=await step.waitForEvent("wait-preview-"+key,{type:"preview-"+key+"-initial",timeout:"30 minutes"});
+      }
     }
     const allPreview=Object.values(previewEvents).every(e=>e.payload?.status==="PREVIEW_READY");
     if(allPreview) await step.do("mark-preview-ready",async()=>setPackStatus(sql,p.packId,"PREVIEW_READY"));
 
     const terminal={};
     for(const key of ["A","B","C"]) {
-      terminal[key]=await step.waitForEvent("wait-terminal-"+key,{type:"terminal-"+key+"-initial",timeout:"90 minutes"});
+      const state=await step.do("check-terminal-state-"+key,async()=>{
+        const rows=await sql`
+          select v.status,v.certified_revision,
+                 (select w.status from render_workflows_v2 w
+                  where w.variant_id=v.id and w.workflow_type='VARIANT'
+                  order by w.created_at desc limit 1) workflow_status
+          from render_v2_variants v
+          where v.id=${persisted.variants[key]}::uuid limit 1`;
+        return rows[0]||{};
+      });
+      if(state.status==="RENDER_READY" && state.certified_revision) {
+        terminal[key]={payload:{status:"RENDER_READY",revision:state.certified_revision,reused:true}};
+      } else if(["FAILED","CANCELLED"].includes(state.workflow_status)) {
+        terminal[key]={payload:{status:"ESCALATION_REQUIRED",reused:true}};
+      } else {
+        terminal[key]=await step.waitForEvent("wait-terminal-"+key,{type:"terminal-"+key+"-initial",timeout:"90 minutes"});
+      }
     }
     if(!Object.values(terminal).every(e=>e.payload?.status==="RENDER_READY")) {
       await step.do("variant-escalation",async()=>{
@@ -447,7 +494,16 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         });
       });
       await step.do("set-"+setCycle+"-persist-qa",async()=>{
-        await recordQa(sql,{packId:p.packId,type:"SET_VISUAL",status:setQa.pass?"PASS":"FAIL",scores:setQa.scores,issues:setQa.issues,actions:setQa.actions,modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION});
+        await recordQa(sql,{
+          packId:p.packId,type:"SET_VISUAL",status:setQa.pass?"PASS":"FAIL",
+          scores:setQa.scores,issues:setQa.issues,actions:setQa.actions,
+          artifactHashes:{
+            A_revision_id:frames.A.revision_id,
+            B_revision_id:frames.B.revision_id,
+            C_revision_id:frames.C.revision_id
+          },
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
+        });
         return {ok:true};
       });
       if(setQa.pass) {
