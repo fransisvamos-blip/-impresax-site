@@ -51,6 +51,9 @@ jobs:
               && grep -q '"flagship_first_pass_model":"@cf/openai/gpt-oss-120b"' /tmp/health.json \
               && grep -q '"generation_circuit_breaker_required":true' /tmp/health.json \
               && grep -q '"max_generation_failures":3' /tmp/health.json \
+              && grep -q '"cron_heavy_phase_separation_required":true' /tmp/health.json \
+              && grep -q '"ai_stale_recovery_minutes":16' /tmp/health.json \
+              && grep -q '"cloudflare_cron_duration_limit_minutes":15' /tmp/health.json \
               && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
               && grep -q '"brand_gate_required":true' /tmp/health.json \
               && grep -q '"brand_gate_auto_recovery":true' /tmp/health.json \
