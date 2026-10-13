@@ -1481,6 +1481,22 @@ async function candidates(sql, limit) {
       and rp.status in ('ART_DIRECTION','BRAND_GATE_HOLD')
       and coalesce((rp.content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
       and coalesce((rp.content_map->>'generation_hold')::boolean,false)=false
+      and (
+        coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
+        or exists (
+          select 1
+          from render_packs proof
+          where proof.status='RENDER_READY'
+            and proof.approved_reference=false
+            and (
+              select count(*) from render_staging_payloads ps
+              where ps.render_pack_id=proof.id
+                and ps.variant_key in ('A','B','C')
+                and coalesce(ps.design_notes->>'engine_revision','')=${CREATIVE_ENGINE_REVISION}
+                and coalesce(ps.design_notes->'visual_qa'->>'pass','false')='true'
+            )=3
+        )
+      )
       and coalesce(p.source_data->>'id_prospect',p.legacy_ids->>'id_prospect') <> 'CZ-000'
     order by
       case coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')
@@ -1641,7 +1657,13 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
   await sql`update render_packs set
       status='RENDERING',
       content_map=coalesce(content_map,'{}'::jsonb) ||
-        jsonb_build_object('generation_failure_count',0,'last_generation_error',null,'generation_hold',false)
+        jsonb_build_object(
+          'generation_failure_count',0,
+          'last_generation_error',null,
+          'generation_hold',false,
+          'creative_engine_revision',CREATIVE_ENGINE_REVISION,
+          'v8_4_proof_candidate',true
+        )
     where id=${row.render_pack_id}::uuid and status='AI_RENDERING'`;
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
         variants:["A","B","C"],
