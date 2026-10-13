@@ -18,6 +18,16 @@ function json(data, status = 200, extra = {}) {
   });
 }
 
+function validSetQa(pack) {
+  const qa=pack?.content_map?.visual_set_qa_last_run;
+  const scores=qa?.scores || {};
+  const required=["set_quality","diversity_ab","diversity_ac","diversity_bc","prospect_fit_a","prospect_fit_b","prospect_fit_c"];
+  return qa?.pass===true &&
+    Array.isArray(qa?.issues) &&
+    qa.issues.length===0 &&
+    required.every(k=>Number.isFinite(Number(scores[k])) && Number(scores[k])>=8);
+}
+
 function db(env) {
   if (!env.OPS_DATABASE_URL) {
     const error = new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -839,10 +849,14 @@ async function api(request, env, pathname) {
         and s.mobile_image_base64 is not null
         and s.rendered_at is not null
         and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+        and coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
         and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
         and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'`;
     if(Number(qaRows[0]?.passed||0)!==3) {
       return json({ok:false,error:"THREE_VISUAL_QA_PASSES_REQUIRED"},409);
+    }
+    if(!validSetQa(pack)) {
+      return json({ok:false,error:"A_B_C_SET_QA_PASS_REQUIRED"},409);
     }
 
     const variants=await sql`select * from render_variants
@@ -1020,10 +1034,14 @@ async function api(request, env, pathname) {
         and s.mobile_image_base64 is not null
         and s.rendered_at is not null
         and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+        and coalesce(s.design_notes->>'rendering_studio_contract','')='V8_2_CREATIVE_QUALITY'
         and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
         and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'`;
     if(Number(qaRows[0]?.passed||0)!==3) {
       return json({ok:false,error:"THREE_VISUAL_QA_PASSES_REQUIRED"},409);
+    }
+    if(!validSetQa(pack)) {
+      return json({ok:false,error:"A_B_C_SET_QA_PASS_REQUIRED"},409);
     }
 
     await sql`update render_packs set
@@ -1202,14 +1220,20 @@ export async function handleOpsRequest(request, env) {
         database_connected: true,
         render_pipeline: "CLOUDFLARE_NATIVE_V1",
         render_model: "@cf/zai-org/glm-4.7-flash",
-        render_engine_version: "CLOUDFLARE_NATIVE_V8_FROZEN_COMPLIANCE",
+        render_engine_version: "CLOUDFLARE_NATIVE_V8_2_CREATIVE_QUALITY",
         frozen_master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
         frozen_contract: "RENDERING_STUDIO_V1_FROZEN",
-        frozen_runtime_revision: "V8.1_STRICT_AUDIT_20261013",
+        frozen_runtime_revision: "V8.2_BESPOKE_DIRECTION_SET_20261013",
         frozen_db_guard: frozenDbGuard,
         exact_brand_dna_required: true,
         image_provenance_required: true,
         site_factory_reference_lock_required: true,
+        direction_pool_required: true,
+        direction_set_gate_required: true,
+        semantic_copy_gate_required: true,
+        structured_asset_inventory_required: true,
+        cross_variant_visual_qa_required: true,
+        qa_rework_memory_required: true,
         render_owner: "CLOUDFLARE_NATIVE_ONLY",
         brand_gate_required: true,
         brand_gate_auto_recovery: true,
