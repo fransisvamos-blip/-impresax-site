@@ -124,17 +124,19 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         });
       } catch(error) {
         const message=String(error?.message||error);
-        await step.do("r"+cycle+"-record-generation-provider-failure",async()=>
+        const fail=await step.do("r"+cycle+"-record-generation-provider-failure",async()=>
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VARIANT_GENERATION_PROVIDER",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:MODEL_ROUTE_VERSION})
         );
+        const domain=fail?.failure?.failure_domain||"AI_PROVIDER";
+        const budget=domain==="SYSTEM_INVARIANT" && /HARD_BUDGET_EXCEEDED/.test(message);
         await step.do("r"+cycle+"-generation-provider-escalation",async()=>{
           await updateRevision(sql,revision.id,{status:"QA_FAILED"});
           if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
-          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"AI_PROVIDER_ESCALATION",errorCode:"VARIANT_GENERATION_PROVIDER_FAILED"});
-          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"AI_PROVIDER"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"AI_PROVIDER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"VARIANT_GENERATION_PROVIDER_FAILED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
           return {ok:true};
         });
-        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"AI_PROVIDER"};
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:domain};
       }
 
       previousSpec=generated.spec;
@@ -183,17 +185,19 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       }
 
       if(!captured.ok) {
-        await step.do("r"+cycle+"-record-browser-failure",async()=>
+        const fail=await step.do("r"+cycle+"-record-browser-failure",async()=>
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"BROWSER_CAPTURE",error:captured.error,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BROWSER_V2"})
         );
+        const domain=fail?.failure?.failure_domain||"BROWSER";
+        const budget=domain==="SYSTEM_INVARIANT" && /HARD_BUDGET_EXCEEDED/.test(captured.error);
         await step.do("r"+cycle+"-browser-escalation",async()=>{
           await updateRevision(sql,revision.id,{status:"QA_FAILED"});
           if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
-          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"BROWSER_ESCALATION",errorCode:"BROWSER_CAPTURE_FAILED"});
-          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"BROWSER"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"BROWSER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"BROWSER_CAPTURE_FAILED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
           return {ok:true};
         });
-        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"BROWSER"};
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:domain};
       }
 
       if(!captured.gate.pass) {
@@ -230,15 +234,17 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         });
       } catch(error) {
         const message=String(error?.message||error);
-        await step.do("r"+cycle+"-record-qa-provider-failure",async()=>
+        const fail=await step.do("r"+cycle+"-record-qa-provider-failure",async()=>
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VISUAL_QA_PROVIDER",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:MODEL_ROUTE_VERSION})
         );
+        const domain=fail?.failure?.failure_domain||"AI_OUTPUT_SCHEMA";
+        const budget=domain==="SYSTEM_INVARIANT" && /HARD_BUDGET_EXCEEDED/.test(message);
         await step.do("r"+cycle+"-qa-provider-escalation",async()=>{
-          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"QA_PROVIDER_ESCALATION",errorCode:"VISUAL_QA_PROVIDER_FAILED"});
-          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"AI_OUTPUT_SCHEMA"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"QA_PROVIDER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"VISUAL_QA_PROVIDER_FAILED"});
+          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
           return {ok:true};
         });
-        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"AI_OUTPUT_SCHEMA",preview_preserved:true};
+        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:domain,preview_preserved:true};
       }
 
       await step.do("r"+cycle+"-persist-qa",async()=>{
