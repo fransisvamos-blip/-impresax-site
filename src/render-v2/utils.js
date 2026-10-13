@@ -62,3 +62,22 @@ export function slug(value) {
 export function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
+
+
+export function safeExternalHttpUrl(value) {
+  const normalized=safeHttpUrl(value);
+  if(!normalized) return "";
+  let u;
+  try { u=new URL(normalized); } catch { return ""; }
+  const host=u.hostname.toLowerCase().replace(/^\[|\]$/g,"");
+  if(!host || host==="localhost" || host.endsWith(".localhost") || host==="metadata.google.internal") return "";
+  if(host==="::1" || host==="0:0:0:0:0:0:0:1" || /^f[cd][0-9a-f:]*$/i.test(host) || /^fe[89ab][0-9a-f:]*$/i.test(host)) return "";
+  const m=host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if(m) {
+    const oct=m.slice(1).map(Number);
+    if(oct.some(x=>x<0||x>255)) return "";
+    const [a,b]=oct;
+    if(a===0 || a===10 || a===127 || (a===169&&b===254) || (a===172&&b>=16&&b<=31) || (a===192&&b===168) || a>=224) return "";
+  }
+  return u.href;
+}
