@@ -206,7 +206,13 @@ export async function createContentTruthPack(env,inputPayload,{beforeModelAttemp
   if(reviewer.data.pass!==true || (reviewer.data.issues||[]).length || (reviewer.data.unsupported_modules||[]).length) {
     throw new Error("CONTENT_TRUTH_VERIFICATION_FAILED:"+JSON.stringify({issues:reviewer.data.issues||[],unsupported_modules:reviewer.data.unsupported_modules||[]}));
   }
-  return {content_truth:generated.data,generator_model:generated.model,reviewer_model:reviewer.model,hash:await sha256(stableStringify(generated.data))};
+  return {
+    content_truth:generated.data,
+    generator_model:generated.model,
+    reviewer_model:reviewer.model,
+    verification:reviewer.data,
+    hash:await sha256(stableStringify(generated.data))
+  };
 }
 
 export async function createCreativeDirections(env,inputPayload,assetTokens,{beforeModelAttempt=null}={}) {
