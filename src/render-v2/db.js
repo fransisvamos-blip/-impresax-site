@@ -306,8 +306,21 @@ export async function recordFailure(sql,{packId,workflowId=null,revisionId=null,
       ${packId}::uuid,${workflowId}::uuid,${revisionId}::uuid,${step},
       ${failure.failure_domain},${failure.failure_code},${fingerprint},${failure.retryable},
       ${strategyVersion},${attempt},${JSON.stringify({...details,message:failure.message})}::jsonb
-    ) returning *`;
-  return rows[0];
+    )
+    on conflict do nothing
+    returning *`;
+  if(rows.length) return rows[0];
+  const existing=await sql`
+    select * from render_failures_v2
+    where render_pack_id=${packId}::uuid
+      and workflow_id is not distinct from ${workflowId}::uuid
+      and variant_revision_id is not distinct from ${revisionId}::uuid
+      and step=${step}
+      and fingerprint=${fingerprint}
+      and strategy_version=${strategyVersion}
+    order by created_at asc limit 1`;
+  if(!existing.length) throw new Error("SYSTEM_INVARIANT:FAILURE_IDEMPOTENCY_RECOVERY_FAILED");
+  return existing[0];
 }
 
 export async function countFailureFingerprint(sql,packId,fingerprint) {
