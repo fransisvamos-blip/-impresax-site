@@ -319,7 +319,7 @@ async function critiqueVariantSet(env, prospect, captured, individualQa) {
 
   const prompt=[
     "Judge the THREE homepage directions AS A SET, not individually.",
-    "The three desktop screenshots follow in exact order A, B, C.",
+    "Six screenshots follow in exact order: A desktop, A mobile, B desktop, B mobile, C desktop, C mobile.",
     "PASS only if each variant is unmistakably adapted to THIS prospect, A/B/C are materially different in hero logic, composition, typography, imagery/materiality, signature device, rhythm and CTA treatment, and the weakest route is still portfolio-grade.",
     "Hard fail if two routes are strong and one is filler, if diversity is merely palette/copy changes, or if the same generic template family is visible underneath.",
     "Every score must be >=8/10. Any issue means FAIL.",
@@ -344,8 +344,11 @@ async function critiqueVariantSet(env, prospect, captured, individualQa) {
           {role:"user",content:[
             {type:"text",text:prompt},
             {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+A.desktopB64}},
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+A.mobileB64}},
             {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+B.desktopB64}},
-            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+C.desktopB64}}
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+B.mobileB64}},
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+C.desktopB64}},
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+C.mobileB64}}
           ]}
         ],
         tools:[{name:"submit_set_qa",description:"Submit the final A/B/C set-level QA verdict.",parameters}],
@@ -1008,7 +1011,6 @@ async function renderHtml(browser, html, width, height) {
       }));
     });
 
-    // Trigger below-the-fold lazy assets before the full-page capture.
     await page.evaluate(async () => {
       const step=Math.max(500,Math.floor(window.innerHeight*0.8));
       for(let y=0;y<document.documentElement.scrollHeight;y+=step) {
@@ -1019,10 +1021,92 @@ async function renderHtml(browser, html, width, height) {
     });
     await new Promise(resolve => setTimeout(resolve, 250));
 
-    return await page.screenshot({ type: "jpeg", quality: 90, fullPage: true });
+    const diagnostics=await page.evaluate((viewportWidth) => {
+      const root=document.documentElement;
+      const images=[...document.images].map(img=>{
+        const r=img.getBoundingClientRect();
+        return {
+          src:img.currentSrc || img.src || "",
+          alt:img.alt || "",
+          natural_width:img.naturalWidth || 0,
+          natural_height:img.naturalHeight || 0,
+          rendered_width:Math.round(r.width),
+          rendered_height:Math.round(r.height),
+          visible:r.width>1 && r.height>1 && getComputedStyle(img).visibility!=="hidden" && getComputedStyle(img).display!=="none"
+        };
+      });
+      const broken_images=images.filter(x=>x.visible && (!x.natural_width || !x.natural_height)).map(x=>x.src || x.alt).slice(0,12);
+      const logo_images=images.filter(x=>/logo/i.test((x.src||"")+" "+(x.alt||"")));
+      const tiny_logo=logo_images.some(x=>x.visible && (x.rendered_width<48 || x.rendered_height<18));
+      const horizontal_overflow=Math.max(root.scrollWidth,document.body?.scrollWidth||0) > viewportWidth + 4;
+      const overflowing_elements=[...document.querySelectorAll("body *")].filter(el=>{
+        const r=el.getBoundingClientRect();
+        return r.width>0 && (r.right>viewportWidth+4 || r.left<-4);
+      }).slice(0,10).map(el=>({
+        tag:el.tagName.toLowerCase(),
+        class_name:String(el.className||"").slice(0,120),
+        text:String(el.textContent||"").replace(/\s+/g," ").trim().slice(0,120)
+      }));
+      const interactive=[...document.querySelectorAll("a,button,input,textarea,select")].filter(el=>{
+        const r=el.getBoundingClientRect();
+        const s=getComputedStyle(el);
+        return r.width>0 && r.height>0 && s.display!=="none" && s.visibility!=="hidden";
+      }).map(el=>{
+        const r=el.getBoundingClientRect();
+        return {w:Math.round(r.width),h:Math.round(r.height),text:String(el.textContent||el.getAttribute("aria-label")||"").trim().slice(0,80)};
+      });
+      const undersized_tap_targets=viewportWidth<=430
+        ? interactive.filter(x=>x.w<36 || x.h<36).slice(0,12)
+        : [];
+      const bodyFont=parseFloat(getComputedStyle(document.body).fontSize||"0");
+      return {
+        width:viewportWidth,
+        full_height:root.scrollHeight,
+        broken_images,
+        horizontal_overflow,
+        overflowing_elements,
+        tiny_logo,
+        body_font_px:bodyFont,
+        undersized_tap_targets,
+        image_count:images.length
+      };
+    },width);
+
+    const bytes=await page.screenshot({ type: "jpeg", quality: 92, fullPage: true });
+    return {bytes,diagnostics};
   } finally {
     await page.close();
   }
+}
+
+function deterministicRenderIssues(desktop,mobile) {
+  const issues=[];
+  if(desktop?.broken_images?.length) issues.push("DESKTOP_BROKEN_IMAGES:"+desktop.broken_images.join("|"));
+  if(mobile?.broken_images?.length) issues.push("MOBILE_BROKEN_IMAGES:"+mobile.broken_images.join("|"));
+  if(desktop?.horizontal_overflow) issues.push("DESKTOP_HORIZONTAL_OVERFLOW");
+  if(mobile?.horizontal_overflow) issues.push("MOBILE_HORIZONTAL_OVERFLOW");
+  if(desktop?.tiny_logo || mobile?.tiny_logo) issues.push("OFFICIAL_IDENTITY_TOO_SMALL");
+  if(Number(mobile?.body_font_px||0)>0 && Number(mobile.body_font_px)<14) issues.push("MOBILE_BODY_TYPE_TOO_SMALL");
+  if((mobile?.undersized_tap_targets||[]).length>=3) issues.push("MOBILE_TAP_TARGETS_TOO_SMALL");
+  return issues;
+}
+
+function deterministicFailQa(issues) {
+  const scoreKeys=[
+    "first_impression","art_direction","prospect_specificity","brand_fidelity","composition",
+    "typography","imagery","materiality","signature_visual_language","rhythm","restraint",
+    "cta_integration","commercial_clarity","desktop_quality","mobile_quality","footer_quality",
+    "no_template_feel","no_saas_feel","no_ai_feel","truth_integrity","consistency"
+  ];
+  return {
+    pass:false,
+    summary:"Deterministic browser-render QA found blocking visible/technical defects before model critique.",
+    issues,
+    rework_instructions:issues.map(x=>"Fix "+x+" and re-render before visual approval."),
+    scores:Object.fromEntries(scoreKeys.map(k=>[k,0])),
+    model:"DETERMINISTIC_BROWSER_QA",
+    checked_at:new Date().toISOString()
+  };
 }
 
 async function recoverStaleClaims(sql) {
@@ -1480,15 +1564,23 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
         renderHtml(browser,item.html_source,1440,900),
         renderHtml(browser,item.html_source,390,844)
       ]);
-      const desktopB64=bytesToBase64(desktop);
-      const mobileB64=bytesToBase64(mobile);
-      captured.push({item,desktopB64,mobileB64});
+      const desktopB64=bytesToBase64(desktop.bytes);
+      const mobileB64=bytesToBase64(mobile.bytes);
+      captured.push({
+        item,
+        desktopB64,
+        mobileB64,
+        desktopDiagnostics:desktop.diagnostics,
+        mobileDiagnostics:mobile.diagnostics
+      });
 
       await sql`update render_staging_payloads set
           status='VISUAL_QA_PENDING',
           desktop_image_base64=${desktopB64},
           mobile_image_base64=${mobileB64},
           image_mime='image/jpeg',
+          design_notes=coalesce(design_notes,'{}'::jsonb) ||
+            ${JSON.stringify({render_diagnostics:{desktop:desktop.diagnostics,mobile:mobile.diagnostics}})}::jsonb,
           render_error=null,
           rendered_at=now(),
           updated_at=now()
@@ -1514,15 +1606,18 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
   try {
     const qaResults = await Promise.all(captured.map(async (frame) => {
       const item=frame.item;
-      const qa = await critiqueVisibleRender(
-        env,
-        master,
-        visualQaProspect,
-        item.variant_key,
-        item.design_notes?.direction || {},
-        frame.desktopB64,
-        frame.mobileB64
-      );
+      const deterministicIssues=deterministicRenderIssues(frame.desktopDiagnostics,frame.mobileDiagnostics);
+      const qa = deterministicIssues.length
+        ? deterministicFailQa(deterministicIssues)
+        : await critiqueVisibleRender(
+            env,
+            master,
+            visualQaProspect,
+            item.variant_key,
+            item.design_notes?.direction || {},
+            frame.desktopB64,
+            frame.mobileB64
+          );
       return { variant_key:item.variant_key, variant_id:item.variant_id, staging_id:item.id, qa };
     }));
 
