@@ -13,7 +13,7 @@ const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
 const MAX_GENERATION_FAILURES = 3;
-const CREATIVE_ENGINE_REVISION = "V8.4.2_LOGO_SAFE_BREAKER_SOT";
+const CREATIVE_ENGINE_REVISION = "V8.4.3_CONTACT_SAFE_BREAKER_RECONCILE";
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -1871,6 +1871,58 @@ async function failGeneration(sql,row,jobId,error) {
   if(!failed.length) return;
   await applyGenerationFailureState(sql,row,message);
 }
+async function reconcileGenerationCircuitBreakers(sql) {
+  await sql`update render_packs rp
+    set content_map=coalesce(rp.content_map,'{}'::jsonb) ||
+      jsonb_build_object(
+        'generation_failure_count',
+        (
+          select count(*)::int
+          from render_jobs j
+          where j.worker='cloudflare-workers-ai'
+            and j.status='FAILED'
+            and j.input_data->>'render_pack_id'=rp.id::text
+            and j.input_data->>'engine_revision'=${CREATIVE_ENGINE_REVISION}
+            and coalesce(j.error,'') not like 'SUPERSEDED_BY%'
+            and coalesce(j.error,'') <> 'CANCELLED_BY_GENERATION_CIRCUIT_BREAKER'
+            and (
+              nullif(rp.content_map->>'generation_success_at','') is null
+              or j.started_at > (rp.content_map->>'generation_success_at')::timestamptz
+            )
+        ),
+        'generation_failure_source','RENDER_JOBS_RECONCILED_EACH_CRON',
+        'creative_engine_revision',${CREATIVE_ENGINE_REVISION},
+        'generation_breaker_reconciled_at',now()
+      )
+    where rp.approved_reference=false
+      and rp.status in ('ART_DIRECTION','AI_RENDERING','ESCALATION_REQUIRED','BRAND_GATE_HOLD')`;
+
+  await sql`update render_packs rp
+    set status='ESCALATION_REQUIRED',
+        content_map=coalesce(rp.content_map,'{}'::jsonb) ||
+          jsonb_build_object('generation_hold',true,'generation_failure_source','RENDER_JOBS_RECONCILED_EACH_CRON')
+    where rp.approved_reference=false
+      and coalesce((rp.content_map->>'generation_failure_count')::int,0) >= ${MAX_GENERATION_FAILURES}
+      and rp.status <> 'RENDER_READY'`;
+
+  await sql`update prospects p
+    set pipeline_status='RENDERING'::pipeline_status,
+        render_status='ESCALATION_REQUIRED',
+        current_step='GENERATION_HOLD',
+        next_action='CABINA_CREATIVE_GENERATION_REVIEW',
+        error=coalesce(p.error,'GENERATION_CIRCUIT_BREAKER'),
+        updated_at=now()
+    where exists (
+      select 1 from render_packs rp
+      where rp.prospect_id=p.id
+        and rp.approved_reference=false
+        and rp.status='ESCALATION_REQUIRED'
+        and coalesce((rp.content_map->>'generation_failure_count')::int,0) >= ${MAX_GENERATION_FAILURES}
+    )
+      and p.render_status<>'RENDER_READY'`;
+}
+
+
 
 async function generateProspect(sql, env, master, row) {
   let workingRow = row;
@@ -2345,6 +2397,7 @@ export async function runCloudflareRenderEngine(env) {
   const sql=db(env);
 
   await recoverStaleClaims(sql);
+  await reconcileGenerationCircuitBreakers(sql);
   const cancelledLegacyRenderJobs=await reconcileNativeRenderQueue(sql);
 
   const activeBrowserRows=await sql`select count(*)::int as n from render_jobs
