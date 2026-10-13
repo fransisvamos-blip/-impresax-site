@@ -803,6 +803,10 @@ async function api(request, env, pathname) {
     if(/REJECT|ARCHIVED/i.test(String(pack.status||""))) {
       return json({ok:false,error:"RENDER_PACK_NOT_SELECTABLE"},409);
     }
+    if(String(pack.status||"").toUpperCase()!=="RENDER_READY" ||
+       String(pack.render_status||"").toUpperCase()!=="RENDER_READY") {
+      return json({ok:false,error:"RENDER_PACK_NOT_RENDER_READY"},409);
+    }
 
     const contractRows=await sql`
       select
@@ -820,6 +824,25 @@ async function api(request, env, pathname) {
     const contract=contractRows[0]||{};
     if(Number(contract.total)!==3 || Number(contract.distinct_keys)!==3 || Number(contract.complete)!==3) {
       return json({ok:false,error:"THREE_COMPLETE_VARIANTS_REQUIRED"},409);
+    }
+
+    const qaRows=await sql`
+      select count(*)::int as passed
+      from render_variants rv
+      join render_staging_payloads s
+        on s.render_pack_id=rv.render_pack_id and s.variant_key=rv.variant_key
+      where rv.render_pack_id=${renderPackId}::uuid
+        and rv.variant_key in ('A','B','C')
+        and rv.status='RENDER_READY'
+        and s.status='RENDERED'
+        and s.desktop_image_base64 is not null
+        and s.mobile_image_base64 is not null
+        and s.rendered_at is not null
+        and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+        and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
+        and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'`;
+    if(Number(qaRows[0]?.passed||0)!==3) {
+      return json({ok:false,error:"THREE_VISUAL_QA_PASSES_REQUIRED"},409);
     }
 
     const variants=await sql`select * from render_variants
@@ -845,19 +868,28 @@ async function api(request, env, pathname) {
       ...(selectedVariant.content_map||{}),
       selected_variant:selectedVariant.variant_key,
       selected_variant_id:selectedVariant.id,
-      selected_variant_name:selectedVariant.name
+      selected_variant_name:selectedVariant.name,
+      selected_from_render_ready:true
     };
+    const nonEmptyObject=(v)=>v && typeof v==="object" && !Array.isArray(v) && Object.keys(v).length>0;
+    const selectedBrandDna=nonEmptyObject(selectedVariant.brand_dna) ? selectedVariant.brand_dna : (pack.brand_dna||{});
+    const selectedPalette=nonEmptyObject(selectedVariant.palette) ? selectedVariant.palette : (pack.palette||{});
+    const selectedTypography=nonEmptyObject(selectedVariant.typography) ? selectedVariant.typography : (pack.typography||{});
+    const selectedImageMap=nonEmptyObject(selectedVariant.image_asset_map) ? selectedVariant.image_asset_map : (pack.image_asset_map||{});
+    const selectedSectionMap=Array.isArray(selectedVariant.section_map) && selectedVariant.section_map.length ? selectedVariant.section_map : (pack.section_map||[]);
+    const selectedCtaMap=nonEmptyObject(selectedVariant.cta_map) ? selectedVariant.cta_map : (pack.cta_map||{});
+    const selectedSources=Array.from(new Set([...(pack.source_references||[]),...(selectedVariant.source_references||[])]));
     await sql`update render_packs set
       desktop_render_url=${selectedVariant.desktop_render_url},
       mobile_render_url=${selectedVariant.mobile_render_url},
-      brand_dna=${JSON.stringify(selectedVariant.brand_dna||{})}::jsonb,
-      palette=${JSON.stringify(selectedVariant.palette||{})}::jsonb,
-      typography=${JSON.stringify(selectedVariant.typography||{})}::jsonb,
-      image_asset_map=${JSON.stringify(selectedVariant.image_asset_map||{})}::jsonb,
-      section_map=${JSON.stringify(selectedVariant.section_map||[])}::jsonb,
-      cta_map=${JSON.stringify(selectedVariant.cta_map||{})}::jsonb,
+      brand_dna=${JSON.stringify(selectedBrandDna)}::jsonb,
+      palette=${JSON.stringify(selectedPalette)}::jsonb,
+      typography=${JSON.stringify(selectedTypography)}::jsonb,
+      image_asset_map=${JSON.stringify(selectedImageMap)}::jsonb,
+      section_map=${JSON.stringify(selectedSectionMap)}::jsonb,
+      cta_map=${JSON.stringify(selectedCtaMap)}::jsonb,
       content_map=${JSON.stringify(mergedContent)}::jsonb,
-      source_references=${JSON.stringify(selectedVariant.source_references||[])}::jsonb,
+      source_references=${JSON.stringify(selectedSources)}::jsonb,
       reference_score=${selectedVariant.reference_score ?? null},
       approved_reference=false,
       approved_at=null,
@@ -943,6 +975,9 @@ async function api(request, env, pathname) {
       });
     }
 
+    if(String(pack.status||"").toUpperCase()!=="AWAITING_IMPLEMENTATION") {
+      return json({ok:false,error:"RENDER_PACK_NOT_AWAITING_IMPLEMENTATION"},409);
+    }
     if(!selectedVariant.selected || String(selectedVariant.status||"").toUpperCase()!=="SELECTED") {
       return json({ok:false,error:"RENDER_VARIANT_MUST_BE_SELECTED_FIRST"},409);
     }
@@ -969,6 +1004,26 @@ async function api(request, env, pathname) {
     const contract=contractRows[0]||{};
     if(Number(contract.total)!==3 || Number(contract.distinct_keys)!==3 || Number(contract.complete)!==3) {
       return json({ok:false,error:"THREE_COMPLETE_VARIANTS_REQUIRED"},409);
+    }
+
+    const qaRows=await sql`
+      select count(*)::int as passed
+      from render_variants rv
+      join render_staging_payloads s
+        on s.render_pack_id=rv.render_pack_id and s.variant_key=rv.variant_key
+      where rv.render_pack_id=${renderPackId}::uuid
+        and rv.variant_key in ('A','B','C')
+        and rv.desktop_render_url is not null
+        and rv.mobile_render_url is not null
+        and s.status='RENDERED'
+        and s.desktop_image_base64 is not null
+        and s.mobile_image_base64 is not null
+        and s.rendered_at is not null
+        and coalesce(s.design_notes->>'source','')='RENDERING_STUDIO_V1_FROZEN'
+        and coalesce(s.design_notes->'visual_qa'->>'pass','false')='true'
+        and coalesce(s.design_notes->'visual_qa'->>'model','')='@cf/qwen/qwen3.8-27b'`;
+    if(Number(qaRows[0]?.passed||0)!==3) {
+      return json({ok:false,error:"THREE_VISUAL_QA_PASSES_REQUIRED"},409);
     }
 
     await sql`update render_packs set
