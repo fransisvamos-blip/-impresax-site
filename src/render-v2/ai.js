@@ -254,7 +254,9 @@ export async function combineCreativePlan(contentTruth,directions) {
     creative_strategy:directions.creative_strategy,
     directions:directions.directions,
     fingerprints:directions.fingerprints,
-    diversity_precheck:directions.diversity_precheck
+    diversity_precheck:directions.diversity_precheck,
+    content_truth_hash:contentTruth.hash,
+    creative_directions_hash:directions.hash
   };
   return {plan,hash:await sha256(stableStringify(plan))};
 }
