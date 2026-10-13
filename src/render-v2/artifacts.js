@@ -1,4 +1,4 @@
-import { sha256, bytesToBase64 } from "./utils.js";
+import { sha256, bytesToBase64, safeExternalHttpUrl } from "./utils.js";
 import { EXECUTION_ENGINE_VERSION } from "./constants.js";
 
 function bodyBytes(body) {
@@ -77,12 +77,28 @@ export async function ingestInputAssets(env,sql,{pack,inputPack}) {
         continue;
       }
 
-      const resp=await fetch(asset.source_url,{headers:{"User-Agent":"ImpresaX-Render-V2/1.0"}});
+      const initialUrl=safeExternalHttpUrl(asset.source_url);
+      if(!initialUrl) throw new Error("ASSET_SOURCE_URL_PRIVATE_OR_UNSAFE");
+      const resp=await fetch(initialUrl,{headers:{"User-Agent":"ImpresaX-Render-V2/1.0"},redirect:"follow"});
       if(!resp.ok) throw new Error("R2_INPUT_ASSET_FETCH_"+resp.status);
-      const mime=(resp.headers.get("content-type")||"application/octet-stream").split(";")[0].trim();
-      if(asset.role==="identity" && !/^image\//i.test(mime)) throw new Error("PRIMARY_LOGO_NOT_IMAGE");
+      if(!safeExternalHttpUrl(resp.url||initialUrl)) throw new Error("ASSET_REDIRECT_PRIVATE_OR_UNSAFE");
+      const mime=(resp.headers.get("content-type")||"application/octet-stream").split(";")[0].trim().toLowerCase();
+      const allowedRaster=new Set(["image/jpeg","image/png","image/webp","image/avif","image/gif"]);
+      const isSvg=mime==="image/svg+xml";
+      if(!allowedRaster.has(mime) && !isSvg) throw new Error("INPUT_ASSET_UNSUPPORTED_MIME:"+mime);
+      if(isSvg && asset.role!=="identity") throw new Error("NON_IDENTITY_SVG_NOT_ALLOWED");
+      const declared=Number(resp.headers.get("content-length")||0);
+      const maxBytes=12*1024*1024;
+      if(declared>maxBytes) throw new Error("INPUT_ASSET_TOO_LARGE");
       const bytes=new Uint8Array(await resp.arrayBuffer());
       if(bytes.byteLength<32) throw new Error("INPUT_ASSET_TOO_SMALL");
+      if(bytes.byteLength>maxBytes) throw new Error("INPUT_ASSET_TOO_LARGE");
+      if(isSvg) {
+        const svgText=new TextDecoder().decode(bytes).slice(0,2_000_000);
+        if(/<script\b|<foreignObject\b|\son[a-z]+\s*=|(?:href|xlink:href)\s*=\s*["']?\s*(?:https?:|javascript:|data:)|url\s*\(/i.test(svgText)) {
+          throw new Error("UNSAFE_IDENTITY_SVG");
+        }
+      }
       const rec=await putArtifact(env,sql,{packId:pack.id,type:"INPUT_ASSET_"+asset.asset_id,key,body:bytes,mime,producerStep:"INPUT_INGEST"});
       assets[asset.asset_id]={...asset,r2_key:key,mime,sha256:rec.sha256,bytes:rec.bytes};
     } catch(error) {
