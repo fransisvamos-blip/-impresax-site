@@ -123,11 +123,14 @@ export async function createVariants(sql,packId,directions) {
       returning *`;
     let row=rows[0];
     if(!row) {
-      const existing=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid and variant_key=${key} limit 1`;
+      const existing=await sql`
+        select * from render_v2_variants
+        where render_pack_id=${packId}::uuid
+          and variant_key=${key}
+          and direction_fingerprint=${JSON.stringify(fp)}::jsonb
+        limit 1`;
       row=existing[0];
-      if(!row || JSON.stringify(row.direction_fingerprint||{})!==JSON.stringify(fp)) {
-        throw new Error("SYSTEM_INVARIANT:VARIANT_DIRECTION_IMMUTABILITY_MISMATCH:"+key);
-      }
+      if(!row) throw new Error("SYSTEM_INVARIANT:VARIANT_DIRECTION_IMMUTABILITY_MISMATCH:"+key);
     }
     out[key]=row;
   }
