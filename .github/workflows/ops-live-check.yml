@@ -28,11 +28,11 @@ jobs:
               && grep -q '"database_connected":true' /tmp/health.json \
               && grep -q '"render_pipeline":"CLOUDFLARE_NATIVE_V1"' /tmp/health.json \
               && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json \
-              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V8_4_4_ACCELERATED_PHASE_CHAINING"' /tmp/health.json \
+              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V8_5_FAST_PREVIEW_FIRST"' /tmp/health.json \
               && grep -q '"frozen_master_commit":"9578da3fa1b173283bf5c748b0e7d89497537e76"' /tmp/health.json \
               && grep -q '"frozen_contract":"RENDERING_STUDIO_V1_FROZEN"' /tmp/health.json \
               && grep -q '"frozen_runtime_revision":"V8.3_DETERMINISTIC_SIX_VIEW_QA_20261013"' /tmp/health.json \
-              && grep -q '"creative_engine_revision":"V8.4.3_CONTACT_SAFE_BREAKER_RECONCILE"' /tmp/health.json \
+              && grep -q '"creative_engine_revision":"V8.5_FAST_PREVIEW_FIRST"' /tmp/health.json \
               && grep -q '"frozen_db_guard":true' /tmp/health.json \
               && grep -q '"frozen_db_guard_current":true' /tmp/health.json \
               && grep -q '"exact_brand_dna_required":true' /tmp/health.json \
@@ -62,8 +62,11 @@ jobs:
               && grep -q '"v8_4_first_render_ready_proof_required":true' /tmp/health.json \
               && grep -q '"v8_4_proof_prospect":"CZ-063"' /tmp/health.json \
               && grep -q '"max_generation_failures":3' /tmp/health.json \
-              && grep -q '"render_phase_acceleration":"GENERATION_BROWSER_QA_REWORK_SAME_TICK"' /tmp/health.json \
+              && grep -q '"render_phase_acceleration":"FAST_PREVIEW_FIRST_THEN_DEEP_QA"' /tmp/health.json \
               && grep -q '"accelerated_pipeline_passes":2' /tmp/health.json \
+              && grep -q '"fast_preview_first":true' /tmp/health.json \
+              && grep -q '"fast_preview_urls_before_final_qa":true' /tmp/health.json \
+              && grep -q '"fast_direction_planning_calls":1' /tmp/health.json \
               && grep -q '"render_tick_soft_budget_minutes":10' /tmp/health.json \
               && grep -q '"cron_heavy_phase_separation_required":false' /tmp/health.json \
               && grep -q '"cron_phase_chaining_enabled":true' /tmp/health.json \
