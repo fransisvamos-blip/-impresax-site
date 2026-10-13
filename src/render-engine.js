@@ -71,15 +71,27 @@ function normalizeVisualQa(result) {
     : [];
   const scores = result?.scores && typeof result.scores === "object" ? result.scores : {};
   const criticalScores = [
+    "first_impression",
     "art_direction",
     "prospect_specificity",
     "brand_fidelity",
+    "composition",
     "typography",
     "imagery",
+    "materiality",
+    "signature_visual_language",
+    "rhythm",
+    "restraint",
+    "cta_integration",
+    "commercial_clarity",
     "desktop_quality",
     "mobile_quality",
+    "footer_quality",
     "no_template_feel",
-    "truth_integrity"
+    "no_saas_feel",
+    "no_ai_feel",
+    "truth_integrity",
+    "consistency"
   ];
   const scoreFailure = criticalScores.some(k => Number.isFinite(Number(scores[k])) && Number(scores[k]) < 8);
   return {
@@ -100,10 +112,7 @@ function isCompleteVisualQaPayload(value) {
   if (!Array.isArray(value.issues) || !Array.isArray(value.rework_instructions)) return false;
   const scores=value.scores;
   if (!scores || typeof scores !== "object") return false;
-  const required=[
-    "art_direction","prospect_specificity","brand_fidelity","typography","imagery",
-    "desktop_quality","mobile_quality","no_template_feel","truth_integrity"
-  ];
+  const required=["first_impression","art_direction","prospect_specificity","brand_fidelity","composition","typography","imagery","materiality","signature_visual_language","rhythm","restraint","cta_integration","commercial_clarity","desktop_quality","mobile_quality","footer_quality","no_template_feel","no_saas_feel","no_ai_feel","truth_integrity","consistency"];
   return required.every(k => Number.isFinite(Number(scores[k])));
 }
 
@@ -143,7 +152,8 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
     "FAIL if logo integration, hierarchy, spacing, rhythm, image direction, footer, CTA integration, desktop quality or mobile quality is visibly weak.",
     "FAIL on any visible unverified/fake claim risk.",
     "Do not reward a page merely because it is complete or functional.",
-    "A pass requires every visible dimension to meet a flagship-level bar. Be demanding.",
+    "Score every frozen review dimension: first impression, art direction, prospect specificity, brand fidelity, composition, typography, imagery, materiality, signature visual language, rhythm, restraint, CTA integration, commercial clarity, desktop quality, mobile quality, footer quality, no-template feel, no-SaaS feel, no-AI feel, truth integrity and consistency.",
+    "A pass requires EVERY dimension to score at least 8/10 and no issue to remain. Be demanding.",
     "",
     "VARIANT: " + variantKey,
     "CREATIVE DIRECTION:",
@@ -171,17 +181,29 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
         type: "object",
         additionalProperties: false,
         properties: {
+          first_impression: { type: "number" },
           art_direction: { type: "number" },
           prospect_specificity: { type: "number" },
           brand_fidelity: { type: "number" },
+          composition: { type: "number" },
           typography: { type: "number" },
           imagery: { type: "number" },
+          materiality: { type: "number" },
+          signature_visual_language: { type: "number" },
+          rhythm: { type: "number" },
+          restraint: { type: "number" },
+          cta_integration: { type: "number" },
+          commercial_clarity: { type: "number" },
           desktop_quality: { type: "number" },
           mobile_quality: { type: "number" },
+          footer_quality: { type: "number" },
           no_template_feel: { type: "number" },
-          truth_integrity: { type: "number" }
+          no_saas_feel: { type: "number" },
+          no_ai_feel: { type: "number" },
+          truth_integrity: { type: "number" },
+          consistency: { type: "number" }
         },
-        required: ["art_direction","prospect_specificity","brand_fidelity","typography","imagery","desktop_quality","mobile_quality","no_template_feel","truth_integrity"]
+        required: ["first_impression","art_direction","prospect_specificity","brand_fidelity","composition","typography","imagery","materiality","signature_visual_language","rhythm","restraint","cta_integration","commercial_clarity","desktop_quality","mobile_quality","footer_quality","no_template_feel","no_saas_feel","no_ai_feel","truth_integrity","consistency"]
       }
     },
     required: ["pass","summary","issues","rework_instructions","scores"]
@@ -947,7 +969,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
         ${JSON.stringify({
           source:"RENDERING_STUDIO_V1_FROZEN",
           execution_engine:"CLOUDFLARE_NATIVE",
-          rendering_studio_contract:"V7_AUTO_BRAND_GATE_VISUAL_QA",
+          rendering_studio_contract:"V8_FROZEN_COMPLIANCE",
           art_direction_model:"@cf/openai/gpt-oss-120b",
           html_model:"@cf/zai-org/glm-4.7-flash",
           visual_qa_model:VISUAL_QA_MODEL,
@@ -999,7 +1021,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions) {
   await sql`update render_jobs set status='COMPLETED',output_data=${JSON.stringify({
         variants:["A","B","C"],
         department:"RENDERING_STUDIO",
-        contract:"V7_AUTO_BRAND_GATE_VISUAL_QA",
+        contract:"V8_FROZEN_COMPLIANCE",
         art_direction_model:"@cf/openai/gpt-oss-120b",
         html_model:"@cf/zai-org/glm-4.7-flash",
         visual_qa_model:VISUAL_QA_MODEL
