@@ -1,6 +1,10 @@
 name: Rendering V2 Shadow Autodeploy
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/render-v2-shadow-autodeploy.yml'
   workflow_dispatch:
   schedule:
     - cron: '*/15 * * * *'
