@@ -608,11 +608,38 @@ async function attemptAutomaticBrandGate(sql, env, row) {
     } catch {}
   }
 
+  const latestRows=await sql`select logo,brand_dna
+    from prospects where id=${row.prospect_id}::uuid limit 1`;
+  const latestLogo=latestRows[0]?.logo || {};
+  const latestDna=latestRows[0]?.brand_dna || {};
+  const latestLogoStatus=String(latestLogo.status || "").toUpperCase();
+  const latestLogoIsVerified =
+    ((latestLogoStatus==="PASS" || latestLogoStatus==="OFFICIAL_LOGO_LOCKED") &&
+      typeof (latestLogo.url || latestLogo.official_source)==="string") ||
+    (latestLogoStatus==="NO_OFFICIAL_LOGO_CONFIRMED" &&
+      latestLogo.generated===false &&
+      latestLogo.use_verified_name_as_text===true);
+
+  if (latestLogoIsVerified) logo=latestLogo;
+  if (validBrandDna(latestDna)) brandDna=latestDna;
+
+  if (!validBrandDna(brandDna)) {
+    throw new Error("FROZEN_BRAND_DNA_RECOVERY_INCOMPLETE");
+  }
+
   await sql`update prospects set
       logo=${JSON.stringify(logo)}::jsonb,
       brand_dna=${JSON.stringify(brandDna)}::jsonb,
       updated_at=now()
-    where id=${row.prospect_id}::uuid`;
+    where id=${row.prospect_id}::uuid
+      and (
+        not (brand_dna ?& ARRAY[
+          'brand_personality','visual_cues','tone','business_type','audience','offer',
+          'local_context','trust_signals','existing_colors','typography_cues','imagery_cues',
+          'business_positioning','commercial_behavior'
+        ])
+        or brand_dna=${JSON.stringify(latestDna)}::jsonb
+      )`;
   await sql`update render_packs set
       official_logo=${JSON.stringify(logo)}::jsonb,
       brand_dna=${JSON.stringify(brandDna)}::jsonb,
@@ -909,7 +936,7 @@ async function claimPack(sql, row) {
       prospect_id,status,attempt,worker,input_data,started_at
     ) values(
       ${row.prospect_id}::uuid,'RUNNING',${attempt},'cloudflare-workers-ai',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code})}::jsonb,now()
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_FROZEN_COMPLIANCE"})}::jsonb,now()
     ) returning id`;
 
   await sql`update prospects set
