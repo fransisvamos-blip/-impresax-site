@@ -13,6 +13,7 @@ const MAX_RENDER_PACKS_PER_TICK = 1;
 const MAX_ACTIVE_BROWSER_JOBS = 2;
 const MAX_TECH_RETRIES = 3;
 const MAX_GENERATION_FAILURES = 3;
+const CREATIVE_ENGINE_REVISION = "V8.3.2_ASSET_VISION_DEDUPED_PRE_RENDER_EVIDENCE";
 
 function db(env) {
   if (!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
@@ -1468,7 +1469,7 @@ async function claimPack(sql, row) {
       prospect_id,status,attempt,worker,input_data,started_at
     ) values(
       ${row.prospect_id}::uuid,'RUNNING',${attempt},'cloudflare-workers-ai',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA"})}::jsonb,now()
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,prospect_code:row.prospect_code,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA",engine_revision:CREATIVE_ENGINE_REVISION})}::jsonb,now()
     ) returning id`;
 
   await sql`update prospects set
@@ -1535,6 +1536,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
           execution_engine:"CLOUDFLARE_NATIVE",
           rendering_studio_contract:"V8_2_CREATIVE_QUALITY",
           creative_quality_runtime:"V8.3_DETERMINISTIC_SIX_VIEW_QA",
+          engine_revision:CREATIVE_ENGINE_REVISION,
           art_direction_model:"@cf/openai/gpt-oss-120b",
           html_model_primary:"@cf/openai/gpt-oss-120b",
           html_model_repair:"@cf/zai-org/glm-4.7-flash",
@@ -1595,6 +1597,7 @@ async function persistGeneratedPack(sql, row, jobId, htmlByKey, directions, preR
         department:"RENDERING_STUDIO",
         contract:"V8_2_CREATIVE_QUALITY",
         runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA",
+        engine_revision:CREATIVE_ENGINE_REVISION,
         art_direction_model:"@cf/openai/gpt-oss-120b",
         html_model_primary:"@cf/openai/gpt-oss-120b",
           html_model_repair:"@cf/zai-org/glm-4.7-flash",
@@ -1835,7 +1838,7 @@ async function renderPack(sql, env, row, sharedBrowser = null, master = "") {
       prospect_id,status,attempt,worker,input_data,started_at
     ) values(
       ${row.prospect_id}::uuid,'RUNNING',${browserAttempt},'cloudflare-browser-renderer',
-      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA"})}::jsonb,now()
+      ${JSON.stringify({render_pack_id:row.render_pack_id,version:row.version,contract:"V8_2_CREATIVE_QUALITY",runtime_revision:"V8.3_DETERMINISTIC_SIX_VIEW_QA",engine_revision:CREATIVE_ENGINE_REVISION})}::jsonb,now()
     ) returning id`;
   const browserJobId=browserJobs[0].id;
 
