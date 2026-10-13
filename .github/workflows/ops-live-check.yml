@@ -40,6 +40,8 @@ jobs:
               && grep -q '"direction_pool_required":true' /tmp/health.json \
               && grep -q '"direction_set_gate_required":true' /tmp/health.json \
               && grep -q '"semantic_copy_gate_required":true' /tmp/health.json \
+              && grep -q '"pre_render_evidence_required":true' /tmp/health.json \
+              && grep -q '"creative_strategy_evidence_required":true' /tmp/health.json \
               && grep -q '"structured_asset_inventory_required":true' /tmp/health.json \
               && grep -q '"cross_variant_visual_qa_required":true' /tmp/health.json \
               && grep -q '"qa_rework_memory_required":true' /tmp/health.json \
