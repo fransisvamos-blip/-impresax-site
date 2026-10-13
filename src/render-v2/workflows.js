@@ -8,16 +8,8 @@ import { captureVariant } from "./browser.js";
 import { classifyFailure, failureFingerprint, shouldChangeStrategy } from "./failure-policy.js";
 import { bytesToBase64 } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
+import { buildContactManifest } from "./contacts.js";
 
-function parseContacts(input) {
-  const text=String(input?.verified_contacts||"");
-  const email=(text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)||[])[0]||"";
-  const phoneRaw=(text.match(/(?:\+?\d[\d\s().-]{6,}\d)/)||[])[0]||"";
-  const phone=phoneRaw ? "+"+phoneRaw.replace(/\D/g,"").replace(/^00/,"") : "";
-  const primary=phone ? "tel:"+phone : email ? "mailto:"+email : "#";
-  const secondary=email ? "mailto:"+email : primary;
-  return {PRIMARY:primary,SECONDARY:secondary};
-}
 
 async function inputAssetsFromDb(sql,packId,inputPayload) {
   const rows=await sql`
@@ -124,7 +116,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const inputPayload=input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack);
-      const ctaManifest=parseContacts(inputPayload);
+      const ctaManifest=buildContactManifest(inputPayload);
       return {inputPayload,assets,copyManifest,ctaManifest,direction:plan.directions?.[params.variantKey]};
     });
 
