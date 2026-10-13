@@ -800,6 +800,8 @@ function scoreFirstPartyAsset(candidate) {
   if(w>=1200) score+=3;
   if(h>=700) score+=2;
   if(candidate.alt && String(candidate.alt).trim().length>=8) score+=2;
+  if(candidate.same_host===true) score+=3;
+  if(candidate.source_type==="FIRST_PARTY_EMBEDDED_EXTERNAL") score+=1;
   return {...candidate,role,score};
 }
 
@@ -820,13 +822,16 @@ async function extractAssetsFromPage(pageUrl, rootHost) {
         const u=new URL(first,base);
         if(u.protocol!=="https:") return;
         const host=u.hostname.replace(/^www\./,"").toLowerCase();
-        if(host!==rootHost && !host.endsWith("."+rootHost)) return;
+        const sameHost=host===rootHost || host.endsWith("."+rootHost);
         const url=u.href;
         if(seen.has(url)) return;
         seen.add(url);
         assets.push(scoreFirstPartyAsset({
           url,
           page_url:base.href,
+          source_type:sameHost ? "FIRST_PARTY_HOST" : "FIRST_PARTY_EMBEDDED_EXTERNAL",
+          same_host:sameHost,
+          source_host:host,
           alt:meta.alt||"",
           title:meta.title||"",
           class_name:meta.class_name||"",
@@ -976,72 +981,45 @@ function prospectPayload(row, firstPartyImages) {
   };
 }
 
-function htmlPrompt(master, payload, direction, key) {
-  const logoUrl = payload?.official_logo?.url || payload?.official_logo?.official_source || "";
-  return [
-    "You are ImpresaX Rendering Studio. Produce ONE complete implementation-reference homepage as HTML/CSS.",
-    "Return ONLY the HTML document. No markdown. No explanation.",
-    "",
-    "NON-NEGOTIABLE:",
-    "- Follow the frozen Rendering Studio master.",
-    "- Verified data only. Never invent services, awards, numbers, people, testimonials, branches, projects or capabilities.",
-    "- Use the exact official logo URL supplied below. Never redraw, recreate, approximate or typeset the logo.",
-    "- Complete full homepage: header/navigation, premium hero, body architecture, verified offer/services, verified trust/evidence where available, conversion/contact, footer.",
-    "- Responsive at 1440 desktop and 390 mobile. Mobile is deliberately art-directed, not a broken stack.",
-    "- Premium flagship editorial quality. No generic SaaS, no template feel, no card-grid inflation, no gradients/glows/glassmorphism.",
-    "- Strong typography, composition, rhythm, restraint and one signature visual device.",
-    "- Use CSS only; no JavaScript, iframe, object or embed.",
-    "- Prefer first-party images supplied below. If insufficient, design elegantly with typography/material shapes rather than inventing fake company photography.",
-    "- External images must be HTTPS.",
-    "- All CTA/contact data must come from verified prospect data.",
-    "- Keep implementation compact enough to render quickly.",
-    "",
-    "VARIANT KEY: " + key,
-    "CREATIVE DIRECTION:",
-    JSON.stringify(direction),
-    "",
-    "EXACT OFFICIAL LOGO URL:",
-    logoUrl || "NO_OFFICIAL_LOGO_CONFIRMED — use verified business name as plain text; invent no mark.",
-    "",
-    "PROSPECT DATA:",
-    JSON.stringify(payload),
-    "",
-    "FROZEN MASTER:",
-    master
-  ].join("\n");
-}
-
-async function generateVariant(env, master, payload, direction, key) {
-  const logoUrl = payload?.official_logo?.url || payload?.official_logo?.official_source || "";
-  let lastError = null;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    const prompt = htmlPrompt(master, payload, direction, key) +
-      (attempt === 2 ? "\n\nREWORK: the previous output failed validation. Return a complete valid HTML document and include the exact official logo URL when one exists." : "");
-    try {
-      const out = await env.AI.run(MODEL, {
-        messages: [
-          { role: "system", content: "You are a senior frontend art director. Output only production-grade HTML/CSS." },
-          { role: "user", content: prompt }
-        ],
-        max_completion_tokens: 7600,
-        temperature: 0.55
-      });
-      return validateHtml(extractModelText(out), logoUrl);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || new Error("AI_VARIANT_GENERATION_FAILED");
-}
-
 async function renderHtml(browser, html, width, height) {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width, height, deviceScaleFactor: 1 });
     await page.setJavaScriptEnabled(false);
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 30000 });
-    await new Promise(resolve => setTimeout(resolve, 450));
-    return await page.screenshot({ type: "jpeg", quality: 82, fullPage: true });
+
+    await page.evaluate(async () => {
+      for (const img of document.images) {
+        img.loading="eager";
+        img.decoding="sync";
+      }
+      if (document.fonts?.ready) {
+        try { await document.fonts.ready; } catch {}
+      }
+      const images=[...document.images];
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          const done=()=>resolve();
+          img.addEventListener("load",done,{once:true});
+          img.addEventListener("error",done,{once:true});
+          setTimeout(done,4000);
+        });
+      }));
+    });
+
+    // Trigger below-the-fold lazy assets before the full-page capture.
+    await page.evaluate(async () => {
+      const step=Math.max(500,Math.floor(window.innerHeight*0.8));
+      for(let y=0;y<document.documentElement.scrollHeight;y+=step) {
+        window.scrollTo(0,y);
+        await new Promise(resolve=>setTimeout(resolve,35));
+      }
+      window.scrollTo(0,0);
+    });
+    await new Promise(resolve => setTimeout(resolve, 250));
+
+    return await page.screenshot({ type: "jpeg", quality: 90, fullPage: true });
   } finally {
     await page.close();
   }
