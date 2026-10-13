@@ -3,21 +3,7 @@ const HTML_MODEL = "@cf/zai-org/glm-4.7-flash";
 const FALLBACK_MODEL = "@cf/openai/gpt-oss-120b";
 const MASTER_URL = "https://raw.githubusercontent.com/fransisvamos-blip/-impresax-site/9578da3fa1b173283bf5c748b0e7d89497537e76/docs/RENDERING_STUDIO_V1_FROZEN.md";
 
-const MASTER_FALLBACK = [
-  "RENDERING_STUDIO_V1 FROZEN.",
-  "Verified data first. Official logo first and immutable. Never redraw or approximate it.",
-  "Extract real Brand DNA before art direction.",
-  "Art direction first. LoveFrom / Ferrari Luce is a quality benchmark, not a template.",
-  "Virtually unlimited creative-budget mentality.",
-  "Three genuinely different complete full-home directions A/B/C.",
-  "Each direction requires full desktop 1440 and mobile 390 art direction.",
-  "Editorial contemporary luxury, strong composition, typographic hierarchy, visual rhythm, materiality, restraint, signature imagery.",
-  "No generic SaaS, no agency-template feel, no card-grid dependence, no fake proof, no invented facts.",
-  "Commercially effective without aggressive sales tactics.",
-  "Complete header, hero, body, verified offering, verified trust, conversion/contact path and footer.",
-  "Mobile is a deliberate pass, not a broken desktop stack.",
-  "Critique and rework before RENDER_READY. User selection is required before Site Factory."
-].join("\n");
+;
 
 function aiText(result) {
   if (typeof result === "string") return result;
@@ -94,44 +80,58 @@ function officialLogoUrl(prospect) {
   return null;
 }
 
-function verifiedImageHosts(prospect) {
-  const hosts=new Set();
+function canonicalAssetUrl(value) {
+  try {
+    const u=new URL(String(value || ""));
+    u.hash="";
+    return u.href;
+  } catch {
+    return "";
+  }
+}
+
+function verifiedImageUrls(prospect) {
+  const urls=new Set();
   const add=(value)=>{
-    try {
-      const u=new URL(String(value || ""));
-      if (u.protocol==="https:") hosts.add(u.hostname.replace(/^www\./,"").toLowerCase());
-    } catch {}
+    const raw = value && typeof value==="object" ? (value.url || value.src || value.asset_url) : value;
+    const u=canonicalAssetUrl(raw);
+    if (u && /^https:\/\//i.test(u)) urls.add(u);
   };
-  add(prospect?.websiteUrl || prospect?.website_url);
   const logo=prospect?.logo || {};
-  add(logo.url || logo.official_source || logo.source_url);
+  add(logo.url || logo.official_source);
   for (const img of prospect?.firstPartyImages || prospect?.first_party_images || []) add(img);
-  return hosts;
+  for (const img of prospect?.approvedExternalImages || prospect?.approved_external_images || []) add(img);
+  return urls;
 }
 
 function htmlImageUrls(html) {
-  const urls=new Set();
+  const urls=[];
   for (const m of String(html || "").matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
-    if (/^https:\/\//i.test(m[1])) urls.add(m[1]);
+    if (/^https:\/\//i.test(m[1])) urls.push(m[1]);
   }
   for (const m of String(html || "").matchAll(/url\(\s*["']?(https:\/\/[^"'\)\s]+)["']?\s*\)/gi)) {
-    urls.add(m[1]);
+    urls.push(m[1]);
   }
-  return [...urls];
+  return urls;
 }
 
 function unverifiedImageUrls(html, prospect) {
-  const allowed=verifiedImageHosts(prospect);
-  const logo=officialLogoUrl(prospect);
-  return htmlImageUrls(html).filter(value => {
-    if (logo && value===logo) return false;
-    try {
-      const host=new URL(value).hostname.replace(/^www\./,"").toLowerCase();
-      return ![...allowed].some(a => host===a || host.endsWith("."+a));
-    } catch {
-      return true;
-    }
-  });
+  const allowed=verifiedImageUrls(prospect);
+  return [...new Set(htmlImageUrls(html).map(canonicalAssetUrl).filter(Boolean))]
+    .filter(value => !allowed.has(value));
+}
+
+function repeatedImageUrls(html, prospect) {
+  const logo=canonicalAssetUrl(officialLogoUrl(prospect));
+  const counts=new Map();
+  for (const raw of htmlImageUrls(html)) {
+    const u=canonicalAssetUrl(raw);
+    if (!u || u===logo) continue;
+    counts.set(u,(counts.get(u)||0)+1);
+  }
+  const inventoryCount=[...(prospect?.firstPartyImages || prospect?.first_party_images || [])].length;
+  const limit=inventoryCount>=3 ? 1 : 2;
+  return [...counts.entries()].filter(([,n])=>n>limit).map(([u,n])=>({url:u,count:n}));
 }
 
 function officialLogoImmutable(html, prospect) {
@@ -185,156 +185,307 @@ function hardGate(html, prospect) {
   }
   const unverifiedImages=unverifiedImageUrls(html,prospect);
   if (unverifiedImages.length) issues.push("unverified_image_provenance:" + unverifiedImages.slice(0,4).join("|"));
+  const repeatedImages=repeatedImageUrls(html,prospect);
+  if (repeatedImages.length) issues.push("repetitive_imagery:" + repeatedImages.slice(0,3).map(x=>x.url+"x"+x.count).join("|"));
   if (!noLogoIdentitySafe(html,prospect)) issues.push("invented_or_missing_no_logo_identity");
   if (/data:image\//i.test(html)) issues.push("unverified_embedded_image");
   if (lower.includes("award-winning") || lower.includes("leader di mercato") || lower.includes("n. 1")) issues.push("unverified_claim_risk");
 
-  return { pass: issues.length === 0, issues, image_provenance:{verified_hosts:[...verifiedImageHosts(prospect)],image_urls:htmlImageUrls(html)} };
+  return { pass: issues.length === 0, issues, image_provenance:{verified_urls:[...verifiedImageUrls(prospect)],image_urls:[...new Set(htmlImageUrls(html))]} };
+}
+
+function directionText(value) {
+  if (typeof value==="string") return value.trim();
+  if (value && typeof value==="object") return String(value.brief || value.direction || value.text || "").trim();
+  return "";
+}
+
+function directionTokens(text) {
+  return new Set(String(text || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g," ")
+    .split(/\s+/)
+    .filter(x=>x.length>=5));
+}
+
+function jaccard(a,b) {
+  const A=directionTokens(a),B=directionTokens(b);
+  if(!A.size || !B.size) return 1;
+  let inter=0;
+  for(const x of A) if(B.has(x)) inter++;
+  return inter/(A.size+B.size-inter);
 }
 
 function validDirections(parsed) {
   if (!parsed?.A || !parsed?.B || !parsed?.C) return false;
-  const values = [parsed.A, parsed.B, parsed.C].map(v => String(v || "").trim());
-  if (values.some(v => v.length < 120)) return false;
-  if (new Set(values.map(v => v.toLowerCase())).size !== 3) return false;
-  return true;
+  const values=[directionText(parsed.A),directionText(parsed.B),directionText(parsed.C)];
+  if(values.some(v=>v.length<350)) return false;
+  if(new Set(values.map(v=>v.toLowerCase())).size!==3) return false;
+  return jaccard(values[0],values[1])<0.72 &&
+         jaccard(values[0],values[2])<0.72 &&
+         jaccard(values[1],values[2])<0.72;
 }
 
-async function deriveIndependentDirection(env, master, prospect, key) {
-  const contrast = {
-    A: "Make this direction identity-led: let the verified brand DNA, material/visual signature and typographic composition determine the page architecture.",
-    B: "Make this direction evidence-and-imagery-led: build a cinematic but credible narrative around the prospect's real work, offer, territory and first-party evidence.",
-    C: "Make this direction precision-and-information-led: create a highly designed editorial system where hierarchy, verified detail and commercial clarity become the visual signature."
-  }[key];
+function reworkHistory(prospect, key=null) {
+  const rows=Array.isArray(prospect?.visualReworkFeedback) ? prospect.visualReworkFeedback : [];
+  const selected=key ? rows.filter(x=>String(x.variant||"").toUpperCase()===String(key).toUpperCase()) : rows;
+  return selected.map(x=>({
+    variant:x.variant,
+    issues:Array.isArray(x?.critique?.issues) ? x.critique.issues : [],
+    rework_instructions:Array.isArray(x?.critique?.rework_instructions) ? x.critique.rework_instructions : [],
+    scores:x?.critique?.scores || {}
+  }));
+}
 
-  const prompt = [
-    "Create ONE original premium full-home art-direction brief for ImpresaX Rendering Studio.",
-    "Variant: " + key,
-    contrast,
-    "This is NOT a template family. Every decision must be justified by THIS prospect's verified logo, Brand DNA, services, trust, local context and imagery evidence.",
-    "Specify hero logic, grid/composition, typography behavior, imagery language, visual rhythm, signature device, section progression, CTA treatment, desktop behavior and deliberate mobile reinterpretation.",
-    "Do not write HTML. Do not invent company facts. Do not use generic SaaS/card-grid/agency tropes.",
-    "Return only the detailed art-direction brief as plain text, without JSON.",
+function assetInventory(prospect) {
+  return (prospect?.firstPartyImages || prospect?.first_party_images || []).map(item=>{
+    if(typeof item==="string") return {url:item,role:"unclassified_verified_first_party"};
+    return item;
+  });
+}
+
+async function buildCreativeStrategy(env, master, prospect) {
+  const prompt=[
+    "Create a concise CREATIVE STRATEGY MEMO for one prospect before any visual direction is invented.",
+    "The memo must identify the prospect-specific design opportunity, strongest verified visual/brand signals, commercial journey, local/contextual anchors, asset strengths/weaknesses, typography opportunity, materiality opportunity, and explicit anti-patterns.",
+    "Do not propose generic sector tropes. Do not invent imagery that is not in the verified asset inventory.",
+    "If imagery is weak, explicitly recommend a typography/materiality-led solution rather than imaginary photography.",
+    "Any previous visual QA failures are mandatory lessons: state what must never be repeated.",
+    "Return plain text only.",
     "",
-    "FROZEN MASTER:",
-    master,
-    "",
-    "VERIFIED PROSPECT:",
-    JSON.stringify(prospect)
+    "VERIFIED PROSPECT:",JSON.stringify(prospect),
+    "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "PREVIOUS QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
+    "SET-LEVEL QA HISTORY:",JSON.stringify(prospect?.visualSetFeedback || null),
+    "FROZEN MASTER:",master
   ].join("\n");
+  const out=await runModel(env,ART_MODEL,[
+    {role:"system",content:"You are the creative strategy director for a flagship identity-led website studio. Ground every recommendation in verified evidence."},
+    {role:"user",content:prompt}
+  ],1800,0.34);
+  const text=aiText(out).trim();
+  if(text.length<400) throw new Error("CREATIVE_STRATEGY_MEMO_REQUIRED");
+  return text;
+}
 
-  const result = await runModel(env, ART_MODEL, [
-    { role:"system", content:"You are ImpresaX Rendering Studio senior art director. Produce a prospect-specific flagship direction, never a generic sector template." },
-    { role:"user", content:prompt }
-  ], 1800, 0.48);
+function parseCandidateDirections(value) {
+  const candidates=Array.isArray(value?.candidates) ? value.candidates : [];
+  const normalized=candidates.map((x,i)=>({
+    name:String(x?.name || ("Direction "+(i+1))).trim(),
+    brief:String(x?.brief || x?.direction || "").trim()
+  })).filter(x=>x.brief.length>=300);
+  return normalized.length>=5 ? normalized.slice(0,8) : null;
+}
 
-  const text = aiText(result).trim();
-  if (text.length < 180) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+async function generateDirectionCandidates(env, master, prospect, strategy, priorIssues=[]) {
+  const prompt=[
+    "Generate SIX bespoke, genuinely different flagship homepage art directions for this one prospect.",
+    "These are a creative pool, not A/B/C templates. Derive each from a DIFFERENT strong verified signal in the prospect.",
+    "Each candidate must differ materially in hero logic, composition/grid, typographic behavior, visual/material language, signature device, section rhythm, mobile reinterpretation and CTA integration.",
+    "No fixed identity/evidence/information archetypes. No generic sector clichés.",
+    "Only rely on imagery that exists in VERIFIED ASSET INVENTORY. Never describe hypothetical photos, premises, people, projects or scenes as if available.",
+    "If assets are weak, use typography, geometry, color/material fields, verified text/data and local cues rather than fake imagery.",
+    "Do not name proprietary/unavailable typefaces. Use implementable open-web/system typography or describe typographic behavior.",
+    "Previous QA failures must not be repeated.",
+    "Return ONLY JSON: {\"candidates\":[{\"name\":\"...\",\"brief\":\"...\"}, ... six items]}.",
+    "",
+    "CREATIVE STRATEGY:",strategy,
+    "PRIOR DIRECTION-SET ISSUES:",JSON.stringify(priorIssues),
+    "VERIFIED PROSPECT:",JSON.stringify(prospect),
+    "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "PREVIOUS QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
+    "FROZEN MASTER:",master
+  ].join("\n");
+  const out=await runModel(env,ART_MODEL,[
+    {role:"system",content:"You are a world-class art director producing six non-template creative routes from verified evidence. Output strict JSON only."},
+    {role:"user",content:prompt}
+  ],5200,0.58);
+  const parsed=extractJson(aiText(out));
+  const candidates=parseCandidateDirections(parsed);
+  if(!candidates) throw new Error("SIX_BESPOKE_DIRECTION_CANDIDATES_REQUIRED");
+  return candidates;
+}
+
+async function curateDirections(env, master, prospect, strategy, candidates) {
+  const prompt=[
+    "Select the THREE strongest directions from the six candidates and refine them into final A/B/C briefs.",
+    "Selection objective: maximum prospect fit + flagship quality + maximum mutual difference + actual implementation feasibility with the verified assets.",
+    "There is NO preferred A/B/C archetype. Do not force one identity-led, one image-led and one information-led route.",
+    "Reject candidates that depend on nonexistent imagery, unavailable proprietary fonts, invented proof or sector clichés.",
+    "Each final brief must explicitly define: core idea, evidence anchor, hero, composition/grid, typography behavior, asset plan using exact verified URLs where relevant, signature device, section progression, CTA, desktop behavior, mobile reinterpretation, and what makes it impossible to reuse for 50 other businesses.",
+    "Return ONLY strict JSON {\"A\":\"...\",\"B\":\"...\",\"C\":\"...\"}.",
+    "",
+    "CREATIVE STRATEGY:",strategy,
+    "CANDIDATES:",JSON.stringify(candidates),
+    "VERIFIED PROSPECT:",JSON.stringify(prospect),
+    "VERIFIED ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "FROZEN MASTER:",master
+  ].join("\n");
+  const out=await runModel(env,ART_MODEL,[
+    {role:"system",content:"You are the creative director selecting three portfolio-grade routes. Output strict JSON only."},
+    {role:"user",content:prompt}
+  ],5000,0.28);
+  const parsed=extractJson(aiText(out));
+  if(!validDirections(parsed)) throw new Error("CURATED_DIRECTION_SET_NOT_DISTINCT_ENOUGH");
+  return {A:directionText(parsed.A),B:directionText(parsed.B),C:directionText(parsed.C)};
+}
+
+async function directionSetGate(env, prospect, directions) {
+  const prompt=[
+    "Audit this set of THREE proposed art directions BEFORE HTML generation.",
+    "PASS only if all three are at least 8/10 for prospect specificity and implementation feasibility, and every pair is at least 8/10 for meaningful visual/structural diversity.",
+    "Hard fail if the three routes are merely cosmetic variations, depend on unavailable imagery, name unavailable proprietary fonts, repeat previous QA failures, or could be reused for generic businesses.",
+    "Return ONLY JSON with: pass(boolean), specificity_A/B/C(number 0-10), feasibility_A/B/C(number 0-10), diversity_AB/AC/BC(number 0-10), issues(array of strings).",
+    "",
+    "PROSPECT:",JSON.stringify(prospect),
+    "ASSETS:",JSON.stringify(assetInventory(prospect)),
+    "PREVIOUS QA:",JSON.stringify(reworkHistory(prospect)),
+    "DIRECTIONS:",JSON.stringify(directions)
+  ].join("\n");
+  const out=await runModel(env,ART_MODEL,[
+    {role:"system",content:"You are an independent creative-review board. Be strict and output JSON only."},
+    {role:"user",content:prompt}
+  ],1600,0.08);
+  const x=extractJson(aiText(out)) || {};
+  const nums=["specificity_A","specificity_B","specificity_C","feasibility_A","feasibility_B","feasibility_C","diversity_AB","diversity_AC","diversity_BC"];
+  const numeric=nums.every(k=>Number.isFinite(Number(x[k])));
+  const min=numeric ? Math.min(...nums.map(k=>Number(x[k]))) : 0;
+  return {pass:x.pass===true && numeric && min>=8,issues:Array.isArray(x.issues)?x.issues:[],scores:Object.fromEntries(nums.map(k=>[k,Number(x[k]||0)]))};
+}
+
+async function deriveIndependentDirection(env, master, prospect, key, previous=[]) {
+  const prompt=[
+    "Create ONE flagship art-direction brief for this prospect.",
+    "Variant label: "+key+". The label has no archetype.",
+    "Choose the strongest prospect-specific creative anchor that is NOT already used by the previous directions.",
+    "Only use available verified assets; never depend on imagined photography. Avoid unavailable proprietary fonts.",
+    "Incorporate previous visual-QA lessons and fix them explicitly.",
+    "Specify core idea, evidence anchor, hero, grid/composition, typography behavior, exact asset plan, materiality, signature device, section sequence, CTA, desktop and deliberate mobile behavior.",
+    "Return plain text only, at least 500 characters.",
+    "PREVIOUS DIRECTIONS TO DIFFER FROM:",JSON.stringify(previous),
+    "PROSPECT:",JSON.stringify(prospect),
+    "ASSETS:",JSON.stringify(assetInventory(prospect)),
+    "QA HISTORY:",JSON.stringify(reworkHistory(prospect)),
+    "FROZEN MASTER:",master
+  ].join("\n");
+  const out=await runModel(env,ART_MODEL,[
+    {role:"system",content:"You are a senior art director. Produce a unique prospect-specific route, not a sector template."},
+    {role:"user",content:prompt}
+  ],2200,0.52);
+  const text=aiText(out).trim();
+  if(text.length<500) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
   return text;
 }
 
 async function deriveDirections(env, master, prospect) {
-  const prompt = [
-    "Create three distinct art-direction briefs A/B/C for one premium business homepage.",
-    "Do not write HTML yet.",
-    "Each brief must be prospect-specific, not reusable as a sector template.",
-    "They must differ materially in hero logic, grid, typography, imagery language, rhythm, signature device, information hierarchy and CTA treatment.",
-    "Base every direction on the verified logo, Brand DNA, real services, real trust, local context and available first-party imagery.",
-    "If the verified prospect data is too weak to create three genuinely prospect-specific directions, say INSUFFICIENT_VERIFIED_BRAND_INPUT instead of inventing.",
-    "Return ONLY valid JSON in this exact shape: {\"A\":\"...\",\"B\":\"...\",\"C\":\"...\"}.",
-    "",
-    "FROZEN MASTER:",
-    master,
-    "",
-    "PROSPECT:",
-    JSON.stringify(prospect)
-  ].join("\n");
+  const strategy=await buildCreativeStrategy(env,master,prospect);
+  let priorIssues=[];
+  for(let round=1;round<=2;round++) {
+    try {
+      const candidates=await generateDirectionCandidates(env,master,prospect,strategy,priorIssues);
+      const directions=await curateDirections(env,master,prospect,strategy,candidates);
+      const gate=await directionSetGate(env,prospect,directions);
+      if(gate.pass) return directions;
+      priorIssues=[...(gate.issues||[]),"Direction-set scores: "+JSON.stringify(gate.scores)];
+    } catch(error) {
+      priorIssues=[String(error?.message || error)];
+    }
+  }
 
-  const result = await runModel(env, ART_MODEL, [
-    { role: "system", content: "You are ImpresaX Rendering Studio art director. Generic fallback directions are forbidden. Be prospect-specific, premium and commercially grounded." },
-    { role: "user", content: prompt }
-  ], 2200, 0.42);
-
-  const raw = aiText(result);
-  let parsed = extractJson(raw);
-  if (validDirections(parsed)) return parsed;
-
-  const repairPrompt = [
-    "Normalize or recreate the following art-direction output into STRICT JSON only.",
-    "Do not simplify, generalize or replace it with generic sector directions.",
-    "Use the verified prospect data below to preserve or increase prospect specificity.",
-    "Return exactly: {\"A\":\"...\",\"B\":\"...\",\"C\":\"...\"}.",
-    "Each value must be a detailed, prospect-specific art-direction brief of at least 120 characters.",
-    "If the inputs do not support prospect-specific art direction, return {\"error\":\"INSUFFICIENT_VERIFIED_BRAND_INPUT\"}.",
-    "",
-    "RAW ART-DIRECTOR OUTPUT:",
-    raw || "(empty)",
-    "",
-    "VERIFIED PROSPECT:",
-    JSON.stringify(prospect),
-    "",
-    "FROZEN MASTER:",
-    master
-  ].join("\n");
-
-  const repaired = await runModel(env, HTML_MODEL, [
-    { role: "system", content: "You are a strict structured-output editor. Output valid JSON only; generic fallback directions are forbidden." },
-    { role: "user", content: repairPrompt }
-  ], 2400, 0.2);
-
-  parsed = extractJson(aiText(repaired));
-  if (validDirections(parsed)) return parsed;
-
-  const [A,B,C] = await Promise.all([
-    deriveIndependentDirection(env,master,prospect,"A"),
-    deriveIndependentDirection(env,master,prospect,"B"),
-    deriveIndependentDirection(env,master,prospect,"C")
-  ]);
-  const independent = {A,B,C};
-  if (!validDirections(independent)) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+  const A=await deriveIndependentDirection(env,master,prospect,"A",[]);
+  const B=await deriveIndependentDirection(env,master,prospect,"B",[A]);
+  const C=await deriveIndependentDirection(env,master,prospect,"C",[A,B]);
+  const independent={A,B,C};
+  if(!validDirections(independent)) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
+  const gate=await directionSetGate(env,prospect,independent);
+  if(!gate.pass) throw new Error("DIRECTION_SET_QUALITY_GATE_FAILED:"+gate.issues.join("|"));
   return independent;
 }
 
 function buildVariantPrompt(master, prospect, key, direction, repairIssues, previousHtml) {
-  const parts = [
+  const variantHistory=reworkHistory(prospect,key);
+  const setHistory=prospect?.visualSetFeedback || null;
+  const parts=[
     "Build ONE complete premium homepage implementation reference for ImpresaX Rendering Studio.",
-    "Variant: " + key,
-    "Art direction: " + direction,
+    "Variant: "+key,
+    "FINAL APPROVED ART DIRECTION BRIEF:",
+    direction,
     "",
-    "FROZEN MASTER:",
-    master,
+    "FROZEN MASTER:",master,
     "",
-    "VERIFIED PROSPECT DATA:",
-    JSON.stringify(prospect),
+    "VERIFIED PROSPECT DATA:",JSON.stringify(prospect),
+    "",
+    "VERIFIED VISUAL ASSET INVENTORY:",JSON.stringify(assetInventory(prospect)),
+    "",
+    "MANDATORY REWORK HISTORY FOR THIS VARIANT:",JSON.stringify(variantHistory),
+    "MANDATORY SET-LEVEL REWORK HISTORY:",JSON.stringify(setHistory),
     "",
     "NON-NEGOTIABLE OUTPUT:",
     "- Return ONLY one complete standalone HTML document, starting with <!doctype html> and ending with </html>.",
     "- Embedded CSS only. NO JavaScript. NO iframe/object/embed.",
     "- Full desktop art direction for 1440px and deliberate mobile art direction for 390px.",
     "- Complete header/navigation, distinctive hero, at least four meaningful body sections, verified offering, verified trust/evidence where available, conversion/contact section and footer.",
-    "- Use ONLY verified facts in the supplied prospect data. Do not invent staff, projects, awards, branches, clients, metrics or capabilities.",
-    "- If an official logo URL is supplied and marked verified, use that exact URL in <img>; never redraw, restyle, spell or approximate the logo.",
-    "- Use imagery ONLY from the supplied verified first-party/source URLs. Do not introduce Unsplash, Pexels, random stock, AI-image URLs or any unverified external image host.",
-    "- If verified imagery is insufficient, solve the page with typography, verified logo, material/color fields, geometry and negative space. Never fake company staff, facilities, projects or premises.",
-    "- Typography and composition must do most of the design work. Avoid generic cards, gradients, glows, glassmorphism, blobs, dashboards and SaaS tropes.",
+    "- Follow THIS direction closely. Do not silently replace its signature idea with an easier generic layout.",
+    "- Use ONLY verified facts in the supplied prospect data. Do not invent staff, projects, awards, branches, clients, metrics, capabilities or service subcategories.",
+    "- If an official logo URL is supplied and marked verified, use that exact URL in <img>; never redraw, recolor, filter, restyle, spell or approximate the logo.",
+    "- Use image URLs ONLY when they appear exactly in VERIFIED VISUAL ASSET INVENTORY (or approved_external_images). Never invent a same-domain path.",
+    "- Respect each asset's role/alt/context. Do not turn a partner badge, logo, icon or unrelated image into hero imagery.",
+    "- Do not repeat the same non-logo image across multiple major sections when the inventory contains alternatives.",
+    "- If verified imagery is insufficient, solve the page with typography, verified logo/name, material/color fields, geometry, rules, negative space and verified data. Never fake company staff, premises, projects, facilities, products or scenes.",
+    "- Use implementable open-web/system typography. Do not depend on proprietary fonts that are not actually loaded.",
+    "- Typography and composition must do most of the design work. Avoid generic cards, gradients, glows, glassmorphism, blobs, dashboards, cheap icons/emoji and SaaS tropes.",
     "- CTA language must match the verified business and contacts.",
     "- If verified contact data exists, include at least one clickable tel: and/or mailto: link using ONLY the verified phone/email values.",
-    "- Include responsive @media rules that materially redesign mobile hierarchy and spacing.",
-    "- Quality is more important than brevity. Do not simplify composition, typography, imagery discipline or mobile art direction merely to make generation faster."
+    "- Include responsive @media rules that materially redesign mobile hierarchy, crop/asset behavior, CTA placement, spacing, density and scroll rhythm.",
+    "- Do not expose internal research language such as 'verified', 'according to the site', 'source', 'prospect', 'data unavailable' or implementation notes in customer-facing copy.",
+    "- Every prior QA issue listed above is a mandatory regression test. Do not repeat it.",
+    "- Quality is more important than brevity."
   ];
 
-  if (repairIssues?.length && previousHtml) {
+  if(repairIssues?.length && previousHtml) {
     parts.push(
       "",
-      "REWORK PASS. The previous draft failed these gates:",
-      repairIssues.join(", "),
-      "Repair the failures without flattening the art direction.",
-      "PREVIOUS HTML:",
-      previousHtml
+      "LOCAL REPAIR PASS — current draft failed:",
+      repairIssues.join(" | "),
+      "Repair these failures while preserving the approved art direction and all previously successful aspects.",
+      "PREVIOUS HTML:",previousHtml
     );
   }
-
   return parts.join("\n");
+}
+
+function visibleCopy(html) {
+  return String(html || "")
+    .replace(/<style[\s\S]*?<\/style>/gi," ")
+    .replace(/<svg[\s\S]*?<\/svg>/gi," ")
+    .replace(/<[^>]+>/g," ")
+    .replace(/&nbsp;/gi," ")
+    .replace(/&amp;/gi,"&")
+    .replace(/\s+/g," ")
+    .trim()
+    .slice(0,18000);
+}
+
+async function semanticContentGate(env, prospect, key, html) {
+  const prompt=[
+    "Audit the CUSTOMER-VISIBLE COPY of this generated homepage against the VERIFIED PROSPECT DATA.",
+    "Hard fail any invented service, sub-service, project, client, partner, certification, metric, employee, location, capability, testimonial or claim.",
+    "Hard fail internal/meta research wording, language inconsistency, misleading presentation of representative imagery/premises, or CTA/contact paths unsupported by verified data.",
+    "Also fail if the copy is generic enough to fit another business or fails to communicate the prospect's real offer clearly.",
+    "Return ONLY JSON: {\"pass\":boolean,\"issues\":[\"...\"],\"rework_instructions\":[\"...\"]}.",
+    "VARIANT:",key,
+    "VERIFIED PROSPECT:",JSON.stringify(prospect),
+    "VISIBLE COPY:",visibleCopy(html)
+  ].join("\n");
+  const out=await runModel(env,ART_MODEL,[
+    {role:"system",content:"You are a factual editorial QA reviewer. Be strict. Output JSON only."},
+    {role:"user",content:prompt}
+  ],1400,0.05);
+  const x=extractJson(aiText(out)) || {};
+  const issues=Array.isArray(x.issues)?x.issues.map(String).slice(0,12):[];
+  const instructions=Array.isArray(x.rework_instructions)?x.rework_instructions.map(String).slice(0,12):[];
+  return {pass:x.pass===true && issues.length===0,issues,instructions};
 }
 
 async function generateOne(env, master, prospect, key, direction) {
@@ -375,11 +526,22 @@ async function generateOne(env, master, prospect, key, direction) {
 
       const html = extractHtml(aiText(result));
       const gate = hardGate(html, prospect);
-      if (gate.pass) return { key, html, direction, gate };
+      if (!gate.pass) {
+        previousHtml=html;
+        repairIssues=gate.issues;
+        lastError=new Error("QUALITY_GATE_"+gate.issues.join("_"));
+        continue;
+      }
 
-      previousHtml = html;
-      repairIssues = gate.issues;
-      lastError = new Error("QUALITY_GATE_" + gate.issues.join("_"));
+      const semantic=await semanticContentGate(env,prospect,key,html);
+      if (semantic.pass) return { key, html, direction, gate:{...gate,semantic_content:semantic} };
+
+      previousHtml=html;
+      repairIssues=[
+        ...semantic.issues.map(x=>"CONTENT_TRUTH:"+x),
+        ...semantic.instructions.map(x=>"CONTENT_REWORK:"+x)
+      ];
+      lastError=new Error("SEMANTIC_CONTENT_GATE_FAILED");
     } catch (error) {
       lastError = error;
       if (!previousHtml) repairIssues = [String(error?.message || error)];
@@ -409,6 +571,7 @@ export async function generateRenderVariants(env, prospect) {
 
   return {
     master: "RENDERING_STUDIO_V1_FROZEN",
+    creative_quality_revision: "V8.2_BESPOKE_DIRECTION_SET",
     master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
     model: HTML_MODEL,
     variants
