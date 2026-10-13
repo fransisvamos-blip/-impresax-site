@@ -1261,11 +1261,16 @@ async function claimPack(sql, row) {
 }
 
 function extractHtmlImageUrls(html) {
+  const source=String(html || "");
   const urls=new Set();
-  for (const m of String(html || "").matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+  for (const m of source.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
     if (/^https:\/\//i.test(m[1])) urls.add(m[1]);
   }
-  for (const m of String(html || "").matchAll(/url\(\s*["']?(https:\/\/[^"'\)\s]+)["']?\s*\)/gi)) {
+  for (const m of source.matchAll(/<source\b[^>]*\bsrcset=["']([^"']+)["']/gi)) {
+    const first=String(m[1]||"").split(",")[0].trim().split(/\s+/)[0];
+    if (/^https:\/\//i.test(first)) urls.add(first);
+  }
+  for (const m of source.matchAll(/(?:background|background-image)\s*:[^;{}]*url\(\s*["']?(https:\/\/[^"'\)\s]+)["']?\s*\)/gi)) {
     urls.add(m[1]);
   }
   return [...urls];
