@@ -5,9 +5,11 @@ on:
     branches: [rendering-v2-shadow]
     paths:
       - 'src/render-v2/**'
-      - 'test/render-v2.test.mjs'
+      - 'test/render-v2*.test.mjs'
+      - 'test/fixtures/render-v2-golden-set.json'
       - 'wrangler.render-v2.jsonc'
       - 'ops/migrations/018_render_v2_shadow_foundation.sql'
+      - 'ops/migrations/019_render_v2_invariants.sql'
       - '.github/workflows/render-v2-shadow-check.yml'
   workflow_dispatch:
 
