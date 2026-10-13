@@ -5,7 +5,9 @@ export function classifyFailure(error, context={}) {
   const lower=message.toLowerCase();
   let failure_domain="UNKNOWN", failure_code="UNKNOWN_FAILURE", retryable=false;
 
-  if (/timeout|timed out|connection closed|network|fetch failed|5\d\d/.test(lower)) {
+  if (/hard_budget_exceeded/.test(lower)) {
+    failure_domain="SYSTEM_INVARIANT"; failure_code="HARD_BUDGET_EXCEEDED"; retryable=false;
+  } else if (/timeout|timed out|connection closed|network|fetch failed|5\d\d/.test(lower)) {
     failure_domain="INFRA"; failure_code="TRANSIENT_INFRA_FAILURE"; retryable=true;
   }
   if (/429|rate limit|model unavailable|provider/.test(lower)) {
