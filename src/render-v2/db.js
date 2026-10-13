@@ -63,7 +63,13 @@ export async function persistWorkflow(sql,{prospectId,packId,variantId=null,revi
       case when ${status}='RUNNING' then now() else null end,now()
     )
     on conflict(workflow_instance_id) do update
-      set last_event_at=now(),status=excluded.status,metadata=render_workflows_v2.metadata||excluded.metadata
+      set last_event_at=now(),
+          status=case
+            when render_workflows_v2.status in ('COMPLETED','FAILED','CANCELLED') then render_workflows_v2.status
+            when excluded.status='QUEUED' and render_workflows_v2.status in ('RUNNING','PAUSED') then render_workflows_v2.status
+            else excluded.status
+          end,
+          metadata=render_workflows_v2.metadata||excluded.metadata
     returning *`;
   return rows[0];
 }
