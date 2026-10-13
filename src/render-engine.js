@@ -1030,7 +1030,7 @@ async function recoverStaleClaims(sql) {
     set status='FAILED', error='STALE_CLOUDFLARE_AI_CLAIM', completed_at=now(), updated_at=now()
     where worker='cloudflare-workers-ai'
       and status in ('RUNNING','COMPLETING')
-      and started_at < now()-interval '12 minutes'`;
+      and started_at < now()-interval '25 minutes'`;
 
   await sql`update render_packs rp
     set status='ART_DIRECTION'
@@ -1040,7 +1040,7 @@ async function recoverStaleClaims(sql) {
         select 1 from render_jobs rj
         where rj.worker='cloudflare-workers-ai'
           and rj.status in ('RUNNING','COMPLETING')
-          and rj.started_at >= now()-interval '12 minutes'
+          and rj.started_at >= now()-interval '25 minutes'
           and rj.input_data->>'render_pack_id'=rp.id::text
       )`;
 
@@ -1699,7 +1699,7 @@ export async function runCloudflareRenderEngine(env) {
 
   const activeRows=await sql`select count(*)::int as n from render_jobs
     where worker='cloudflare-workers-ai' and status in ('RUNNING','COMPLETING')
-      and started_at >= now()-interval '12 minutes'`;
+      and started_at >= now()-interval '25 minutes'`;
   const active=Number(activeRows[0]?.n || 0);
   const slots=Math.max(0,MAX_PROSPECTS_PER_TICK-active);
 
