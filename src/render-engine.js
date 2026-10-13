@@ -1688,8 +1688,8 @@ async function generateProspect(sql, env, master, row) {
       preVisionPayload,
       [...discoveredFirstParty,...approvedExternal]
     );
-    const usableFirstParty=assetVision.usable.filter(x=>x.source_type!=="APPROVED_EXTERNAL");
-    const usableExternal=assetVision.usable.filter(x=>x.source_type==="APPROVED_EXTERNAL");
+    const usableFirstParty=assetVision.usable.filter(x=>x.approved_external!==true);
+    const usableExternal=assetVision.usable.filter(x=>x.approved_external===true);
     const payload = prospectPayload(row, usableFirstParty);
     payload.approved_external_images=usableExternal;
 
