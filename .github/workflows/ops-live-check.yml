@@ -62,7 +62,11 @@ jobs:
               && grep -q '"v8_4_first_render_ready_proof_required":true' /tmp/health.json \
               && grep -q '"v8_4_proof_prospect":"CZ-063"' /tmp/health.json \
               && grep -q '"max_generation_failures":3' /tmp/health.json \
-              && grep -q '"cron_heavy_phase_separation_required":true' /tmp/health.json \
+              && grep -q '"render_phase_acceleration":"GENERATION_BROWSER_QA_REWORK_SAME_TICK"' /tmp/health.json \
+              && grep -q '"accelerated_pipeline_passes":2' /tmp/health.json \
+              && grep -q '"render_tick_soft_budget_minutes":10' /tmp/health.json \
+              && grep -q '"cron_heavy_phase_separation_required":false' /tmp/health.json \
+              && grep -q '"cron_phase_chaining_enabled":true' /tmp/health.json \
               && grep -q '"ai_stale_recovery_minutes":16' /tmp/health.json \
               && grep -q '"cloudflare_cron_duration_limit_minutes":15' /tmp/health.json \
               && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
