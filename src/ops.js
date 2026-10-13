@@ -1247,6 +1247,8 @@ export async function handleOpsRequest(request, env) {
         direction_pool_required: true,
         direction_set_gate_required: true,
         semantic_copy_gate_required: true,
+        pre_render_evidence_required: true,
+        creative_strategy_evidence_required: true,
         structured_asset_inventory_required: true,
         cross_variant_visual_qa_required: true,
         qa_rework_memory_required: true,
