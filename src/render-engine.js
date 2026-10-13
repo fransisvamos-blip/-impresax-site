@@ -1528,6 +1528,19 @@ async function candidates(sql, limit) {
     where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status,'RENDER_REWORK'::pipeline_status)
       and rp.status in ('ART_DIRECTION','BRAND_GATE_HOLD')
       and coalesce((rp.content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
+      and (
+        select count(*) from render_jobs gf
+        where gf.worker='cloudflare-workers-ai'
+          and gf.status='FAILED'
+          and gf.input_data->>'render_pack_id'=rp.id::text
+          and gf.input_data->>'engine_revision'=${CREATIVE_ENGINE_REVISION}
+          and coalesce(gf.error,'') not like 'SUPERSEDED_BY%'
+          and coalesce(gf.error,'') <> 'CANCELLED_BY_GENERATION_CIRCUIT_BREAKER'
+          and (
+            nullif(rp.content_map->>'generation_success_at','') is null
+            or gf.started_at > (rp.content_map->>'generation_success_at')::timestamptz
+          )
+      ) < ${MAX_GENERATION_FAILURES}
       and coalesce((rp.content_map->>'generation_hold')::boolean,false)=false
       and (
         coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect')='CZ-063'
@@ -1567,6 +1580,19 @@ async function claimPack(sql, row) {
       and status='ART_DIRECTION'
       and approved_reference=false
       and coalesce((content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
+      and (
+        select count(*) from render_jobs gf
+        where gf.worker='cloudflare-workers-ai'
+          and gf.status='FAILED'
+          and gf.input_data->>'render_pack_id'=${row.render_pack_id}
+          and gf.input_data->>'engine_revision'=${CREATIVE_ENGINE_REVISION}
+          and coalesce(gf.error,'') not like 'SUPERSEDED_BY%'
+          and coalesce(gf.error,'') <> 'CANCELLED_BY_GENERATION_CIRCUIT_BREAKER'
+          and (
+            nullif(render_packs.content_map->>'generation_success_at','') is null
+            or gf.started_at > (render_packs.content_map->>'generation_success_at')::timestamptz
+          )
+      ) < ${MAX_GENERATION_FAILURES}
       and coalesce((content_map->>'generation_hold')::boolean,false)=false
       and not exists (
         select 1 from render_jobs j
