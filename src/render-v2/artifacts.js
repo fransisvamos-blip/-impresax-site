@@ -46,6 +46,19 @@ export async function ingestInputAssets(env,sql,{pack,inputPack}) {
   for(const asset of payload.assets||[]) {
     const key="render-v2/"+payload.prospect_code+"/"+pack.id+"/inputs/"+asset.asset_id;
     try {
+      const existing=await sql`
+        select * from render_artifacts_v2
+        where render_pack_id=${pack.id}::uuid
+          and artifact_type=${"INPUT_ASSET_"+asset.asset_id}
+          and r2_key=${key}
+        limit 1`;
+      if(existing.length) {
+        const head=await env.RENDER_ARTIFACTS.head(key);
+        if(!head) throw new Error("SYSTEM_INVARIANT:INPUT_ASSET_DB_R2_MISMATCH:"+asset.asset_id);
+        assets[asset.asset_id]={...asset,r2_key:key,mime:existing[0].mime,sha256:existing[0].sha256,bytes:existing[0].bytes,reused:true};
+        continue;
+      }
+
       const resp=await fetch(asset.source_url,{headers:{"User-Agent":"ImpresaX-Render-V2/1.0"}});
       if(!resp.ok) throw new Error("R2_INPUT_ASSET_FETCH_"+resp.status);
       const mime=(resp.headers.get("content-type")||"application/octet-stream").split(";")[0].trim();
