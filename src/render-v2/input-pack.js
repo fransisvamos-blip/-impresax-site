@@ -8,10 +8,17 @@ const REQUIRED_DNA=[
   "business_positioning","commercial_behavior"
 ];
 
+const UNAVAILABLE_MARKERS=new Set(["","NON_DISPONIBILE","NON DISPONIBILE","N/A","NA","UNKNOWN","NON_VERIFICATO","NON VERIFICATO","NOT_AVAILABLE"]);
+
+function meaningfulVerifiedValue(v) {
+  if(Array.isArray(v)) return v.some(meaningfulVerifiedValue);
+  if(v && typeof v==="object") return Object.values(v).some(meaningfulVerifiedValue);
+  const text=String(v??"").trim();
+  return text.length>2 && !UNAVAILABLE_MARKERS.has(text.toUpperCase());
+}
+
 function objectHasValue(v) {
-  if(Array.isArray(v)) return v.length>0;
-  if(v && typeof v==="object") return Object.keys(v).length>0;
-  return String(v??"").trim().length>2;
+  return meaningfulVerifiedValue(v);
 }
 
 function assetCandidates(prospect) {
@@ -81,9 +88,9 @@ export function certifyInputPayload(payload) {
   if(!["PASS","OFFICIAL_LOGO_LOCKED","NO_OFFICIAL_LOGO_CONFIRMED"].includes(logoStatus)) issues.push("OFFICIAL_IDENTITY_NOT_CERTIFIED");
   if(["PASS","OFFICIAL_LOGO_LOCKED"].includes(logoStatus) && !payload.assets.some(x=>x.asset_id==="PRIMARY_LOGO")) issues.push("PRIMARY_LOGO_ASSET_MISSING");
   for(const key of REQUIRED_DNA) if(!objectHasValue(payload?.brand_dna?.[key])) issues.push("BRAND_DNA_MISSING:"+key);
-  if(!String(payload?.verified_services||"").trim()) issues.push("VERIFIED_SERVICES_REQUIRED");
-  if(!String(payload?.verified_contacts||"").trim()) issues.push("VERIFIED_CONTACTS_REQUIRED");
-  if(!String(payload?.address||"").trim()) issues.push("VERIFIED_LOCATION_REQUIRED");
+  if(!meaningfulVerifiedValue(payload?.verified_services)) issues.push("VERIFIED_SERVICES_REQUIRED");
+  if(!meaningfulVerifiedValue(payload?.verified_contacts)) issues.push("VERIFIED_CONTACTS_REQUIRED");
+  if(!meaningfulVerifiedValue(payload?.address)) issues.push("VERIFIED_LOCATION_REQUIRED");
   if(!payload?.source_references?.length) issues.push("SOURCE_REFERENCES_REQUIRED");
   const ids=payload?.assets?.map(x=>x.asset_id)||[];
   if(unique(ids).length!==ids.length) issues.push("DUPLICATE_ASSET_ID");
