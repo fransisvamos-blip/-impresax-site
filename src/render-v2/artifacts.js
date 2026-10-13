@@ -17,7 +17,7 @@ export async function putArtifact(env,sql,{packId,revisionId=null,type,key,body,
     insert into render_artifacts_v2(
       render_pack_id,variant_revision_id,artifact_type,r2_key,sha256,mime,bytes,producer_step,execution_engine_version
     ) values(
-      \${packId}::uuid,\${revisionId}::uuid,\${type},\${key},\${hash},\${mime},\${bytes.byteLength},\${producerStep},\${EXECUTION_ENGINE_VERSION}
+      ${packId}::uuid,${revisionId}::uuid,${type},${key},${hash},${mime},${bytes.byteLength},${producerStep},${EXECUTION_ENGINE_VERSION}
     )
     on conflict(r2_key) do update set
       sha256=excluded.sha256,mime=excluded.mime,bytes=excluded.bytes,producer_step=excluded.producer_step

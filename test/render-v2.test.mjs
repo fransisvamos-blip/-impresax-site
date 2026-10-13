@@ -68,3 +68,14 @@ test("compiler requires a verified contact token in generated main",()=>{
   assert.equal(x.pass,false);
   assert.ok(x.issues.includes("VERIFIED_CONTACT_PATH_REQUIRED"));
 });
+
+test("V2 sources contain no escaped Neon interpolation literals", async()=>{
+  const { readFile } = await import("node:fs/promises");
+  for (const path of [
+    "src/render-v2/db.js","src/render-v2/input-pack.js","src/render-v2/artifacts.js",
+    "src/render-v2/workflows.js","src/render-v2/index.js"
+  ]) {
+    const source=await readFile(path,"utf8");
+    assert.equal(source.includes("\\${"),false,path+" contains escaped interpolation");
+  }
+});

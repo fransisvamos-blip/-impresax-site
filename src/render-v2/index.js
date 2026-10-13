@@ -50,8 +50,8 @@ export default {
       const packId=url.pathname.split("/").pop();
       const sql=db(env);
       const state=await packSnapshot(sql,packId);
-      const qa=await sql`select * from render_qa_results_v2 where render_pack_id=\${packId}::uuid order by created_at desc limit 30`;
-      const artifacts=await sql`select id,variant_revision_id,artifact_type,r2_key,sha256,mime,bytes,created_at from render_artifacts_v2 where render_pack_id=\${packId}::uuid order by created_at desc`;
+      const qa=await sql`select * from render_qa_results_v2 where render_pack_id=${packId}::uuid order by created_at desc limit 30`;
+      const artifacts=await sql`select id,variant_revision_id,artifact_type,r2_key,sha256,mime,bytes,created_at from render_artifacts_v2 where render_pack_id=${packId}::uuid order by created_at desc`;
       return json({ok:true,...state,qa,artifacts});
     }
 

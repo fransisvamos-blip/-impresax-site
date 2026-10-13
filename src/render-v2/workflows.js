@@ -22,7 +22,7 @@ async function inputAssetsFromDb(sql,packId,inputPayload) {
   const rows=await sql`
     select artifact_type,r2_key,sha256,mime,bytes
     from render_artifacts_v2
-    where render_pack_id=\${packId}::uuid and artifact_type like 'INPUT_ASSET_%'`;
+    where render_pack_id=${packId}::uuid and artifact_type like 'INPUT_ASSET_%'`;
   const byToken={};
   for(const row of rows) {
     const token=String(row.artifact_type).replace(/^INPUT_ASSET_/,"");
@@ -46,13 +46,13 @@ async function latestCertifiedRevision(sql,variantId) {
     select r.*
     from render_v2_variants v
     join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
-    where v.id=\${variantId}::uuid
+    where v.id=${variantId}::uuid
     limit 1`;
   return rows[0]||null;
 }
 
 async function recordTypedFailure(sql,{packId,workflowInstanceId,revisionId=null,stepName,error,variantKey=null,revision=null,strategyVersion}) {
-  const wf=await sql`select id from render_workflows_v2 where workflow_instance_id=\${workflowInstanceId} limit 1`;
+  const wf=await sql`select id from render_workflows_v2 where workflow_instance_id=${workflowInstanceId} limit 1`;
   const failure=classifyFailure(error,{step:stepName,variant_key:variantKey,revision});
   const fingerprint=await failureFingerprint(failure);
   const current=await countFailureFingerprint(sql,packId,fingerprint);
@@ -82,7 +82,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
     const context=await step.do("load-variant-context",{retries:{limit:2,delay:"2 seconds",backoff:"exponential"}},async()=>{
       const input=await getInputPack(sql,params.inputPackId);
-      const planRows=await sql`select * from render_creative_plans_v2 where render_pack_id=\${params.packId}::uuid limit 1`;
+      const planRows=await sql`select * from render_creative_plans_v2 where render_pack_id=${params.packId}::uuid limit 1`;
       if(!planRows.length) throw new Error("SYSTEM_INVARIANT:CREATIVE_PLAN_NOT_FOUND");
       const plan=planRows[0];
       const inputPayload=input.payload;
@@ -96,7 +96,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     let previousSpec=null;
     if(params.parentRevisionId) {
       const prior=await step.do("load-parent-revision",async()=>{
-        const rows=await sql`select * from render_variant_revisions where id=\${params.parentRevisionId}::uuid limit 1`;
+        const rows=await sql`select * from render_variant_revisions where id=${params.parentRevisionId}::uuid limit 1`;
         return rows[0]||null;
       });
       previousSpec=prior?.render_spec||null;
