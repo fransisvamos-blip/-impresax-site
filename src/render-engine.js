@@ -1076,6 +1076,14 @@ async function generateProspect(sql, env, master, row) {
     return {ok:false,code:workingRow.prospect_code,error:"BRAND_GATE_BLOCKED",issues:brandGate.issues};
   }
 
+  await sql`update render_packs set
+      official_logo=${JSON.stringify(workingRow.logo || {})}::jsonb,
+      brand_dna=${JSON.stringify(workingRow.brand_dna || {})}::jsonb,
+      source_references=${JSON.stringify(workingRow.source_data?.source_references || [])}::jsonb,
+      content_map=coalesce(content_map,'{}'::jsonb) ||
+        jsonb_build_object('brand_gate_frozen_pass',true,'brand_gate_frozen_pass_at',now())
+    where id=${workingRow.render_pack_id}::uuid and approved_reference=false`;
+
   if (workingRow.pack_status === "BRAND_GATE_HOLD") {
     const reopened = await sql`update render_packs set status='ART_DIRECTION'
       where id=${workingRow.render_pack_id}::uuid
