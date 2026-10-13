@@ -1016,7 +1016,7 @@ async function candidates(sql, limit) {
   const rows = await sql`select
       p.id as prospect_id,p.rank,p.business_name,p.vertical,p.city,p.country,p.website_url,
       p.logo,p.brand_dna,p.source_data,p.pipeline_status,
-      rp.id as render_pack_id,rp.version,rp.status as pack_status,
+      rp.id as render_pack_id,rp.version,rp.status as pack_status,rp.content_map as pack_content_map,
       coalesce(p.legacy_ids->>'id_prospect',p.source_data->>'id_prospect') as prospect_code
     from prospects p
     join lateral (
@@ -1290,7 +1290,7 @@ async function generateProspect(sql, env, master, row) {
       firstPartyImages: payload.first_party_images,
       approvedExternalImages: payload.approved_external_images,
       visualReworkFeedback: feedbackRows.map(x => ({variant:x.variant_key, critique:x.visual_qa})),
-      visualSetFeedback: row?.content_map?.visual_set_qa_last_run || null
+      visualSetFeedback: row?.pack_content_map?.visual_set_qa_last_run || null
     };
     const studio = await generateRenderVariants(env, studioProspect);
     const htmlByKey = {};
