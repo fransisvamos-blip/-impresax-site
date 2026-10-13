@@ -21,6 +21,6 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - name: Contract tests
-        run: node --test test/render-v2.test.mjs
+        run: node --test test/render-v2*.test.mjs
       - name: Cloudflare dry build
         run: npx wrangler deploy --dry-run --config wrangler.render-v2.jsonc --outdir dist-v2
