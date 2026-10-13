@@ -28,7 +28,13 @@ jobs:
               && grep -q '"database_connected":true' /tmp/health.json \
               && grep -q '"render_pipeline":"CLOUDFLARE_NATIVE_V1"' /tmp/health.json \
               && grep -q '"render_model":"@cf/zai-org/glm-4.7-flash"' /tmp/health.json \
-              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V7_AUTO_BRAND_GATE_VISUAL_QA"' /tmp/health.json \
+              && grep -q '"render_engine_version":"CLOUDFLARE_NATIVE_V8_FROZEN_COMPLIANCE"' /tmp/health.json \
+              && grep -q '"frozen_master_commit":"9578da3fa1b173283bf5c748b0e7d89497537e76"' /tmp/health.json \
+              && grep -q '"frozen_contract":"RENDERING_STUDIO_V1_FROZEN"' /tmp/health.json \
+              && grep -q '"frozen_db_guard":true' /tmp/health.json \
+              && grep -q '"exact_brand_dna_required":true' /tmp/health.json \
+              && grep -q '"image_provenance_required":true' /tmp/health.json \
+              && grep -q '"site_factory_reference_lock_required":true' /tmp/health.json \
               && grep -q '"render_owner":"CLOUDFLARE_NATIVE_ONLY"' /tmp/health.json \
               && grep -q '"brand_gate_required":true' /tmp/health.json \
               && grep -q '"brand_gate_auto_recovery":true' /tmp/health.json \
