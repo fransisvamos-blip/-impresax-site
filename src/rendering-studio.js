@@ -296,6 +296,42 @@ function assetPolicyText(prospect) {
   ].join(" ");
 }
 
+function verifiedContactAnchors(prospect) {
+  const raw=String(prospect?.verifiedContacts || prospect?.verified_contacts || "").trim();
+  if(!raw) return [];
+  const anchors=[];
+  const emails=[...raw.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)].map(m=>m[0]);
+  const phoneCandidates=[...raw.matchAll(/(?:\+?\d[\d\s().-]{6,}\d)/g)].map(m=>m[0].trim());
+  for(const email of [...new Set(emails)]) {
+    anchors.push({kind:"email",href:"mailto:"+email,label:email});
+  }
+  for(const candidate of [...new Set(phoneCandidates)]) {
+    const normalized=(candidate.startsWith("+")?"+":"")+candidate.replace(/\D/g,"");
+    if(normalized.replace(/\D/g,"").length>=7) {
+      anchors.push({kind:"phone",href:"tel:"+normalized,label:candidate});
+    }
+  }
+  return anchors.slice(0,3);
+}
+
+function ensureVerifiedContactPath(html, prospect) {
+  let out=String(html || "");
+  const anchors=verifiedContactAnchors(prospect);
+  if(!anchors.length || /(?:mailto:|tel:)/i.test(out)) return out;
+  const markup='<div class="ix-verified-contacts">'+anchors.map(a=>
+    '<a href="'+a.href.replace(/"/g,"%22")+'" class="ix-contact-link">'+
+      a.label.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+
+    '</a>'
+  ).join("")+'</div>';
+  if(/<footer\b[^>]*>/i.test(out)) {
+    return out.replace(/<footer\b([^>]*)>/i,'<footer$1>'+markup);
+  }
+  if(/<\/main>/i.test(out)) {
+    return out.replace(/<\/main>/i,markup+'</main>');
+  }
+  return out.replace(/<\/body>/i,markup+'</body>');
+}
+
 function sanitizeGeneratedHtml(html, prospect) {
   let out=String(html || "");
   const allowed=verifiedImageUrls(prospect);
@@ -361,8 +397,9 @@ function sanitizeGeneratedHtml(html, prospect) {
     out=out.replace(/<footer\b/i,'</main><footer');
   }
 
-  const recoveryCss='<style id="ix-v84-recovery">.ix-sanitized-visual{min-height:160px;border:1px solid currentColor;opacity:.14;background:transparent}.ix-recovered-header,.ix-recovered-footer{padding:24px}.ix-verified-name{font:inherit;font-weight:700}</style>';
+  const recoveryCss='<style id="ix-v84-recovery">.ix-sanitized-visual{min-height:160px;border:1px solid currentColor;opacity:.14;background:transparent}.ix-recovered-header,.ix-recovered-footer{padding:24px}.ix-verified-name{font:inherit;font-weight:700}.ix-verified-contacts{display:flex;gap:14px;flex-wrap:wrap}.ix-contact-link{min-height:44px;display:inline-flex;align-items:center}</style>';
   out=out.replace(/<\/head>/i,recoveryCss+'</head>');
+  out=ensureVerifiedContactPath(out,prospect);
   return out;
 }
 
