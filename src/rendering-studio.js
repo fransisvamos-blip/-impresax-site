@@ -397,7 +397,7 @@ async function deriveDirections(env, master, prospect) {
       const candidates=await generateDirectionCandidates(env,master,prospect,strategy,priorIssues);
       const directions=await curateDirections(env,master,prospect,strategy,candidates);
       const gate=await directionSetGate(env,prospect,directions);
-      if(gate.pass) return directions;
+      if(gate.pass) return {directions,strategy,direction_set_gate:gate};
       priorIssues=[...(gate.issues||[]),"Direction-set scores: "+JSON.stringify(gate.scores)];
     } catch(error) {
       priorIssues=[String(error?.message || error)];
@@ -411,7 +411,7 @@ async function deriveDirections(env, master, prospect) {
   if(!validDirections(independent)) throw new Error("PROSPECT_SPECIFIC_ART_DIRECTION_REQUIRED");
   const gate=await directionSetGate(env,prospect,independent);
   if(!gate.pass) throw new Error("DIRECTION_SET_QUALITY_GATE_FAILED:"+gate.issues.join("|"));
-  return independent;
+  return {directions:independent,strategy,direction_set_gate:gate};
 }
 
 function buildVariantPrompt(master, prospect, key, direction, repairIssues, previousHtml) {
@@ -573,7 +573,8 @@ async function loadMaster() {
 }
 export async function generateRenderVariants(env, prospect) {
   const master = await loadMaster();
-  const directions = await deriveDirections(env, master, prospect);
+  const plan = await deriveDirections(env, master, prospect);
+  const directions=plan.directions;
 
   const variants = await Promise.all([
     generateOne(env, master, prospect, "A", directions.A),
@@ -587,6 +588,8 @@ export async function generateRenderVariants(env, prospect) {
     master_commit: "9578da3fa1b173283bf5c748b0e7d89497537e76",
     model: ART_MODEL,
     repair_model: HTML_MODEL,
+    creative_strategy:plan.strategy,
+    direction_set_gate:plan.direction_set_gate,
     variants
   };
 }
