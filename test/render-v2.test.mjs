@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { validateRenderSpec, compileRenderSpec } from "../src/render-v2/compiler.js";
 import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-policy.js";
 import { stableStringify } from "../src/render-v2/utils.js";
+import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
 
 const manifests={
   copy:{HERO_HEADLINE:"Titolo",HERO_BODY:"Testo"},
@@ -79,4 +80,25 @@ test("all V2 sources contain no escaped Neon interpolation literals", async()=>{
     const source=await readFile(path,"utf8");
     assert.equal(source.includes("\\${"),false,path+" contains escaped interpolation");
   }
+});
+
+
+test("Italian verified contact normalization preserves landline and mobile semantics",()=>{
+  assert.equal(normalizeVerifiedPhone("0961 754432","IT"),"+390961754432");
+  assert.equal(normalizeVerifiedPhone("331 4587039","IT"),"+393314587039");
+  assert.equal(normalizeVerifiedPhone("0039 331 4587039","IT"),"+393314587039");
+  assert.equal(normalizeVerifiedPhone("+39 331 4587039","IT"),"+393314587039");
+});
+
+test("contact manifest prefers verified phone and keeps verified email fallback",()=>{
+  const x=buildContactManifest({country:"IT",verified_contacts:"0961 754432 | info@example.it"});
+  assert.equal(x.PRIMARY,"tel:+390961754432");
+  assert.equal(x.SECONDARY,"mailto:info@example.it");
+  const y=buildContactManifest({country:"IT",verified_contacts:"info@example.it"});
+  assert.equal(y.PRIMARY,"mailto:info@example.it");
+  assert.equal(y.SECONDARY,"mailto:info@example.it");
+});
+
+test("contact manifest refuses an unresolved verified contact path",()=>{
+  assert.throws(()=>buildContactManifest({country:"IT",verified_contacts:"NON_DISPONIBILE"}),/VERIFIED_CONTACT_PATH_UNRESOLVED/);
 });
