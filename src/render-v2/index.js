@@ -2,6 +2,8 @@ export { RenderProspectWorkflow, RenderVariantWorkflow } from "./workflows.js";
 import { db, packSnapshot } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
+import { reconcileV2 } from "./reconcile.js";
+import { budgetSnapshot } from "./metrics.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -11,14 +13,37 @@ function authorized(request,env) {
   return auth==="Bearer "+env.V2_SHADOW_TOKEN;
 }
 
+function workflowBinding(env,type) {
+  return type==="VARIANT" ? env.RENDER_VARIANT_WORKFLOW : env.RENDER_PROSPECT_WORKFLOW;
+}
+
+async function writeControlEvent(sql,row,action,payload={}) {
+  try {
+    await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,payload)
+      values(${row.prospect_id}::uuid,'RENDER_V2_CONTROL','render_workflow_v2',${row.id}::text,'render-v2-shadow',
+        ${JSON.stringify({action,...payload,workflow_instance_id:row.workflow_instance_id})}::jsonb)`;
+  } catch {}
+}
+
 export default {
+  async scheduled(controller,env,ctx) {
+    ctx.waitUntil(reconcileV2(env).catch(()=>null));
+  },
+
   async fetch(request,env) {
     const url=new URL(request.url);
     if(url.pathname==="/healthz") {
+      let database_connected=false;
+      try {
+        const sql=db(env);
+        const ping=await sql`select 1 as ok`;
+        database_connected=Number(ping[0]?.ok||0)===1;
+      } catch {}
       return json({
         ok:true,service:"impresax-render-v2-shadow",mode:"SHADOW",
         quality_contract:QUALITY_CONTRACT_VERSION,engine:EXECUTION_ENGINE_VERSION,
         compiler:COMPILER_VERSION,model_routes:MODEL_ROUTE_VERSION,
+        database_connected,
         bindings:{ai:Boolean(env.AI),browser:Boolean(env.BROWSER),r2:Boolean(env.RENDER_ARTIFACTS),db:Boolean(env.OPS_DATABASE_URL),parent_workflow:Boolean(env.RENDER_PROSPECT_WORKFLOW),variant_workflow:Boolean(env.RENDER_VARIANT_WORKFLOW)}
       });
     }
@@ -59,6 +84,67 @@ export default {
       const id=url.pathname.split("/").pop();
       const instance=await env.RENDER_PROSPECT_WORKFLOW.get(id);
       return json({ok:true,id,status:await instance.status()});
+    }
+
+    if(request.method==="POST" && url.pathname==="/shadow/reconcile") {
+      return json({ok:true,summary:await reconcileV2(env)});
+    }
+
+    if(request.method==="POST" && url.pathname==="/shadow/control") {
+      const body=await request.json().catch(()=>({}));
+      const instanceId=String(body.workflow_instance_id||"").trim();
+      const action=String(body.action||"").toLowerCase();
+      if(!instanceId || !["pause","resume","restart","terminate"].includes(action)) {
+        return json({ok:false,error:"workflow_instance_id_and_valid_action_required"},400);
+      }
+      const sql=db(env);
+      const rows=await sql`select * from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
+      if(!rows.length) return json({ok:false,error:"WORKFLOW_NOT_FOUND"},404);
+      const row=rows[0];
+      const instance=await workflowBinding(env,row.workflow_type).get(instanceId);
+
+      if(action==="pause") {
+        await instance.pause();
+        await sql`update render_workflows_v2 set status='PAUSED',last_event_at=now(),metadata=metadata||${JSON.stringify({human_control:"pause"})}::jsonb where id=${row.id}::uuid`;
+      } else if(action==="resume") {
+        await instance.resume();
+        await sql`update render_workflows_v2 set status='RUNNING',last_event_at=now(),metadata=metadata||${JSON.stringify({human_control:"resume"})}::jsonb where id=${row.id}::uuid`;
+      } else if(action==="restart") {
+        const fromName=String(body.from_step||"").trim();
+        if(fromName) {
+          await instance.restart({from:{name:fromName,count:Number(body.count||1),type:["do","sleep","waitForEvent"].includes(body.step_type)?body.step_type:"do"}});
+        } else {
+          await instance.restart();
+        }
+        await sql`update render_workflows_v2 set status='RUNNING',last_event_at=now(),attempt=attempt+1,metadata=metadata||${JSON.stringify({human_control:"restart",from_step:body.from_step||null})}::jsonb where id=${row.id}::uuid`;
+      } else if(action==="terminate") {
+        await instance.terminate({rollback:body.rollback===true});
+        await sql`update render_workflows_v2 set status='CANCELLED',completed_at=now(),last_event_at=now(),metadata=metadata||${JSON.stringify({human_control:"terminate",rollback:body.rollback===true})}::jsonb where id=${row.id}::uuid`;
+      }
+      await writeControlEvent(sql,row,action,{from_step:body.from_step||null,rollback:body.rollback===true});
+      return json({ok:true,workflow_instance_id:instanceId,action,status:await instance.status()});
+    }
+
+    if(request.method==="GET" && url.pathname.startsWith("/shadow/artifact/")) {
+      const artifactId=url.pathname.split("/").pop();
+      const sql=db(env);
+      const rows=await sql`select * from render_artifacts_v2 where id=${artifactId}::uuid limit 1`;
+      if(!rows.length) return json({ok:false,error:"ARTIFACT_NOT_FOUND"},404);
+      const artifact=rows[0];
+      const object=await env.RENDER_ARTIFACTS.get(artifact.r2_key);
+      if(!object) return json({ok:false,error:"R2_ARTIFACT_NOT_FOUND"},404);
+      return new Response(object.body,{status:200,headers:{
+        "content-type":artifact.mime,
+        "cache-control":"private, no-store",
+        "x-content-type-options":"nosniff",
+        "x-render-artifact-sha256":artifact.sha256
+      }});
+    }
+
+    if(request.method==="GET" && url.pathname.startsWith("/shadow/budget/")) {
+      const packId=url.pathname.split("/").pop();
+      const sql=db(env);
+      return json({ok:true,pack_id:packId,budget:await budgetSnapshot(sql,packId,env)});
     }
 
     return json({ok:false,error:"NOT_FOUND"},404);
