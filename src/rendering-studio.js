@@ -269,27 +269,56 @@ function buildVariantPrompt(master, prospect, key, direction, repairIssues, prev
 }
 
 async function generateOne(env, master, prospect, key, direction) {
-  let result = await runModel(env, HTML_MODEL, [
-    { role: "system", content: "You are a senior editorial web art director and frontend designer. Output production-grade HTML only." },
-    { role: "user", content: buildVariantPrompt(master, prospect, key, direction, null, null) }
-  ], 8500, 0.56);
+  let lastError = null;
+  let previousHtml = null;
+  let repairIssues = [];
 
-  let html = extractHtml(aiText(result));
-  let gate = hardGate(html, prospect);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const retryNote = attempt > 1
+        ? [
+            "",
+            "STRICT RETRY " + attempt + ": the prior model response was unusable.",
+            "Failure: " + (lastError?.message || repairIssues.join(", ") || "invalid HTML output"),
+            "Return exactly one complete HTML document. No markdown, no commentary, no truncation."
+          ].join("\n")
+        : "";
 
-  if (!gate.pass) {
-    result = await runModel(env, HTML_MODEL, [
-      { role: "system", content: "You are a senior editorial web art director fixing a premium homepage without changing its core direction. Output HTML only." },
-      { role: "user", content: buildVariantPrompt(master, prospect, key, direction, gate.issues, html) }
-    ], 8500, 0.46);
-    html = extractHtml(aiText(result));
-    gate = hardGate(html, prospect);
+      const result = await runModel(env, HTML_MODEL, [
+        {
+          role: "system",
+          content: attempt === 1
+            ? "You are a senior editorial web art director and frontend designer. Output production-grade HTML only."
+            : "You are repairing a failed homepage generation. Output one complete standalone HTML document only."
+        },
+        {
+          role: "user",
+          content: buildVariantPrompt(
+            master,
+            prospect,
+            key,
+            direction,
+            previousHtml ? repairIssues : null,
+            previousHtml
+          ) + retryNote
+        }
+      ], 9000, attempt === 1 ? 0.52 : 0.32);
+
+      const html = extractHtml(aiText(result));
+      const gate = hardGate(html, prospect);
+      if (gate.pass) return { key, html, direction, gate };
+
+      previousHtml = html;
+      repairIssues = gate.issues;
+      lastError = new Error("QUALITY_GATE_" + gate.issues.join("_"));
+    } catch (error) {
+      lastError = error;
+      if (!previousHtml) repairIssues = [String(error?.message || error)];
+    }
   }
 
-  if (!gate.pass) throw new Error("VARIANT_" + key + "_QUALITY_GATE_" + gate.issues.join("_"));
-  return { key, html, direction, gate };
+  throw lastError || new Error("VARIANT_" + key + "_GENERATION_FAILED");
 }
-
 async function loadMaster() {
   try {
     const r = await fetch(MASTER_URL, { headers: { "Cache-Control": "no-cache" } });
