@@ -10,6 +10,7 @@ on:
       - 'wrangler.render-v2.jsonc'
       - 'ops/migrations/018_render_v2_shadow_foundation.sql'
       - 'ops/migrations/019_render_v2_invariants.sql'
+      - 'ops/migrations/020_render_v2_input_truth_guards.sql'
       - '.github/workflows/render-v2-shadow-check.yml'
   workflow_dispatch:
 
