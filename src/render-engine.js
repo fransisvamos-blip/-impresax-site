@@ -280,6 +280,113 @@ async function critiqueVisibleRender(env, master, prospect, variantKey, directio
   }
   throw lastError || new Error("VISUAL_QA_FAILED_TO_RUN");
 }
+
+async function critiqueVariantSet(env, prospect, captured, individualQa) {
+  const parameters={
+    type:"object",
+    additionalProperties:false,
+    properties:{
+      pass:{type:"boolean"},
+      summary:{type:"string"},
+      issues:{type:"array",items:{type:"string"}},
+      rework_instructions:{type:"array",items:{type:"string"}},
+      scores:{
+        type:"object",
+        additionalProperties:false,
+        properties:{
+          set_quality:{type:"number"},
+          diversity_ab:{type:"number"},
+          diversity_ac:{type:"number"},
+          diversity_bc:{type:"number"},
+          prospect_fit_a:{type:"number"},
+          prospect_fit_b:{type:"number"},
+          prospect_fit_c:{type:"number"}
+        },
+        required:["set_quality","diversity_ab","diversity_ac","diversity_bc","prospect_fit_a","prospect_fit_b","prospect_fit_c"]
+      }
+    },
+    required:["pass","summary","issues","rework_instructions","scores"]
+  };
+
+  const directions=Object.fromEntries(captured.map(x=>[
+    x.item.variant_key,
+    x.item.design_notes?.direction || {}
+  ]));
+  const individual=Object.fromEntries(individualQa.map(x=>[
+    x.variant_key,
+    {pass:x.qa.pass,scores:x.qa.scores,issues:x.qa.issues}
+  ]));
+
+  const prompt=[
+    "Judge the THREE homepage directions AS A SET, not individually.",
+    "The three desktop screenshots follow in exact order A, B, C.",
+    "PASS only if each variant is unmistakably adapted to THIS prospect, A/B/C are materially different in hero logic, composition, typography, imagery/materiality, signature device, rhythm and CTA treatment, and the weakest route is still portfolio-grade.",
+    "Hard fail if two routes are strong and one is filler, if diversity is merely palette/copy changes, or if the same generic template family is visible underneath.",
+    "Every score must be >=8/10. Any issue means FAIL.",
+    "Return the verdict through the required tool.",
+    "",
+    "PROSPECT:",JSON.stringify(prospect),
+    "DIRECTIONS:",JSON.stringify(directions),
+    "INDIVIDUAL QA:",JSON.stringify(individual)
+  ].join("\n");
+
+  let lastError=null;
+  for(let attempt=1;attempt<=2;attempt++) {
+    try {
+      const A=captured.find(x=>x.item.variant_key==="A");
+      const B=captured.find(x=>x.item.variant_key==="B");
+      const C=captured.find(x=>x.item.variant_key==="C");
+      if(!A||!B||!C) throw new Error("SET_QA_THREE_VARIANTS_REQUIRED");
+
+      const out=await env.AI.run(VISUAL_QA_MODEL,{
+        messages:[
+          {role:"system",content:"You are a strict creative director reviewing a three-route design pitch. Never pass a repetitive or filler set."},
+          {role:"user",content:[
+            {type:"text",text:prompt},
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+A.desktopB64}},
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+B.desktopB64}},
+            {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+C.desktopB64}}
+          ]}
+        ],
+        tools:[{name:"submit_set_qa",description:"Submit the final A/B/C set-level QA verdict.",parameters}],
+        tool_choice:"required",
+        parallel_tool_calls:false,
+        max_completion_tokens:1400,
+        temperature:0.03,
+        reasoning_effort:"medium"
+      });
+
+      const call=
+        out?.tool_calls?.[0] ??
+        out?.choices?.[0]?.message?.tool_calls?.[0] ??
+        out?.result?.tool_calls?.[0];
+      let args=call?.arguments ?? call?.function?.arguments ?? call?.args ?? null;
+      if(typeof args==="string") args=JSON.parse(args);
+      if(!args || typeof args!=="object") throw new Error("SET_QA_TOOL_RESULT_REQUIRED");
+
+      const scores=args.scores || {};
+      const required=["set_quality","diversity_ab","diversity_ac","diversity_bc","prospect_fit_a","prospect_fit_b","prospect_fit_c"];
+      const complete=required.every(k=>Number.isFinite(Number(scores[k])));
+      if(!complete) throw new Error("SET_QA_SCORES_INCOMPLETE");
+      const issues=Array.isArray(args.issues)?args.issues.map(x=>String(x).slice(0,400)).slice(0,16):[];
+      const rework=Array.isArray(args.rework_instructions)?args.rework_instructions.map(x=>String(x).slice(0,500)).slice(0,16):[];
+      const min=Math.min(...required.map(k=>Number(scores[k])));
+      return {
+        pass:args.pass===true && issues.length===0 && min>=8,
+        summary:String(args.summary||"").slice(0,1200),
+        issues:min<8 && issues.length===0 ? ["A_B_C_SET_BELOW_FROZEN_DIVERSITY_BAR"] : issues,
+        rework_instructions:rework,
+        scores:Object.fromEntries(required.map(k=>[k,Number(scores[k])])),
+        model:VISUAL_QA_MODEL,
+        checked_at:new Date().toISOString()
+      };
+    } catch(error) {
+      lastError=error;
+    }
+  }
+  throw lastError || new Error("SET_LEVEL_VISUAL_QA_FAILED");
+}
+
 function validateHtml(value, logoUrl) {
   const html = stripCodeFence(value);
   if (!/<html[\s>]/i.test(html) || !/<\/html>/i.test(html)) throw new Error("HTML_DOCUMENT_REQUIRED");
