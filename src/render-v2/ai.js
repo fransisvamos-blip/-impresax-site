@@ -41,13 +41,14 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
     const model=modelFor(env,role,Boolean(fallback));
     if(beforeAttempt) await beforeAttempt({role,model,fallback:Boolean(fallback)});
     try {
-      const result=await env.AI.run(model,{
+      const inference={
         messages,
         response_format:{type:"json_schema",json_schema:schema},
         max_completion_tokens:maxTokens,
-        temperature,
-        ...(vision?{reasoning_effort:"medium"}:{})
-      },{
+        temperature
+      };
+      if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="medium";
+      const result=await env.AI.run(model,inference,{
         gateway:{id:env.AI_GATEWAY_ID||"default",skipCache:true}
       });
       return {data:extractStructured(result),model,fallback:Boolean(fallback)};
@@ -79,48 +80,73 @@ const directionSchema={
   required:["name","core_idea","hero_logic","grid","typography_behavior","material_language","signature_device","section_progression","cta_behavior","mobile_reinterpretation","asset_tokens","fingerprint"]
 };
 
-const creativeSchema={
+
+const contentTruthSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    hero_headline:{type:"string"},hero_body:{type:"string"},
+    hero_source_refs:{type:"array",minItems:1,items:{type:"string"}},
+    services:{type:"array",minItems:1,maxItems:8,items:{
+      type:"object",additionalProperties:false,
+      properties:{
+        title:{type:"string"},description:{type:"string"},
+        source_refs:{type:"array",minItems:1,items:{type:"string"}}
+      },
+      required:["title","description","source_refs"]
+    }},
+    trust_points:{type:"array",maxItems:8,items:{
+      type:"object",additionalProperties:false,
+      properties:{text:{type:"string"},source_refs:{type:"array",minItems:1,items:{type:"string"}}},
+      required:["text","source_refs"]
+    }},
+    locality_line:{type:"string"},
+    locality_source_refs:{type:"array",minItems:1,items:{type:"string"}},
+    primary_cta_label:{type:"string"},secondary_cta_label:{type:"string"},
+    footer_line:{type:"string"},prohibited_claims:{type:"array",items:{type:"string"}}
+  },
+  required:["hero_headline","hero_body","hero_source_refs","services","trust_points","locality_line","locality_source_refs","primary_cta_label","secondary_cta_label","footer_line","prohibited_claims"]
+};
+
+const creativeDirectionsSchema={
   type:"object",additionalProperties:false,
   properties:{
     creative_strategy:{type:"string"},
-    content_truth:{
-      type:"object",additionalProperties:false,
-      properties:{
-        hero_headline:{type:"string"},hero_body:{type:"string"},
-        hero_source_refs:{type:"array",minItems:1,items:{type:"string"}},
-        services:{type:"array",minItems:1,maxItems:8,items:{
-          type:"object",additionalProperties:false,
-          properties:{
-            title:{type:"string"},description:{type:"string"},
-            source_refs:{type:"array",minItems:1,items:{type:"string"}}
-          },
-          required:["title","description","source_refs"]
-        }},
-        trust_points:{type:"array",maxItems:8,items:{
-          type:"object",additionalProperties:false,
-          properties:{text:{type:"string"},source_refs:{type:"array",minItems:1,items:{type:"string"}}},
-          required:["text","source_refs"]
-        }},
-        locality_line:{type:"string"},
-        locality_source_refs:{type:"array",minItems:1,items:{type:"string"}},
-        primary_cta_label:{type:"string"},secondary_cta_label:{type:"string"},
-        footer_line:{type:"string"},prohibited_claims:{type:"array",items:{type:"string"}}
-      },
-      required:["hero_headline","hero_body","hero_source_refs","services","trust_points","locality_line","locality_source_refs","primary_cta_label","secondary_cta_label","footer_line","prohibited_claims"]
-    },
     directions:{
       type:"object",additionalProperties:false,
       properties:{A:directionSchema,B:directionSchema,C:directionSchema},
       required:["A","B","C"]
     }
   },
-  required:["creative_strategy","content_truth","directions"]
+  required:["creative_strategy","directions"]
+};
+
+const truthQaSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    pass:{type:"boolean"},
+    summary:{type:"string"},
+    issues:{type:"array",items:{type:"string"}},
+    unsupported_modules:{type:"array",items:{type:"string"}}
+  },
+  required:["pass","summary","issues","unsupported_modules"]
 };
 
 function fingerprintSimilarity(a,b) {
   const keys=["hero_type","grid_topology","typography_mode","material_system","signature_device","section_rhythm","cta_pattern","mobile_pattern"];
+  const normalize=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   let same=0;
-  for(const k of keys) if(String(a?.[k]||"").toLowerCase()===String(b?.[k]||"").toLowerCase()) same++;
+  for(const k of keys) {
+    const A=normalize(a?.[k]),B=normalize(b?.[k]);
+    if(A===B) { same++; continue; }
+    const as=new Set(A.split(/\s+/).filter(x=>x.length>3));
+    const bs=new Set(B.split(/\s+/).filter(x=>x.length>3));
+    if(as.size&&bs.size) {
+      let inter=0;
+      for(const x of as) if(bs.has(x)) inter++;
+      const union=as.size+bs.size-inter;
+      if(union>0 && inter/union>=0.72) same++;
+    }
+  }
   return same/keys.length;
 }
 
@@ -150,32 +176,79 @@ export function validateContentTruthSources(contentTruth,inputPayload) {
   return {pass:issues.length===0,issues};
 }
 
-export async function createCreativePlan(env,inputPayload,assetTokens,{beforeModelAttempt=null}={}) {
+export async function createContentTruthPack(env,inputPayload,{beforeModelAttempt=null}={}) {
   const prompt=[
-    "Create the single definitive ImpresaX creative plan for this verified prospect.",
-    "Return THREE materially different flagship routes A/B/C and one factual Content Truth Pack.",
-    "All factual copy must be grounded only in VERIFIED INPUT. Never invent claims, reviews, premises, people, prices, certifications or capabilities.",
+    "Create the definitive factual Content Truth Pack for this ImpresaX prospect.",
+    "Use ONLY VERIFIED INPUT. Never invent claims, reviews, premises, people, prices, certifications, years, statistics or capabilities.",
+    "Write concise natural Italian suitable for a premium commercial homepage.",
+    "Every hero/service/trust/locality factual module MUST cite one or more exact URLs from VERIFIED INPUT source_references.",
+    "Never invent, normalize or alter a source URL.",
+    "VERIFIED INPUT:",
+    JSON.stringify(inputPayload)
+  ].join("\n");
+  const generated=await runStructured(env,"creative",{
+    messages:[
+      {role:"system",content:"You are the factual editorial layer of ImpresaX. Truth and exact source grounding are mandatory."},
+      {role:"user",content:prompt}
+    ],
+    schema:contentTruthSchema,maxTokens:4500,temperature:0.12,beforeAttempt:beforeModelAttempt
+  });
+  const sourceGate=validateContentTruthSources(generated.data,inputPayload);
+  if(!sourceGate.pass) throw new Error("CONTENT_TRUTH_SOURCE_INVALID:"+sourceGate.issues.join("|"));
+
+  const reviewer=await runStructured(env,"visualQa",{
+    messages:[
+      {role:"system",content:"You are an independent factual QA reviewer. Reject any claim not directly supported by VERIFIED INPUT. Output the schema only."},
+      {role:"user",content:"VERIFIED INPUT:\n"+JSON.stringify(inputPayload)+"\n\nCONTENT TRUTH PACK:\n"+JSON.stringify(generated.data)}
+    ],
+    schema:truthQaSchema,maxTokens:1800,temperature:0,beforeAttempt:beforeModelAttempt
+  });
+  if(reviewer.data.pass!==true || (reviewer.data.issues||[]).length || (reviewer.data.unsupported_modules||[]).length) {
+    throw new Error("CONTENT_TRUTH_VERIFICATION_FAILED:"+JSON.stringify({issues:reviewer.data.issues||[],unsupported_modules:reviewer.data.unsupported_modules||[]}));
+  }
+  return {content_truth:generated.data,generator_model:generated.model,reviewer_model:reviewer.model,hash:await sha256(stableStringify(generated.data))};
+}
+
+export async function createCreativeDirections(env,inputPayload,assetTokens,{beforeModelAttempt=null}={}) {
+  const prompt=[
+    "Create the single definitive ImpresaX visual strategy for this verified prospect.",
+    "Return THREE materially different flagship routes A/B/C.",
     "Available asset tokens are the ONLY images/identity assets variants may use: "+JSON.stringify(assetTokens),
     "If only the identity asset is available, design in ZERO_PHOTO_PREMIUM mode using typography, composition, geometry and materiality instead of invented photography.",
     "A/B/C must differ in hero logic, grid, typography behavior, material language, signature device, section rhythm, CTA integration and mobile reinterpretation.",
-    "Copy must be concise, natural Italian and commercially clear.",
-    "Every hero/service/trust/locality factual module MUST cite one or more exact URLs from VERIFIED INPUT source_references. Never invent or alter a source URL.",
+    "Do not invent facts. Creative direction is visual/structural; factual copy is supplied separately by the Content Truth Pack.",
     "VERIFIED INPUT:",
     JSON.stringify(inputPayload)
   ].join("\n");
   const r=await runStructured(env,"creative",{
     messages:[
-      {role:"system",content:"You are the senior creative director of ImpresaX. Originality, truth, premium art direction and implementation feasibility are mandatory."},
+      {role:"system",content:"You are the senior creative director of ImpresaX. Originality, premium art direction, prospect specificity and implementation feasibility are mandatory."},
       {role:"user",content:prompt}
     ],
-    schema:creativeSchema,maxTokens:9000,temperature:0.35,beforeAttempt:beforeModelAttempt
+    schema:creativeDirectionsSchema,maxTokens:6500,temperature:0.32,beforeAttempt:beforeModelAttempt
   });
-  const truthGate=validateContentTruthSources(r.data.content_truth,inputPayload);
-  if(!truthGate.pass) throw new Error("CONTENT_TRUTH_SOURCE_INVALID:"+truthGate.issues.join("|"));
   const pre=diversityPrecheck(r.data.directions);
   if(!pre.pass) throw new Error("SET_DIVERSITY_PRECHECK_FAILED:"+JSON.stringify(pre.scores));
-  const plan={...r.data,fingerprints:Object.fromEntries(["A","B","C"].map(k=>[k,r.data.directions[k].fingerprint])),diversity_precheck:pre};
-  return {plan,model:r.model,hash:await sha256(stableStringify(plan))};
+  const directions=r.data.directions;
+  return {
+    creative_strategy:r.data.creative_strategy,
+    directions,
+    fingerprints:Object.fromEntries(["A","B","C"].map(k=>[k,directions[k].fingerprint])),
+    diversity_precheck:pre,
+    model:r.model,
+    hash:await sha256(stableStringify(r.data))
+  };
+}
+
+export async function combineCreativePlan(contentTruth,directions) {
+  const plan={
+    content_truth:contentTruth.content_truth,
+    creative_strategy:directions.creative_strategy,
+    directions:directions.directions,
+    fingerprints:directions.fingerprints,
+    diversity_precheck:directions.diversity_precheck
+  };
+  return {plan,hash:await sha256(stableStringify(plan))};
 }
 
 export function buildCopyManifest(content) {
