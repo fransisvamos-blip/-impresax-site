@@ -1,0 +1,55 @@
+name: V2 Golden Targeted Final
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-golden-targeted-final.yml'
+  workflow_dispatch:
+
+jobs:
+  relaunch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rendering-v2-shadow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Relaunch only remaining Golden variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+
+          call_variant () {
+            local pack="$1"
+            local variant="$2"
+            local key="$3"
+            local reset="$4"
+            local body
+            body=$(jq -nc --arg pack "$pack" --arg variant "$variant" --arg key "$key" --argjson reset "$reset"               '{pack_id:$pack,variant_key:$variant,run_key:$key,force:true,reset_budget:$reset,event_prefix:"final",reason:"GOLDEN_DETERMINISTIC_FINAL"}')
+            local ok=0
+            for i in {1..20}; do
+              code=$(curl -sS -o /tmp/variant.json -w '%{http_code}'                 -H "Authorization: Bearer $token"                 -H "Content-Type: application/json"                 --data "$body"                 "$V2_URL/shadow/relaunch-variant" || true)
+              echo "variant=$variant attempt=$i code=$code body=$(cat /tmp/variant.json 2>/dev/null || true)"
+              if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
+              sleep 4
+            done
+            [ "$ok" = "1" ] || exit 1
+            jq -e '.ok == true' /tmp/variant.json >/dev/null
+          }
+
+          call_variant "959dffb2-48d0-40db-94bf-1802625fa47d" "A" "golden-final-cz031-a" true
+          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "B" "golden-final-cz210-b" true
+          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "C" "golden-final-cz210-c" false
+
+          echo "Targeted Golden variants relaunched on final deterministic contract." >> "$GITHUB_STEP_SUMMARY"
