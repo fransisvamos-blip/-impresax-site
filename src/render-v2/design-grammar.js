@@ -134,7 +134,7 @@ export function sanitizeDirectionForExecution(direction,{hasEditorialAssets=fals
 }
 
 export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=true,inputPayload=null}) {
-  const accent=verifiedAccent(inputPayload)||(variantKey==="B"?"#d7ff43":"#8d8981");
+  const accent=verifiedAccent(inputPayload)||(variantKey==="B"?"#e6e1d7":"#8d8981");
   const services=serviceMarkup(copyManifest,"ixg-service");
   const trust=trustMarkup(copyManifest,"ixg-trust");
   const serviceTitles=availableIndexed(copyManifest,"SERVICE_","_TITLE");
@@ -282,9 +282,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixc-positioning{background:#111;color:#f5f2eb;padding:clamp(70px,8vw,120px) 0}.ixc-positioning__grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(36px,7vw,110px);align-items:start}.ixc-positioning h2{font-family:Arial,Helvetica,sans-serif;font-size:clamp(38px,5.4vw,78px);line-height:.98;letter-spacing:-.045em;max-width:18ch}
 .ixc-services{background:#faf9f6;color:#111;padding:0}.ixc-ledger-row{display:grid;grid-template-columns:minmax(240px,.7fr) minmax(0,1.3fr);gap:clamp(30px,7vw,110px);padding:clamp(42px,6vw,82px) 0;border-bottom:1px solid rgba(17,17,17,.24);align-items:start}.ixc-ledger-row:first-child{border-top:1px solid rgba(17,17,17,.24)}
 .ixc-ledger-row h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(32px,4.2vw,62px);line-height:.96;letter-spacing:-.04em}.ixc-ledger-value p{font-size:clamp(18px,1.65vw,24px);line-height:1.55;max-width:52ch;color:#4e4a44}
-.ixc-trust{background:#e7e4dd;color:#111;padding:clamp(64px,8vw,110px) 0}.ixc-trust__inner{display:grid;grid-template-columns:1fr}.ixc-trust-row{display:grid;grid-template-columns:minmax(90px,.23fr) minmax(0,1fr);gap:28px;align-items:center;padding:26px 0;border-bottom:1px solid rgba(17,17,17,.2)}.ixc-trust-row:first-child{border-top:1px solid rgba(17,17,17,.2)}
+.ixc-trust{background:#fff;color:#111;padding:clamp(64px,8vw,110px) 0}.ixc-trust__inner{display:grid;grid-template-columns:1fr}.ixc-trust-row{display:grid;grid-template-columns:minmax(90px,.23fr) minmax(0,1fr);gap:28px;align-items:center;padding:26px 0;border-bottom:1px solid rgba(17,17,17,.2)}.ixc-trust-row:first-child{border-top:1px solid rgba(17,17,17,.2)}
 .ixc-trust-row{border-top:1px solid rgba(17,17,17,.24);padding:24px 0}.ixc-trust-row strong{font-size:clamp(24px,3vw,44px);line-height:1.05;letter-spacing:-.03em}
-.ixc-bridge{background:#fff;color:#111;padding:clamp(80px,10vw,150px) 0}.ixc-bridge__inner{display:grid;grid-template-columns:12px minmax(0,1fr);gap:clamp(34px,6vw,84px);align-items:stretch}.ixc-bridge__rule{background:#111;min-height:260px}.ixc-bridge__copy{display:grid;gap:30px;max-width:950px}.ixc-bridge__copy h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(52px,7.4vw,108px);line-height:.9;letter-spacing:-.055em}.ixc-bridge__copy p{max-width:52ch;color:#4e4a44}
+.ixc-bridge{background:#fff;color:#111;padding:clamp(80px,10vw,150px) 0}.ixc-bridge__inner{display:grid;grid-template-columns:12px minmax(0,1fr);gap:clamp(34px,6vw,84px);align-items:stretch}.ixc-bridge__rule{background:var(--ix-accent);min-height:260px}.ixc-bridge__copy{display:grid;gap:30px;max-width:950px}.ixc-bridge__copy h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(52px,7.4vw,108px);line-height:.9;letter-spacing:-.055em}.ixc-bridge__copy p{max-width:52ch;color:#4e4a44}
 .ixc-contact{background:#111;color:#f5f2eb;padding:clamp(68px,8vw,112px) 0}.ixc-contact__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:50px;align-items:end}.ixc-contact h2{font-family:Arial,Helvetica,sans-serif;font-size:clamp(44px,6vw,86px);line-height:.92;letter-spacing:-.045em;max-width:10ch}
 .ixc-hero .ixg-cta,.ixc-contact .ixg-cta{background:transparent!important;color:inherit!important;border:0!important;border-bottom:1px solid currentColor!important;padding:0 0 7px!important;min-height:0!important;border-radius:0!important;width:auto!important;justify-content:flex-start!important}
 .ixc-hero .ixg-actions,.ixc-contact .ixg-actions{gap:18px 28px}
