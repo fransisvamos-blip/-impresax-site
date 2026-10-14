@@ -174,11 +174,16 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       const retrySuffix=attempt.retry
         ? [{role:"system",content:"Return ONLY one complete valid JSON object matching the requested schema. No prose, markdown, analysis, comments or code fences."}]
         : [];
+      const qaJsonInstruction=qaRole
+        ? [{role:"system",content:"Return ONLY one valid JSON object and no other text. It MUST match this JSON Schema exactly: "+JSON.stringify(schema)}]
+        : [];
       const inference={
-        messages:[...messages,...retrySuffix],
-        response_format:{type:"json_schema",json_schema:schema},
+        messages:[...messages,...qaJsonInstruction,...retrySuffix],
         temperature:attempt.retry?0:temperature
       };
+      // Qwen vision is not an officially listed Workers AI JSON Mode model.
+      // For multimodal QA we request plain JSON text and validate it ourselves.
+      if(!qaRole) inference.response_format={type:"json_schema",json_schema:schema};
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="low";
