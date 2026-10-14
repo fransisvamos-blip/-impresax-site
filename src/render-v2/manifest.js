@@ -15,6 +15,14 @@ export async function selectCertifiedVariant(sql,{packId,variantKey}) {
     limit 1`;
   if(!rows.length) throw new Error("CERTIFIED_VARIANT_REQUIRED");
   const selected=rows[0];
+  const heroQaRows=await sql`
+    select id from render_qa_results_v2
+    where render_pack_id=${packId}::uuid
+      and variant_revision_id=${selected.revision_id}::uuid
+      and qa_type='HERO_VISUAL'
+      and status='PASS'
+    limit 1`;
+  if(!heroQaRows.length) throw new Error("CERTIFIED_HERO_QA_PASS_REQUIRED");
   const packRows=await sql`
     select status,selected_variant_revision_id,metadata
     from render_v2_packs where id=${packId}::uuid limit 1`;
@@ -70,7 +78,7 @@ export async function buildReferenceManifest(sql,packId) {
     where variant_revision_id=${selected.id}::uuid
     order by artifact_type`;
   const byType=Object.fromEntries(artifacts.map(x=>[x.artifact_type,x]));
-  for(const type of ["SOURCE_HTML","DESKTOP_1440","MOBILE_390"]) {
+  for(const type of ["SOURCE_HTML","DESKTOP_1440","MOBILE_390","HERO_VISUAL_USED"]) {
     if(!byType[type]) throw new Error("REFERENCE_ARTIFACT_REQUIRED:"+type);
   }
 
