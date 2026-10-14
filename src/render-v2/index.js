@@ -152,6 +152,77 @@ export default {
       return json({ok:true,...state,qa,artifacts});
     }
 
+    if(request.method==="POST" && url.pathname==="/shadow/relaunch-variant") {
+      const body=await request.json().catch(()=>({}));
+      const packId=String(body.pack_id||"").trim();
+      const variantKey=String(body.variant_key||"").trim().toUpperCase();
+      const runKey=String(body.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
+      if(!packId || !["A","B","C"].includes(variantKey) || !runKey) {
+        return json({ok:false,error:"pack_id_variant_key_and_run_key_required"},400);
+      }
+      const sql=db(env);
+      const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
+      if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
+      const pack=packs[0];
+      const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid and variant_key=${variantKey} limit 1`;
+      if(!variants.length) return json({ok:false,error:"VARIANT_NOT_FOUND"},404);
+      const variant=variants[0];
+      if(variant.status==="RENDER_READY" && variant.certified_revision) {
+        return json({ok:true,pack_id:packId,variant_key:variantKey,skipped:true,reason:"ALREADY_RENDER_READY"},200);
+      }
+
+      const instanceId="rv2-"+packId+"-"+variantKey+"-"+runKey;
+      const existing=await sql`select * from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
+      if(existing.length) {
+        let status=null;
+        try { status=await (await env.RENDER_VARIANT_WORKFLOW.get(instanceId)).status(); } catch {}
+        return json({ok:true,pack_id:packId,variant_key:variantKey,already_applied:true,workflow_instance_id:instanceId,status},200);
+      }
+
+      const prior=await sql`
+        select * from render_workflows_v2
+        where variant_id=${variant.id}::uuid and workflow_type='VARIANT'
+        order by created_at desc limit 1`;
+      if(prior[0] && ["QUEUED","RUNNING","PAUSED"].includes(prior[0].status)) {
+        try {
+          const oldInstance=await env.RENDER_VARIANT_WORKFLOW.get(prior[0].workflow_instance_id);
+          await oldInstance.terminate({rollback:false});
+        } catch {}
+        await sql`update render_workflows_v2
+          set status='CANCELLED',completed_at=now(),last_event_at=now(),
+              metadata=metadata||${JSON.stringify({superseded_by_targeted_relaunch:true})}::jsonb
+          where id=${prior[0].id}::uuid`;
+      }
+
+      const params={
+        prospectId:pack.prospect_id,
+        packId,
+        inputPackId:pack.input_pack_id,
+        variantId:variant.id,
+        variantKey,
+        parentInstanceId:"rpv2-"+packId,
+        eventPrefix:"initial",
+        initialFeedback:{
+          reason:"TARGETED_ENGINE_REPAIR",
+          issues:["This variant is being relaunched on a newer compiler/model repair route."],
+          actions:[
+            "Preserve verified content and the approved direction intent.",
+            "Eliminate every known browser/quality defect from prior attempts.",
+            "Use the current deterministic identity and token contract.",
+            "Prioritize flagship composition over decorative empty geometry."
+          ]
+        }
+      };
+      await persistWorkflow(sql,{
+        prospectId:pack.prospect_id,packId,variantId:variant.id,type:"VARIANT",
+        instanceId,status:"QUEUED",
+        metadata:{variant_key:variantKey,event_prefix:"initial",run_key:runKey,targeted_relaunch:true}
+      });
+      const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
+      await setPackStatus(sql,packId,"GENERATING",{targeted_relaunch:{variant_key:variantKey,run_key:runKey}});
+      return json({ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,status:await instance.status()},202);
+    }
+
     if(request.method==="POST" && url.pathname==="/shadow/relaunch-variants") {
       const body=await request.json().catch(()=>({}));
       const packId=String(body.pack_id||"").trim();
