@@ -48,7 +48,7 @@ jobs:
             jq -e '.ok == true' /tmp/variant.json >/dev/null
           }
 
-          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "B" "golden-final2-cz210-b" true
-          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "C" "golden-final2-cz210-c" false
+          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "B" "golden-final3-cz210-b" true
+          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "C" "golden-final3-cz210-c" false
 
           echo "Targeted Golden variants relaunched on final deterministic contract." >> "$GITHUB_STEP_SUMMARY"
