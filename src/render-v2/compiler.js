@@ -30,6 +30,85 @@ function unsafeTextAttributes(html) {
   return issues;
 }
 
+function canonicalizeKnownBareCopyTokens(html,copyManifest) {
+  const copyKeys=new Set(Object.keys(copyManifest||{}));
+  return String(html||"").replace(/\{\{([A-Z0-9_]+)\}\}/g,(full,key)=>
+    copyKeys.has(key) ? "{{copy:"+key+"}}" : full
+  );
+}
+
+function removeCompilerOwnedIdentityFromMain(html) {
+  return String(html||"")
+    .replace(/<img\b[^>]*\{\{asset:PRIMARY_LOGO\}\}[^>]*>/gi,"")
+    .replace(/<source\b[^>]*\{\{asset:PRIMARY_LOGO\}\}[^>]*>/gi,"");
+}
+
+function neutralizeUnsafeTextAttributes(html) {
+  return String(html||"").replace(/\b(alt|title|aria-label)\s*=\s*(["'])(.*?)\2/gi,(full,name,quote,value)=>{
+    const v=String(value||"").trim();
+    if(!v || /^\{\{copy:[A-Z0-9_]+\}\}$/.test(v)) return full;
+    return name+"="+quote+quote;
+  });
+}
+
+function keepOnlyCanonicalTokensInTextNode(text) {
+  const saved=[];
+  let x=String(text||"").replace(/\{\{(?:copy|asset|cta):[A-Z0-9_]+\}\}/g,m=>{
+    const i=saved.push(m)-1;
+    return "\u0000"+i+"\u0000";
+  });
+  x=x.replace(/\S+/g,"");
+  x=x.replace(/\u0000(\d+)\u0000/g,(_,i)=>saved[Number(i)]||"");
+  return x;
+}
+
+function stripUnauthorizedLiteralTextNodes(html) {
+  return String(html||"").split(/(<[^>]+>)/g).map(part=>
+    part.startsWith("<") ? part : keepOnlyCanonicalTokensInTextNode(part)
+  ).join("");
+}
+
+function stripCssContentProperty(css) {
+  return String(css||"").replace(/(^|[;{]\s*)content\s*:[^;}]*;?/gim,"$1");
+}
+
+export function normalizeRenderSpecForCompile(spec,manifests={}) {
+  const source=(spec&&typeof spec==="object")?spec:{};
+  const normalizations=[];
+  let main=normalizeMainFragment(source.main_html);
+  const beforeBare=main;
+  main=canonicalizeKnownBareCopyTokens(main,manifests.copy||{});
+  if(main!==beforeBare) normalizations.push("CANONICALIZED_BARE_COPY_TOKENS");
+
+  const beforeLogo=main;
+  main=removeCompilerOwnedIdentityFromMain(main);
+  if(main!==beforeLogo) normalizations.push("REMOVED_COMPILER_OWNED_PRIMARY_LOGO");
+
+  const beforeAttrs=main;
+  main=neutralizeUnsafeTextAttributes(main);
+  if(main!==beforeAttrs) normalizations.push("NEUTRALIZED_UNVERIFIED_TEXT_ATTRIBUTES");
+
+  const beforeText=main;
+  main=stripUnauthorizedLiteralTextNodes(main);
+  if(main!==beforeText) normalizations.push("STRIPPED_UNVERIFIED_LITERAL_TEXT");
+
+  let css=String(source.custom_css||"");
+  const beforeCss=css;
+  css=stripCssContentProperty(css);
+  if(css!==beforeCss) normalizations.push("STRIPPED_CSS_CONTENT_PROPERTY");
+
+  const sectionIds=[...main.matchAll(/<section\b[^>]*\bid\s*=\s*["']([^"']+)["']/gi)].map(m=>m[1]);
+  const normalized={
+    ...source,
+    main_html:main,
+    custom_css:css,
+    section_ids:sectionIds.length?sectionIds:(Array.isArray(source.section_ids)?source.section_ids:[]),
+    used_copy_tokens:tokenSet(main,COPY_TOKEN),
+    used_asset_tokens:tokenSet(main,ASSET_TOKEN)
+  };
+  return {spec:normalized,normalizations};
+}
+
 function visibleLiteralText(html) {
   let x=String(html||"")
     .replace(/<!--[\s\S]*?-->/g," ")
@@ -92,10 +171,12 @@ function replaceAllTokens(source,re,map,kind) {
 
 export async function compileRenderSpec(spec,{businessName,logoToken,copyManifest,assetManifest,ctaManifest}) {
   const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest};
-  const gate=validateRenderSpec(spec,manifests);
-  if(!gate.pass) return {ok:false,issues:gate.issues};
+  const normalized=normalizeRenderSpecForCompile(spec,manifests);
+  const normalizedSpec=normalized.spec;
+  const gate=validateRenderSpec(normalizedSpec,manifests);
+  if(!gate.pass) return {ok:false,issues:gate.issues,normalizations:normalized.normalizations,normalized_spec:normalizedSpec};
 
-  let main=normalizeMainFragment(spec.main_html);
+  let main=normalizeMainFragment(normalizedSpec.main_html);
   main=replaceAllTokens(main,COPY_TOKEN,copyManifest,"COPY");
   main=replaceAllTokens(main,ASSET_TOKEN,assetManifest,"ASSET");
   main=replaceAllTokens(main,CTA_TOKEN,ctaManifest,"CTA");
@@ -120,7 +201,7 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
   const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span></footer></body></html>';
   const sourceHash=await sha256(html);
-  return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(spec))};
+  return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(normalizedSpec)),normalized_spec:normalizedSpec,normalizations:normalized.normalizations};
 }
 
 export function buildCaptureHtml(compiledHtml,materializedAssets) {
