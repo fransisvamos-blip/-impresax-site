@@ -110,11 +110,11 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: hero-v2k-20261014
+          V2_CONTRACT_KEY: hero-v2l-20261014
         run: |
           set -euo pipefail
           token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
-          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+          # V2_SHADOW_TOKEN is persistent on the Worker; do not rewrite it after each deploy.
 
           started=0
           for i in {1..18}; do
@@ -188,3 +188,5 @@ jobs:
 # HERO_PREQA_CONTENT_ADDRESS_V1
 
 # HERO_A_MATERIAL_ONLY_V1
+
+# V2_PERSISTENT_CONTROL_SECRET_V1
