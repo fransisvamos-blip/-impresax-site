@@ -133,6 +133,32 @@ export function extractStructured(result,schema) {
   throw new Error("AI_OUTPUT_SCHEMA_INVALID");
 }
 
+function collectRawText(result) {
+  const out=[];
+  const queue=[result];
+  const seen=new Set();
+  let visited=0;
+  while(queue.length && visited<500 && out.join("\n").length<20000) {
+    const value=queue.shift();
+    visited++;
+    if(value==null) continue;
+    if(typeof value==="string") {
+      const t=value.trim();
+      if(t) out.push(t);
+      continue;
+    }
+    if(typeof value!=="object") continue;
+    if(seen.has(value)) continue;
+    seen.add(value);
+    if(Array.isArray(value)) {
+      for(const item of value) queue.push(item);
+    } else {
+      for(const item of Object.values(value)) queue.push(item);
+    }
+  }
+  return out.join("\n").slice(0,20000);
+}
+
 async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null}) {
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
@@ -165,7 +191,46 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
       const result=await env.AI.run(model,inference,runOptions);
-      return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
+      try {
+        return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
+      } catch(parseError) {
+        if(!qaRole || String(parseError?.message||parseError)!=="AI_OUTPUT_SCHEMA_INVALID") throw parseError;
+        const raw=collectRawText(result);
+        if(!raw) throw parseError;
+
+        const fixerModel=env.V2_MODEL_TEXT_FALLBACK||DEFAULT_MODELS.textFallback;
+        if(beforeAttempt) await beforeAttempt({
+          role:role+"_schema_normalizer",
+          model:fixerModel,
+          fallback:true,
+          retry:0
+        });
+        const fixerInference={
+          messages:[
+            {
+              role:"system",
+              content:"Convert the supplied reviewer output into exactly one JSON object matching the provided JSON Schema. Preserve the reviewer's factual judgments, scores, issues and actions. Do NOT perform a new visual review. Do NOT add claims that are absent from the supplied reviewer output. Return JSON only."
+            },
+            {
+              role:"user",
+              content:"JSON SCHEMA:\n"+JSON.stringify(schema)+"\n\nRAW REVIEWER OUTPUT:\n"+raw
+            }
+          ],
+          response_format:{type:"json_schema",json_schema:schema},
+          temperature:0
+        };
+        if(/llama-3\.3-70b-instruct-fp8-fast/i.test(fixerModel)) fixerInference.max_tokens=Math.min(maxTokens,5000);
+        else fixerInference.max_completion_tokens=Math.min(maxTokens,5000);
+        const fixed=await env.AI.run(fixerModel,fixerInference,runOptions);
+        return {
+          data:extractStructured(fixed,schema),
+          model,
+          fallback:attempt.fallback,
+          retry:attempt.retry,
+          schema_repaired:true,
+          fixer_model:fixerModel
+        };
+      }
     } catch(error) {
       lastError=error;
     }
