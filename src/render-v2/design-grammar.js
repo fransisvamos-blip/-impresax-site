@@ -32,6 +32,66 @@ function commonUsedCopy(copyManifest) {
   );
 }
 
+function verifiedAccent(inputPayload) {
+  const raw=JSON.stringify(inputPayload?.brand_dna?.existing_colors||"");
+  const colors=[...new Set(raw.match(/#[0-9a-f]{6}/gi)||[])];
+  const nonNeutral=colors.find(x=>!/^#(?:ffffff|000000|111111|0a0a0a|f[0-9a-f]{5})$/i.test(x));
+  return nonNeutral||null;
+}
+
+export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
+  const accent=verifiedAccent(inputPayload);
+  const shared={
+    asset_tokens:[],
+    execution_constraints:{
+      static_preview:true,no_scripts:true,no_forms:true,immutable_identity:true,
+      no_empty_placeholder_geometry:true,mobile_overlay_forbidden:true
+    }
+  };
+  const variants={
+    A:{
+      name:"Structural Field",
+      core_idea:"Light industrial composition built from verified copy, structural rules and immutable identity.",
+      hero_logic:"Oversized verified headline with a structural rule field; official identity remains compiler-owned.",
+      grid:"Asymmetric structural grid with services in measured modules.",
+      typography_behavior:"Bold system sans with dense industrial hierarchy.",
+      material_language:"Warm light field, black structure"+(accent?", verified accent "+accent:"")+".",
+      signature_device:"Connected structural rule field, never an empty box.",
+      section_progression:["hero","positioning","services","trust","bridge","contact"],
+      cta_behavior:"Anchored solid/outline CTA pair integrated into the hero and close.",
+      mobile_reinterpretation:"Single-column structural stack preserving hierarchy and rule rhythm.",
+      fingerprint:{hero_type:"structural light hero",grid_topology:"asymmetric structural grid",typography_mode:"bold industrial sans",material_system:"light industrial field",signature_device:"connected rule field",section_rhythm:"measured modular",cta_pattern:"anchored pair",mobile_pattern:"structured stacked"}
+    },
+    B:{
+      name:"Trust First Poster",
+      core_idea:"Trust-first commercial poster with a materially different information architecture.",
+      hero_logic:"Typography-first dark hero followed immediately by verified trust proof.",
+      grid:"Trust modules first, then horizontal service ledger rows.",
+      typography_behavior:"Large serif display paired with utilitarian sans service typography.",
+      material_language:"Dark poster system with high-contrast accent"+(accent?" "+accent:"")+".",
+      signature_device:"Trust band and oversized editorial type; no reused cross motif.",
+      section_progression:["hero","trust","services","positioning","bridge","contact"],
+      cta_behavior:"Editorial CTA treatment separated from the structural A system.",
+      mobile_reinterpretation:"Trust-first vertical poster with full-width service rows.",
+      fingerprint:{hero_type:"trust first dark poster",grid_topology:"trust band plus service rows",typography_mode:"serif display plus sans utility",material_system:"dark high contrast poster",signature_device:"trust band",section_rhythm:"poster ledger",cta_pattern:"editorial anchored",mobile_pattern:"trust first stacked"}
+    },
+    C:{
+      name:"Editorial Ledger",
+      core_idea:"Single-column editorial ledger with hairline service rhythm and address/locality emphasis.",
+      hero_logic:"Editorial headline with rail system and restrained commercial close.",
+      grid:"Hairline ledger rows and text-led sections instead of cards.",
+      typography_behavior:"Editorial serif display with restrained sans metadata.",
+      material_language:"Neutral editorial field"+(accent?" with verified accent "+accent:"")+".",
+      signature_device:"Rail and ledger rules, no structural cross motif.",
+      section_progression:["hero","positioning","services","trust","bridge","contact"],
+      cta_behavior:"Inline editorial CTA rhythm with strong final contact close.",
+      mobile_reinterpretation:"Compact editorial ledger with preserved hairline hierarchy.",
+      fingerprint:{hero_type:"editorial rail hero",grid_topology:"single column ledger",typography_mode:"editorial serif and metadata sans",material_system:"neutral editorial",signature_device:"rail ledger rules",section_rhythm:"editorial hairline",cta_pattern:"inline editorial",mobile_pattern:"editorial stacked"}
+    }
+  };
+  return {...shared,...variants[variantKey]};
+}
+
 export function sanitizeDirectionForExecution(direction,{hasEditorialAssets=false}={}) {
   const d=structuredClone(direction||{});
   const text=v=>String(v||"");
@@ -73,7 +133,8 @@ export function sanitizeDirectionForExecution(direction,{hasEditorialAssets=fals
   return d;
 }
 
-export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=true}) {
+export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=true,inputPayload=null}) {
+  const accent=verifiedAccent(inputPayload)||(variantKey==="B"?"var(--ix-accent)":"#8d8981");
   const services=serviceMarkup(copyManifest,"ixg-service");
   const trust=trustMarkup(copyManifest,"ixg-trust");
   const serviceTitles=availableIndexed(copyManifest,"SERVICE_","_TITLE");
@@ -147,7 +208,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const main=variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB;
 
   const base=`
-:root{--ix-ink:#111;--ix-paper:#f4f1ea;--ix-muted:#6b6964;--ix-line:rgba(17,17,17,.18);--ix-dark:#111;--ix-light:#fff;--ix-space:clamp(24px,4.2vw,72px)}
+:root{--ix-ink:#111;--ix-paper:#f4f1ea;--ix-muted:#6b6964;--ix-line:rgba(17,17,17,.18);--ix-dark:#111;--ix-light:#fff;--ix-accent:${accent};--ix-space:clamp(24px,4.2vw,72px)}
 .ixg{position:relative;overflow:hidden;font-family:Arial,Helvetica,sans-serif}.ixg-shell{width:min(1320px,calc(100% - 2*var(--ix-space)));margin:0 auto}
 .ixg h1,.ixg h2,.ixg h3,.ixg p{margin:0}.ixg h1{font-size:clamp(58px,8.4vw,138px);line-height:.86;letter-spacing:-.065em;max-width:10ch}
 .ixg h2{font-size:clamp(36px,5.4vw,82px);line-height:.94;letter-spacing:-.045em}.ixg h3{font-size:clamp(24px,2.4vw,38px);line-height:1.02;letter-spacing:-.025em}
@@ -189,7 +250,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const variants={
     A:`
 .ixg-a .ixg-hero__device span:nth-child(1){height:16px}.ixg-a .ixg-hero__device span:nth-child(2){width:16px}
-.ixg-a .ixg-hero__device span:nth-child(3){left:8%;width:76%;height:10px}.ixg-a .ixg-hero__device span:nth-child(4){left:54%;height:76%;width:10px}
+.ixg-a .ixg-hero__device span:nth-child(3){left:8%;width:76%;height:10px;background:var(--ix-accent)}.ixg-a .ixg-hero__device span:nth-child(4){left:54%;height:76%;width:10px}
 .ixg-a.ixg-positioning{background:#f7f5ef}.ixg-a .ixg-positioning__statement h2{max-width:12ch}.ixg-a .ixg-service:nth-child(2n){background:#f4f1ea}
 .ixg-a .ixg-bridge__device i:nth-child(1){height:14px}.ixg-a .ixg-bridge__device i:nth-child(2){width:14px}
 `,
