@@ -101,6 +101,26 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "<section id=\"contact\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("PRIMARY_CTA_LABEL")+"</h2></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
+  const bTrustRows=trustKeys.map(key=>
+    "<article class=\"ixb-trust-item\"><strong>"+copyToken(key)+"</strong></article>"
+  ).join("");
+  const bServiceRows=serviceTitles.map((titleKey,i)=>{
+    const bodyKey="SERVICE_"+(i+1)+"_BODY";
+    const body=Object.prototype.hasOwnProperty.call(copyManifest,bodyKey)
+      ? "<p>"+copyToken(bodyKey)+"</p>"
+      : "";
+    return "<article class=\"ixb-service-row\"><h3>"+copyToken(titleKey)+"</h3><div class=\"ixb-service-body\">"+body+"</div></article>";
+  }).join("");
+  const bPositionTitle=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE") ? "FOOTER_LINE" : "LOCALITY_LINE";
+  const mainB=[
+    "<section id=\"hero\" class=\"ixg ixb-hero ixg-b\"><div class=\"ixg-shell ixb-hero__inner\"><div class=\"ixb-hero__meta\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div><h1>"+copyToken("HERO_HEADLINE")+"</h1><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p></div></section>",
+    "<section id=\"trust\" class=\"ixg ixb-trust ixg-b\"><div class=\"ixg-shell\"><div class=\"ixb-trust-grid\">"+bTrustRows+"</div></div></section>",
+    "<section id=\"services\" class=\"ixg ixb-services ixg-b\"><div class=\"ixg-shell\">"+bServiceRows+"</div></section>",
+    "<section id=\"positioning\" class=\"ixg ixb-positioning ixg-b\"><div class=\"ixg-shell ixb-positioning__inner\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken(bPositionTitle)+"</h2></div></section>",
+    "<section id=\"bridge\" class=\"ixg ixb-bridge ixg-b\"><div class=\"ixg-shell ixb-bridge__inner\"><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><div class=\"ixg-actions\">"+secondary+"</div></div></section>",
+    "<section id=\"contact\" class=\"ixg ixb-contact ixg-b\"><div class=\"ixg-shell ixb-contact__inner\"><h2>"+copyToken("PRIMARY_CTA_LABEL")+"</h2><div class=\"ixg-actions\">"+primary+"</div></div></section>"
+  ].join("");
+
   const cServiceRows=serviceTitles.map((titleKey,i)=>{
     const bodyKey="SERVICE_"+(i+1)+"_BODY";
     const body=Object.prototype.hasOwnProperty.call(copyManifest,bodyKey)
@@ -124,7 +144,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "<section id=\"contact\" class=\"ixg ixc-contact ixg-c\"><div class=\"ixg-shell ixc-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("PRIMARY_CTA_LABEL")+"</h2></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
-  const main=variantKey==="C" ? mainC : mainAB;
+  const main=variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB;
 
   const base=`
 :root{--ix-ink:#111;--ix-paper:#f4f1ea;--ix-muted:#6b6964;--ix-line:rgba(17,17,17,.18);--ix-dark:#111;--ix-light:#fff;--ix-space:clamp(24px,4.2vw,72px)}
@@ -174,18 +194,25 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-a .ixg-bridge__device i:nth-child(1){height:14px}.ixg-a .ixg-bridge__device i:nth-child(2){width:14px}
 `,
     B:`
-.ixg-b{--ix-paper:#111;--ix-ink:#f4f1ea;--ix-muted:#b8b5ae;--ix-line:rgba(244,241,234,.22)}
-.ixg-b.ixg-hero,.ixg-b.ixg-positioning{background:#111;color:#f4f1ea;border-color:rgba(244,241,234,.22)}
-.ixg-b.ixg-hero .ixg-hero__grid{grid-template-columns:minmax(300px,.72fr) minmax(0,1.28fr);align-items:center}
-.ixg-b.ixg-hero .ixg-hero__copy{order:2}.ixg-b.ixg-hero .ixg-hero__device{order:1}
-.ixg-b .ixg-hero__device span{background:#f4f1ea;transform:none}.ixg-b .ixg-hero__device span:nth-child(1){left:2%;top:18%;width:88%;height:16px}.ixg-b .ixg-hero__device span:nth-child(2){right:24%;top:2%;width:16px;height:86%}
-.ixg-b .ixg-hero__device span:nth-child(3){left:16%;bottom:22%;width:72%;height:10px;background:#77736b}.ixg-b .ixg-hero__device span:nth-child(4){left:55%;top:24%;width:10px;height:72%;background:#77736b}
-.ixg-b h1,.ixg-b h2,.ixg-b h3{font-family:Georgia,'Times New Roman',serif;font-weight:500}.ixg-b h1{letter-spacing:-.055em}
-.ixg-b .ixg-cta--primary{background:#f4f1ea;color:#111}.ixg-b .ixg-cta--secondary{color:inherit}
-.ixg-b.ixg-services{background:#f4f1ea;color:#111}.ixg-b.ixg-services .ixg-services__grid{grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden;background:#111;border-right:1px solid #111}.ixg-b.ixg-services .ixg-service{width:100%;min-width:0}.ixg-b.ixg-services .ixg-service:nth-child(odd){background:#f4f1ea;color:#111}.ixg-b.ixg-services .ixg-service:nth-child(odd) .ixg-service__body{color:#2b2926}.ixg-b.ixg-services .ixg-service:nth-child(2n){background:#111;color:#f4f1ea}.ixg-b.ixg-services .ixg-service:nth-child(2n) .ixg-service__body{color:#c9c5bd}
-.ixg-b.ixg-trust-section{padding:72px 0}.ixg-b.ixg-bridge{background:#111;color:#f4f1ea}.ixg-b .ixg-bridge__device i{background:#f4f1ea}.ixg-b .ixg-bridge__device i:nth-child(3){background:#77736b}
-.ixg-b.ixg-contact{background:#f4f1ea;color:#111}.ixg-b.ixg-contact .ixg-cta--primary{background:#111;color:#f4f1ea;border-color:#111}.ixg-b.ixg-contact .ixg-cta--secondary{color:#111;border-color:#111}.ixg-b.ixg-contact h2{color:#111}.ixg-b.ixg-hero .ixg-actions{margin-top:44px}
-@media(max-width:700px){.ixg-b.ixg-hero .ixg-hero__copy{order:1}.ixg-b.ixg-hero .ixg-hero__device{order:2;transform:none;margin:18px auto 12px}.ixg-b .ixg-hero__device span{transform:none!important}.ixg-b.ixg-services .ixg-services__grid{grid-template-columns:1fr!important}.ixg-b.ixg-services .ixg-service{width:100%!important}.ixg-b.ixg-services .ixg-service:not(:nth-child(2n)) .ixg-service__body{color:#2b2926!important}}
+.ixg-b{--ix-paper:#111;--ix-ink:#f4f1ea;--ix-muted:#aaa59b;--ix-line:rgba(244,241,234,.22)}
+.ixb-hero{background:#111;color:#f4f1ea;padding:clamp(84px,10vw,155px) 0 clamp(70px,8vw,120px)}
+.ixb-hero__inner{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}.ixb-hero__meta{display:flex;align-items:flex-start;justify-content:space-between;gap:30px;border-bottom:1px solid rgba(244,241,234,.28);padding-bottom:24px}
+.ixb-hero h1{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(74px,11.5vw,182px);line-height:.79;letter-spacing:-.07em;max-width:8.6ch;margin-top:10px}
+.ixb-hero .ixg-lede{color:#c9c4ba;max-width:58ch;font-size:clamp(18px,1.6vw,24px)}.ixb-hero .ixg-actions{margin-top:0}.ixb-hero .ixg-cta--primary{background:#f4f1ea;color:#111;border-color:#f4f1ea}.ixb-hero .ixg-cta--secondary{color:#f4f1ea;border-color:#f4f1ea}
+.ixb-trust{background:#d7ff43;color:#111;padding:0}.ixb-trust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));border-left:1px solid #111;border-top:1px solid #111}
+.ixb-trust-item{min-height:210px;padding:30px;border-right:1px solid #111;border-bottom:1px solid #111;display:flex;align-items:flex-end}.ixb-trust-item strong{font-family:Arial,Helvetica,sans-serif;font-size:clamp(26px,3vw,46px);line-height:1;letter-spacing:-.04em}
+.ixb-services{background:#f4f1ea;color:#111;padding:clamp(72px,8vw,120px) 0}.ixb-service-row{display:grid;grid-template-columns:minmax(250px,.8fr) minmax(0,1.2fr);gap:clamp(34px,7vw,110px);padding:clamp(42px,5vw,70px) 0;border-top:1px solid rgba(17,17,17,.28);align-items:start}.ixb-service-row:last-child{border-bottom:1px solid rgba(17,17,17,.28)}
+.ixb-service-row h3{font-family:Arial,Helvetica,sans-serif;font-size:clamp(38px,5.2vw,76px);line-height:.92;letter-spacing:-.055em;text-transform:uppercase}.ixb-service-body p{color:#3f3c36;font-size:clamp(18px,1.5vw,23px);max-width:50ch}
+.ixb-positioning{background:#111;color:#f4f1ea;padding:clamp(76px,9vw,140px) 0}.ixb-positioning__inner{display:grid;grid-template-columns:180px minmax(0,1fr);gap:clamp(36px,7vw,110px);align-items:start}.ixb-positioning h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(50px,7.2vw,108px);line-height:.9;letter-spacing:-.055em;max-width:12ch}
+.ixb-bridge{background:#f4f1ea;color:#111;padding:clamp(64px,7vw,105px) 0;border-bottom:1px solid rgba(17,17,17,.25)}.ixb-bridge__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end}.ixb-bridge h2{font-family:Arial,Helvetica,sans-serif;font-size:clamp(38px,5vw,72px);line-height:.94;letter-spacing:-.045em}
+.ixb-contact{background:#d7ff43;color:#111;padding:clamp(68px,8vw,120px) 0}.ixb-contact__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end}.ixb-contact h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(54px,8vw,120px);line-height:.86;letter-spacing:-.06em;max-width:9ch}.ixb-contact .ixg-actions{margin-top:0}.ixb-contact .ixg-cta--primary{background:#111;color:#d7ff43;border-color:#111}
+@media(max-width:700px){
+ .ixb-hero{padding:62px 0 64px}.ixb-hero__meta{display:grid;gap:18px}.ixb-hero h1{font-size:clamp(54px,15vw,76px);line-height:.84;max-width:none}.ixb-hero .ixg-actions{display:flex;flex-wrap:wrap}
+ .ixb-trust-grid{grid-template-columns:1fr}.ixb-trust-item{min-height:0;padding:26px 22px}.ixb-trust-item strong{font-size:clamp(24px,8vw,34px)}
+ .ixb-services{padding:54px 0}.ixb-service-row{grid-template-columns:1fr;gap:18px;padding:34px 0}.ixb-service-row h3{font-size:clamp(36px,11vw,54px)}
+ .ixb-positioning{padding:58px 0}.ixb-positioning__inner{grid-template-columns:1fr;gap:24px}.ixb-positioning h2{font-size:clamp(42px,12vw,62px)}
+ .ixb-bridge{padding:52px 0}.ixb-bridge__inner,.ixb-contact__inner{grid-template-columns:1fr;align-items:start}.ixb-contact{padding:58px 0}.ixb-contact h2{font-size:clamp(48px,14vw,68px)}.ixb-contact .ixg-actions,.ixb-bridge .ixg-actions{margin-top:0}
+}
 `,
     C:`
 .ixc-hero{background:#f1f0ec;color:#111;padding:clamp(88px,11vw,170px) 0 54px}.ixc-hero__inner{display:block}.ixc-hero h1{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(72px,10.8vw,174px);line-height:.82;letter-spacing:-.068em;max-width:8.8ch;margin-top:34px}
@@ -227,8 +254,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
-      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v1.8 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
+      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v1.9 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
     },
-    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V1_8"
+    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V1_9"
   };
 }
