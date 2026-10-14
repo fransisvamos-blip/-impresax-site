@@ -234,6 +234,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         context.assets={...context.assets,HERO_VISUAL:refreshedHero};
       }
 
+      const boundHero=await step.do("r"+cycle+"-bind-hero",async()=>{
+        const source=context.assets.HERO_VISUAL;
+        if(!source?.r2_key) throw new Error("SYSTEM_INVARIANT:HERO_VISUAL_SOURCE_REQUIRED");
+        const heroBytes=await readArtifactBytes(this.env,source.r2_key);
+        const ext=source.mime==="image/png"?"png":source.mime==="image/webp"?"webp":"jpg";
+        const key="render-v2/"+context.inputPayload.prospect_code+"/"+params.packId+"/"+params.variantKey+"/r"+revision.revision+"/hero-visual."+ext;
+        const artifact=await putArtifact(this.env,sql,{
+          packId:params.packId,
+          revisionId:revision.id,
+          type:"HERO_VISUAL_USED",
+          key,
+          body:heroBytes,
+          mime:source.mime||"image/jpeg",
+          producerStep:"HERO_BIND_REVISION"
+        });
+        return {...source,r2_key:artifact.r2_key,sha256:artifact.sha256,mime:artifact.mime,bytes:artifact.bytes,bound_revision_id:revision.id};
+      });
+      context.assets={...context.assets,HERO_VISUAL:boundHero};
+
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
