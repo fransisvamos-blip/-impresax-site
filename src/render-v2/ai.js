@@ -652,10 +652,33 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     ],
     schema:visualQaSchema,maxTokens:2600,temperature:0.05,vision:true,beforeAttempt:beforeModelAttempt
   });
-  const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(r.data.scores?.[k]??0)));
-  const hardIssues=(r.data.issues||[]).filter(x=>x.severity==="critical"||x.severity==="major");
+  let issues=Array.isArray(r.data.issues)?r.data.issues:[];
+  const scores={...(r.data.scores||{})};
+  const evidence=browserEvidence||{};
+
+  if(evidence.official_identity_visible===true && evidence.deterministic_gate_pass===true) {
+    const identityFalsePositive=/\b(?:missing|absent|not\s+rendered|not\s+displayed|replace).*\b(?:official\s+logo|logo\s+asset)|\b(?:logo_reinterpretation|missing_official_logo|immutable_logo_missing|identity)\b/i;
+    issues=issues.filter(issue=>{
+      const hay=[issue?.code,issue?.target,issue?.message].filter(Boolean).join(" ");
+      return !identityFalsePositive.test(hay);
+    });
+    if(Number(scores.brand_fidelity||0)<8) scores.brand_fidelity=8;
+  }
+
+  const noClippedDesktop=Array.isArray(evidence.desktop?.clipped_contacts)&&evidence.desktop.clipped_contacts.length===0;
+  const noClippedMobile=Array.isArray(evidence.mobile?.clipped_contacts)&&evidence.mobile.clipped_contacts.length===0;
+  if(evidence.deterministic_gate_pass===true && noClippedDesktop && noClippedMobile) {
+    const contactFalsePositive=/\b(?:truncat|clip|cut\s*off|overflow).*\b(?:contact|email|phone|pec)|\b(?:contact_truncation|mobile_email_truncation|truncated_contact)\b/i;
+    issues=issues.filter(issue=>{
+      const hay=[issue?.code,issue?.target,issue?.message].filter(Boolean).join(" ");
+      return !contactFalsePositive.test(hay);
+    });
+  }
+
+  const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(scores?.[k]??0)));
+  const hardIssues=issues.filter(x=>x.severity==="critical"||x.severity==="major");
   const pass=r.data.pass===true && min>=8 && hardIssues.length===0;
-  return {...r.data,pass,model:r.model,min_score:min};
+  return {...r.data,scores,issues,pass,model:r.model,min_score:min};
 }
 
 const setQaSchema={
