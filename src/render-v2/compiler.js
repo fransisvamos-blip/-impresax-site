@@ -38,6 +38,12 @@ function canonicalizeKnownBareCopyTokens(html,copyManifest) {
   );
 }
 
+function normalizeIdentityImagePlacement(html) {
+  return String(html||"")
+    .replace(/<img\b[^>]*\bsrc\s*=\s*["']\s*\{\{identity:PRIMARY_LOGO\}\}\s*["'][^>]*>/gi,"{{identity:PRIMARY_LOGO}}")
+    .replace(/<source\b[^>]*\bsrc(?:set)?\s*=\s*["']\s*\{\{identity:PRIMARY_LOGO\}\}\s*["'][^>]*>/gi,"{{identity:PRIMARY_LOGO}}");
+}
+
 function removeCompilerOwnedIdentityFromMain(html) {
   return String(html||"")
     .replace(/<img\b[^>]*\{\{asset:PRIMARY_LOGO\}\}[^>]*>/gi,"")
@@ -76,6 +82,10 @@ export function normalizeRenderSpecForCompile(spec,manifests={}) {
   const beforeBare=main;
   main=canonicalizeKnownBareCopyTokens(main,manifests.copy||{});
   if(main!==beforeBare) normalizations.push("CANONICALIZED_BARE_COPY_TOKENS");
+
+  const beforeIdentityPlacement=main;
+  main=normalizeIdentityImagePlacement(main);
+  if(main!==beforeIdentityPlacement) normalizations.push("NORMALIZED_IDENTITY_IMAGE_PLACEMENT");
 
   const beforeLogo=main;
   main=removeCompilerOwnedIdentityFromMain(main);
