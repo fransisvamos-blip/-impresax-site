@@ -84,7 +84,6 @@ export function explicitHeroAsset(assets={}) {
 
 export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null}) {
   const context={
-    business_name:clean(inputPayload?.business_name,180),
     vertical:clean(inputPayload?.vertical,300),
     city:clean(inputPayload?.city,120),
     verified_services:clean(inputPayload?.verified_services,900),
@@ -97,7 +96,7 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
     "Create ONE premium photorealistic editorial hero photograph for a high-end business website.",
     "The image must be visually arresting, commercially credible, realistic and directly relevant to the VERIFIED business context below.",
     "This is illustrative commercial imagery, not documentary proof of an actual company project, premises, employee, client or completed work.",
-    "Do not render any company name, logo, signage, text, watermark, certification, number plate or invented claim.",
+    "ABSOLUTE NO-TEXT RULE: render ZERO visible letters, words, numbers, logos, signage, labels, UI, watermarks, certification marks, number plates or typographic shapes anywhere in the photograph. Surfaces that would normally contain writing must be blank, turned away, out of focus or non-readable. Do not invent pseudo-text or gibberish.",
     "Avoid obvious AI artifacts, uncanny hands/faces, impossible architecture, oversaturated advertising gloss, generic stock-photo poses and empty decorative scenes.",
     sectorDirection(inputPayload),
     variantComposition(variantKey),
@@ -105,7 +104,7 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
     "Use natural European/Italian visual cues only when compatible with the verified city/context; do not invent a recognizable exact location.",
     "Direction intent: "+clean(direction?.hero_logic||direction?.core_idea,700),
     feedback?"REWORK FEEDBACK FROM PRIOR HERO QA: "+clean(feedback,1200):"",
-    "VERIFIED BUSINESS CONTEXT (visual relevance only; never render these strings as text):",
+    "ABSTRACT VERIFIED BUSINESS CONTEXT (for scene relevance only; never reproduce any words from this context inside the image):",
     JSON.stringify(context)
   ].join("\n");
 }
