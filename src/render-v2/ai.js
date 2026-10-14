@@ -18,17 +18,61 @@ function modelFor(env,role,fallback=false) {
   return env[vars[role]]||DEFAULT_MODELS[role];
 }
 
+function balancedJsonObjects(text) {
+  const s=String(text||"");
+  const out=[];
+  let depth=0,start=-1,inString=false,escape=false;
+  for(let i=0;i<s.length;i++) {
+    const ch=s[i];
+    if(inString) {
+      if(escape) { escape=false; continue; }
+      if(ch==="\\") { escape=true; continue; }
+      if(ch==='"') inString=false;
+      continue;
+    }
+    if(ch==='"') { inString=true; continue; }
+    if(ch==="{") {
+      if(depth===0) start=i;
+      depth++;
+    } else if(ch==="}" && depth>0) {
+      depth--;
+      if(depth===0 && start>=0) {
+        out.push(s.slice(start,i+1));
+        start=-1;
+      }
+    }
+  }
+  return out;
+}
+
 function parseJsonCandidate(value) {
-  if(value && typeof value==="object" && !Array.isArray(value)) return value;
+  if(Array.isArray(value)) {
+    for(const item of value) {
+      const parsed=parseJsonCandidate(item);
+      if(parsed) return parsed;
+    }
+    return null;
+  }
+  if(value && typeof value==="object") {
+    for(const key of ["parsed","text","content","response","output_text","result","message"]) {
+      if(key in value) {
+        const parsed=parseJsonCandidate(value[key]);
+        if(parsed) return parsed;
+      }
+    }
+    return value;
+  }
   if(typeof value!=="string") return null;
   const clean=value
+    .replace(/<think>[\s\S]*?<\/think>/gi," ")
     .replace(/^\s*```(?:json)?\s*/i,"")
     .replace(/\s*```\s*$/,"")
     .trim();
-  const attempts=[clean];
-  const a=clean.indexOf("{"),b=clean.lastIndexOf("}");
-  if(a>=0&&b>a) attempts.push(clean.slice(a,b+1));
+  const attempts=[clean,...balancedJsonObjects(clean).reverse()];
+  const seen=new Set();
   for(const raw of attempts) {
+    if(!raw || seen.has(raw)) continue;
+    seen.add(raw);
     try { return JSON.parse(raw); } catch {}
     try { return JSON.parse(raw.replace(/,\s*([}\]])/g,"$1")); } catch {}
   }
@@ -62,7 +106,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
   let lastError=null;
   const qaRole=role==="visualQa"||role==="setQa";
   const plan=qaRole
-    ? [{fallback:false,retry:0},{fallback:false,retry:1},{fallback:true,retry:0},{fallback:true,retry:1}]
+    ? [{fallback:false,retry:0},{fallback:true,retry:0}]
     : [{fallback:false,retry:0},{fallback:true,retry:0}];
 
   for(const attempt of plan) {
