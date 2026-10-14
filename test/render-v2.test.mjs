@@ -161,7 +161,7 @@ test("compiler safely normalizes bare verified tokens and strips invented litera
   const block='<section id="x"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
   const copy={...manifests.copy,PRIMARY_CTA_LABEL:"Contatti"};
   const result=await compileRenderSpec({
-    main_html:block.repeat(8),
+    main_html:block.repeat(14),
     custom_css:".x{display:flex;justify-content:center;align-items:center;padding:3rem}.x::before{content:'decorative'} @media(max-width:700px){.x{display:block;padding:1rem}}".repeat(12)
   },{
     businessName:"Example SRL",
