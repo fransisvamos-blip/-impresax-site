@@ -9,6 +9,7 @@ import { classifyFailure, failureFingerprint, shouldChangeStrategy } from "./fai
 import { bytesToBase64 } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 import { buildContactManifest } from "./contacts.js";
+import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
 
 
 async function inputAssetsFromDb(sql,packId,inputPayload) {
@@ -118,7 +119,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack);
       const ctaManifest=buildContactManifest(inputPayload);
-      return {inputPayload,assets,copyManifest,ctaManifest,direction:plan.directions?.[params.variantKey]};
+      const editorialAssetTokens=Object.keys(assets).filter(k=>k!=="PRIMARY_LOGO" && !assets[k]?.unavailable);
+      const zeroPhoto=editorialAssetTokens.length===0;
+      const direction=sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:!zeroPhoto});
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto};
     });
 
     let feedback=params.initialFeedback||null;
@@ -142,10 +146,18 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+          if(context.zeroPhoto && cycle===1) {
+            const deterministic=buildZeroPhotoPremiumSpec({
+              variantKey:params.variantKey,
+              copyManifest:context.copyManifest,
+              hasIdentity:Boolean(context.assets.PRIMARY_LOGO)
+            });
+            return {spec:deterministic.spec,model:deterministic.strategy,deterministic:true};
+          }
           return generateRenderSpec(this.env,{
             inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
             copyManifest:context.copyManifest,
-            assetTokens:Object.keys(context.assets).filter(k=>k!=="PRIMARY_LOGO"),
+            assetTokens:context.editorialAssetTokens,
             qaFeedback:feedback,previousSpec,
             beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_GENERATION:"+model,revision.id)
           });
@@ -337,10 +349,35 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       await updateRevision(sql,revision.id,{status:"QA_FAILED",score:qa.min_score});
       await setVariantStatus(sql,params.variantId,{status:"REWORKING"});
-      await step.do("r"+cycle+"-record-visual-failure",async()=>
+      const visualFailure=await step.do("r"+cycle+"-record-visual-failure",async()=>
         recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VISUAL_QUALITY",error:"VISUAL_QUALITY_BELOW_BAR:"+qa.summary,variantKey:params.variantKey,revision:revision.revision,strategyVersion:PROMPT_VERSION})
       );
-      feedback={issues:qa.issues,actions:qa.actions,summary:qa.summary,scores:qa.scores};
+
+      const bestCandidate=await step.do("r"+cycle+"-load-best-candidate",async()=>{
+        const rows=await sql`
+          select revision,render_spec,score
+          from render_variant_revisions
+          where variant_id=${params.variantId}::uuid
+            and render_spec is not null
+            and score is not null
+          order by score desc, revision desc
+          limit 1`;
+        return rows[0]||null;
+      });
+      if(bestCandidate?.render_spec && Number(bestCandidate.score||0)>=Number(qa.min_score||0)) {
+        previousSpec=bestCandidate.render_spec;
+      } else {
+        previousSpec=compiled.normalized_spec||generated.spec;
+      }
+      feedback={
+        issues:qa.issues,
+        actions:qa.actions,
+        summary:qa.summary,
+        scores:qa.scores,
+        reason:visualFailure.change_strategy?"VISUAL_STRATEGY_SWITCH":"VISUAL_REPAIR",
+        best_candidate_revision:bestCandidate?.revision||revision.revision,
+        best_candidate_score:Number(bestCandidate?.score??qa.min_score??0)
+      };
     }
 
     await step.do("terminal-escalation",async()=>{
