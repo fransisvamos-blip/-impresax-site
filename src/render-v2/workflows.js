@@ -335,6 +335,15 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           return runVisualQa(this.env,{
             inputPayload:context.inputPayload,direction:context.direction,variantKey:params.variantKey,
             desktopB64:bytesToBase64(desktopBytes),mobileB64:bytesToBase64(mobileBytes),
+            browserEvidence:{
+              deterministic_gate_pass:captured.gate?.pass===true,
+              deterministic_gate_issues:captured.gate?.issues||[],
+              desktop:captured.diagnostics?.desktop||captured.desktop?.diagnostics||{},
+              mobile:captured.diagnostics?.mobile||captured.mobile?.diagnostics||{},
+              official_identity_visible:
+                (captured.diagnostics?.desktop?.official_logo_present??captured.desktop?.diagnostics?.official_logo_present??false)
+                && (captured.diagnostics?.mobile?.official_logo_present??captured.mobile?.diagnostics?.official_logo_present??false)
+            },
             beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_VISUAL_QA:"+model,revision.id)
           });
         });
