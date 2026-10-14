@@ -161,8 +161,35 @@ export default {
       const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
       if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
       const pack=packs[0];
+      if(String(pack.metadata?.contract_relaunch||"")===runKey) {
+        return json({ok:true,pack_id:packId,run_key:runKey,already_applied:true,launched:[]},200);
+      }
       const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid order by variant_key`;
       if(variants.length!==3) return json({ok:false,error:"THREE_VARIANTS_REQUIRED"},409);
+
+      await sql`
+        update render_v2_packs
+        set metrics=
+          (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+          || jsonb_build_object(
+            'ai_calls',0,
+            'browser_captures',0,
+            'prior_epoch_ai_calls',
+              coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+            'prior_epoch_browser_captures',
+              coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+            'budget_epoch',${runKey}::text,
+            'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+          ),
+          metadata=coalesce(metadata,'{}'::jsonb)
+            || jsonb_build_object(
+              'contract_relaunch',${runKey}::text,
+              'budget_epoch_reset_at',now(),
+              'budget_epoch_reason','CONTRACT_RELAUNCH'
+            ),
+          status='GENERATING',
+          updated_at=now()
+        where id=${packId}::uuid`;
 
       const launched=[];
       for(const variant of variants) {
@@ -214,7 +241,7 @@ export default {
         launched.push({variant_key:variant.variant_key,workflow_instance_id:instanceId,status:await instance.status()});
       }
       await setPackStatus(sql,packId,"GENERATING",{contract_relaunch:runKey});
-      return json({ok:true,pack_id:packId,run_key:runKey,launched},202);
+      return json({ok:true,pack_id:packId,run_key:runKey,already_applied:false,launched},202);
     }
 
     if(request.method==="GET" && url.pathname.startsWith("/shadow/workflow/")) {
