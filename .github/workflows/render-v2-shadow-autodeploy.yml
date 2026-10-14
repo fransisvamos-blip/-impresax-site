@@ -113,7 +113,7 @@ jobs:
           V2_CONTRACT_KEY: contract-v2e
         run: |
           set -euo pipefail
-          token=$(openssl rand -hex 32)
+          token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
 
           started=0
@@ -169,7 +169,7 @@ jobs:
           V2_URL: ${{ steps.deploy.outputs.url }}
         run: |
           set -euo pipefail
-          token=$(openssl rand -hex 32)
+          token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
           ok=0
           for i in {1..18}; do
