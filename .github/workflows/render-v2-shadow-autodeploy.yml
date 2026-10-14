@@ -94,7 +94,7 @@ jobs:
           for i in {1..24}; do
             code=$(curl -L -sS -o /tmp/v2-health.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$V2_URL/healthz" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/v2-health.json 2>/dev/null || true)"
-            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_1_HERO"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
+            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_1_HERO"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"hero_contract_required":true' /tmp/v2-health.json               && grep -q '"hero_db_guard":true' /tmp/v2-health.json               && grep -q '"hero_score_floor":8' /tmp/v2-health.json               && grep -q '"hero_certified_variants_required":3' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
               echo "V2_URL=$V2_URL" >> "$GITHUB_ENV"
               echo "V2 shadow is deployed and healthy. CZ-063 autostart is armed." >> "$GITHUB_STEP_SUMMARY"
               exit 0
@@ -169,4 +169,4 @@ jobs:
           fi
           echo "V2 HERO contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied forced=$forced launched=$launched" >> "$GITHUB_STEP_SUMMARY"
 
-# HERO_CONTRACT_PATCH_4_IDEMPOTENT
+# HERO_CONTRACT_PATCH_5_DB_GUARD
