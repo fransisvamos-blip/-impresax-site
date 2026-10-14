@@ -212,3 +212,23 @@ test("compiler rejects repeated or unknown identity tokens",()=>{
   },{...manifests,identity:{PRIMARY_LOGO:"identity://PRIMARY_LOGO"}});
   assert.ok(unknown.issues.includes("UNKNOWN_IDENTITY_TOKEN:FAKE"));
 });
+
+
+test("compiler normalizes identity token used inside img src",async()=>{
+  const hero='<section id="hero"><div><img src="{{identity:PRIMARY_LOGO}}" alt="" class="logo-img"></div><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
+  const other='<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
+  const result=await compileRenderSpec({
+    main_html:hero+other.repeat(14),
+    custom_css:".logo-img{width:240px}.x{display:grid;justify-content:center;padding:3rem}@media(max-width:700px){.x{display:block}}".repeat(18)
+  },{
+    businessName:"Example SRL",
+    logoToken:"identity://PRIMARY_LOGO",
+    copyManifest:manifests.copy,
+    assetManifest:{},
+    ctaManifest:manifests.cta
+  });
+  assert.equal(result.ok,true,result.issues?.join("|"));
+  assert.ok(result.normalizations.includes("NORMALIZED_IDENTITY_IMAGE_PLACEMENT"));
+  assert.match(result.html,/data-official-logo-main/);
+  assert.equal(result.html.includes('src="<img'),false);
+});
