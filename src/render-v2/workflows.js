@@ -730,7 +730,8 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
             B_revision_id:frames.B.revision_id,
             C_revision_id:frames.C.revision_id
           },
-          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+          idempotencyKey:"qa:SET_VISUAL:"+p.packId+":"+frames.A.revision_id+":"+frames.B.revision_id+":"+frames.C.revision_id+":"+event.instanceId+":cycle"+setCycle
         });
         return {ok:true};
       });
