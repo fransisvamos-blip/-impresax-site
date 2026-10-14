@@ -167,6 +167,24 @@ export function validateRenderSpec(spec, manifests) {
   const ctaKeys=new Set(Object.keys(manifests?.cta||{}));
   const identityKeys=new Set(Object.keys(manifests?.identity||{}));
 
+  const heroStart=main.search(/<section\b[^>]*\bid\s*=\s*["']hero["'][^>]*>/i);
+  if(heroStart<0) {
+    issues.push("HERO_SECTION_REQUIRED");
+  } else {
+    const heroEnd=main.indexOf("</section>",heroStart);
+    const heroHtml=main.slice(heroStart,heroEnd>=0?heroEnd+10:Math.min(main.length,heroStart+6000));
+    if(!assetKeys.has("HERO_VISUAL")) {
+      issues.push("HERO_VISUAL_ASSET_REQUIRED");
+    } else {
+      const heroToken=/\{\{asset:HERO_VISUAL\}\}/g;
+      const tokenCountInHero=(heroHtml.match(heroToken)||[]).length;
+      if(tokenCountInHero!==1) issues.push("HERO_VISUAL_EXACTLY_ONCE_IN_HERO:"+tokenCountInHero);
+      if(!/<img\b[^>]*\bsrc\s*=\s*["']\{\{asset:HERO_VISUAL\}\}["'][^>]*>/i.test(heroHtml)) {
+        issues.push("HERO_VISUAL_REAL_IMG_REQUIRED");
+      }
+    }
+  }
+
   for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
   for(const key of tokenSet(main,ASSET_TOKEN)) if(!assetKeys.has(key)) issues.push("UNKNOWN_ASSET_TOKEN:"+key);
   for(const key of tokenSet(main,IDENTITY_TOKEN)) if(!identityKeys.has(key)) issues.push("UNKNOWN_IDENTITY_TOKEN:"+key);
