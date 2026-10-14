@@ -376,36 +376,120 @@ async function tickChaos(env,sql) {
 }
 
 async function drainQueue(env,sql,state) {
-  if(!state.queue_enabled) return {enabled:false,started:[],blocked:[]};
+  if(!state.queue_enabled) return {enabled:false,started:[],blocked:[],remediation_started:[]};
+
   const active=await sql`
     select count(*)::int n from render_v2_packs
     where shadow_mode=true and status=any(${ACTIVE_PACK_STATUSES})`;
   let slots=Math.max(0,n(state.max_concurrency)-n(active[0]?.n));
-  if(slots<=0) return {enabled:true,started:[],blocked:[],slots:0};
 
-  const prospects=await sql`
-    select p.id,p.rank,p.business_name
-    from prospects p
-    where p.rank is not null and p.rank<=50
-      and not exists (select 1 from render_v2_packs rp where rp.prospect_id=p.id)
-    order by p.rank
-    limit 30`;
+  const activeRemediation=await sql`
+    select count(*)::int n
+    from render_workflows_v2
+    where workflow_type='INPUT_REMEDIATION' and status in ('QUEUED','RUNNING','PAUSED')`;
+  let remediationSlots=Math.max(0,2-n(activeRemediation[0]?.n));
 
-  const started=[],blocked=[];
-  for(const prospect of prospects) {
-    if(slots<=0) break;
-    const created=await createShadowInputPack(env,prospect.id);
-    if(created.input_pack?.certification_status!=="PASS") {
-      blocked.push({prospect_id:prospect.id,rank:prospect.rank,name:prospect.business_name,issues:created.input_pack?.certification_issues||[]});
-      continue;
-    }
-    const parent=await startParent(env,sql,created.pack,{reason:"QUEUE"});
-    if(parent.started) {
-      slots--;
-      started.push({prospect_id:prospect.id,rank:prospect.rank,name:prospect.business_name,pack_id:created.pack.id,workflow_instance_id:parent.instance_id});
+  const remediationStarted=[];
+  if(remediationSlots>0 && env.RENDER_INPUT_REMEDIATION_WORKFLOW) {
+    const blockedPacks=await sql`
+      select rp.id pack_id,rp.prospect_id,p.rank,p.business_name,
+             coalesce((p.source_data->>'v2_remediation_attempts')::int,0) remediation_attempts
+      from render_v2_packs rp
+      join prospects p on p.id=rp.prospect_id
+      where rp.shadow_mode=true
+        and rp.status='INPUT_BLOCKED'
+        and p.rank is not null and p.rank<=50
+        and coalesce((p.source_data->>'v2_remediation_attempts')::int,0)<2
+        and not exists (
+          select 1 from render_workflows_v2 w
+          where w.render_pack_id=rp.id
+            and w.workflow_type='INPUT_REMEDIATION'
+            and w.status in ('QUEUED','RUNNING','PAUSED')
+        )
+      order by p.rank,rp.created_at desc
+      limit 10`;
+
+    for(const item of blockedPacks) {
+      if(remediationSlots<=0) break;
+      const attempt=n(item.remediation_attempts)+1;
+      const instanceId="rv2-remediate-"+item.pack_id+"-"+attempt;
+      const existing=await sql`select 1 from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
+      if(existing.length) continue;
+      await persistWorkflow(sql,{
+        prospectId:item.prospect_id,
+        packId:item.pack_id,
+        type:"INPUT_REMEDIATION",
+        instanceId,
+        status:"QUEUED",
+        metadata:{attempt,rank:item.rank}
+      });
+      const instance=await env.RENDER_INPUT_REMEDIATION_WORKFLOW.create({
+        id:instanceId,
+        params:{prospectId:item.prospect_id,packId:item.pack_id,attempt}
+      });
+      remediationStarted.push({
+        prospect_id:item.prospect_id,
+        pack_id:item.pack_id,
+        rank:item.rank,
+        name:item.business_name,
+        attempt,
+        workflow_instance_id:instanceId,
+        status:await instance.status()
+      });
+      remediationSlots--;
     }
   }
-  return {enabled:true,started,blocked,slots};
+
+  const started=[],blocked=[];
+  if(slots>0) {
+    const prospects=await sql`
+      select p.id,p.rank,p.business_name
+      from prospects p
+      where p.rank is not null and p.rank<=50
+        and (
+          not exists (select 1 from render_v2_packs rp where rp.prospect_id=p.id)
+          or exists (
+            select 1 from render_v2_packs rp
+            where rp.prospect_id=p.id
+              and rp.status='INPUT_READY'
+              and rp.id=(
+                select rp2.id from render_v2_packs rp2
+                where rp2.prospect_id=p.id
+                  and rp2.status not in ('CANCELLED','SUPERSEDED','APPROVED')
+                order by rp2.created_at desc limit 1
+              )
+          )
+        )
+      order by p.rank
+      limit 30`;
+
+    for(const prospect of prospects) {
+      if(slots<=0) break;
+      const created=await createShadowInputPack(env,prospect.id);
+      if(created.input_pack?.certification_status!=="PASS") {
+        blocked.push({
+          prospect_id:prospect.id,
+          rank:prospect.rank,
+          name:prospect.business_name,
+          issues:created.input_pack?.certification_issues||[]
+        });
+        continue;
+      }
+      const parent=await startParent(env,sql,created.pack,{reason:"QUEUE"});
+      if(parent.started) {
+        slots--;
+        started.push({
+          prospect_id:prospect.id,
+          rank:prospect.rank,
+          name:prospect.business_name,
+          pack_id:created.pack.id,
+          workflow_instance_id:parent.instance_id
+        });
+      }
+    }
+  }
+
+  return {enabled:true,started,blocked,remediation_started:remediationStarted,slots,remediation_slots:remediationSlots};
 }
 
 export async function rolloutStatus(env) {
