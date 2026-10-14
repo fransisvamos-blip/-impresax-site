@@ -155,3 +155,27 @@ test("compiler allows justify-content but blocks CSS content property",()=>{
   },manifests);
   assert.ok(unsafe.issues.includes("UNSAFE_CSS_URL_IMPORT_OR_CONTENT"));
 });
+
+
+test("compiler safely normalizes bare verified tokens and strips invented literal text",async()=>{
+  const block='<section id="x"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
+  const copy={...manifests.copy,PRIMARY_CTA_LABEL:"Contatti"};
+  const result=await compileRenderSpec({
+    main_html:block.repeat(8),
+    custom_css:".x{display:flex;justify-content:center;align-items:center;padding:3rem}.x::before{content:'decorative'} @media(max-width:700px){.x{display:block;padding:1rem}}".repeat(12)
+  },{
+    businessName:"Example SRL",
+    logoToken:"identity://PRIMARY_LOGO",
+    copyManifest:copy,
+    assetManifest:{},
+    ctaManifest:manifests.cta
+  });
+  assert.equal(result.ok,true,result.issues?.join("|"));
+  assert.ok(result.normalizations.includes("CANONICALIZED_BARE_COPY_TOKENS"));
+  assert.ok(result.normalizations.includes("REMOVED_COMPILER_OWNED_PRIMARY_LOGO"));
+  assert.ok(result.normalizations.includes("STRIPPED_UNVERIFIED_LITERAL_TEXT"));
+  assert.ok(result.normalizations.includes("STRIPPED_CSS_CONTENT_PROPERTY"));
+  assert.equal(result.html.includes("Invented positioning"),false);
+  assert.equal(result.html.includes("asset:PRIMARY_LOGO"),false);
+  assert.match(result.html,/Titolo/);
+});
