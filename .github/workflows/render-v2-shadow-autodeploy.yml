@@ -160,3 +160,28 @@ jobs:
           jq -e '.ok == true' /tmp/v2-relaunch.json >/dev/null
           applied=$(jq -r '.already_applied // false' /tmp/v2-relaunch.json)
           echo "V2 contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied" >> "$GITHUB_STEP_SUMMARY"
+
+
+      - name: Targeted A compiler repair
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        env:
+          V2_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+          ok=0
+          for i in {1..18}; do
+            code=$(curl -sS -o /tmp/v2-a-repair.json -w '%{http_code}' \
+              -H "Authorization: Bearer $token" \
+              -H "Content-Type: application/json" \
+              --data '{"pack_id":"8595c9d2-9d53-424b-a660-82102b9db5b3","variant_key":"A","run_key":"a-v131-fix"}' \
+              "$V2_URL/shadow/relaunch-variant" || true)
+            echo "targeted_a_attempt=$i code=$code"
+            if [ "$code" = "200" ] || [ "$code" = "202" ]; then ok=1; break; fi
+            sleep 4
+          done
+          [ "$ok" = "1" ] || { cat /tmp/v2-a-repair.json || true; exit 1; }
+          jq -e '.ok == true' /tmp/v2-a-repair.json >/dev/null
+          echo "A targeted repair reconciled." >> "$GITHUB_STEP_SUMMARY"
