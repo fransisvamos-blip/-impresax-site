@@ -313,6 +313,14 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     asset_tokens:(direction?.asset_tokens||[]).filter(x=>allowedAssets.includes(x))
   };
   const zeroPhoto=allowedAssets.length===0;
+  const layoutContext={
+    locale:inputPayload?.locale||"it-IT",
+    asset_mode:inputPayload?.asset_mode||null,
+    service_count:Object.keys(copyManifest||{}).filter(k=>/^SERVICE_\d+_TITLE$/.test(k)).length,
+    trust_count:Object.keys(copyManifest||{}).filter(k=>/^TRUST_\d+$/.test(k)).length,
+    copy_tokens:Object.keys(copyManifest||{})
+  };
+  const safePrevious=qaFeedback?.reason==="COMPILER_CONTRACT" ? null : previousSpec;
   const prompt=[
     "Implement variant "+variantKey+" as a flagship premium full-home RenderSpec for the VERIFIED prospect.",
     "This is NOT a wireframe, starter template, generic agency page, SaaS layout or basic implementation.",
@@ -347,16 +355,16 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- section_ids must list the actual section ids and contain 6-10 entries.",
     "- used_copy_tokens and used_asset_tokens must report only tokens actually used.",
     "",
-    "COPY TOKEN MAP (read values for layout/length/context, but NEVER paste values literally into HTML):",
-    JSON.stringify(copyManifest),
+    "COPY TOKENS — these are the ONLY strings allowed to become visible text:",
+    JSON.stringify(Object.keys(copyManifest)),
+    "LAYOUT CONTEXT — structural only; do not render any value from this object as text:",
+    JSON.stringify(layoutContext),
     "ALLOWED MAIN ASSET TOKENS:",
     JSON.stringify(allowedAssets),
-    "VERIFIED INPUT:",
-    JSON.stringify(inputPayload),
-    "SANITIZED DIRECTION:",
+    "SANITIZED DIRECTION — visual instructions only; never render its words as copy:",
     JSON.stringify(safeDirection),
     qaFeedback?"REWORK FEEDBACK — fix these exact failures without weakening the art direction:"+JSON.stringify(qaFeedback):"",
-    previousSpec?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(previousSpec):""
+    safePrevious?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(safePrevious):""
   ].filter(Boolean).join("\n");
 
   const role=qaFeedback?"repair":"generator";
