@@ -167,6 +167,10 @@ export default {
       const packId=String(body.pack_id||"").trim();
       const variantKey=String(body.variant_key||"").trim().toUpperCase();
       const runKey=String(body.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
+      const force=body.force===true;
+      const eventPrefix=String(body.event_prefix||"initial").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,32)||"initial";
+      const parentWorkflowInstanceId=String(body.parent_workflow_instance_id||("rpv2-"+packId)).trim();
+      const relaunchReason=String(body.reason||"TARGETED_ENGINE_REPAIR").trim().slice(0,64);
       if(!packId || !["A","B","C"].includes(variantKey) || !runKey) {
         return json({ok:false,error:"pack_id_variant_key_and_run_key_required"},400);
       }
@@ -177,7 +181,7 @@ export default {
       const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid and variant_key=${variantKey} limit 1`;
       if(!variants.length) return json({ok:false,error:"VARIANT_NOT_FOUND"},404);
       const variant=variants[0];
-      if(variant.status==="RENDER_READY" && variant.certified_revision) {
+      if(!force && variant.status==="RENDER_READY" && variant.certified_revision) {
         return json({ok:true,pack_id:packId,variant_key:variantKey,skipped:true,reason:"ALREADY_RENDER_READY"},200);
       }
 
@@ -210,10 +214,10 @@ export default {
         inputPackId:pack.input_pack_id,
         variantId:variant.id,
         variantKey,
-        parentInstanceId:"rpv2-"+packId,
-        eventPrefix:"initial",
+        parentInstanceId:parentWorkflowInstanceId,
+        eventPrefix,
         initialFeedback:{
-          reason:"TARGETED_ENGINE_REPAIR",
+          reason:relaunchReason,
           issues:["This variant is being relaunched on a newer compiler/model repair route."],
           actions:[
             "Preserve verified content and the approved direction intent.",
@@ -226,11 +230,11 @@ export default {
       await persistWorkflow(sql,{
         prospectId:pack.prospect_id,packId,variantId:variant.id,type:"VARIANT",
         instanceId,status:"QUEUED",
-        metadata:{variant_key:variantKey,event_prefix:"initial",run_key:runKey,targeted_relaunch:true}
+        metadata:{variant_key:variantKey,event_prefix:eventPrefix,run_key:runKey,targeted_relaunch:true,force_relaunch:force,parent_workflow_instance_id:parentWorkflowInstanceId,relaunch_reason:relaunchReason}
       });
       const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
-      await setPackStatus(sql,packId,"GENERATING",{targeted_relaunch:{variant_key:variantKey,run_key:runKey}});
-      return json({ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,status:await instance.status()},202);
+      await setPackStatus(sql,packId,"GENERATING",{targeted_relaunch:{variant_key:variantKey,run_key:runKey,force,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId}});
+      return json({ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,force,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId,status:await instance.status()},202);
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/relaunch-variants") {
