@@ -71,7 +71,7 @@ export function explicitHeroAsset(assets={}) {
   };
 }
 
-export function buildHeroPrompt({inputPayload,direction,variantKey}) {
+export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null}) {
   const context={
     business_name:clean(inputPayload?.business_name,180),
     vertical:clean(inputPayload?.vertical,300),
@@ -93,15 +93,16 @@ export function buildHeroPrompt({inputPayload,direction,variantKey}) {
     "Composition must work as a website hero: strong focal point, premium depth/light/materiality, and a clean area for headline + CTA. It must also survive a 390px mobile crop without losing the main subject.",
     "Use natural European/Italian visual cues only when compatible with the verified city/context; do not invent a recognizable exact location.",
     "Direction intent: "+clean(direction?.hero_logic||direction?.core_idea,700),
+    feedback?"REWORK FEEDBACK FROM PRIOR HERO QA: "+clean(feedback,1200):"",
     "VERIFIED BUSINESS CONTEXT (visual relevance only; never render these strings as text):",
     JSON.stringify(context)
   ].join("\n");
 }
 
-export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey}) {
+export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback=null}) {
   if(!env.AI) throw new Error("HERO_IMAGE_AI_BINDING_REQUIRED");
   const model=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-klein-9b";
-  const prompt=buildHeroPrompt({inputPayload,direction,variantKey});
+  const prompt=buildHeroPrompt({inputPayload,direction,variantKey,feedback});
   const form=new FormData();
   form.append("prompt",prompt);
   form.append("width","1536");
