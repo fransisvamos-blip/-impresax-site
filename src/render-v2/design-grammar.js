@@ -51,7 +51,7 @@ function verifiedAccent(inputPayload) {
 export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
   const accent=verifiedAccent(inputPayload);
   const shared={
-    asset_tokens:[],
+    asset_tokens:["HERO_VISUAL"],
     execution_constraints:{
       static_preview:true,no_scripts:true,no_forms:true,immutable_identity:true,
       no_empty_placeholder_geometry:true,mobile_overlay_forbidden:true
@@ -61,7 +61,7 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
     A:{
       name:"Structural Field",
       core_idea:"Light industrial composition built from verified copy, structural rules and immutable identity.",
-      hero_logic:"Oversized verified headline with a structural rule field; official identity remains compiler-owned.",
+      hero_logic:"Premium image-led split hero using HERO_VISUAL as the dominant photographic anchor, with verified headline/CTA in a clean copy field; official identity remains compiler-owned.",
       grid:"Asymmetric structural grid with services in measured modules.",
       typography_behavior:"Bold system sans with dense industrial hierarchy.",
       material_language:"Warm light field, black structure"+(accent?", verified accent "+accent:"")+".",
@@ -69,12 +69,12 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
       section_progression:["hero","positioning","services","trust","bridge","contact"],
       cta_behavior:"Anchored solid/outline CTA pair integrated into the hero and close.",
       mobile_reinterpretation:"Single-column structural stack preserving hierarchy and rule rhythm.",
-      fingerprint:{hero_type:"structural light hero",grid_topology:"asymmetric structural grid",typography_mode:"bold industrial sans",material_system:"light industrial field",signature_device:"connected rule field",section_rhythm:"measured modular",cta_pattern:"anchored pair",mobile_pattern:"structured stacked"}
+      fingerprint:{hero_type:"premium image split hero",grid_topology:"asymmetric structural grid",typography_mode:"bold industrial sans",material_system:"light industrial field",signature_device:"connected rule field",section_rhythm:"measured modular",cta_pattern:"anchored pair",mobile_pattern:"structured stacked"}
     },
     B:{
       name:"Trust First Poster",
       core_idea:"Trust-first commercial poster with a materially different information architecture.",
-      hero_logic:"Typography-first dark hero followed immediately by verified trust proof.",
+      hero_logic:"Cinematic architecture-first hero using HERO_VISUAL as the dominant full-bleed photographic field with restrained dark copy treatment, followed immediately by verified trust proof.",
       grid:"Trust modules first, then horizontal service ledger rows.",
       typography_behavior:"Large serif display paired with utilitarian sans service typography.",
       material_language:"Dark poster system with high-contrast accent"+(accent?" "+accent:"")+".",
@@ -82,12 +82,12 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
       section_progression:["hero","trust","services","positioning","bridge","contact"],
       cta_behavior:"Editorial CTA treatment separated from the structural A system.",
       mobile_reinterpretation:"Trust-first vertical poster with full-width service rows.",
-      fingerprint:{hero_type:"trust first dark poster",grid_topology:"trust band plus service rows",typography_mode:"serif display plus sans utility",material_system:"dark high contrast poster",signature_device:"trust band",section_rhythm:"poster ledger",cta_pattern:"editorial anchored",mobile_pattern:"trust first stacked"}
+      fingerprint:{hero_type:"cinematic full bleed image hero",grid_topology:"trust band plus service rows",typography_mode:"serif display plus sans utility",material_system:"dark high contrast poster",signature_device:"trust band",section_rhythm:"poster ledger",cta_pattern:"editorial anchored",mobile_pattern:"trust first stacked"}
     },
     C:{
       name:"Editorial Ledger",
       core_idea:"Single-column editorial ledger with hairline service rhythm and address/locality emphasis.",
-      hero_logic:"Editorial headline with rail system and restrained commercial close.",
+      hero_logic:"Editorial image-and-copy hero using HERO_VISUAL with a deliberate asymmetric crop, headline rail system and restrained commercial close.",
       grid:"Hairline ledger rows and text-led sections instead of cards.",
       typography_behavior:"Editorial serif display with restrained sans metadata.",
       material_language:"Neutral editorial field"+(accent?" with verified accent "+accent:"")+".",
@@ -95,7 +95,7 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
       section_progression:["hero","positioning","services","trust","bridge","contact"],
       cta_behavior:"Inline editorial CTA rhythm with strong final contact close.",
       mobile_reinterpretation:"Compact editorial ledger with preserved hairline hierarchy.",
-      fingerprint:{hero_type:"editorial rail hero",grid_topology:"single column ledger",typography_mode:"editorial serif and metadata sans",material_system:"neutral editorial",signature_device:"rail ledger rules",section_rhythm:"editorial hairline",cta_pattern:"inline editorial",mobile_pattern:"editorial stacked"}
+      fingerprint:{hero_type:"editorial image rail hero",grid_topology:"single column ledger",typography_mode:"editorial serif and metadata sans",material_system:"neutral editorial",signature_device:"rail ledger rules",section_rhythm:"editorial hairline",cta_pattern:"inline editorial",mobile_pattern:"editorial stacked"}
     }
   };
   return {...shared,...variants[variantKey]};
