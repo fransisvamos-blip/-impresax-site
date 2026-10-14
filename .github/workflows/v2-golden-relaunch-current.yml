@@ -38,7 +38,7 @@ jobs:
 
           for code in CZ-031 CZ-209 CZ-210; do
             pack="${packs[$code]}"
-            key="golden-v2h-$(echo "$code" | tr '[:upper:]' '[:lower:]')"
+            key="golden-v2i-$(echo "$code" | tr '[:upper:]' '[:lower:]')"
             ok=0
             for i in {1..20}; do
               status=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}' \
