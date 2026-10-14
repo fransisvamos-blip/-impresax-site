@@ -184,7 +184,7 @@ test("compiler safely normalizes bare verified tokens and strips invented litera
 test("compiler owns one optional main identity placement",async()=>{
   const section='<section><div>{{identity:PRIMARY_LOGO}}</div><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>';
   const result=await compileRenderSpec({
-    main_html:section + '<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p></section>'.repeat(8),
+    main_html:section + '<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>'.repeat(14),
     custom_css:".x{display:grid;justify-content:center;padding:3rem} @media(max-width:700px){.x{display:block}}".repeat(18)
   },{
     businessName:"Example SRL",
