@@ -35,7 +35,7 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"run_key\":\"contract-v2b\"}" \
+              --data "{\"pack_id\":\"$PACK_ID\",\"run_key\":\"contract-v2c\"}" \
               "$V2_URL/shadow/relaunch-variants" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch.json 2>/dev/null || true)"
             if [ "$code" = "202" ]; then ok=1; break; fi
@@ -43,4 +43,4 @@ jobs:
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true and (.launched|length) == 3' /tmp/relaunch.json >/dev/null
-          echo "CZ-063 A/B/C relaunched on contract-v2b." >> "$GITHUB_STEP_SUMMARY"
+          echo "CZ-063 A/B/C relaunched on contract-v2c." >> "$GITHUB_STEP_SUMMARY"
