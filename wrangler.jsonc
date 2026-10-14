@@ -40,6 +40,12 @@
   "browser": {
     "binding": "BROWSER"
   },
+  "r2_buckets": [
+    {
+      "binding": "RENDER_ARTIFACTS",
+      "bucket_name": "impresax-render-v2-shadow"
+    }
+  ],
   "ai": {
     "binding": "AI"
   }
