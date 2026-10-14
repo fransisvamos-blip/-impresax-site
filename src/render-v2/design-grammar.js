@@ -91,7 +91,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   const base=`
 :root{--ix-ink:#111;--ix-paper:#f4f1ea;--ix-muted:#6b6964;--ix-line:rgba(17,17,17,.18);--ix-dark:#111;--ix-light:#fff;--ix-space:clamp(24px,4.2vw,72px)}
-.ixg{position:relative;overflow:hidden}.ixg-shell{width:min(1320px,calc(100% - 2*var(--ix-space)));margin:0 auto}
+.ixg{position:relative;overflow:hidden;font-family:Arial,Helvetica,sans-serif}.ixg-shell{width:min(1320px,calc(100% - 2*var(--ix-space)));margin:0 auto}
 .ixg h1,.ixg h2,.ixg h3,.ixg p{margin:0}.ixg h1{font-size:clamp(58px,8.4vw,138px);line-height:.86;letter-spacing:-.065em;max-width:10ch}
 .ixg h2{font-size:clamp(36px,5.4vw,82px);line-height:.94;letter-spacing:-.045em}.ixg h3{font-size:clamp(24px,2.4vw,38px);line-height:1.02;letter-spacing:-.025em}
 .ixg p{font-size:clamp(16px,1.3vw,20px);line-height:1.55}.ixg-kicker{font-size:12px!important;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
@@ -118,7 +118,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-bridge__device i:nth-child(2){background:#fff;border:1px solid var(--ix-ink)}.ixg-bridge__device i:nth-child(3){grid-column:1/-1;background:rgba(17,17,17,.14)}
 .ixg-contact{padding:clamp(70px,8vw,120px) 0;background:#fff;color:var(--ix-ink);border-top:1px solid var(--ix-line)}.ixg-contact__inner{display:grid;grid-template-columns:1fr auto;gap:40px;align-items:end}
 @media(max-width:700px){
- .ixg-shell{width:min(100% - 40px,1320px)}.ixg h1{font-size:clamp(50px,14vw,74px);max-width:none;overflow-wrap:anywhere}.ixg h2{font-size:clamp(34px,10vw,52px)}
+ .ixg-shell{width:min(calc(100% - 40px),1320px)}.ixg h1{font-size:clamp(44px,12vw,64px);max-width:none;overflow-wrap:normal;word-break:normal;hyphens:none}.ixg h2{font-size:clamp(34px,10vw,52px)}
  .ixg-hero{padding:60px 0 76px}.ixg-hero__grid,.ixg-split,.ixg-bridge__grid,.ixg-contact__inner{grid-template-columns:1fr}.ixg-hero__device{height:220px;grid-template-columns:1.4fr .6fr;order:2}
  .ixg-hero__copy{order:1}.ixg-hero__identity{order:3;margin-top:6px}.ixg-actions{display:grid;grid-template-columns:1fr;margin-top:26px}.ixg-cta{width:100%;min-height:50px}
  .ixg-positioning{padding:64px 0}.ixg-split{gap:28px}.ixg-services__grid{grid-template-columns:1fr}.ixg-service{min-height:0;padding:34px 24px;gap:22px}
@@ -129,7 +129,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   const variants={
     A:`
-.ixg-a .ixg-hero__device{grid-template-columns:.8fr 1.2fr}.ixg-a .ixg-hero__device span:nth-child(1){background:#111}.ixg-a .ixg-hero__device span:nth-child(2){border-width:10px}
+.ixg-a .ixg-hero__device{display:flex;align-items:flex-end;gap:10px;padding:24px;background:#e6e1d7}.ixg-a .ixg-hero__device span{display:block;flex:1;border:0!important;background:#111!important;transform:none!important}
+.ixg-a .ixg-hero__device span:nth-child(1){height:100%}.ixg-a .ixg-hero__device span:nth-child(2){height:68%}.ixg-a .ixg-hero__device span:nth-child(3){height:42%;background:#77736b!important}.ixg-a .ixg-hero__device span:nth-child(4){height:82%}
+.ixg-a .ixg-bridge__device{display:flex;align-items:flex-end;gap:12px;padding:24px;background:#ded8cc}.ixg-a .ixg-bridge__device i{display:block;flex:1;grid-column:auto!important;background:#111!important}
+.ixg-a .ixg-bridge__device i:nth-child(1){height:100%}.ixg-a .ixg-bridge__device i:nth-child(2){height:62%;border:0}.ixg-a .ixg-bridge__device i:nth-child(3){height:34%;background:#817d75!important}
 .ixg-a .ixg-positioning__statement h2{max-width:11ch}.ixg-a .ixg-service:nth-child(2n){background:#f4f1ea}
 `,
     B:`
@@ -145,14 +148,23 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-c .ixg-hero__device{height:520px;grid-template-columns:1.2fr .8fr;grid-template-rows:.7fr 1.3fr}.ixg-c .ixg-hero__device span:nth-child(1){background:#dedbd3}.ixg-c .ixg-hero__device span:nth-child(2){border:0;background:#111}.ixg-c .ixg-hero__device span:nth-child(3){background:#111}.ixg-c .ixg-hero__device span:nth-child(4){background:#dedbd3;transform:none}
 .ixg-c h1{font-family:Georgia,'Times New Roman',serif;font-weight:500}.ixg-c .ixg-lede{max-width:48ch}
 .ixg-c+.ixg-positioning .ixg-split{grid-template-columns:.8fr 1.2fr}.ixg-c+.ixg-positioning{background:#f3f3f0}
-@media(max-width:700px){.ixg-c .ixg-hero__device{height:240px}.ixg-c+.ixg-positioning .ixg-split{grid-template-columns:1fr}}
+@media(max-width:700px){.ixg-c .ixg-hero__device{height:240px}.ixg-c+.ixg-positioning .ixg-split{grid-template-columns:1fr}.ixg-c+.ixg-positioning .ixg-positioning__statement h2{font-size:clamp(30px,9vw,46px)}}
 `
   };
 
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A),
+      custom_css:base+(variants[variantKey]||variants.A)+`
+@media(max-width:700px){
+ .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:28px!important;align-items:start!important}
+ .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
+ .ixg-hero__device{order:2!important;width:100%!important;min-width:0!important;max-width:100%!important}
+ .ixg h1{font-size:clamp(44px,12vw,64px)!important;line-height:.94!important;max-width:100%!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
+ .ixg-kicker,.ixg-lede{width:100%!important;max-width:100%!important;overflow-wrap:normal!important;word-break:normal!important}
+ .ixg-kicker{line-height:1.35!important}
+}
+`,
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
