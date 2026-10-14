@@ -9,7 +9,7 @@ import { extractStructured, normalizeSetQaResult } from "../src/render-v2/ai.js"
 
 const manifests={
   copy:{HERO_HEADLINE:"Titolo",HERO_BODY:"Testo"},
-  assets:{HERO_01:"asset://HERO_01"},
+  assets:{HERO_01:"asset://HERO_01",HERO_VISUAL:"asset://HERO_VISUAL"},
   cta:{PRIMARY:"tel:+390000000"}
 };
 
@@ -36,7 +36,7 @@ test("compiler blocks literal unverified copy",()=>{
 });
 
 test("valid tokenized render compiles with mandatory shell",async()=>{
-  const main='<section class="hero"><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_01}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>'.repeat(8);
+  const main='<section id="hero" class="hero"><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>'.repeat(8);
   const result=await compileRenderSpec({
     main_html:main,
     custom_css:".hero{min-height:80vh;padding:6vw;display:grid;gap:32px;align-items:center} .hero h1{font-size:clamp(40px,7vw,110px);line-height:.9;letter-spacing:-.04em} @media(max-width:700px){.hero{min-height:auto;padding:24px;grid-template-columns:1fr}.hero h1{font-size:clamp(38px,12vw,64px)}}".repeat(8)
@@ -272,7 +272,7 @@ test("zero-photo grammar compiles all three variants",async()=>{
       businessName:"DEDIL DONATO S.R.L.",
       logoToken:"identity://PRIMARY_LOGO",
       copyManifest:copy,
-      assetManifest:{},
+      assetManifest:{HERO_VISUAL:"asset://HERO_VISUAL"},
       ctaManifest:{PRIMARY:"tel:+390961000000",SECONDARY:"mailto:info@example.it"}
     });
     assert.equal(result.ok,true,variantKey+":"+JSON.stringify(result.issues||[]));
