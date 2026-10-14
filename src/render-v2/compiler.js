@@ -52,14 +52,10 @@ function neutralizeUnsafeTextAttributes(html) {
 }
 
 function keepOnlyCanonicalTokensInTextNode(text) {
-  const saved=[];
-  let x=String(text||"").replace(/\{\{(?:copy|asset|cta):[A-Z0-9_]+\}\}/g,m=>{
-    const i=saved.push(m)-1;
-    return "\u0000"+i+"\u0000";
-  });
-  x=x.replace(/\S+/g,"");
-  x=x.replace(/\u0000(\d+)\u0000/g,(_,i)=>saved[Number(i)]||"");
-  return x;
+  const source=String(text||"");
+  const tokens=source.match(/\{\{(?:copy|asset|cta):[A-Z0-9_]+\}\}/g)||[];
+  if(tokens.length) return " "+tokens.join(" ")+" ";
+  return source.replace(/\S/g,"");
 }
 
 function stripUnauthorizedLiteralTextNodes(html) {
