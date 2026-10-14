@@ -215,6 +215,50 @@ function validateApprovedPack(pack) {
 }
 
 async function validateApprovedVisualQa(sql, packId) {
+  const packRows=await sql`select content_map from render_packs where id=${packId}::uuid limit 1`;
+  const contentMap=packRows[0]?.content_map || {};
+  const v2PackId=String(contentMap?.v2_render_pack_id || "").trim();
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if(contentMap?.source==="RENDERING_STUDIO_V2" && uuid.test(v2PackId)) {
+    const rows=await sql`
+      select
+        (select count(distinct v.variant_key)::int
+           from render_v2_variants v
+           join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+          where v.render_pack_id=${v2PackId}::uuid
+            and v.variant_key in ('A','B','C')
+            and v.status='RENDER_READY'
+            and r.status='RENDER_READY'
+            and r.desktop_r2_key is not null
+            and r.mobile_r2_key is not null) as certified_variants,
+        (select count(distinct q.variant_revision_id)::int
+           from render_qa_results_v2 q
+           join render_variant_revisions r on r.id=q.variant_revision_id
+           join render_v2_variants v on v.id=r.variant_id
+          where q.render_pack_id=${v2PackId}::uuid
+            and q.qa_type='VARIANT_VISUAL'
+            and q.status='PASS'
+            and v.render_pack_id=${v2PackId}::uuid
+            and r.revision=v.certified_revision) as certified_variant_qa,
+        (select count(*)::int
+           from render_qa_results_v2 q
+          where q.render_pack_id=${v2PackId}::uuid
+            and q.qa_type='SET_VISUAL'
+            and q.status='PASS') as set_qa_passes,
+        (select count(*)::int
+           from render_v2_packs p
+          where p.id=${v2PackId}::uuid
+            and p.status='APPROVED'
+            and p.approved_reference=true
+            and p.selected_variant_revision_id is not null) as approved_selected_pack`;
+    const state=rows[0] || {};
+    return Number(state.certified_variants||0)===3 &&
+      Number(state.certified_variant_qa||0)===3 &&
+      Number(state.set_qa_passes||0)>=1 &&
+      Number(state.approved_selected_pack||0)===1;
+  }
+
   const rows=await sql`
     select
       count(*) filter (
