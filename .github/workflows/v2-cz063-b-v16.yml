@@ -1,4 +1,4 @@
-name: V2 CZ063 B Trust V23
+name: V2 CZ063 B Trust V24
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch-b.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"B\",\"run_key\":\"trust-v23-b\",\"force\":true,\"reset_budget\":true,\"reset_budget\":true,\"event_prefix\":\"initial\",\"reason\":\"SET_DIVERSITY_TRUST_FIRST_REBUILD\"}" \
+              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"B\",\"run_key\":\"trust-v24-b\",\"force\":true,\"reset_budget\":true,\"reset_budget\":true,\"event_prefix\":\"initial\",\"reason\":\"SET_DIVERSITY_TRUST_FIRST_REBUILD\"}" \
               "$V2_URL/shadow/relaunch-variant" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch-b.json 2>/dev/null || true)"
             if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
