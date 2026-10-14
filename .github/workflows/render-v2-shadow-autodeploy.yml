@@ -94,7 +94,7 @@ jobs:
           for i in {1..24}; do
             code=$(curl -L -sS -o /tmp/v2-health.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$V2_URL/healthz" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/v2-health.json 2>/dev/null || true)"
-            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_0"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
+            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_1_HERO"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
               echo "V2_URL=$V2_URL" >> "$GITHUB_ENV"
               echo "V2 shadow is deployed and healthy. CZ-063 autostart is armed." >> "$GITHUB_STEP_SUMMARY"
               exit 0
@@ -110,7 +110,7 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: contract-v2e
+          V2_CONTRACT_KEY: hero-v2-20261014
         run: |
           set -euo pipefail
           token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
@@ -146,7 +146,7 @@ jobs:
             [ "$control_code" = "200" ] || { cat /tmp/v2-control.json || true; exit 1; }
           fi
 
-          relaunch_payload=$(jq -nc --arg pack "$pack" --arg key "$V2_CONTRACT_KEY" '{pack_id:$pack,run_key:$key}')
+          relaunch_payload=$(jq -nc --arg pack "$pack" --arg key "$V2_CONTRACT_KEY" '{pack_id:$pack,run_key:$key,force:true}')
           relaunch_code=$(curl -sS -o /tmp/v2-relaunch.json -w '%{http_code}' \
             -H "Authorization: Bearer $token" \
             -H "Content-Type: application/json" \
@@ -159,29 +159,8 @@ jobs:
           fi
           jq -e '.ok == true' /tmp/v2-relaunch.json >/dev/null
           applied=$(jq -r '.already_applied // false' /tmp/v2-relaunch.json)
-          echo "V2 contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied" >> "$GITHUB_STEP_SUMMARY"
-
-
-      - name: Targeted A compiler repair
-        if: steps.gate.outputs.ready == 'true'
-        shell: bash
-        env:
-          V2_URL: ${{ steps.deploy.outputs.url }}
-        run: |
-          set -euo pipefail
-          token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
-          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
-          ok=0
-          for i in {1..18}; do
-            code=$(curl -sS -o /tmp/v2-a-repair.json -w '%{http_code}' \
-              -H "Authorization: Bearer $token" \
-              -H "Content-Type: application/json" \
-              --data '{"pack_id":"8595c9d2-9d53-424b-a660-82102b9db5b3","variant_key":"A","run_key":"a-v131-fix"}' \
-              "$V2_URL/shadow/relaunch-variant" || true)
-            echo "targeted_a_attempt=$i code=$code"
-            if [ "$code" = "200" ] || [ "$code" = "202" ]; then ok=1; break; fi
-            sleep 4
-          done
-          [ "$ok" = "1" ] || { cat /tmp/v2-a-repair.json || true; exit 1; }
-          jq -e '.ok == true' /tmp/v2-a-repair.json >/dev/null
-          echo "A targeted repair reconciled." >> "$GITHUB_STEP_SUMMARY"
+          forced=$(jq -r '.force // false' /tmp/v2-relaunch.json)
+          launched=$(jq -r '[.launched[] | select(.skipped != true)] | length' /tmp/v2-relaunch.json)
+          test "$forced" = "true"
+          test "$launched" = "3"
+          echo "V2 HERO contract reconciliation: key=$V2_CONTRACT_KEY forced=$forced launched=$launched" >> "$GITHUB_STEP_SUMMARY"
