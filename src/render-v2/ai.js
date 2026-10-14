@@ -94,32 +94,6 @@ function matchesSchemaRoot(value,schema) {
   return overlap>=Math.min(2,keys.size) || (required.length>0 && requiredOverlap>=Math.min(2,required.length));
 }
 
-function balancedJsonObjects(text) {
-  const s=String(text||"");
-  const out=[];
-  let start=-1,depth=0,inString=false,escape=false;
-  for(let i=0;i<s.length;i++) {
-    const ch=s[i];
-    if(inString) {
-      if(escape) { escape=false; continue; }
-      if(ch==="\\") { escape=true; continue; }
-      if(ch==='"') inString=false;
-      continue;
-    }
-    if(ch==='"') { inString=true; continue; }
-    if(ch==="{") {
-      if(depth===0) start=i;
-      depth++;
-    } else if(ch==="}" && depth>0) {
-      depth--;
-      if(depth===0 && start>=0) {
-        out.push(s.slice(start,i+1));
-        start=-1;
-      }
-    }
-  }
-  return out;
-}
 
 export function extractStructured(result,schema) {
   const queue=[result];
