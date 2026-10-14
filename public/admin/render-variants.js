@@ -14,6 +14,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
   const rejected = /REJECT|ARCHIVED/i.test(String(variant.status || ""));
   const complete = Boolean(variant.desktop_render_url && variant.mobile_render_url);
   const selected = Boolean(variant.selected);
+  const sourceV2 = variant.source_system === "V2";
   let html = "";
   html += '<article class="render-pack-card render-variant-card ' + (selected ? 'approved' : '') + '">';
   html += '<div class="render-pack-head"><div>';
@@ -52,10 +53,10 @@ function renderVariantCardV2(variant, pack, prospectId) {
   html += '<div class="render-pack-actions">';
   html += '<span class="id">' + (variant.reference_score != null ? 'Punteggio ' + esc(variant.reference_score) : 'Versione completa') + '</span>';
   html += '<div class="render-decision-actions">';
-  html += '<button class="choose-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
+  html += '<button class="choose-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
   if (!complete || rejected || selected || pack.approved_reference) html += ' disabled';
   html += '>' + (selected ? 'Versione scelta' : 'Scegli questa versione') + '</button>';
-  html += '<button class="implement-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
+  html += '<button class="implement-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
   if (!complete || rejected || !selected || pack.approved_reference) html += ' disabled';
   html += '>' + (pack.approved_reference && selected ? 'Versione implementata' : 'Implementa questa versione') + '</button>';
   html += '</div></div></article>';
@@ -133,13 +134,32 @@ openRenderingProspect = async function(id) {
     const allPacks = d.render_packs || [];
     const packs = allPacks.filter(pack => {
       const status = String(pack.status || "").toUpperCase();
-      return !status.includes("REJECT") && !status.includes("ARCHIVED");
+      return !status.includes("REJECT") && !status.includes("ARCHIVED") && !status.includes("SUPERSEDED");
     });
     const activePackIds = new Set(packs.map(pack => pack.id));
     const variants = allVariants.filter(v => activePackIds.has(v.render_pack_id));
+
+    const allV2Packs = d.render_v2_packs || [];
+    const v2Packs = allV2Packs.filter(pack => !["CANCELLED","SUPERSEDED"].includes(String(pack.status || "").toUpperCase()));
+    const v2PackIds = new Set(v2Packs.map(pack => pack.id));
+    const v2Variants = (d.render_v2_variants || []).filter(v => v2PackIds.has(v.render_pack_id));
+    const latestV2Pack = v2Packs[0] || null;
+    const latestV2Variants = latestV2Pack ? v2Variants.filter(v => v.render_pack_id === latestV2Pack.id) : [];
+    const certifiedV2Variants = latestV2Variants.filter(v => Boolean(v.desktop_render_url && v.mobile_render_url));
+
     let renderContent = "";
 
-    if (variants.length) {
+    if (latestV2Pack && certifiedV2Variants.length) {
+      renderContent += '<div class="render-contract-note"><strong>RENDERING V2 · ' + certifiedV2Variants.length + '/3 VERSIONI DISPONIBILI</strong><span>Queste sono le revisioni certificate reali del nuovo motore. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+      certifiedV2Variants.forEach(v => {
+        renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
+      });
+    } else if (latestV2Pack) {
+      renderContent += '<div class="render-contract-note warning"><strong>RENDERING V2 IN LAVORAZIONE</strong><span>Le versioni certificate compariranno qui automaticamente appena avranno desktop e mobile pronti.</span></div>';
+      latestV2Variants.forEach(v => {
+        renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
+      });
+    } else if (variants.length) {
       renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Prima scegli la versione. Solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
       variants.forEach(v => {
         const pack = packs.find(x => x.id === v.render_pack_id);
@@ -168,13 +188,15 @@ openRenderingProspect = async function(id) {
       b.dataset.prospectId,
       b.dataset.packId,
       b.dataset.variantId,
-      b
+      b,
+      b.dataset.renderSource || "V1"
     )));
     document.querySelectorAll(".implement-render").forEach(b => b.addEventListener("click", () => implementRender(
       b.dataset.prospectId,
       b.dataset.packId,
       b.dataset.variantId,
-      b
+      b,
+      b.dataset.renderSource || "V1"
     )));
   } catch (e) {
     $("#rendering-detail").innerHTML = '<div class="empty error">Impossibile caricare le proposte visive.</div>';
@@ -182,13 +204,14 @@ openRenderingProspect = async function(id) {
   }
 };
 
-chooseRender = async function(prospectId, packId, variantId, button) {
+chooseRender = async function(prospectId, packId, variantId, button, source = "V1") {
   if (!confirm("Scegliere questa versione? La Site Factory NON partirà ancora.")) return;
   button.disabled = true;
   button.textContent = "Salvataggio scelta…";
 
   try {
-    await api("/ops/api/render/select", {
+    const endpoint = source === "V2" ? "/ops/api/render-v2/select" : "/ops/api/render/select";
+    await api(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -207,13 +230,14 @@ chooseRender = async function(prospectId, packId, variantId, button) {
   }
 };
 
-implementRender = async function(prospectId, packId, variantId, button) {
+implementRender = async function(prospectId, packId, variantId, button, source = "V1") {
   if (!confirm("Confermi l'implementazione di questa versione? Solo ora verrà approvata e inviata alla Site Factory.")) return;
   button.disabled = true;
   button.textContent = "Invio alla Site Factory…";
 
   try {
-    await api("/ops/api/render/implement", {
+    const endpoint = source === "V2" ? "/ops/api/render-v2/implement" : "/ops/api/render/implement";
+    await api(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
