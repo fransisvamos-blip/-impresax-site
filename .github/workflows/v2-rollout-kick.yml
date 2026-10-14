@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/v2-rollout-kick.yml'
   workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
 
 jobs:
   tick:
