@@ -36,7 +36,10 @@ function sectorDirection(inputPayload={}) {
     inputPayload.brand_dna?.business_positioning
   ].map(x=>String(x||"").toLowerCase()).join(" ");
 
-  if(/edil|costruz|ristruttur|cement|materiali|cantiere|immobil|architett/.test(hay)) {
+  if(/materiali|ingrosso|distribuz|tondo|cemento armato|rebar|acciaio|fornitur/.test(hay) && /edil|costruz|cement|materiali|rebar|tondo/.test(hay)) {
+    return "Show a believable premium B2B construction-materials and rebar-supply context: an organized Italian building-materials yard, warehouse or processing/logistics environment; quality pallets/materials, steel reinforcing bars or rebar processing only when visually natural, professional material handling or commercial supervision. Communicate scale, reliability, supply and technical capability. Do NOT portray the company as the builder of a luxury villa or claim a completed construction project that is not verified. Avoid generic office stock imagery.";
+  }
+  if(/edil|costruz|ristruttur|cantiere|immobil|architett/.test(hay)) {
     return "Show a believable high-end Italian construction / renovation context: quality building site, refined residential or commercial architecture, scaffolding or materials only where natural, clean professional workwear, credible site supervision or craftsmanship. Avoid generic corporate offices.";
   }
   if(/dent|odont|medic|fisioter|clinic|salute|sanit/.test(hay)) {
