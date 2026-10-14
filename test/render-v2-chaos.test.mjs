@@ -5,6 +5,7 @@ import { recoveryDecision } from "../src/render-v2/recovery-policy.js";
 import { validateRenderSpec } from "../src/render-v2/compiler.js";
 import { certifyInputPayload } from "../src/render-v2/input-pack.js";
 import { validateContentTruthSources } from "../src/render-v2/ai.js";
+import { identitySvgIsSafe } from "../src/render-v2/artifacts.js";
 
 const dna={
   brand_personality:"Established and reliable",visual_cues:"Strong wordmark",tone:"Professional",
@@ -135,4 +136,14 @@ test("chaos: compiler blocks protocol-relative assets and font-face injection",(
   assert.equal(gate.pass,false);
   assert.ok(gate.issues.includes("ARBITRARY_URL_FORBIDDEN"));
   assert.ok(gate.issues.includes("UNSAFE_CSS_URL_IMPORT_OR_CONTENT"));
+});
+
+
+test("verified identity SVG allows only embedded raster data",()=>{
+  const safe='<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB"/></svg>';
+  assert.equal(identitySvgIsSafe(safe),true);
+  assert.equal(identitySvgIsSafe('<svg><image href="data:image/svg+xml;base64,PHN2Zz4="/></svg>'),false);
+  assert.equal(identitySvgIsSafe('<svg><image href="https://evil.example/x.png"/></svg>'),false);
+  assert.equal(identitySvgIsSafe('<svg><script>alert(1)</script></svg>'),false);
+  assert.equal(identitySvgIsSafe('<svg><image onload="x()" href="data:image/png;base64,AAAA"/></svg>'),false);
 });
