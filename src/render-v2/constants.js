@@ -26,7 +26,7 @@ export const DEFAULT_MODELS = Object.freeze({
   setQa: "@cf/qwen/qwen3.8-27b",
   textFallback: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
   visionFallback: "@cf/moonshotai/kimi-k2.7-code",
-  heroImage: "black-forest-labs/flux-2-pro-preview"
+  heroImage: "@cf/black-forest-labs/flux-2-dev"
 });
 
 export const STEP_RETRY = Object.freeze({
