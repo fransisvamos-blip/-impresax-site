@@ -117,6 +117,27 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
       mime:"application/json",
       producerStep:"HERO_IMAGE_PREQA"
     });
+    await recordQa(sql,{
+      packId,
+      revisionId:null,
+      type:"HERO_ASSET_PREQA",
+      status:approved?"PASS":"FAIL",
+      scores:qa.scores||{},
+      issues:qa.issues||[],
+      actions:qa.regeneration_guidance||[],
+      artifactHashes:{
+        variant_key:variantKey,
+        cycle,
+        attempt,
+        hero_sha256:artifact.sha256,
+        hero_r2_key:artifact.r2_key,
+        hero_model:generated.model,
+        reviewer_model:qa.model
+      },
+      modelRouteVersion:MODEL_ROUTE_VERSION,
+      promptVersion:PROMPT_VERSION,
+      idempotencyKey:"qa:HERO_ASSET_PREQA:"+packId+":"+variantKey+":"+safeInstance+":"+cycle+":"+attempt
+    });
 
     if(approved) {
       return {
