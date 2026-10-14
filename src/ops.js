@@ -513,7 +513,13 @@ async function prospectDetail(sql, id) {
           v.best_qa_revision,v.certified_revision,v.direction_fingerprint,v.created_at,v.updated_at,
           p.status as pack_status,p.selected_variant_revision_id,p.approved_reference,p.shadow_mode,p.created_at as pack_created_at,
           r.id as certified_revision_id,r.revision,r.status as revision_status,r.render_spec,r.source_hash,
-          r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score
+          r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score,
+          exists(
+            select 1 from render_qa_results_v2 hq
+            where hq.variant_revision_id=r.id
+              and hq.qa_type='HERO_VISUAL'
+              and hq.status='PASS'
+          ) as hero_qa_passed
         from render_v2_variants v
         join render_v2_packs p on p.id=v.render_pack_id
         left join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
@@ -528,8 +534,8 @@ async function prospectDetail(sql, id) {
     name:"Versione "+v.variant_key,
     reference_score:v.score,
     selected:Boolean(v.certified_revision_id && String(v.selected_variant_revision_id||"")===String(v.certified_revision_id)),
-    desktop_render_url:v.certified_revision_id && v.desktop_r2_key ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
-    mobile_render_url:v.certified_revision_id && v.mobile_r2_key ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
+    desktop_render_url:v.certified_revision_id && v.desktop_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
+    mobile_render_url:v.certified_revision_id && v.mobile_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
   }));
 
   return {
@@ -881,6 +887,18 @@ async function api(request, env, pathname) {
       select
         count(distinct v.variant_key)::int as variants_ready,
         count(distinct q.variant_revision_id)::int as variant_qa_passed,
+        (select count(distinct hq.variant_revision_id)::int
+           from render_qa_results_v2 hq
+          where hq.render_pack_id=${renderPackId}::uuid
+            and hq.qa_type='HERO_VISUAL'
+            and hq.status='PASS'
+            and hq.variant_revision_id in (
+              select cr.id
+              from render_v2_variants cv
+              join render_variant_revisions cr on cr.variant_id=cv.id and cr.revision=cv.certified_revision
+              where cv.render_pack_id=${renderPackId}::uuid
+                and cv.variant_key in ('A','B','C')
+            )) as hero_qa_passed,
         (select count(*)::int from render_qa_results_v2 sq
           where sq.render_pack_id=${renderPackId}::uuid and sq.qa_type='SET_VISUAL' and sq.status='PASS') as set_qa_passed
       from render_v2_variants v
@@ -894,8 +912,8 @@ async function api(request, env, pathname) {
         and r.desktop_r2_key is not null
         and r.mobile_r2_key is not null`;
     const gates=gateRows[0]||{};
-    if(Number(gates.variants_ready)!==3 || Number(gates.variant_qa_passed)!==3 || Number(gates.set_qa_passed)<1) {
-      return json({ok:false,error:"V2_THREE_CERTIFIED_VARIANTS_AND_QA_REQUIRED"},409);
+    if(Number(gates.variants_ready)!==3 || Number(gates.variant_qa_passed)!==3 || Number(gates.hero_qa_passed)!==3 || Number(gates.set_qa_passed)<1) {
+      return json({ok:false,error:"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED"},409);
     }
 
     await sql`update render_v2_packs
@@ -975,6 +993,18 @@ async function api(request, env, pathname) {
       select
         count(distinct v.variant_key)::int as variants_ready,
         count(distinct q.variant_revision_id)::int as variant_qa_passed,
+        (select count(distinct hq.variant_revision_id)::int
+           from render_qa_results_v2 hq
+          where hq.render_pack_id=${renderPackId}::uuid
+            and hq.qa_type='HERO_VISUAL'
+            and hq.status='PASS'
+            and hq.variant_revision_id in (
+              select cr.id
+              from render_v2_variants cv
+              join render_variant_revisions cr on cr.variant_id=cv.id and cr.revision=cv.certified_revision
+              where cv.render_pack_id=${renderPackId}::uuid
+                and cv.variant_key in ('A','B','C')
+            )) as hero_qa_passed,
         (select count(*)::int from render_qa_results_v2 sq
           where sq.render_pack_id=${renderPackId}::uuid and sq.qa_type='SET_VISUAL' and sq.status='PASS') as set_qa_passed
       from render_v2_variants v
@@ -988,8 +1018,8 @@ async function api(request, env, pathname) {
         and r.desktop_r2_key is not null
         and r.mobile_r2_key is not null`;
     const gates=gateRows[0]||{};
-    if(Number(gates.variants_ready)!==3 || Number(gates.variant_qa_passed)!==3 || Number(gates.set_qa_passed)<1) {
-      return json({ok:false,error:"V2_THREE_CERTIFIED_VARIANTS_AND_QA_REQUIRED"},409);
+    if(Number(gates.variants_ready)!==3 || Number(gates.variant_qa_passed)!==3 || Number(gates.hero_qa_passed)!==3 || Number(gates.set_qa_passed)<1) {
+      return json({ok:false,error:"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED"},409);
     }
 
     const htmlObject=await env.RENDER_ARTIFACTS.get(row.html_r2_key);
@@ -1016,7 +1046,7 @@ async function api(request, env, pathname) {
       selected_from_render_ready:true,
       implementation_html:implementationHtml,
       render_spec:renderSpec,
-      v2_quality_gate:{variants_ready:Number(gates.variants_ready),variant_qa_passed:Number(gates.variant_qa_passed),set_qa_passed:Number(gates.set_qa_passed)}
+      v2_quality_gate:{variants_ready:Number(gates.variants_ready),variant_qa_passed:Number(gates.variant_qa_passed),hero_qa_passed:Number(gates.hero_qa_passed),set_qa_passed:Number(gates.set_qa_passed)}
     };
 
     await sql`update render_packs
