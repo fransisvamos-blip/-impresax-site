@@ -190,7 +190,14 @@ export default {
       if(existing.length) {
         let status=null;
         try { status=await (await env.RENDER_VARIANT_WORKFLOW.get(instanceId)).status(); } catch {}
-        return json({ok:true,pack_id:packId,variant_key:variantKey,already_applied:true,workflow_instance_id:instanceId,status},200);
+        const qaRows=await sql`
+          select q.status,q.scores,q.issues,q.actions,q.created_at,r.revision
+          from render_qa_results_v2 q
+          join render_variant_revisions r on r.id=q.variant_revision_id
+          where r.variant_id=${variant.id}::uuid and q.qa_type='VARIANT_VISUAL'
+          order by q.created_at desc
+          limit 1`;
+        return json({ok:true,pack_id:packId,variant_key:variantKey,already_applied:true,workflow_instance_id:instanceId,status,latest_qa:qaRows[0]||null},200);
       }
 
       const prior=await sql`
