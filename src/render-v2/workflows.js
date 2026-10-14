@@ -11,6 +11,7 @@ import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
 import { remediateBlockedPack } from "./remediation.js";
+import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
 
 
 async function inputAssetsFromDb(sql,packId,inputPayload) {
@@ -25,6 +26,47 @@ async function inputAssetsFromDb(sql,packId,inputPayload) {
     byToken[token]={...source,r2_key:row.r2_key,sha256:row.sha256,mime:row.mime,bytes:row.bytes};
   }
   return byToken;
+}
+
+
+async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,variantKey,workflowInstanceId,cycle=1,revisionId=null,feedback=null}) {
+  const model=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-klein-9b";
+  await reserveAiCall(sql,packId,env,"HERO_IMAGE:"+variantKey+":"+model,revisionId);
+  const generated=await generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback});
+  const safeInstance=String(workflowInstanceId||"workflow").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,120);
+  const base="render-v2/"+inputPayload.prospect_code+"/"+packId+"/"+variantKey+"/hero/";
+  const key=base+safeInstance+"-r"+cycle+".jpg";
+  const type="HERO_VISUAL_"+variantKey+"_R"+cycle;
+  const artifact=await putArtifact(env,sql,{
+    packId,revisionId,type,key,body:generated.bytes,mime:generated.mime,producerStep:"HERO_IMAGE_GENERATION"
+  });
+  const metaKey=base+safeInstance+"-r"+cycle+".json";
+  await putArtifact(env,sql,{
+    packId,revisionId,type:"HERO_VISUAL_META_"+variantKey+"_R"+cycle,key:metaKey,
+    body:new TextEncoder().encode(JSON.stringify({
+      model:generated.model,
+      prompt:generated.prompt,
+      width:generated.width,
+      height:generated.height,
+      generated:true,
+      illustrative_not_documentary:true,
+      cycle
+    })),
+    mime:"application/json",producerStep:"HERO_IMAGE_GENERATION"
+  });
+  return {
+    asset_id:"HERO_VISUAL",
+    role:"hero",
+    source_type:"AI_GENERATED_EDITORIAL",
+    commercial_use_status:"AI_GENERATED_EDITORIAL",
+    generated:true,
+    model:generated.model,
+    r2_key:artifact.r2_key,
+    mime:artifact.mime,
+    sha256:artifact.sha256,
+    bytes:artifact.bytes,
+    generation_cycle:cycle
+  };
 }
 
 async function parentInstance(env,id) {
@@ -137,6 +179,27 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto};
     });
 
+    const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
+      const verified=explicitHeroAsset(context.assets);
+      if(verified) return verified;
+      return createGeneratedHeroAsset(this.env,sql,{
+        packId:params.packId,
+        inputPayload:context.inputPayload,
+        direction:context.direction,
+        variantKey:params.variantKey,
+        workflowInstanceId:event.instanceId,
+        cycle:1
+      });
+    });
+    context.assets={...context.assets,HERO_VISUAL:heroAsset};
+    context.editorialAssetTokens=[...new Set([...context.editorialAssetTokens,"HERO_VISUAL"])];
+    context.direction={
+      ...context.direction,
+      asset_tokens:[...new Set([...(context.direction?.asset_tokens||[]),"HERO_VISUAL"])],
+      hero_logic:String(context.direction?.hero_logic||"")+" HERO_VISUAL is the mandatory dominant photographic anchor; preserve a clear copy field and intentional 390px crop."
+    };
+    context.zeroPhoto=false;
+
     let feedback=params.initialFeedback||null;
     let previousSpec=null;
     if(params.parentRevisionId) {
@@ -154,6 +217,22 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"GENERATE",attempt:cycle,metadata:{revision:r.revision}});
         return r;
       });
+
+      if(cycle>1 && feedback?.reason==="HERO_VISUAL_REPAIR") {
+        const refreshedHero=await step.do("r"+cycle+"-refresh-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
+          return createGeneratedHeroAsset(this.env,sql,{
+            packId:params.packId,
+            inputPayload:context.inputPayload,
+            direction:context.direction,
+            variantKey:params.variantKey,
+            workflowInstanceId:event.instanceId,
+            cycle,
+            revisionId:revision.id,
+            feedback:[...((feedback?.issues)||[]),...((feedback?.actions)||[])].map(x=>typeof x==="string"?x:(x?.message||x?.code||"")).filter(Boolean).join(" | ")
+          });
+        });
+        context.assets={...context.assets,HERO_VISUAL:refreshedHero};
+      }
 
       let generated;
       try {
@@ -363,6 +442,16 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:domain,preview_preserved:true};
       }
 
+      const heroScoreKeys=["hero_strength","hero_relevance","hero_image_quality","hero_mobile_crop"];
+      const heroScores=Object.fromEntries(heroScoreKeys.map(k=>[k,Number(qa.scores?.[k]??0)]));
+      const heroIssues=(qa.issues||[]).filter(issue=>
+        /hero|imagery|image|crop|focal|generic|stock|synthetic|ai[- ]?feel/i.test(
+          [issue?.code,issue?.target,issue?.message].filter(Boolean).join(" ")
+        )
+      );
+      const heroHardIssues=heroIssues.filter(x=>x?.severity==="critical"||x?.severity==="major");
+      const heroPass=heroScoreKeys.every(k=>Number(heroScores[k])>=8) && heroHardIssues.length===0;
+
       await step.do("r"+cycle+"-persist-qa",async()=>{
         await recordQa(sql,{
           packId:params.packId,revisionId:revision.id,type:"VARIANT_VISUAL",status:qa.pass?"PASS":"FAIL",
@@ -370,10 +459,21 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           artifactHashes:{desktop:captured.desktop.sha256,mobile:captured.mobile.sha256},
           modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
         });
+        await recordQa(sql,{
+          packId:params.packId,revisionId:revision.id,type:"HERO_VISUAL",status:heroPass?"PASS":"FAIL",
+          scores:heroScores,issues:heroIssues,actions:qa.actions,
+          artifactHashes:{
+            desktop:captured.desktop.sha256,
+            mobile:captured.mobile.sha256,
+            hero_asset_sha256:context.assets.HERO_VISUAL?.sha256||null
+          },
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+          idempotencyKey:"qa:HERO_VISUAL:"+params.packId+":"+revision.id
+        });
         return {ok:true};
       });
 
-      if(qa.pass) {
+      if(qa.pass && heroPass) {
         await step.do("r"+cycle+"-certify",async()=>{
           await updateRevision(sql,revision.id,{status:"RENDER_READY",score:qa.min_score});
           await setVariantStatus(sql,params.variantId,{status:"RENDER_READY",bestPreview:revision.revision,bestQa:revision.revision,certified:revision.revision});
@@ -387,7 +487,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       await updateRevision(sql,revision.id,{status:"QA_FAILED",score:qa.min_score});
       await setVariantStatus(sql,params.variantId,{status:"REWORKING"});
       const visualFailure=await step.do("r"+cycle+"-record-visual-failure",async()=>
-        recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VISUAL_QUALITY",error:"VISUAL_QUALITY_BELOW_BAR:"+qa.summary,variantKey:params.variantKey,revision:revision.revision,strategyVersion:PROMPT_VERSION})
+        recordTypedFailure(sql,{
+          packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,
+          stepName:heroPass?"VISUAL_QUALITY":"HERO_VISUAL_QUALITY",
+          error:(heroPass?"VISUAL_QUALITY_BELOW_BAR:":"HERO_VISUAL_BELOW_BAR:")+qa.summary,
+          variantKey:params.variantKey,revision:revision.revision,strategyVersion:PROMPT_VERSION
+        })
       );
 
       const bestCandidate=await step.do("r"+cycle+"-load-best-candidate",async()=>{
@@ -411,7 +516,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         actions:qa.actions,
         summary:qa.summary,
         scores:qa.scores,
-        reason:visualFailure.change_strategy?"VISUAL_STRATEGY_SWITCH":"VISUAL_REPAIR",
+        reason:!heroPass?"HERO_VISUAL_REPAIR":(visualFailure.change_strategy?"VISUAL_STRATEGY_SWITCH":"VISUAL_REPAIR"),
         best_candidate_revision:bestCandidate?.revision||revision.revision,
         best_candidate_score:Number(bestCandidate?.score??qa.min_score??0)
       };
@@ -737,12 +842,37 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         return {ok:true};
       });
       if(setQa.pass) {
+        const heroGate=await step.do("set-"+setCycle+"-hero-gate",async()=>{
+          const rows=await sql`
+            select count(distinct q.variant_revision_id)::int as passed
+            from render_qa_results_v2 q
+            where q.render_pack_id=${p.packId}::uuid
+              and q.qa_type='HERO_VISUAL'
+              and q.status='PASS'
+              and q.variant_revision_id in (
+                select r.id
+                from render_v2_variants v
+                join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+                where v.render_pack_id=${p.packId}::uuid
+                  and v.status='RENDER_READY'
+                  and r.status='RENDER_READY'
+              )`;
+          return {passed:Number(rows[0]?.passed||0)};
+        });
+        if(heroGate.passed!==3) {
+          await step.do("set-"+setCycle+"-hero-escalation",async()=>{
+            await setPackStatus(sql,p.packId,"ESCALATION_REQUIRED",{hero_visual_qa_passed:heroGate.passed,hero_gate_required:3});
+            await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:"HERO_QA_ESCALATION",errorCode:"THREE_HERO_VISUAL_PASSES_REQUIRED"});
+            return {ok:true};
+          });
+          return {status:"ESCALATION_REQUIRED",hero_visual_qa_passed:heroGate.passed};
+        }
         await step.do("certify-pack",async()=>{
-          await setPackStatus(sql,p.packId,"RENDER_READY",{set_qa_cycle:setCycle});
+          await setPackStatus(sql,p.packId,"RENDER_READY",{set_qa_cycle:setCycle,hero_visual_qa_passed:3});
           await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"RENDER_READY"});
           return {ok:true};
         });
-        return {status:"RENDER_READY",pack_id:p.packId};
+        return {status:"RENDER_READY",pack_id:p.packId,hero_visual_qa_passed:3};
       }
 
       const weakest=setQa.weakest_variant;
