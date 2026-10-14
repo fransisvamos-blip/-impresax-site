@@ -125,6 +125,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const inputPayload=input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack);
+      if(inputPayload.primary_cta) copyManifest.PRIMARY_CTA_LABEL=String(inputPayload.primary_cta);
+      if(inputPayload.secondary_cta) copyManifest.SECONDARY_CTA_LABEL=String(inputPayload.secondary_cta);
       const ctaManifest=buildContactManifest(inputPayload);
       const editorialAssetTokens=Object.keys(assets).filter(k=>k!=="PRIMARY_LOGO" && !assets[k]?.unavailable);
       const zeroPhoto=editorialAssetTokens.length===0;
