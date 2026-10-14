@@ -217,6 +217,9 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     .filter((v,i,a)=>v&&a.indexOf(v)===i)
     .map(href=>'<a class="ix-v2-footer-contact" data-verified-contact href="'+esc(href)+'">'+esc(displayContactHref(href))+'</a>')
     .join('');
+  const footerAddress=String(ctaManifest.ADDRESS||"").trim()
+    ? '<span class="ix-v2-footer-address" data-verified-address>'+esc(ctaManifest.ADDRESS)+'</span>'
+    : '';
   const baseCss=[
     "*{box-sizing:border-box}",
     "html,body{margin:0;padding:0}",
@@ -230,12 +233,13 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     ".ix-v2-header-cta{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:inherit;border-bottom:1px solid currentColor}",
     ".ix-v2-footer{min-height:96px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;border-top:1px solid rgba(17,17,17,.14)}",
     ".ix-v2-footer-contacts{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}",
+    ".ix-v2-footer-address{max-width:48ch;line-height:1.35}",
     ".ix-v2-footer-contact{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px}",
     "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px}.ix-v2-logo{max-width:150px;max-height:52px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}.ix-v2-footer{align-items:flex-start;flex-direction:column}.ix-v2-footer-contacts{flex-direction:column;align-items:flex-start;gap:10px}}"
   ].join("");
 
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
-  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span><span class="ix-v2-footer-contacts">'+footerContacts+'</span></footer></body></html>';
+  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer"><span>'+esc(businessName)+'</span><span class="ix-v2-footer-contacts">'+footerAddress+footerContacts+'</span></footer></body></html>';
   const sourceHash=await sha256(html);
   return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(normalizedSpec)),normalized_spec:normalizedSpec,normalizations:normalized.normalizations};
 }
