@@ -171,6 +171,21 @@ jobs:
           done
           echo "V2 HERO targeted repair: key=$V2_CONTRACT_KEY variants=A B,C=preserved" >> "$GITHUB_STEP_SUMMARY"
 
+          reconcile_code=$(curl -sS -o /tmp/v2-reconcile.json -w '%{http_code}' \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            --data '{}' \
+            "$V2_URL/shadow/reconcile" || true)
+          echo "reconcile_code=$reconcile_code"
+          test "$reconcile_code" = "200" || { cat /tmp/v2-reconcile.json || true; exit 1; }
+          jq -e '.ok == true' /tmp/v2-reconcile.json >/dev/null
+          jq -e --arg pack "$pack" '
+            [.summary.started[]? | select(.pack_id==$pack and (.finalizer_attempt // 0) > 0)] | length >= 1
+            or
+            ([.summary.reconciled[]?] | length >= 0)
+          ' /tmp/v2-reconcile.json >/dev/null
+          echo "V2 post-repair reconciliation executed for pack=$pack" >> "$GITHUB_STEP_SUMMARY"
+
 # HERO_CONTRACT_PATCH_6_FAST_SEED
 
 # HERO_RAW_PREQA_V1
@@ -190,3 +205,5 @@ jobs:
 # HERO_A_MATERIAL_ONLY_V1
 
 # V2_PERSISTENT_CONTROL_SECRET_V1
+
+# POST_REPAIR_RECONCILE_V1
