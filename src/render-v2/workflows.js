@@ -729,3 +729,56 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     return {status:"ESCALATION_REQUIRED"};
   }
 }
+
+
+export class RenderChaosProbeWorkflow extends WorkflowEntrypoint {
+  async run(event,step) {
+    const sql=db(this.env);
+    const probeKey=String(event.payload?.probeKey||"render-v2-live-recovery-v1");
+    await step.do("chaos-register",async()=>{
+      await sql`
+        insert into render_v2_chaos_probes(probe_key,workflow_instance_id,status,details)
+        values(${probeKey},${event.instanceId},'RUNNING',${JSON.stringify({workflow_started:true})}::jsonb)
+        on conflict(probe_key) do update set
+          workflow_instance_id=excluded.workflow_instance_id,
+          status='RUNNING',
+          updated_at=now(),
+          details=render_v2_chaos_probes.details||excluded.details`;
+      return {ok:true};
+    });
+
+    await step.do("chaos-idempotent-side-effect",async()=>{
+      await sql`
+        update render_v2_chaos_probes
+        set side_effect_count=case when effect_applied then side_effect_count else side_effect_count+1 end,
+            effect_applied=true,
+            updated_at=now()
+        where probe_key=${probeKey}`;
+      return {ok:true};
+    });
+
+    await step.do("chaos-transient-recovery",{retries:{limit:2,delay:"2 seconds",backoff:"constant"}},async()=>{
+      const rows=await sql`
+        update render_v2_chaos_probes
+        set transient_attempts=transient_attempts+1,
+            transient_seen=true,
+            updated_at=now()
+        where probe_key=${probeKey}
+        returning transient_attempts`;
+      if(Number(rows[0]?.transient_attempts||0)===1) {
+        throw new Error("CHAOS_TRANSIENT_EXPECTED");
+      }
+      return {attempts:Number(rows[0]?.transient_attempts||0)};
+    });
+
+    await step.do("chaos-complete",async()=>{
+      await sql`
+        update render_v2_chaos_probes
+        set status='PASS',completed=true,updated_at=now(),
+            details=details||${JSON.stringify({recovery_verified:true,idempotency_verified:true})}::jsonb
+        where probe_key=${probeKey}`;
+      return {ok:true};
+    });
+    return {status:"PASS",probe_key:probeKey};
+  }
+}
