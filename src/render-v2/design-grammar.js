@@ -149,9 +149,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const serviceTitles=availableIndexed(copyManifest,"SERVICE_","_TITLE");
   const serviceBodies=availableIndexed(copyManifest,"SERVICE_","_BODY");
   const trustKeys=availableIndexed(copyManifest,"TRUST_");
-  const positionTitle=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE")
+  const safeTrustTitle=trustKeys.find(key=>!trustIsContact(copyManifest,key));
+  const footerIsDisplaySafe=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE")
+    && !trustIsContact(copyManifest,"FOOTER_LINE");
+  const positionTitle=footerIsDisplaySafe
     ? "FOOTER_LINE"
-    : (trustKeys[0]||"LOCALITY_LINE");
+    : (safeTrustTitle||serviceTitles[0]||"LOCALITY_LINE");
   const positionBody=null;
   const splitLastService=serviceTitles.length>2;
   const aGridTitles=splitLastService?serviceTitles.slice(0,-1):serviceTitles;
@@ -195,7 +198,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       : "";
     return "<article class=\"ixb-service-row\"><h3>"+copyToken(titleKey)+"</h3><div class=\"ixb-service-body\">"+body+"</div></article>";
   }).join("");
-  const bPositionTitle=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE") ? "FOOTER_LINE" : "LOCALITY_LINE";
+  const bPositionTitle=footerIsDisplaySafe ? "FOOTER_LINE" : (safeTrustTitle||serviceTitles[0]||"LOCALITY_LINE");
   const mainB=[
     "<section id=\"hero\" class=\"ixg ixb-hero ixg-b\"><div class=\"ixg-shell ixb-hero__inner\"><div class=\"ixb-hero__meta\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p></div><h1>"+copyToken("HERO_HEADLINE")+"</h1><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p></div></section>",
     "<section id=\"trust\" class=\"ixg ixb-trust ixg-b\"><div class=\"ixg-shell\"><div class=\"ixb-trust-grid\">"+bTrustRows+"</div></div></section>",
@@ -216,7 +219,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     .filter(key=>!trustIsContact(copyManifest,key))
     .map(key=>"<div class=\"ixc-trust-row\"><strong>"+copyToken(key)+"</strong></div>")
     .join("");
-  const cPositionToken=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE") ? "FOOTER_LINE" : "LOCALITY_LINE";
+  const cPositionToken=footerIsDisplaySafe ? "FOOTER_LINE" : (safeTrustTitle||serviceTitles[0]||"LOCALITY_LINE");
   const cBridgeTitle="LOCALITY_LINE";
   const cBridgeBody=null;
 
@@ -338,8 +341,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
-      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v2.4 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
+      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v2.5 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
     },
-    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V2_4"
+    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V2_5"
   };
 }
