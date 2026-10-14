@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
 import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS } from "./constants.js";
-import { createContentTruthPack, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa } from "./ai.js";
+import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant } from "./browser.js";
@@ -407,20 +407,49 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       step.do("load-creative-directions-component",async()=>getDirectionPlan(sql,p.packId))
     ]);
 
-    const truth=storedTruth ? {
-      content_truth:storedTruth.payload,
-      generator_model:storedTruth.generator_model,
-      reviewer_model:storedTruth.reviewer_model,
-      verification:storedTruth.verification,
-      hash:storedTruth.content_hash,
-      reused:true
-    } : await step.do("content-truth-pack",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-      return createContentTruthPack(this.env,input.payload,{
-        beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH:"+role+":"+model)
-      });
-    });
+    const truthDraftPromise=storedTruth
+      ? Promise.resolve({
+          content_truth:storedTruth.payload,
+          generator_model:storedTruth.generator_model,
+          reviewer_model:storedTruth.reviewer_model,
+          verification:storedTruth.verification,
+          hash:storedTruth.content_hash,
+          reused:true,
+          verified:true
+        })
+      : step.do("content-truth-draft",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+          return generateContentTruthDraft(this.env,input.payload,{
+            beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH_DRAFT:"+role+":"+model)
+          });
+        });
 
+    const directionsPromise=storedDirections
+      ? Promise.resolve({
+          creative_strategy:storedDirections.creative_strategy,
+          directions:storedDirections.directions,
+          fingerprints:storedDirections.fingerprints,
+          diversity_precheck:storedDirections.diversity_precheck,
+          model:storedDirections.model,
+          hash:storedDirections.content_hash,
+          reused:true
+        })
+      : step.do("creative-directions",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+          return createCreativeDirections(this.env,input.payload,assetTokens,{
+            beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_DIRECTIONS:"+model)
+          });
+        });
+
+    const [truthDraft,directions]=await Promise.all([truthDraftPromise,directionsPromise]);
+
+    let truth=truthDraft;
     if(!storedTruth) {
+      const truthReview=await step.do("content-truth-review",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+        return reviewContentTruthDraft(this.env,input.payload,truthDraft,{
+          beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH_REVIEW:"+role+":"+model)
+        });
+      });
+      truth={...truthDraft,...truthReview,verified:true};
+
       await step.do("persist-content-truth-component",async()=>{
         return persistContentTruth(sql,{
           packId:p.packId,inputPackId:p.inputPackId,result:truth,
@@ -439,20 +468,6 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
       });
       return {ok:true,content_truth_hash:truth.hash};
-    });
-
-    const directions=storedDirections ? {
-      creative_strategy:storedDirections.creative_strategy,
-      directions:storedDirections.directions,
-      fingerprints:storedDirections.fingerprints,
-      diversity_precheck:storedDirections.diversity_precheck,
-      model:storedDirections.model,
-      hash:storedDirections.content_hash,
-      reused:true
-    } : await step.do("creative-directions",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-      return createCreativeDirections(this.env,input.payload,assetTokens,{
-        beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"CREATIVE_DIRECTIONS:"+model)
-      });
     });
 
     if(!storedDirections) {
