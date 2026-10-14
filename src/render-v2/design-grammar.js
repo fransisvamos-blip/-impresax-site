@@ -184,11 +184,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "<section id=\"contact\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("PRIMARY_CTA_LABEL")+"</h2></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
-  const bTrustRows=trustKeys.map(key=>{
-    const contact=trustIsContact(copyManifest,key);
-    return "<article class=\"ixb-trust-item"+(contact?" ixb-trust-item--contact":"")+"\">"
-      +(contact?"<span>":"<strong>")+copyToken(key)+(contact?"</span>":"</strong>")+"</article>";
-  }).join("");
+  const bTrustRows=trustKeys
+    .filter(key=>!trustIsContact(copyManifest,key))
+    .map(key=>"<article class=\"ixb-trust-item\"><strong>"+copyToken(key)+"</strong></article>")
+    .join("");
   const bServiceRows=serviceTitles.map((titleKey,i)=>{
     const bodyKey="SERVICE_"+(i+1)+"_BODY";
     const body=Object.prototype.hasOwnProperty.call(copyManifest,bodyKey)
@@ -213,11 +212,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       : "";
     return "<article class=\"ixc-ledger-row\"><div class=\"ixc-ledger-key\"><h3>"+copyToken(titleKey)+"</h3></div><div class=\"ixc-ledger-value\">"+body+"</div></article>";
   }).join("");
-  const cTrustRows=trustKeys.map(key=>{
-    const contact=trustIsContact(copyManifest,key);
-    return "<div class=\"ixc-trust-row"+(contact?" ixc-trust-row--contact":"")+"\">"
-      +(contact?"<span>":"<strong>")+copyToken(key)+(contact?"</span>":"</strong>")+"</div>";
-  }).join("");
+  const cTrustRows=trustKeys
+    .filter(key=>!trustIsContact(copyManifest,key))
+    .map(key=>"<div class=\"ixc-trust-row\"><strong>"+copyToken(key)+"</strong></div>")
+    .join("");
   const cPositionToken=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE") ? "FOOTER_LINE" : "LOCALITY_LINE";
   const cBridgeTitle="LOCALITY_LINE";
   const cBridgeBody=null;
@@ -341,8 +339,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
-      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v2.0 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
+      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v2.1 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
     },
-    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V2_0"
+    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V2_1"
   };
 }
