@@ -179,3 +179,36 @@ test("compiler safely normalizes bare verified tokens and strips invented litera
   assert.equal(result.html.includes("asset:PRIMARY_LOGO"),false);
   assert.match(result.html,/Titolo/);
 });
+
+
+test("compiler owns one optional main identity placement",async()=>{
+  const section='<section><div>{{identity:PRIMARY_LOGO}}</div><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>';
+  const result=await compileRenderSpec({
+    main_html:section + '<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p></section>'.repeat(8),
+    custom_css:".x{display:grid;justify-content:center;padding:3rem} @media(max-width:700px){.x{display:block}}".repeat(18)
+  },{
+    businessName:"Example SRL",
+    logoToken:"identity://PRIMARY_LOGO",
+    copyManifest:manifests.copy,
+    assetManifest:{},
+    ctaManifest:manifests.cta
+  });
+  assert.equal(result.ok,true,result.issues?.join("|"));
+  assert.match(result.html,/data-official-logo-main/);
+  assert.equal(result.html.includes("{{identity:PRIMARY_LOGO}}"),false);
+});
+
+test("compiler rejects repeated or unknown identity tokens",()=>{
+  const base='<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>'.repeat(8);
+  const repeated=validateRenderSpec({
+    main_html:'<section>{{identity:PRIMARY_LOGO}}{{identity:PRIMARY_LOGO}}</section>'+base,
+    custom_css:".x{display:grid;padding:3rem}@media(max-width:700px){.x{display:block}}".repeat(18)
+  },{...manifests,identity:{PRIMARY_LOGO:"identity://PRIMARY_LOGO"}});
+  assert.ok(repeated.issues.includes("IDENTITY_TOKEN_MAX_ONE"));
+
+  const unknown=validateRenderSpec({
+    main_html:'<section>{{identity:FAKE}}</section>'+base,
+    custom_css:".x{display:grid;padding:3rem}@media(max-width:700px){.x{display:block}}".repeat(18)
+  },{...manifests,identity:{PRIMARY_LOGO:"identity://PRIMARY_LOGO"}});
+  assert.ok(unknown.issues.includes("UNKNOWN_IDENTITY_TOKEN:FAKE"));
+});
