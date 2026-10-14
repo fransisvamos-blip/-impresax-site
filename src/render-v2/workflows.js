@@ -309,7 +309,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       let qa;
       try {
-        qa=await step.do("r"+cycle+"-visual-qa",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
+        qa=await step.do("r"+cycle+"-visual-qa",{timeout:"8 minutes"},async()=>{
           const desktopBytes=await readArtifactBytes(this.env,captured.qaDesktop.r2_key);
           const mobileBytes=await readArtifactBytes(this.env,captured.qaMobile.r2_key);
           return runVisualQa(this.env,{
@@ -666,7 +666,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         }
         return out;
       });
-      const setQa=await step.do("set-"+setCycle+"-qa",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"10 minutes"},async()=>{
+      const setQa=await step.do("set-"+setCycle+"-qa",{timeout:"10 minutes"},async()=>{
         return runSetQa(this.env,{
           inputPayload:input.payload,frames,
           beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"SET_VISUAL_QA:"+model)
