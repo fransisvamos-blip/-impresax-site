@@ -37,7 +37,7 @@ function sectorDirection(inputPayload={}) {
   ].map(x=>String(x||"").toLowerCase()).join(" ");
 
   if(/materiali|ingrosso|distribuz|tondo|cemento armato|rebar|acciaio|fornitur/.test(hay) && /edil|costruz|cement|materiali|rebar|tondo/.test(hay)) {
-    return "Show a believable premium B2B construction-materials and rebar-supply context: an organized Italian building-materials yard, warehouse or processing/logistics environment; quality pallets/materials, steel reinforcing bars or rebar processing only when visually natural, professional material handling or commercial supervision. Communicate scale, reliability, supply and technical capability. Do NOT portray the company as the builder of a luxury villa or claim a completed construction project that is not verified. Avoid generic office stock imagery.";
+    return "Show a believable premium B2B construction-materials and rebar-supply context: organized raw steel/rebar, clean warehouse or processing/logistics environment, technical handling or supervision, strong material texture and scale. Use ONLY blank unbranded PPE and raw materials. Avoid cardboard boxes, printed packaging, stickers, hanging tags, wall signs, warning boards, vehicle plates, branded clothing, pallets with labels, storefronts and any surface likely to contain writing. Do NOT portray the company as the builder of a luxury villa or claim a completed construction project that is not verified. Avoid generic office stock imagery.";
   }
   if(/edil|costruz|ristruttur|cantiere|immobil|architett/.test(hay)) {
     return "Show a believable high-end Italian construction / renovation context: quality building site, refined residential or commercial architecture, scaffolding or materials only where natural, clean professional workwear, credible site supervision or craftsmanship. Avoid generic corporate offices.";
@@ -102,7 +102,7 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
 
 export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback=null}) {
   if(!env.AI) throw new Error("HERO_IMAGE_AI_BINDING_REQUIRED");
-  const primary=env.V2_MODEL_HERO_IMAGE||"black-forest-labs/flux-2-pro-preview";
+  const primary=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-dev";
   const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
   const prompt=buildHeroPrompt({inputPayload,direction,variantKey,feedback});
   let lastError=null;
@@ -117,7 +117,8 @@ export async function generatePremiumHeroVisual(env,{inputPayload,direction,vari
         form.append("prompt",prompt);
         form.append("width","1536");
         form.append("height","1024");
-        form.append("guidance","5.5");
+        form.append("guidance","6.0");
+        if(String(model).includes("flux-2-dev")) form.append("steps","25");
         form.append("seed",String(Math.abs((variantKey.charCodeAt(0)*1009)+(feedback?7919:3571))));
         const encoded=new Response(form);
         const contentType=encoded.headers.get("content-type")||"multipart/form-data";
