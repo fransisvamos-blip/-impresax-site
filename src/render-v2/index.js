@@ -280,8 +280,8 @@ export default {
       const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
       if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
       const pack=packs[0];
-      if(!force && String(pack.metadata?.contract_relaunch||"")===runKey) {
-        return json({ok:true,pack_id:packId,run_key:runKey,already_applied:true,force:false,launched:[]},200);
+      if(String(pack.metadata?.contract_relaunch||"")===runKey) {
+        return json({ok:true,pack_id:packId,run_key:runKey,already_applied:true,force,launched:[]},200);
       }
       const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid order by variant_key`;
       if(variants.length!==3) return json({ok:false,error:"THREE_VARIANTS_REQUIRED"},409);
