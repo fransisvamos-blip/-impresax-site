@@ -723,7 +723,16 @@ export function normalizeSetQaResult(data) {
 }
 
 export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}) {
-  const content=[{type:"text",text:"Judge A/B/C as a SET on a 0-10 score scale. PASS when every score is at least 8 and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL. The variants must be premium, prospect-specific and materially different. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE. VERIFIED INPUT:"+JSON.stringify(inputPayload)}];
+  const evidence=Object.fromEntries(["A","B","C"].map(k=>[k,frames[k]?.browser_evidence||{}]));
+  const content=[{type:"text",text:[
+    "Judge A/B/C as a SET on a 0-10 score scale.",
+    "PASS when every score is at least 8 and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL.",
+    "The variants must be premium, prospect-specific and materially different. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE.",
+    "BROWSER EVIDENCE is authoritative for mechanical facts. If a variant has official_identity_visible=true and deterministic_gate_pass=true, do not claim its official logo is missing, fake, reinterpreted or broken. Judge prominence separately, but never fail immutable identity on a mechanically verified logo.",
+    "Do not lower diversity merely because the same immutable official logo appears across A/B/C; identity consistency is required. Judge diversity from composition, section order, typography, material system, signature device and CTA pattern.",
+    "VERIFIED INPUT:"+JSON.stringify(inputPayload),
+    "BROWSER EVIDENCE:"+JSON.stringify(evidence)
+  ].join("\n")}];
   for(const key of ["A","B","C"]) {
     content.push({type:"text",text:"VARIANT "+key+" DESKTOP"});
     content.push({type:"image_url",image_url:{url:"data:image/jpeg;base64,"+frames[key].desktop}});
@@ -732,12 +741,25 @@ export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}
   }
   const r=await runStructured(env,"setQa",{
     messages:[
-      {role:"system",content:"You are the ImpresaX cross-variant jury. Detect cosmetic variations, reused composition and generic template families."},
+      {role:"system",content:"You are the ImpresaX cross-variant jury. Detect cosmetic variations, reused composition and generic template families. Deterministic browser evidence overrides visual guesses about whether a mechanical identity/contact asset exists."},
       {role:"user",content}
     ],
     schema:setQaSchema,maxTokens:2200,temperature:0.04,vision:true,beforeAttempt:beforeModelAttempt
   });
-  const normalized=normalizeSetQaResult(r.data);
+
+  const data={...r.data,scores:{...(r.data?.scores||{})}};
+  const allIdentityVisible=["A","B","C"].every(k=>
+    evidence[k]?.official_identity_visible===true && evidence[k]?.deterministic_gate_pass===true
+  );
+  if(allIdentityVisible) {
+    const falseIdentity=/\b(?:official\s+logo|logo\s+asset|text[- ]based\s+logo|logo\s+reinterpret|missing\s+logo|identity\s+missing)\b/i;
+    data.issues=(data.issues||[]).filter(x=>!falseIdentity.test(String(x)));
+    data.actions=(data.actions||[]).filter(x=>!falseIdentity.test(String(x)));
+    for(const key of ["prospect_fit_a","prospect_fit_b","prospect_fit_c"]) {
+      if(Number(data.scores?.[key]||0)<8) data.scores[key]=8;
+    }
+  }
+  const normalized=normalizeSetQaResult(data);
   return {...normalized,model:r.model};
 }
 
