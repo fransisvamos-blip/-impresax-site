@@ -240,10 +240,10 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     ".ix-v2-footer{min-height:96px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;border-top:1px solid rgba(17,17,17,.14)}",
     ".ix-v2-footer-identity{display:flex;align-items:center;min-height:56px}",
     ".ix-v2-footer-logo{max-width:min(260px,48vw);max-height:72px;object-fit:contain}",
-    ".ix-v2-footer-contacts{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}",
-    ".ix-v2-footer-address{max-width:48ch;line-height:1.35;overflow-wrap:anywhere}",
-    ".ix-v2-footer-contact{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px;overflow-wrap:anywhere;word-break:break-word}",
-    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px;min-height:86px}.ix-v2-logo{max-width:180px;max-height:60px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}.ix-v2-footer{align-items:flex-start;flex-direction:column}.ix-v2-footer-contacts{flex-direction:column;align-items:flex-start;gap:10px;width:100%}.ix-v2-footer-contact{max-width:100%}}"
+    ".ix-v2-footer-contacts{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:flex-end;max-width:min(100%,720px)}",
+    ".ix-v2-footer-address{max-width:40ch;line-height:1.35;overflow-wrap:anywhere;font-size:13px}",
+    ".ix-v2-footer-contact{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px;overflow-wrap:anywhere;word-break:break-word;max-width:min(100%,34ch);font-size:13px;line-height:1.35}",
+    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px;min-height:86px}.ix-v2-logo{max-width:180px;max-height:60px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}.ix-v2-footer{align-items:flex-start;flex-direction:column}.ix-v2-footer-contacts{flex-direction:column;align-items:flex-start;gap:10px;width:100%}.ix-v2-footer-contact{max-width:100%;word-break:break-all}.ix-v2-footer-address{max-width:100%}}"
   ].join("");
 
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
