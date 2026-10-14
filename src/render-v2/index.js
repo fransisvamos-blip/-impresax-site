@@ -1,4 +1,4 @@
-export { RenderProspectWorkflow, RenderVariantWorkflow, RenderChaosProbeWorkflow } from "./workflows.js";
+export { RenderProspectWorkflow, RenderVariantWorkflow, RenderChaosProbeWorkflow, RenderInputRemediationWorkflow } from "./workflows.js";
 import { db, packSnapshot, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
