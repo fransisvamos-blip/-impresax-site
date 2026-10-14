@@ -522,7 +522,13 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           beforeModelAttempt:({role,model})=>reserveAiCall(sql,p.packId,this.env,"CONTENT_TRUTH_REVIEW:"+role+":"+model)
         });
       });
-      truth={...truthDraft,...truthReview,verified:true};
+      truth={
+        ...truthDraft,
+        ...truthReview,
+        content_truth:truthReview.repaired_content_truth||truthDraft.content_truth,
+        hash:truthReview.repaired_hash||truthDraft.hash,
+        verified:true
+      };
 
       await step.do("persist-content-truth-component",async()=>{
         return persistContentTruth(sql,{
