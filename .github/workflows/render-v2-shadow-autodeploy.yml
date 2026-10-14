@@ -161,8 +161,12 @@ jobs:
           applied=$(jq -r '.already_applied // false' /tmp/v2-relaunch.json)
           forced=$(jq -r '.force // false' /tmp/v2-relaunch.json)
           launched=$(jq -r '[.launched[] | select(.skipped != true)] | length' /tmp/v2-relaunch.json)
-          test "$forced" = "true"
-          test "$launched" = "3"
-          echo "V2 HERO contract reconciliation: key=$V2_CONTRACT_KEY forced=$forced launched=$launched" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$applied" = "true" ]; then
+            test "$launched" = "0"
+          else
+            test "$forced" = "true"
+            test "$launched" = "3"
+          fi
+          echo "V2 HERO contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied forced=$forced launched=$launched" >> "$GITHUB_STEP_SUMMARY"
 
-# HERO_CONTRACT_PATCH_3_RELEVANCE
+# HERO_CONTRACT_PATCH_4_IDEMPOTENT
