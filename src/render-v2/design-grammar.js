@@ -306,8 +306,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixc-positioning{background:#eceae5;color:#111;padding:clamp(50px,6vw,82px) 0}.ixc-positioning__grid{display:grid;grid-template-columns:180px minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:start}.ixc-positioning h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(30px,4.2vw,58px);line-height:1;letter-spacing:-.035em;max-width:20ch}
 .ixc-services{background:#faf9f6;color:#111;padding:0}.ixc-ledger-row{display:grid;grid-template-columns:1fr;gap:18px;padding:clamp(38px,5vw,64px) 0;border-bottom:1px solid rgba(17,17,17,.24);align-items:start}.ixc-ledger-row:first-child{border-top:1px solid rgba(17,17,17,.24)}
 .ixc-ledger-row h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(32px,4.2vw,62px);line-height:.96;letter-spacing:-.04em}.ixc-ledger-value p{font-size:clamp(18px,1.65vw,24px);line-height:1.55;max-width:52ch;color:#4e4a44}
-.ixc-trust{background:#fff;color:#111;padding:clamp(64px,8vw,110px) 0}.ixc-trust__inner{display:grid;grid-template-columns:1fr}.ixc-trust-row{display:grid;grid-template-columns:minmax(90px,.23fr) minmax(0,1fr);gap:28px;align-items:center;padding:26px 0;border-bottom:1px solid rgba(17,17,17,.2)}.ixc-trust-row:first-child{border-top:1px solid rgba(17,17,17,.2)}
-.ixc-trust-row{border-top:1px solid rgba(17,17,17,.24);padding:24px 0}.ixc-trust-row strong{font-size:clamp(24px,3vw,44px);line-height:1.05;letter-spacing:-.03em}.ixc-trust-row--contact{grid-template-columns:1fr;padding:18px 0}.ixc-trust-row--contact span{font-size:14px;line-height:1.45;font-weight:600;overflow-wrap:anywhere;word-break:break-word;max-width:48ch}
+.ixc-trust{background:#fff;color:#111;padding:clamp(54px,7vw,92px) 0}.ixc-trust__inner{display:grid;grid-template-columns:1fr}.ixc-trust-row{display:block;padding:26px 0;border-bottom:1px solid rgba(17,17,17,.2)}.ixc-trust-row:first-child{border-top:1px solid rgba(17,17,17,.2)}.ixc-trust-row strong{display:block;font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(26px,3.4vw,48px);line-height:1.04;letter-spacing:-.035em;max-width:24ch}
 .ixc-bridge{background:#fff;color:#111;padding:clamp(80px,10vw,150px) 0}.ixc-bridge__inner{display:grid;grid-template-columns:12px minmax(0,1fr);gap:clamp(34px,6vw,84px);align-items:stretch}.ixc-bridge__rule{background:var(--ix-accent);min-height:260px}.ixc-bridge__copy{display:grid;gap:30px;max-width:950px}.ixc-bridge__copy h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(52px,7.4vw,108px);line-height:.9;letter-spacing:-.055em}.ixc-bridge__copy p{max-width:52ch;color:#4e4a44}
 .ixc-contact{background:#f7f6f2;color:#111;padding:28px 0;border-top:1px solid rgba(17,17,17,.2)}.ixc-contact__inner{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .ixc-hero .ixg-cta,.ixc-contact .ixg-cta{background:transparent!important;color:inherit!important;border:0!important;border-bottom:1px solid currentColor!important;padding:0 0 7px!important;min-height:0!important;border-radius:0!important;width:auto!important;justify-content:flex-start!important}
@@ -316,7 +315,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  .ixc-hero{padding:64px 0 42px}.ixc-hero h1{font-size:clamp(54px,15vw,76px);line-height:.86;max-width:none;margin-top:26px}.ixc-hero__lower{grid-template-columns:1fr;gap:26px;margin-top:42px}.ixc-hero__lower .ixg-actions{display:grid}
  .ixc-rail{height:1px;margin-top:34px}.ixc-positioning{padding:58px 0}.ixc-positioning__grid{grid-template-columns:1fr;gap:22px}.ixc-positioning h2{font-size:clamp(34px,10vw,50px)}
  .ixc-ledger-row{grid-template-columns:1fr;gap:18px;padding:38px 0}.ixc-ledger-row h3{font-size:clamp(34px,10vw,50px)}.ixc-ledger-value p{font-size:17px}
- .ixc-trust{padding:52px 0}.ixc-trust-row{grid-template-columns:52px 1fr;gap:20px;padding:22px 0}.ixc-trust-row--contact{grid-template-columns:1fr;gap:0;padding:16px 0}.ixc-trust-row strong{font-size:clamp(22px,7vw,32px)}
+ .ixc-trust{padding:44px 0}.ixc-trust-row{display:block;padding:20px 0}.ixc-trust-row strong{font-size:clamp(24px,7.2vw,34px);line-height:1.08;max-width:none;overflow-wrap:normal;word-break:normal}
  .ixc-bridge{padding:64px 0}.ixc-bridge__inner{grid-template-columns:7px 1fr;gap:24px}.ixc-bridge__rule{min-height:220px}.ixc-bridge__copy h2{font-size:clamp(46px,13vw,66px)}
  .ixc-contact{padding:24px 0}.ixc-contact__inner{display:flex;align-items:flex-start;flex-direction:column;gap:14px}.ixc-contact .ixg-actions{margin-top:0}
 }
@@ -339,8 +338,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
-      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v2.3 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
+      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v2.4 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
     },
-    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V2_3"
+    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V2_4"
   };
 }
