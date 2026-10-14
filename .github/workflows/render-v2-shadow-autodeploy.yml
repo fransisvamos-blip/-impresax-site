@@ -110,7 +110,7 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: hero-v2c-20261014
+          V2_CONTRACT_KEY: hero-v2d-20261014
         run: |
           set -euo pipefail
           token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
@@ -170,3 +170,5 @@ jobs:
           echo "V2 HERO contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied forced=$forced launched=$launched" >> "$GITHUB_STEP_SUMMARY"
 
 # HERO_CONTRACT_PATCH_6_FAST_SEED
+
+# HERO_RAW_PREQA_V1
