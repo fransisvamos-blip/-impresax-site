@@ -204,7 +204,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const htmlArtifact=await step.do("r"+cycle+"-persist-source",{retries:{limit:2,delay:"2 seconds",backoff:"exponential"}},async()=>{
         return putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"SOURCE_HTML",key:htmlKey,body:compiled.html,mime:"text/html; charset=utf-8",producerStep:"COMPILE"});
       });
-      await updateRevision(sql,revision.id,{status:"CAPTURING",renderSpec:generated.spec,sourceHash:compiled.source_hash,htmlKey:htmlKey});
+      await updateRevision(sql,revision.id,{status:"CAPTURING",renderSpec:compiled.normalized_spec||generated.spec,sourceHash:compiled.source_hash,htmlKey:htmlKey});
 
       let captured;
       try {
