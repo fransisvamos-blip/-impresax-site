@@ -110,7 +110,7 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: hero-v2h-20261014
+          V2_CONTRACT_KEY: hero-v2i-20261014
         run: |
           set -euo pipefail
           token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
@@ -182,3 +182,5 @@ jobs:
 # HERO_FLUX2_DEV_V1
 
 # HERO_INDUSTRIAL_TARGETED_REPAIR_V1
+
+# HERO_C_PROCESS_ONLY_V1
