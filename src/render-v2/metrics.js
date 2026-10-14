@@ -14,12 +14,12 @@ async function reserveCounter(sql,packId,key,limit) {
     update render_v2_packs
     set metrics=coalesce(metrics,'{}'::jsonb) ||
       jsonb_build_object(
-        ${key},
-        coalesce((metrics->>${key})::int,0)+1
+        ${key}::text,
+        coalesce((metrics ->> (${key}::text))::int,0)+1
       ),
       updated_at=now()
     where id=${packId}::uuid
-      and coalesce((metrics->>${key})::int,0) < ${limit}
+      and coalesce((metrics ->> (${key}::text))::int,0) < ${limit}::int
     returning metrics`;
   if(!rows.length) throw new Error("HARD_BUDGET_EXCEEDED:"+key.toUpperCase());
   return Number(rows[0].metrics?.[key]||0);
