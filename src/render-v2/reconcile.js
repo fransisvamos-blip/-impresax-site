@@ -92,7 +92,7 @@ export async function reconcileV2(env) {
 
   for(const pack of finalizable) {
     const count=Number(pack.finalizer_count||0);
-    if(Number(pack.active_finalizers||0)>0 || count>=3) continue;
+    if(Number(pack.active_finalizers||0)>0 || count>=5) continue;
     try {
       const result=await startPackFinalizer(env,sql,pack,count+1);
       summary.started.push(result);
