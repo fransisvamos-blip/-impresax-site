@@ -567,7 +567,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       } else if(["FAILED","CANCELLED"].includes(state.workflow_status)) {
         previewEvents[key]={payload:{status:"NO_PREVIEW",reused:true}};
       } else {
-        previewEvents[key]=await step.waitForEvent("wait-preview-"+key,{type:"preview-"+key+"-initial",timeout:"30 minutes"});
+        previewEvents[key]=await step.waitForEvent("wait-preview-"+key,{type:"preview-"+key+"-initial",timeout:"3 hours"});
       }
     }
     const allPreview=Object.values(previewEvents).every(e=>e.payload?.status==="PREVIEW_READY");
@@ -590,7 +590,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       } else if(["FAILED","CANCELLED"].includes(state.workflow_status)) {
         terminal[key]={payload:{status:"ESCALATION_REQUIRED",reused:true}};
       } else {
-        terminal[key]=await step.waitForEvent("wait-terminal-"+key,{type:"terminal-"+key+"-initial",timeout:"90 minutes"});
+        terminal[key]=await step.waitForEvent("wait-terminal-"+key,{type:"terminal-"+key+"-initial",timeout:"6 hours"});
       }
     }
     if(!Object.values(terminal).every(e=>e.payload?.status==="RENDER_READY")) {
@@ -675,7 +675,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         catch { await this.env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
         return {instanceId};
       });
-      const replacement=await step.waitForEvent("set-"+setCycle+"-wait-"+weakest,{type:"terminal-"+weakest+"-"+prefix,timeout:"90 minutes"});
+      const replacement=await step.waitForEvent("set-"+setCycle+"-wait-"+weakest,{type:"terminal-"+weakest+"-"+prefix,timeout:"6 hours"});
       if(replacement.payload?.status!=="RENDER_READY") {
         await step.do("set-"+setCycle+"-replacement-escalation",async()=>setPackStatus(sql,p.packId,"ESCALATION_REQUIRED",{replacement}));
         return {status:"ESCALATION_REQUIRED",replacement};
