@@ -1,10 +1,11 @@
-export { RenderProspectWorkflow, RenderVariantWorkflow } from "./workflows.js";
+export { RenderProspectWorkflow, RenderVariantWorkflow, RenderChaosProbeWorkflow } from "./workflows.js";
 import { db, packSnapshot, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 import { reconcileV2 } from "./reconcile.js";
 import { budgetSnapshot } from "./metrics.js";
 import { selectCertifiedVariant, buildReferenceManifest } from "./manifest.js";
+import { tickRollout, rolloutStatus } from "./rollout.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -30,6 +31,7 @@ export default {
   async scheduled(controller,env,ctx) {
     ctx.waitUntil((async()=>{
       await reconcileV2(env).catch(()=>null);
+      await tickRollout(env).catch(()=>null);
       const ref=String(env.V2_SHADOW_AUTOSTART||"").trim();
       if(!ref || !env.RENDER_PROSPECT_WORKFLOW) return;
       try {
@@ -69,6 +71,14 @@ export default {
       });
     }
     if(!authorized(request,env)) return json({ok:false,error:"UNAUTHORIZED"},401);
+
+    if(request.method==="GET" && url.pathname==="/shadow/rollout/status") {
+      return json({ok:true,...await rolloutStatus(env)});
+    }
+
+    if(request.method==="POST" && url.pathname==="/shadow/rollout/tick") {
+      return json({ok:true,result:await tickRollout(env)});
+    }
 
     if(request.method==="POST" && url.pathname==="/shadow/start") {
       const body=await request.json().catch(()=>({}));
