@@ -153,18 +153,19 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-b .ixg-hero__device span:nth-child(3){transform:rotate(-9deg);left:12%;bottom:24%;width:74%;background:#77736b}.ixg-b .ixg-hero__device span:nth-child(4){transform:rotate(8deg);left:58%;background:#77736b}
 .ixg-b h1,.ixg-b h2,.ixg-b h3{font-family:Georgia,'Times New Roman',serif;font-weight:500}.ixg-b h1{letter-spacing:-.055em}
 .ixg-b .ixg-cta--primary{background:#f4f1ea;color:#111}.ixg-b .ixg-cta--secondary{color:inherit}
-.ixg-b.ixg-services{background:#f4f1ea;color:#111}.ixg-b.ixg-services .ixg-service:nth-child(2n){background:#111;color:#f4f1ea}.ixg-b.ixg-services .ixg-service:nth-child(2n) .ixg-service__body{color:#c9c5bd}
+.ixg-b.ixg-services{background:#f4f1ea;color:#111}.ixg-b.ixg-services .ixg-services__grid{grid-template-columns:repeat(2,minmax(0,1fr));overflow:hidden}.ixg-b.ixg-services .ixg-service{width:100%;min-width:0}.ixg-b.ixg-services .ixg-service:nth-child(2n){background:#111;color:#f4f1ea}.ixg-b.ixg-services .ixg-service:nth-child(2n) .ixg-service__body{color:#c9c5bd}
 .ixg-b.ixg-bridge{background:#111;color:#f4f1ea}.ixg-b .ixg-bridge__device i{background:#f4f1ea}.ixg-b .ixg-bridge__device i:nth-child(3){background:#77736b}
+.ixg-b.ixg-contact{background:#f4f1ea;color:#111}.ixg-b.ixg-contact .ixg-cta--primary{background:#111;color:#f4f1ea;border-color:#111}.ixg-b.ixg-contact .ixg-cta--secondary{color:#111;border-color:#111}.ixg-b.ixg-contact h2{color:#111}.ixg-b.ixg-hero .ixg-actions{margin-top:44px}
 @media(max-width:700px){.ixg-b.ixg-hero .ixg-hero__copy{order:1}.ixg-b.ixg-hero .ixg-hero__device{order:2;transform:none}.ixg-b .ixg-hero__device span{transform:none!important}}
 `,
     C:`
 .ixg-c.ixg-hero{background:#fafafa}.ixg-c.ixg-hero .ixg-hero__grid{grid-template-columns:minmax(0,1fr) minmax(340px,.92fr);align-items:center}
-.ixg-c .ixg-hero__device span:nth-child(1){left:0;top:12%;width:78%;height:7px}.ixg-c .ixg-hero__device span:nth-child(2){right:12%;top:0;width:7px;height:78%}
-.ixg-c .ixg-hero__device span:nth-child(3){left:22%;bottom:24%;width:78%;height:7px;background:#a8a59e}.ixg-c .ixg-hero__device span:nth-child(4){left:40%;top:22%;width:7px;height:78%;background:#a8a59e}
-.ixg-c h1,.ixg-c h2{font-family:Georgia,'Times New Roman',serif;font-weight:500}.ixg-c.ixg-positioning{background:#f2f2ef}.ixg-c.ixg-positioning .ixg-split{grid-template-columns:.8fr 1.2fr}
+.ixg-c .ixg-hero__device{background:#efefeb;min-height:360px}.ixg-c .ixg-hero__device span:nth-child(1){left:4%;top:15%;width:92%;height:12px}.ixg-c .ixg-hero__device span:nth-child(2){right:15%;top:4%;width:12px;height:92%}
+.ixg-c .ixg-hero__device span:nth-child(3){left:10%;bottom:18%;width:82%;height:10px;background:#8f8c85}.ixg-c .ixg-hero__device span:nth-child(4){left:34%;top:10%;width:10px;height:82%;background:#8f8c85}
+.ixg-c h1,.ixg-c h2{font-family:Georgia,'Times New Roman',serif;font-weight:500}.ixg-c.ixg-positioning{background:#f2f2ef}.ixg-c.ixg-positioning .ixg-split{grid-template-columns:.8fr 1.2fr}.ixg-c.ixg-positioning .ixg-positioning__body p{font-size:clamp(18px,1.6vw,24px)}
 .ixg-c.ixg-services .ixg-services__grid{grid-template-columns:1.15fr .85fr}.ixg-c.ixg-bridge{background:#ededE8}
-.ixg-c .ixg-bridge__device i:nth-child(1){left:4%;width:82%;height:7px}.ixg-c .ixg-bridge__device i:nth-child(2){right:8%;width:7px}.ixg-c .ixg-bridge__device i:nth-child(3){left:24%;width:68%;height:7px;background:#a8a59e}
-@media(max-width:700px){.ixg-c.ixg-positioning .ixg-split,.ixg-c.ixg-services .ixg-services__grid{grid-template-columns:1fr}}
+.ixg-c .ixg-bridge__device{background:#e3e3de}.ixg-c .ixg-bridge__device i:nth-child(1){left:3%;top:16%;width:92%;height:11px}.ixg-c .ixg-bridge__device i:nth-child(2){right:14%;top:4%;width:11px;height:92%}.ixg-c .ixg-bridge__device i:nth-child(3){left:12%;bottom:20%;width:76%;height:9px;background:#8f8c85}
+@media(max-width:700px){.ixg-c.ixg-positioning .ixg-split,.ixg-c.ixg-services .ixg-services__grid{grid-template-columns:1fr}.ixg-c .ixg-hero__device{min-height:150px;height:150px}.ixg-c .ixg-bridge__device{height:150px}}
 `
   };
 
@@ -184,8 +185,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
-      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v1.2 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
+      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v1.3 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
     },
-    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V1_2"
+    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V1_3"
   };
 }
