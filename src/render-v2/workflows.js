@@ -185,7 +185,17 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COMPILE",error:msg,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"RS_COMPILER_V1"})
         );
         await updateRevision(sql,revision.id,{status:"QA_FAILED",renderSpec:generated.spec});
-        feedback={issues:compiled.issues,actions:["Repair only the structural RenderSpec contract while preserving the art direction."]};
+        feedback={
+          issues:compiled.issues,
+          actions:[
+            "Preserve the approved visual direction but rebuild the failing markup/CSS to satisfy the RenderSpec contract.",
+            "Never reference PRIMARY_LOGO inside main_html; the deterministic compiler owns official identity.",
+            "Replace every literal visible string or decorative number with an allowed copy token or remove it.",
+            "Remove CSS content:, url(), @import and any external/network construct.",
+            "Return 6-10 substantial sections, complete desktop/mobile CSS, and only declared tokens."
+          ],
+          reason:"COMPILER_CONTRACT"
+        };
         if(fail.change_strategy) break;
         continue;
       }
@@ -396,7 +406,9 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return ingestInputAssets(this.env,sql,{pack:await getV2Pack(sql,p.packId),inputPack:input});
     });
 
-    const assetTokens=Object.entries(assets).filter(([,v])=>!v.unavailable).map(([k])=>k);
+    const assetTokens=Object.entries(assets)
+      .filter(([k,v])=>!v.unavailable && k!=="PRIMARY_LOGO")
+      .map(([k])=>k);
     await step.do("mark-truth-and-creative-planning",async()=>{
       await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN"});
       return {ok:true};
