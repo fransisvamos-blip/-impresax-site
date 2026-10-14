@@ -11,6 +11,7 @@ async function renderPage(browser,html,width,height) {
       const images=[...document.images];
       const logo=document.querySelector("[data-official-logo]");
       const bodyStyle=getComputedStyle(document.body);
+      const verifiedContacts=[...document.querySelectorAll("[data-verified-contact]")];
       return {
         horizontal_overflow:root.scrollWidth>root.clientWidth+2,
         broken_images:images.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.getAttribute("src")||"").slice(0,12),
@@ -20,7 +21,12 @@ async function renderPage(browser,html,width,height) {
         viewport_width:root.clientWidth,
         body_font_px:Number.parseFloat(bodyStyle.fontSize||"0"),
         logo_width:logo?logo.getBoundingClientRect().width:0,
-        logo_height:logo?logo.getBoundingClientRect().height:0
+        logo_height:logo?logo.getBoundingClientRect().height:0,
+        official_logo_present:Boolean(logo && logo.complete && logo.naturalWidth>0),
+        verified_contact_count:verifiedContacts.length,
+        clipped_contacts:verifiedContacts
+          .filter(el=>el.scrollWidth>el.clientWidth+2 || el.scrollHeight>el.clientHeight+2)
+          .map(el=>(el.textContent||"").trim()).filter(Boolean).slice(0,8)
       };
     });
     const bytes=await page.screenshot({type:"jpeg",quality:90,fullPage:true});
@@ -38,6 +44,8 @@ export function deterministicBrowserGate(desktop,mobile,inputPayload) {
   if(desktop.diagnostics.broken_images.length) issues.push("DESKTOP_BROKEN_IMAGES");
   if(mobile.diagnostics.broken_images.length) issues.push("MOBILE_BROKEN_IMAGES");
   if(Number(mobile.diagnostics.body_font_px||0)>0 && Number(mobile.diagnostics.body_font_px)<14) issues.push("MOBILE_BODY_TYPE_TOO_SMALL");
+  if(desktop.diagnostics.clipped_contacts?.length) issues.push("DESKTOP_VERIFIED_CONTACT_CLIPPED");
+  if(mobile.diagnostics.clipped_contacts?.length) issues.push("MOBILE_VERIFIED_CONTACT_CLIPPED");
   const needsLogo=String(inputPayload?.official_logo?.status||"").toUpperCase()!=="NO_OFFICIAL_LOGO_CONFIRMED";
   if(needsLogo && (desktop.diagnostics.logo_width<40 || mobile.diagnostics.logo_width<32)) issues.push("OFFICIAL_IDENTITY_NOT_VISIBLE");
   return {pass:issues.length===0,issues};
