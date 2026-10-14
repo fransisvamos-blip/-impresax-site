@@ -1,4 +1,5 @@
 name: V2 Rollout Kick
+# rollout kick trigger: c-v18-status-check
 
 on:
   push:
