@@ -168,6 +168,7 @@ export default {
       const variantKey=String(body.variant_key||"").trim().toUpperCase();
       const runKey=String(body.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
       const force=body.force===true;
+      const resetBudget=body.reset_budget===true;
       const eventPrefix=String(body.event_prefix||"initial").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,32)||"initial";
       const parentWorkflowInstanceId=String(body.parent_workflow_instance_id||("rpv2-"+packId)).trim();
       const relaunchReason=String(body.reason||"TARGETED_ENGINE_REPAIR").trim().slice(0,64);
@@ -198,6 +199,31 @@ export default {
           order by q.created_at desc
           limit 1`;
         return json({ok:true,pack_id:packId,variant_key:variantKey,already_applied:true,workflow_instance_id:instanceId,status,latest_qa:qaRows[0]||null},200);
+      }
+
+      if(resetBudget) {
+        await sql`
+          update render_v2_packs
+          set metrics=
+            (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+            || jsonb_build_object(
+              'ai_calls',0,
+              'browser_captures',0,
+              'prior_epoch_ai_calls',
+                coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+              'prior_epoch_browser_captures',
+                coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+              'budget_epoch',${runKey}::text,
+              'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+            ),
+            metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'budget_epoch_reset_at',now(),
+                'budget_epoch_reason','TARGETED_RELAUNCH',
+                'targeted_budget_variant',${variantKey}::text
+              ),
+            updated_at=now()
+          where id=${packId}::uuid`;
       }
 
       const prior=await sql`
@@ -237,11 +263,11 @@ export default {
       await persistWorkflow(sql,{
         prospectId:pack.prospect_id,packId,variantId:variant.id,type:"VARIANT",
         instanceId,status:"QUEUED",
-        metadata:{variant_key:variantKey,event_prefix:eventPrefix,run_key:runKey,targeted_relaunch:true,force_relaunch:force,parent_workflow_instance_id:parentWorkflowInstanceId,relaunch_reason:relaunchReason}
+        metadata:{variant_key:variantKey,event_prefix:eventPrefix,run_key:runKey,targeted_relaunch:true,force_relaunch:force,reset_budget:resetBudget,parent_workflow_instance_id:parentWorkflowInstanceId,relaunch_reason:relaunchReason}
       });
       const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
       await setPackStatus(sql,packId,"GENERATING",{targeted_relaunch:{variant_key:variantKey,run_key:runKey,force,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId}});
-      return json({ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,force,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId,status:await instance.status()},202);
+      return json({ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,force,reset_budget:resetBudget,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId,status:await instance.status()},202);
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/relaunch-variants") {
