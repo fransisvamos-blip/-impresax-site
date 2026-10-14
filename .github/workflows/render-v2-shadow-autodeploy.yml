@@ -110,7 +110,7 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: hero-v2j-20261014
+          V2_CONTRACT_KEY: hero-v2k-20261014
         run: |
           set -euo pipefail
           token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
@@ -147,7 +147,7 @@ jobs:
           fi
 
           # Preserve the already-certified B route. Repair only A and C with the industrial documentary hero contract.
-          for variant in A C; do
+          for variant in A; do
             reset=false
             if [ "$variant" = "A" ]; then reset=true; fi
             repair_key="$V2_CONTRACT_KEY-$variant"
@@ -169,7 +169,7 @@ jobs:
             fi
             jq -e '.ok == true' "/tmp/v2-repair-$variant.json" >/dev/null
           done
-          echo "V2 HERO targeted repair: key=$V2_CONTRACT_KEY variants=A,C B=preserved" >> "$GITHUB_STEP_SUMMARY"
+          echo "V2 HERO targeted repair: key=$V2_CONTRACT_KEY variants=A B,C=preserved" >> "$GITHUB_STEP_SUMMARY"
 
 # HERO_CONTRACT_PATCH_6_FAST_SEED
 
@@ -186,3 +186,5 @@ jobs:
 # HERO_C_PROCESS_ONLY_V1
 
 # HERO_PREQA_CONTENT_ADDRESS_V1
+
+# HERO_A_MATERIAL_ONLY_V1
