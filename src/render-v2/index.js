@@ -57,18 +57,43 @@ export default {
     const url=new URL(request.url);
     if(url.pathname==="/healthz") {
       let database_connected=false;
+      let hero_db_guard=false;
       try {
         const sql=db(env);
-        const ping=await sql`select 1 as ok`;
+        const ping=await sql`select
+          1 as ok,
+          exists(
+            select 1
+            from pg_proc p
+            join pg_namespace n on n.oid=p.pronamespace
+            join pg_trigger t on t.tgfoid=p.oid
+            where n.nspname='public'
+              and p.proname='render_v2_certification_guard'
+              and t.tgname='trg_render_v2_certification_guard'
+              and t.tgenabled<>'D'
+              and position('THREE_HERO_QA_PASSES_REQUIRED' in pg_get_functiondef(p.oid))>0
+              and position('HERO_VISUAL_USED' in pg_get_functiondef(p.oid))>0
+          ) as hero_db_guard`;
         database_connected=Number(ping[0]?.ok||0)===1;
+        hero_db_guard=Boolean(ping[0]?.hero_db_guard);
       } catch {}
+      const bindings={
+        ai:Boolean(env.AI),browser:Boolean(env.BROWSER),r2:Boolean(env.RENDER_ARTIFACTS),
+        db:Boolean(env.OPS_DATABASE_URL),parent_workflow:Boolean(env.RENDER_PROSPECT_WORKFLOW),
+        variant_workflow:Boolean(env.RENDER_VARIANT_WORKFLOW)
+      };
+      const healthy=database_connected && hero_db_guard && Object.values(bindings).every(Boolean);
       return json({
-        ok:true,service:"impresax-render-v2-shadow",mode:"SHADOW",
+        ok:healthy,service:"impresax-render-v2-shadow",mode:"SHADOW",
         quality_contract:QUALITY_CONTRACT_VERSION,engine:EXECUTION_ENGINE_VERSION,
         compiler:COMPILER_VERSION,model_routes:MODEL_ROUTE_VERSION,
         database_connected,
-        bindings:{ai:Boolean(env.AI),browser:Boolean(env.BROWSER),r2:Boolean(env.RENDER_ARTIFACTS),db:Boolean(env.OPS_DATABASE_URL),parent_workflow:Boolean(env.RENDER_PROSPECT_WORKFLOW),variant_workflow:Boolean(env.RENDER_VARIANT_WORKFLOW)}
-      });
+        hero_contract_required:true,
+        hero_db_guard,
+        hero_score_floor:8,
+        hero_certified_variants_required:3,
+        bindings
+      },healthy?200:503);
     }
     if(!authorized(request,env)) return json({ok:false,error:"UNAUTHORIZED"},401);
 
