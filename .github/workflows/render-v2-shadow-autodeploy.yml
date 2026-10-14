@@ -103,3 +103,25 @@ jobs:
           done
           echo "V2 shadow failed health validation."
           exit 1
+
+
+      - name: Bootstrap CZ-063 immediately
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        env:
+          V2_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+          code=$(curl -sS -o /tmp/v2-start.json -w '%{http_code}' \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            --data '{"prospect_code":"CZ-063"}' \
+            "$V2_URL/shadow/start" || true)
+          echo "start_code=$code body=$(cat /tmp/v2-start.json 2>/dev/null || true)"
+          if [ "$code" != "202" ]; then
+            echo "CZ-063 immediate bootstrap failed."
+            exit 1
+          fi
+          echo "CZ-063 V2 workflow started immediately." >> "$GITHUB_STEP_SUMMARY"
