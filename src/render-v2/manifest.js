@@ -148,6 +148,21 @@ export async function buildReferenceManifest(sql,packId) {
     order by q.created_at asc`;
   if(variantQa.length!==3) throw new Error("THREE_CERTIFIED_VARIANT_QA_RESULTS_REQUIRED");
 
+  const heroQa=await sql`
+    select q.id,q.variant_revision_id,q.status,q.scores,q.issues,q.actions,q.artifact_hashes,q.model_route_version,q.prompt_version,q.created_at
+    from render_qa_results_v2 q
+    where q.render_pack_id=${packId}::uuid
+      and q.qa_type='HERO_VISUAL'
+      and q.status='PASS'
+      and q.variant_revision_id in (
+        select r.id
+        from render_v2_variants v
+        join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+        where v.render_pack_id=${packId}::uuid
+      )
+    order by q.created_at asc`;
+  if(heroQa.length!==3) throw new Error("THREE_CERTIFIED_HERO_QA_RESULTS_REQUIRED");
+
   const selectedAt=String(pack.metadata?.selected_at||"");
   if(!selectedAt) throw new Error("SELECTED_AT_REQUIRED");
 
@@ -205,7 +220,8 @@ export async function buildReferenceManifest(sql,packId) {
     qa_evidence:{
       content_truth:truthQa,
       set_qa:setQa,
-      variant_qa:variantQa
+      variant_qa:variantQa,
+      hero_qa:heroQa
     },
     quality_contract_version:QUALITY_CONTRACT_VERSION,
     execution_engine_version:EXECUTION_ENGINE_VERSION,
