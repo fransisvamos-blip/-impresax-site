@@ -18,21 +18,41 @@ function modelFor(env,role,fallback=false) {
   return env[vars[role]]||DEFAULT_MODELS[role];
 }
 
+function parseJsonCandidate(value) {
+  if(value && typeof value==="object" && !Array.isArray(value)) return value;
+  if(typeof value!=="string") return null;
+  const clean=value
+    .replace(/^\s*```(?:json)?\s*/i,"")
+    .replace(/\s*```\s*$/,"")
+    .trim();
+  const attempts=[clean];
+  const a=clean.indexOf("{"),b=clean.lastIndexOf("}");
+  if(a>=0&&b>a) attempts.push(clean.slice(a,b+1));
+  for(const raw of attempts) {
+    try { return JSON.parse(raw); } catch {}
+    try { return JSON.parse(raw.replace(/,\s*([}\]])/g,"$1")); } catch {}
+  }
+  return null;
+}
+
 function extractStructured(result) {
   const candidates=[
     result?.response,
+    result?.response?.response,
+    result?.response?.content,
+    result?.result,
     result?.result?.response,
+    result?.result?.content,
     result?.choices?.[0]?.message?.parsed,
     result?.choices?.[0]?.message?.content,
-    result?.output_text
+    result?.choices?.[0]?.message?.content?.[0]?.text,
+    result?.output_text,
+    result?.text,
+    result?.output?.[0]?.content?.[0]?.text
   ];
   for(const value of candidates) {
-    if(value && typeof value==="object" && !Array.isArray(value)) return value;
-    if(typeof value==="string") {
-      try { return JSON.parse(value); } catch {}
-      const a=value.indexOf("{"),b=value.lastIndexOf("}");
-      if(a>=0&&b>a) { try{return JSON.parse(value.slice(a,b+1));}catch{} }
-    }
+    const parsed=parseJsonCandidate(value);
+    if(parsed) return parsed;
   }
   throw new Error("AI_OUTPUT_SCHEMA_INVALID");
 }
@@ -40,23 +60,31 @@ function extractStructured(result) {
 async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null}) {
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
-  for(let fallback=0;fallback<2;fallback++) {
-    const model=modelFor(env,role,Boolean(fallback));
-    if(beforeAttempt) await beforeAttempt({role,model,fallback:Boolean(fallback)});
+  const qaRole=role==="visualQa"||role==="setQa";
+  const plan=qaRole
+    ? [{fallback:false,retry:0},{fallback:false,retry:1},{fallback:true,retry:0},{fallback:true,retry:1}]
+    : [{fallback:false,retry:0},{fallback:true,retry:0}];
+
+  for(const attempt of plan) {
+    const model=modelFor(env,role,attempt.fallback);
+    if(beforeAttempt) await beforeAttempt({role,model,fallback:attempt.fallback,retry:attempt.retry});
     try {
+      const retrySuffix=attempt.retry
+        ? [{role:"system",content:"Return ONLY one complete valid JSON object matching the requested schema. No prose, markdown, analysis, comments or code fences."}]
+        : [];
       const inference={
-        messages,
+        messages:[...messages,...retrySuffix],
         response_format:{type:"json_schema",json_schema:schema},
-        temperature
+        temperature:attempt.retry?0:temperature
       };
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
-      if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="medium";
+      if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="low";
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
       const result=await env.AI.run(model,inference,runOptions);
-      return {data:extractStructured(result),model,fallback:Boolean(fallback)};
+      return {data:extractStructured(result),model,fallback:attempt.fallback,retry:attempt.retry};
     } catch(error) {
       lastError=error;
     }
