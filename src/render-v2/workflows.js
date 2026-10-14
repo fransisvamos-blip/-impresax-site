@@ -10,6 +10,7 @@ import { bytesToBase64 } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
+import { remediateBlockedPack } from "./remediation.js";
 
 
 async function inputAssetsFromDb(sql,packId,inputPayload) {
@@ -830,5 +831,51 @@ export class RenderChaosProbeWorkflow extends WorkflowEntrypoint {
       return {ok:true};
     });
     return {status:"PASS",probe_key:probeKey};
+  }
+}
+
+
+export class RenderInputRemediationWorkflow extends WorkflowEntrypoint {
+  async run(event,step) {
+    const params=event.payload||{};
+    const sql=db(this.env);
+    await step.do("register-input-remediation",{retries:{limit:2,delay:"2 seconds",backoff:"exponential"}},async()=>{
+      await persistWorkflow(sql,{
+        prospectId:params.prospectId,
+        packId:params.packId,
+        type:"INPUT_REMEDIATION",
+        instanceId:event.instanceId,
+        status:"RUNNING",
+        metadata:{remediation_attempt:params.attempt||1}
+      });
+      return {ok:true};
+    });
+
+    try {
+      const result=await step.do("remediate-input",{retries:{limit:1,delay:"5 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+        return remediateBlockedPack(this.env,{prospectId:params.prospectId,packId:params.packId});
+      });
+      await step.do("complete-input-remediation",async()=>{
+        await updateWorkflow(sql,event.instanceId,{
+          status:"COMPLETED",
+          currentStep:result.status==="INPUT_READY"?"INPUT_READY":"INPUT_BLOCKED",
+          metadata:{result}
+        });
+        return {ok:true};
+      });
+      return result;
+    } catch(error) {
+      const message=String(error?.message||error||"INPUT_REMEDIATION_FAILED");
+      await step.do("fail-input-remediation",async()=>{
+        await updateWorkflow(sql,event.instanceId,{
+          status:"FAILED",
+          currentStep:"INPUT_REMEDIATION_FAILED",
+          errorCode:"INPUT_REMEDIATION_FAILED",
+          metadata:{error:message}
+        });
+        return {ok:true};
+      });
+      return {status:"INPUT_BLOCKED",error:message};
+    }
   }
 }
