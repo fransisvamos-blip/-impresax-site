@@ -17,14 +17,35 @@ function clean(value,max=1200) {
   return String(value||"").replace(/\s+/g," ").trim().slice(0,max);
 }
 
-function variantComposition(variantKey) {
+function isIndustrialMaterialsContext(inputPayload={}) {
+  const hay=[
+    inputPayload.vertical,
+    inputPayload.verified_services,
+    inputPayload.brand_dna?.offer,
+    inputPayload.brand_dna?.business_type,
+    inputPayload.brand_dna?.business_positioning
+  ].map(x=>String(x||"").toLowerCase()).join(" ");
+  return /materiali|ingrosso|distribuz|tondo|cemento armato|rebar|acciaio|fornitur/.test(hay) &&
+    /edil|costruz|cement|materiali|rebar|tondo|acciaio/.test(hay);
+}
+
+function variantComposition(variantKey,inputPayload={}) {
+  if(isIndustrialMaterialsContext(inputPayload)) {
+    if(variantKey==="B") {
+      return "Material-and-environment composition: premium wide documentary photograph of real steel/rebar inventory, warehouse or processing context. Human presence may be partial and secondary. No staged poses, no faces required. Keep the visual center crop-safe and use natural industrial depth.";
+    }
+    if(variantKey==="C") {
+      return "Process-first documentary composition: show authentic rebar handling, bending/cutting/processing or inspection activity. Prefer machinery, gloved hands, or one worker seen from side/back in complete blank PPE. No meetings, pointing duos, handshakes, corporate collaboration poses, clipboards or posed portraits. Keep the primary action inside the central 60% of frame.";
+    }
+    return "Operational documentary composition: one real-looking worker seen from side/back actively measuring, moving, inspecting or processing rebar/steel in complete blank PPE (hard hat, gloves, safety footwear, practical workwear). Avoid visible face as focal point, clipboards, thinking poses and staged corporate gestures. Keep subject inside the central-right third with at least 18% safe margin from the right edge for mobile cropping.";
+  }
   if(variantKey==="B") {
-    return "Architecture-first composition: the environment is the hero, with real work activity secondary; cinematic wide frame, strong depth, premium editorial photography, generous negative space for copy.";
+    return "Architecture-first composition: the environment is the hero, with real work activity secondary; cinematic wide frame, strong depth, premium editorial photography, generous natural breathing room for later HTML copy.";
   }
   if(variantKey==="C") {
     return "Trust-and-collaboration composition: two relevant professionals or a professional with a client reviewing the work/context; subjects placed away from the copy area; sophisticated editorial realism.";
   }
-  return "Flagship operational composition: one relevant professional supervising or performing the core work in a premium real-world setting; subject placed on the right half with generous clean copy space on the left.";
+  return "Flagship operational composition: one relevant professional supervising or performing the core work in a premium real-world setting; subject placed within a mobile-safe composition with natural breathing room for later HTML copy.";
 }
 
 function sectorDirection(inputPayload={}) {
@@ -91,8 +112,8 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
     "ABSOLUTE NO-TEXT RULE: render ZERO visible letters, words, numbers, logos, signage, labels, UI, watermarks, certification marks, number plates or typographic shapes anywhere in the photograph. Surfaces that would normally contain writing must be blank, turned away, out of focus or non-readable. Do not invent pseudo-text or gibberish.",
     "Avoid obvious AI artifacts, uncanny hands/faces, impossible architecture, oversaturated advertising gloss, generic stock-photo poses and empty decorative scenes.",
     sector,
-    variantComposition(variantKey),
-    "Composition must work as a website hero: strong focal point, premium depth/light/materiality, and a clean area for headline + CTA. It must also survive a 390px mobile crop without losing the main subject.",
+    variantComposition(variantKey,inputPayload),
+    "This output must be a FULL-FRAME RAW PHOTOGRAPH only — never a web mockup, split-layout graphic, copy panel, poster, collage, UI or composed landing-page hero. Natural empty wall/floor/air can provide breathing room, but do not create a blank graphic rectangle or text area inside the image. Strong focal point, premium realistic depth/light/materiality, and a center-safe subject must survive a 390px mobile crop.",
     "Use natural European/Italian visual cues only when compatible with the verified city/context; do not invent a recognizable exact location.",
     "Direction intent: "+clean(direction?.hero_logic||direction?.core_idea,700),
     feedback?"REWORK FEEDBACK FROM PRIOR HERO QA: "+clean(feedback,1200):"",
