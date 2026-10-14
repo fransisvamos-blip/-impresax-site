@@ -770,9 +770,15 @@ export async function runHeroAssetQa(env,{imageB64,inputPayload,direction,varian
   const vals=Object.values(numeric);
   const issues=Array.isArray(r.data?.issues)?r.data.issues:[];
   const blocking=issues.filter(x=>x?.severity==="critical"||x?.severity==="major");
+  const coreKeys=["relevance","image_quality","realism","text_free","composition"];
+  const corePass=coreKeys.every(k=>Number.isFinite(Number(numeric[k])) && Number(numeric[k])>=8);
+  // Raw crop safety is predictive only. The authoritative 390px crop is reviewed again
+  // on the actual rendered mobile screenshot by HERO_VISUAL QA, where the floor remains 8.
+  const cropPredictivePass=Number.isFinite(Number(numeric.crop_safety)) && Number(numeric.crop_safety)>=7;
   const pass=r.data?.pass===true &&
     vals.length===6 &&
-    vals.every(v=>Number.isFinite(v)&&v>=8) &&
+    corePass &&
+    cropPredictivePass &&
     Number(numeric.text_free)===10 &&
     blocking.length===0;
   return {...r.data,scores:numeric,issues,pass,model:r.model};
