@@ -137,7 +137,7 @@ async function maybeStartFinalizer(env,sql,pack,gate) {
     where render_pack_id=${pack.id}::uuid
       and workflow_type='PROSPECT'
       and coalesce((metadata->>'rollout_finalizer')::boolean,false)=true`;
-  if(n(rows[0]?.active)>0 || n(rows[0]?.total)>=3) return null;
+  if(n(rows[0]?.active)>0 || n(rows[0]?.total)>=5) return null;
   const attempt=n(rows[0]?.total)+1;
   const instanceId="rpv2-finalize-"+pack.id+"-"+attempt;
   await persistWorkflow(sql,{
