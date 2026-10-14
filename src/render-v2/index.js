@@ -274,13 +274,14 @@ export default {
       const body=await request.json().catch(()=>({}));
       const packId=String(body.pack_id||"").trim();
       const runKey=String(body.run_key||"contract-v2").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
+      const force=body.force===true;
       if(!packId || !runKey) return json({ok:false,error:"pack_id_and_run_key_required"},400);
       const sql=db(env);
       const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
       if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
       const pack=packs[0];
-      if(String(pack.metadata?.contract_relaunch||"")===runKey) {
-        return json({ok:true,pack_id:packId,run_key:runKey,already_applied:true,launched:[]},200);
+      if(!force && String(pack.metadata?.contract_relaunch||"")===runKey) {
+        return json({ok:true,pack_id:packId,run_key:runKey,already_applied:true,force:false,launched:[]},200);
       }
       const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid order by variant_key`;
       if(variants.length!==3) return json({ok:false,error:"THREE_VARIANTS_REQUIRED"},409);
@@ -303,7 +304,8 @@ export default {
             || jsonb_build_object(
               'contract_relaunch',${runKey}::text,
               'budget_epoch_reset_at',now(),
-              'budget_epoch_reason','CONTRACT_RELAUNCH'
+              'budget_epoch_reason','CONTRACT_RELAUNCH',
+              'contract_relaunch_force',${force}::boolean
             ),
           status='GENERATING',
           updated_at=now()
@@ -311,7 +313,7 @@ export default {
 
       const launched=[];
       for(const variant of variants) {
-        if(variant.status==="RENDER_READY" && variant.certified_revision) {
+        if(!force && variant.status==="RENDER_READY" && variant.certified_revision) {
           launched.push({variant_key:variant.variant_key,skipped:true,reason:"ALREADY_RENDER_READY"});
           continue;
         }
@@ -342,24 +344,25 @@ export default {
           eventPrefix:"initial",
           initialFeedback:{
             reason:"ENGINE_CONTRACT_UPGRADE",
-            issues:["Previous attempts were generated under a superseded RenderSpec contract."],
+            issues:["Previous attempts were generated under a superseded RenderSpec contract and may not satisfy the mandatory premium hero contract."],
             actions:[
               "Use the current token-safe RenderSpec contract only.",
               "Keep official identity outside main_html.",
-              "Produce a complete premium 6-10 section desktop/mobile composition."
+              "Produce a complete premium 6-10 section desktop/mobile composition.",
+              "Use HERO_VISUAL as the dominant prospect-relevant photographic hero and pass the dedicated desktop/mobile hero quality gate."
             ]
           }
         };
         await persistWorkflow(sql,{
           prospectId:pack.prospect_id,packId,variantId:variant.id,type:"VARIANT",
           instanceId,status:"QUEUED",
-          metadata:{variant_key:variant.variant_key,event_prefix:"initial",run_key:runKey,contract_relaunch:true}
+          metadata:{variant_key:variant.variant_key,event_prefix:"initial",run_key:runKey,contract_relaunch:true,force_relaunch:force}
         });
         const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
         launched.push({variant_key:variant.variant_key,workflow_instance_id:instanceId,status:await instance.status()});
       }
       await setPackStatus(sql,packId,"GENERATING",{contract_relaunch:runKey});
-      return json({ok:true,pack_id:packId,run_key:runKey,already_applied:false,launched},202);
+      return json({ok:true,pack_id:packId,run_key:runKey,already_applied:false,force,launched},202);
     }
 
     if(request.method==="GET" && url.pathname.startsWith("/shadow/workflow/")) {
