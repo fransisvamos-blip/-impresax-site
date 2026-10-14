@@ -1,5 +1,6 @@
 import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS } from "./constants.js";
 import { stableStringify, sha256 } from "./utils.js";
+import { sanitizeDirectionForExecution } from "./design-grammar.js";
 
 function modelFor(env,role,fallback=false) {
   const vars={
@@ -250,9 +251,12 @@ export async function createCreativeDirections(env,inputPayload,assetTokens,{bef
     ],
     schema:creativeDirectionsSchema,maxTokens:6500,temperature:0.32,beforeAttempt:beforeModelAttempt
   });
-  const pre=diversityPrecheck(r.data.directions);
+  const hasEditorialAssets=(assetTokens||[]).some(x=>x!=="PRIMARY_LOGO");
+  const directions=Object.fromEntries(
+    ["A","B","C"].map(k=>[k,sanitizeDirectionForExecution(r.data.directions[k],{hasEditorialAssets})])
+  );
+  const pre=diversityPrecheck(directions);
   if(!pre.pass) throw new Error("SET_DIVERSITY_PRECHECK_FAILED:"+JSON.stringify(pre.scores));
-  const directions=r.data.directions;
   return {
     creative_strategy:r.data.creative_strategy,
     directions,
@@ -402,7 +406,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     "PASS only when every score is >=8 and there are no critical/major unresolved issues.",
     "The deterministic shell owns the official logo, contact path and footer. A direction described as logo-centric may use the immutable logo in the shell and at most one compiler-owned hero identity placement; never demand a fake/reinterpreted logo.",
-    "Scripts and forms are prohibited in previews. If a direction mentions accordion, tabs or floating behavior, accept an equally strong static/mobile-native reinterpretation; do not fail solely because there is no JavaScript interaction.",
+    "Scripts and forms are prohibited in previews. Judge only what the static preview contract can actually implement; never require accordion/tabs/dark-mode/back-to-top/forms/scroll widgets or other interactive product features.",
+    "The QA action list MUST stay within visual composition, typography, spacing, responsive layout, permitted static CTA treatment, immutable identity placement and existing verified content. Never propose new pages, report links, toggles, widgets, invented copy or new assets.",
     "Hard fail generic template/SaaS feel, weak typography/composition, fake or cheap imagery, weak mobile reinterpretation, poor brand fidelity, truth risk, or lack of prospect specificity.",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
