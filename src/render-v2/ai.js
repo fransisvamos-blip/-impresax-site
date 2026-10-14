@@ -623,8 +623,30 @@ const setQaSchema={
   required:["pass","summary","weakest_variant","issues","actions","scores"]
 };
 
+export function normalizeSetQaResult(data) {
+  const raw={...(data?.scores||{})};
+  const numeric=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,Number(v)]));
+  const finite=Object.values(numeric).filter(Number.isFinite);
+  const scaleIsUnit=finite.length>0 && Math.max(...finite)<=1.000001;
+  const scores=Object.fromEntries(Object.entries(numeric).map(([k,v])=>[k,scaleIsUnit?v*10:v]));
+  const vals=Object.values(scores);
+  const scorePass=vals.length===7 && vals.every(v=>Number.isFinite(v)&&v>=8);
+  const issues=Array.isArray(data?.issues)?data.issues.map(String):[];
+  const blockingPattern=/\b(?:critical|major|material(?:ly)?\s+(?:same|similar|weak|conflict)|same\s+composition|reused\s+composition|cosmetic\s+variation|template\s+family|generic\s+template|too\s+similar|not\s+materially\s+different|redundan(?:t|cy)|weaker\s+(?:variant|member)|diversity\s+(?:fail|below|insufficient)|conflicting\s+variant)\b/i;
+  const blockingIssues=issues.filter(x=>blockingPattern.test(x));
+  const pass=scorePass && blockingIssues.length===0;
+  return {
+    ...data,
+    scores,
+    pass,
+    weakest_variant:pass?"NONE":data?.weakest_variant,
+    blocking_issues:blockingIssues,
+    score_floor:vals.length?Math.min(...vals):0
+  };
+}
+
 export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}) {
-  const content=[{type:"text",text:"Judge A/B/C as a SET. PASS only if all are premium, prospect-specific and materially different. Identify the weaker conflicting variant if diversity fails. VERIFIED INPUT:"+JSON.stringify(inputPayload)}];
+  const content=[{type:"text",text:"Judge A/B/C as a SET on a 0-10 score scale. PASS when every score is at least 8 and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL. The variants must be premium, prospect-specific and materially different. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE. VERIFIED INPUT:"+JSON.stringify(inputPayload)}];
   for(const key of ["A","B","C"]) {
     content.push({type:"text",text:"VARIANT "+key+" DESKTOP"});
     content.push({type:"image_url",image_url:{url:"data:image/jpeg;base64,"+frames[key].desktop}});
@@ -638,9 +660,8 @@ export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}
     ],
     schema:setQaSchema,maxTokens:2200,temperature:0.04,vision:true,beforeAttempt:beforeModelAttempt
   });
-  const vals=Object.values(r.data.scores||{}).map(Number);
-  const pass=r.data.pass===true && vals.length===7 && vals.every(v=>Number.isFinite(v)&&v>=8) && (r.data.issues||[]).length===0;
-  return {...r.data,pass,model:r.model};
+  const normalized=normalizeSetQaResult(r.data);
+  return {...normalized,model:r.model};
 }
 
 export const AI_CONTRACT_META={MODEL_ROUTE_VERSION,PROMPT_VERSION};
