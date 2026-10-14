@@ -3,7 +3,8 @@ import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
 const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']?\s*(?:https?:|javascript:|data:|\/\/)/i;
-const FORBIDDEN_CSS=/@import|@font-face|expression\s*\(|javascript:|url\s*\(|\bcontent\s*:/i;
+const FORBIDDEN_CSS_NETWORK=/@import|@font-face|expression\s*\(|javascript:|url\s*\(/i;
+const FORBIDDEN_CSS_CONTENT=/(?:^|[;{]\s*)content\s*:/im;
 const INLINE_STYLE=/\sstyle\s*=/i;
 const EVENT_HANDLER=/\son[a-z]+\s*=/i;
 const COPY_TOKEN=/\{\{copy:([A-Z0-9_]+)\}\}/g;
@@ -55,7 +56,7 @@ export function validateRenderSpec(spec, manifests) {
   if(css.length<1000) issues.push("CUSTOM_CSS_TOO_THIN");
   if(FORBIDDEN_TAGS.test(main)) issues.push("FORBIDDEN_TAG");
   if(FORBIDDEN_URL.test(main)) issues.push("ARBITRARY_URL_FORBIDDEN");
-  if(FORBIDDEN_CSS.test(css)) issues.push("UNSAFE_CSS_URL_IMPORT_OR_CONTENT");
+  if(FORBIDDEN_CSS_NETWORK.test(css)||FORBIDDEN_CSS_CONTENT.test(css)) issues.push("UNSAFE_CSS_URL_IMPORT_OR_CONTENT");
   if(INLINE_STYLE.test(main)) issues.push("INLINE_STYLE_FORBIDDEN");
   if(EVENT_HANDLER.test(main)) issues.push("EVENT_HANDLER_FORBIDDEN");
   if(/<svg\b/i.test(main)) issues.push("INLINE_SVG_NOT_ALLOWED_V2_0");
