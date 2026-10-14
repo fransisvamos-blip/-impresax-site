@@ -10,6 +10,25 @@ const COPY_TOKEN=/\{\{copy:([A-Z0-9_]+)\}\}/g;
 const ASSET_TOKEN=/\{\{asset:([A-Z0-9_]+)\}\}/g;
 const CTA_TOKEN=/\{\{cta:([A-Z0-9_]+)\}\}/g;
 
+function normalizeMainFragment(value) {
+  let main=String(value||"").trim();
+  const wrapped=main.match(/^<main(?:\s[^>]*)?>([\s\S]*)<\/main>$/i);
+  if(wrapped) main=wrapped[1].trim();
+  return main;
+}
+
+function unsafeTextAttributes(html) {
+  const issues=[];
+  const re=/\b(?:alt|title|aria-label)\s*=\s*["']([^"']*)["']/gi;
+  for(const m of String(html||"").matchAll(re)) {
+    const value=String(m[1]||"").trim();
+    if(!value) continue;
+    if(/^\{\{copy:[A-Z0-9_]+\}\}$/.test(value)) continue;
+    issues.push(value.slice(0,80));
+  }
+  return issues;
+}
+
 function visibleLiteralText(html) {
   let x=String(html||"")
     .replace(/<!--[\s\S]*?-->/g," ")
@@ -30,21 +49,25 @@ function tokenSet(source,re) {
 export function validateRenderSpec(spec, manifests) {
   const issues=[];
   if(!spec || typeof spec!=="object") issues.push("RENDER_SPEC_OBJECT_REQUIRED");
-  const main=String(spec?.main_html||"");
+  const main=normalizeMainFragment(spec?.main_html);
   const css=String(spec?.custom_css||"");
   if(main.length<1200) issues.push("MAIN_HTML_TOO_THIN");
-  if(css.length<400) issues.push("CUSTOM_CSS_TOO_THIN");
+  if(css.length<1000) issues.push("CUSTOM_CSS_TOO_THIN");
   if(FORBIDDEN_TAGS.test(main)) issues.push("FORBIDDEN_TAG");
   if(FORBIDDEN_URL.test(main)) issues.push("ARBITRARY_URL_FORBIDDEN");
   if(FORBIDDEN_CSS.test(css)) issues.push("UNSAFE_CSS_URL_IMPORT_OR_CONTENT");
   if(INLINE_STYLE.test(main)) issues.push("INLINE_STYLE_FORBIDDEN");
   if(EVENT_HANDLER.test(main)) issues.push("EVENT_HANDLER_FORBIDDEN");
   if(/<svg\b/i.test(main)) issues.push("INLINE_SVG_NOT_ALLOWED_V2_0");
-  if(!/<section\b/i.test(main)) issues.push("SECTION_REQUIRED");
+  if(/<main\b/i.test(main)) issues.push("NESTED_MAIN_FORBIDDEN");
+  const sectionCount=(main.match(/<section\b/gi)||[]).length;
+  if(sectionCount<6) issues.push("SECTION_DEPTH_REQUIRED:"+sectionCount);
   if(!/@media/i.test(css)) issues.push("MOBILE_RULES_REQUIRED");
 
   const literal=visibleLiteralText(main);
   if(literal) issues.push("UNAUTHORIZED_LITERAL_COPY:"+literal.slice(0,120));
+  const textAttrs=unsafeTextAttributes(main);
+  if(textAttrs.length) issues.push("UNAUTHORIZED_TEXT_ATTRIBUTE:"+textAttrs.join("|").slice(0,120));
 
   const copyKeys=new Set(Object.keys(manifests?.copy||{}));
   const assetKeys=new Set(Object.keys(manifests?.assets||{}));
@@ -71,7 +94,7 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   const gate=validateRenderSpec(spec,manifests);
   if(!gate.pass) return {ok:false,issues:gate.issues};
 
-  let main=String(spec.main_html);
+  let main=normalizeMainFragment(spec.main_html);
   main=replaceAllTokens(main,COPY_TOKEN,copyManifest,"COPY");
   main=replaceAllTokens(main,ASSET_TOKEN,assetManifest,"ASSET");
   main=replaceAllTokens(main,CTA_TOKEN,ctaManifest,"CTA");
