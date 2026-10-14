@@ -241,6 +241,15 @@ async function validateApprovedVisualQa(sql, packId) {
             and q.status='PASS'
             and v.render_pack_id=${v2PackId}::uuid
             and r.revision=v.certified_revision) as certified_variant_qa,
+        (select count(distinct q.variant_revision_id)::int
+           from render_qa_results_v2 q
+           join render_variant_revisions r on r.id=q.variant_revision_id
+           join render_v2_variants v on v.id=r.variant_id
+          where q.render_pack_id=${v2PackId}::uuid
+            and q.qa_type='HERO_VISUAL'
+            and q.status='PASS'
+            and v.render_pack_id=${v2PackId}::uuid
+            and r.revision=v.certified_revision) as certified_hero_qa,
         (select count(*)::int
            from render_qa_results_v2 q
           where q.render_pack_id=${v2PackId}::uuid
@@ -255,6 +264,7 @@ async function validateApprovedVisualQa(sql, packId) {
     const state=rows[0] || {};
     return Number(state.certified_variants||0)===3 &&
       Number(state.certified_variant_qa||0)===3 &&
+      Number(state.certified_hero_qa||0)===3 &&
       Number(state.set_qa_passes||0)>=1 &&
       Number(state.approved_selected_pack||0)===1;
   }
@@ -296,6 +306,37 @@ async function validateApprovedVisualQa(sql, packId) {
     Number(state.selected_count||0)===1 &&
     setPass;
 }
+async function resolveV2ImplementationHtml(env,sql,pack,rawHtml) {
+  const contentMap=pack?.content_map||{};
+  if(contentMap?.source!=="RENDERING_STUDIO_V2") return rawHtml;
+
+  const revisionId=String(contentMap?.v2_variant_revision_id||"").trim();
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if(!uuid.test(revisionId)) throw new Error("V2_SELECTED_REVISION_REQUIRED");
+  if(!env.RENDER_ARTIFACTS || typeof env.RENDER_ARTIFACTS.get!=="function") {
+    throw new Error("V2_RENDER_STORAGE_NOT_CONFIGURED");
+  }
+
+  const rows=await sql`
+    select r2_key,mime,sha256
+    from render_artifacts_v2
+    where variant_revision_id=${revisionId}::uuid
+      and artifact_type='HERO_VISUAL_USED'
+    order by created_at desc
+    limit 1`;
+  if(!rows.length) throw new Error("V2_HERO_VISUAL_USED_REQUIRED");
+  const hero=rows[0];
+  const obj=await env.RENDER_ARTIFACTS.get(hero.r2_key);
+  if(!obj) throw new Error("V2_HERO_VISUAL_R2_MISSING");
+  const bytes=new Uint8Array(await obj.arrayBuffer());
+  const dataUri="data:"+(hero.mime||"image/jpeg")+";base64,"+bytesToBase64(bytes);
+  const html=String(rawHtml||"");
+  if(!html.includes("asset://HERO_VISUAL")) throw new Error("V2_IMPLEMENTATION_HERO_TOKEN_REQUIRED");
+  const resolved=html.replaceAll("asset://HERO_VISUAL",dataUri);
+  if(resolved.includes("asset://HERO_VISUAL")) throw new Error("V2_IMPLEMENTATION_HERO_UNRESOLVED");
+  return resolved;
+}
+
 export async function buildApprovedReference(env, prospectId) {
   const sql=db(env);
   const { prospect,pack,assets }=await approvedContext(sql,prospectId);
@@ -323,7 +364,7 @@ export async function buildApprovedReference(env, prospectId) {
 
   const missing=validateApprovedPack(pack);
   const approvedVisualQa=await validateApprovedVisualQa(sql,pack.id);
-  if (!approvedVisualQa) missing.push("THREE_VISUAL_QA_PASSES_SET_QA_AND_ONE_SELECTED_VARIANT");
+  if (!approvedVisualQa) missing.push("THREE_VISUAL_QA_HERO_QA_SET_QA_AND_ONE_SELECTED_VARIANT");
   if (missing.length) {
     const error="RENDER_PACK_INCOMPLETE: "+missing.join(",");
     await sql`select * from ops_register_factory_failure(${prospectId}::uuid,'build',${error},
@@ -336,7 +377,8 @@ export async function buildApprovedReference(env, prospectId) {
   const collision=await sql`select id from prospects where slug=${slug} and id<>${prospectId}::uuid limit 1`;
   if (collision.length) slug=(slug.slice(0,54)+"-"+String(prospect.id).slice(0,8)).replace(/-+$/,"");
 
-  const html=String(pack.content_map?.implementation_html || "").trim();
+  const rawHtml=String(pack.content_map?.implementation_html || "").trim();
+  const html=rawHtml ? await resolveV2ImplementationHtml(env,sql,pack,rawHtml) : "";
   if (!html) {
     const error="RENDER_PACK_INCOMPLETE: IMPLEMENTATION_HTML";
     await sql`select * from ops_register_factory_failure(${prospectId}::uuid,'build',${error},
