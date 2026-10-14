@@ -5,7 +5,7 @@ import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-
 import { stableStringify, safeExternalHttpUrl } from "../src/render-v2/utils.js";
 import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
 import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "../src/render-v2/design-grammar.js";
-import { extractStructured } from "../src/render-v2/ai.js";
+import { extractStructured, normalizeSetQaResult } from "../src/render-v2/ai.js";
 
 const manifests={
   copy:{HERO_HEADLINE:"Titolo",HERO_BODY:"Testo"},
@@ -306,4 +306,30 @@ test("extractStructured ignores envelope objects and selects schema payload",()=
   };
   const wrapped={result:{response:[{foo:"bar"},{content:'prefix {"pass":false,"summary":"x"} suffix'}]}};
   assert.deepEqual(extractStructured(wrapped,schema),{pass:false,summary:"x"});
+});
+
+
+test("set QA normalization accepts strong set with minor notes",()=>{
+  const r=normalizeSetQaResult({
+    pass:false,
+    weakest_variant:"C",
+    scores:{set_quality:8.6,diversity_ab:8.1,diversity_ac:8,diversity_bc:8.2,prospect_fit_a:9,prospect_fit_b:9,prospect_fit_c:8.5},
+    issues:["Variant C address block is slightly large.","Variant B headings marginally lower scannability."],
+    actions:[]
+  });
+  assert.equal(r.pass,true);
+  assert.equal(r.weakest_variant,"NONE");
+  assert.equal(r.score_floor,8);
+});
+
+test("set QA normalization converts unit scale and still blocks material diversity failures",()=>{
+  const r=normalizeSetQaResult({
+    pass:true,
+    weakest_variant:"B",
+    scores:{set_quality:.86,diversity_ab:.81,diversity_ac:.8,diversity_bc:.82,prospect_fit_a:.9,prospect_fit_b:.9,prospect_fit_c:.85},
+    issues:["A and B reuse the same composition and are not materially different."],
+    actions:[]
+  });
+  assert.equal(r.scores.set_quality,8.6);
+  assert.equal(r.pass,false);
 });
