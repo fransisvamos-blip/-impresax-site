@@ -83,57 +83,89 @@ export function explicitHeroAsset(assets={}) {
 }
 
 export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null}) {
-  const context={
-    vertical:clean(inputPayload?.vertical,300),
-    city:clean(inputPayload?.city,120),
-    verified_services:clean(inputPayload?.verified_services,900),
-    audience:clean(inputPayload?.brand_dna?.audience,500),
-    offer:clean(inputPayload?.brand_dna?.offer,700),
-    positioning:clean(inputPayload?.brand_dna?.business_positioning,700),
-    visual_cues:clean(inputPayload?.brand_dna?.visual_cues,500)
-  };
+  const sector=sectorDirection(inputPayload);
   return [
     "Create ONE premium photorealistic editorial hero photograph for a high-end business website.",
     "The image must be visually arresting, commercially credible, realistic and directly relevant to the VERIFIED business context below.",
     "This is illustrative commercial imagery, not documentary proof of an actual company project, premises, employee, client or completed work.",
     "ABSOLUTE NO-TEXT RULE: render ZERO visible letters, words, numbers, logos, signage, labels, UI, watermarks, certification marks, number plates or typographic shapes anywhere in the photograph. Surfaces that would normally contain writing must be blank, turned away, out of focus or non-readable. Do not invent pseudo-text or gibberish.",
     "Avoid obvious AI artifacts, uncanny hands/faces, impossible architecture, oversaturated advertising gloss, generic stock-photo poses and empty decorative scenes.",
-    sectorDirection(inputPayload),
+    sector,
     variantComposition(variantKey),
     "Composition must work as a website hero: strong focal point, premium depth/light/materiality, and a clean area for headline + CTA. It must also survive a 390px mobile crop without losing the main subject.",
     "Use natural European/Italian visual cues only when compatible with the verified city/context; do not invent a recognizable exact location.",
     "Direction intent: "+clean(direction?.hero_logic||direction?.core_idea,700),
     feedback?"REWORK FEEDBACK FROM PRIOR HERO QA: "+clean(feedback,1200):"",
-    "ABSTRACT VERIFIED BUSINESS CONTEXT (for scene relevance only; never reproduce any words from this context inside the image):",
-    JSON.stringify(context)
+    "Do not include any written business information in the image. Scene relevance is fully described above."
   ].join("\n");
 }
 
 export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback=null}) {
   if(!env.AI) throw new Error("HERO_IMAGE_AI_BINDING_REQUIRED");
-  const model=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-klein-9b";
+  const primary=env.V2_MODEL_HERO_IMAGE||"black-forest-labs/flux-2-pro-preview";
+  const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
   const prompt=buildHeroPrompt({inputPayload,direction,variantKey,feedback});
-  const form=new FormData();
-  form.append("prompt",prompt);
-  form.append("width","1536");
-  form.append("height","1024");
-  form.append("guidance","4.5");
-  const encoded=new Response(form);
-  const contentType=encoded.headers.get("content-type")||"multipart/form-data";
-  const response=await env.AI.run(model,{
-    multipart:{body:encoded.body,contentType}
-  });
-  const image=String(response?.image||"").trim();
-  if(!image) throw new Error("HERO_IMAGE_EMPTY_RESPONSE");
-  const bytes=base64ToBytes(image);
-  if(bytes.byteLength<50000) throw new Error("HERO_IMAGE_TOO_SMALL");
-  return {
-    bytes,
-    mime:detectImageMime(bytes),
-    model,
-    prompt,
-    width:1536,
-    height:1024,
-    generated:true
-  };
+  let lastError=null;
+
+  for(const model of [primary,fallback]) {
+    try {
+      let bytes;
+      let mime="image/jpeg";
+
+      if(String(model).startsWith("@cf/")) {
+        const form=new FormData();
+        form.append("prompt",prompt);
+        form.append("width","1536");
+        form.append("height","1024");
+        form.append("guidance","5.5");
+        form.append("seed",String(Math.abs((variantKey.charCodeAt(0)*1009)+(feedback?7919:3571))));
+        const encoded=new Response(form);
+        const contentType=encoded.headers.get("content-type")||"multipart/form-data";
+        const response=await env.AI.run(model,{
+          multipart:{body:encoded.body,contentType}
+        });
+        const image=String(response?.image||"").trim();
+        if(!image) throw new Error("HERO_IMAGE_EMPTY_RESPONSE");
+        bytes=base64ToBytes(image);
+        mime=detectImageMime(bytes);
+      } else {
+        const response=await env.AI.run(model,{
+          prompt,
+          width:1536,
+          height:1024,
+          output_format:"jpeg",
+          seed:Math.abs((variantKey.charCodeAt(0)*1009)+(feedback?7919:3571))
+        });
+        const imageUrl=String(response?.result?.image||response?.image||"").trim();
+        if(!imageUrl) throw new Error("HERO_IMAGE_EMPTY_RESPONSE");
+        if(imageUrl.startsWith("data:")) {
+          const comma=imageUrl.indexOf(",");
+          if(comma<0) throw new Error("HERO_IMAGE_INVALID_DATA_URI");
+          const header=imageUrl.slice(0,comma);
+          const payload=imageUrl.slice(comma+1);
+          bytes=header.includes(";base64")?base64ToBytes(payload):new TextEncoder().encode(decodeURIComponent(payload));
+          mime=header.match(/^data:([^;,]+)/)?.[1]||detectImageMime(bytes);
+        } else {
+          const fetched=await fetch(imageUrl,{cf:{cacheTtl:0,cacheEverything:false}});
+          if(!fetched.ok) throw new Error("HERO_IMAGE_FETCH_FAILED:"+fetched.status);
+          bytes=new Uint8Array(await fetched.arrayBuffer());
+          mime=fetched.headers.get("content-type")||detectImageMime(bytes);
+        }
+      }
+
+      if(!bytes || bytes.byteLength<50000) throw new Error("HERO_IMAGE_TOO_SMALL");
+      return {
+        bytes,
+        mime:mime.startsWith("image/")?mime:detectImageMime(bytes),
+        model,
+        prompt,
+        width:1536,
+        height:1024,
+        generated:true
+      };
+    } catch(error) {
+      lastError=error;
+    }
+  }
+  throw lastError||new Error("HERO_IMAGE_PROVIDER_FAILURE");
 }
