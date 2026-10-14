@@ -238,6 +238,20 @@ export async function allocateRevision(sql,variantId,parentRevisionId=null,alloc
 }
 
 export async function updateRevision(sql,revisionId,{status,renderSpec=null,sourceHash=null,htmlKey=null,desktopKey=null,mobileKey=null,score=null}) {
+  const currentRows=await sql`select * from render_variant_revisions where id=${revisionId}::uuid limit 1`;
+  const current=currentRows[0];
+  if(!current) throw new Error("SYSTEM_INVARIANT:REVISION_NOT_FOUND");
+  if(["RENDER_READY","QA_FAILED","SUPERSEDED"].includes(current.status)) {
+    const sameStatus=current.status===status;
+    const sameSpec=renderSpec===null || JSON.stringify(current.render_spec||{})===JSON.stringify(renderSpec||{});
+    const sameSource=sourceHash===null || current.source_hash===sourceHash;
+    const sameHtml=htmlKey===null || current.html_r2_key===htmlKey;
+    const sameDesktop=desktopKey===null || current.desktop_r2_key===desktopKey;
+    const sameMobile=mobileKey===null || current.mobile_r2_key===mobileKey;
+    const sameScore=score===null || Number(current.score)===Number(score);
+    if(sameStatus&&sameSpec&&sameSource&&sameHtml&&sameDesktop&&sameMobile&&sameScore) return current;
+    throw new Error("SYSTEM_INVARIANT:TERMINAL_VARIANT_REVISION_IMMUTABLE");
+  }
   const rows=await sql`
     update render_variant_revisions set
       status=${status},
