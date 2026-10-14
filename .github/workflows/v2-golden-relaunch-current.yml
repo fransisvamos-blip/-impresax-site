@@ -1,0 +1,57 @@
+name: V2 Golden Relaunch Current
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-golden-relaunch-current.yml'
+  workflow_dispatch:
+
+jobs:
+  relaunch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rendering-v2-shadow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Relaunch non-certified Golden variants on current contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+
+          declare -A packs=(
+            [CZ-031]="959dffb2-48d0-40db-94bf-1802625fa47d"
+            [CZ-209]="7a971ccf-6b83-449c-8b45-b50af3995b45"
+            [CZ-210]="c07a7358-e019-4b7d-9f77-a61dbdd58518"
+          )
+
+          for code in CZ-031 CZ-209 CZ-210; do
+            pack="${packs[$code]}"
+            key="golden-v2g-$(echo "$code" | tr '[:upper:]' '[:lower:]')"
+            ok=0
+            for i in {1..20}; do
+              status=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}' \
+                -H "Authorization: Bearer $token" \
+                -H "Content-Type: application/json" \
+                --data "{\"pack_id\":\"$pack\",\"run_key\":\"$key\"}" \
+                "$V2_URL/shadow/relaunch-variants" || true)
+              echo "$code attempt=$i code=$status body=$(cat /tmp/relaunch.json 2>/dev/null || true)"
+              if [ "$status" = "202" ] || [ "$status" = "200" ]; then ok=1; break; fi
+              sleep 4
+            done
+            [ "$ok" = "1" ] || exit 1
+            jq -e '.ok == true' /tmp/relaunch.json >/dev/null
+          done
+
+          echo "Golden CZ-031/CZ-209/CZ-210 relaunched on current V2 contract." >> "$GITHUB_STEP_SUMMARY"
