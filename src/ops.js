@@ -1534,6 +1534,12 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("Implementa questa versione") &&
         renderUiText.includes("/ops/api/render/select") &&
         renderUiText.includes("/ops/api/render/implement");
+      const renderUiV2Bridge =
+        renderUiText.includes("RENDERING V2") &&
+        renderUiText.includes("/ops/api/render-v2/select") &&
+        renderUiText.includes("/ops/api/render-v2/implement") &&
+        renderUiText.includes("data-render-source");
+      const renderV2ArtifactsBinding=Boolean(env.RENDER_ARTIFACTS && typeof env.RENDER_ARTIFACTS.get==="function");
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
       const frozenDbGuard=Boolean(rows[0]?.frozen_db_guard);
@@ -1542,6 +1548,8 @@ export async function handleOpsRequest(request, env) {
         adminAsset.ok &&
         renderUiAsset.ok &&
         renderUiTwoStep &&
+        renderUiV2Bridge &&
+        renderV2ArtifactsBinding &&
         frozenDbGuard &&
         frozenDbGuardCurrent &&
         falseRenderReady===0 &&
@@ -1610,6 +1618,9 @@ export async function handleOpsRequest(request, env) {
         visual_qa_model: "@cf/qwen/qwen3.8-27b",
         render_selection_mode: "TWO_STEP_EXPLICIT",
         render_ui_two_step: renderUiTwoStep,
+        render_v2_admin_bridge: renderUiV2Bridge,
+        render_v2_artifacts_binding: renderV2ArtifactsBinding,
+        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_BRIDGE_20261014",
         legacy_render_transports: "DISABLED",
         render_ready_count: Number(rows[0]?.render_ready_count || 0),
         false_render_ready_count: falseRenderReady,
