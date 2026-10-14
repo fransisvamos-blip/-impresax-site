@@ -32,15 +32,24 @@ async function inputAssetsFromDb(sql,packId,inputPayload) {
 async function latestReusableHeroAsset(sql,packId,variantKey) {
   const prefix="HERO_VISUAL_APPROVED_"+variantKey+"_";
   const rows=await sql`
-    select artifact_type,r2_key,sha256,mime,bytes,created_at
-    from render_artifacts_v2
-    where render_pack_id=${packId}::uuid
-      and variant_revision_id is null
-      and artifact_type like ${prefix+"%"}
-      and mime like 'image/%'
-      and sha256 is not null
-      and bytes>0
-    order by created_at desc
+    select a.artifact_type,a.r2_key,a.sha256,a.mime,a.bytes,a.created_at
+    from render_artifacts_v2 a
+    where a.render_pack_id=${packId}::uuid
+      and a.variant_revision_id is null
+      and a.artifact_type like ${prefix+"%"}
+      and a.mime like 'image/%'
+      and a.sha256 is not null
+      and a.bytes>0
+      and exists(
+        select 1
+        from render_qa_results_v2 q
+        where q.render_pack_id=a.render_pack_id
+          and q.qa_type='HERO_ASSET_PREQA'
+          and q.status='PASS'
+          and q.artifact_hashes->>'variant_key'=${variantKey}
+          and q.artifact_hashes->>'hero_sha256'=a.sha256
+      )
+    order by a.created_at desc
     limit 1`;
   if(!rows.length) return null;
   const a=rows[0];
@@ -136,7 +145,7 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
       },
       modelRouteVersion:MODEL_ROUTE_VERSION,
       promptVersion:PROMPT_VERSION,
-      idempotencyKey:"qa:HERO_ASSET_PREQA:"+packId+":"+variantKey+":"+safeInstance+":"+cycle+":"+attempt
+      idempotencyKey:"qa:HERO_ASSET_PREQA:"+packId+":"+variantKey+":"+artifact.sha256
     });
 
     if(approved) {
