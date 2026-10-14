@@ -121,7 +121,7 @@ function balancedJsonObjects(text) {
   return out;
 }
 
-function extractStructured(result,schema) {
+export function extractStructured(result,schema) {
   const queue=[result];
   const seen=new Set();
   let visited=0;
