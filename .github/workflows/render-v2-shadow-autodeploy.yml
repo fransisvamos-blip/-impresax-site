@@ -54,6 +54,15 @@ jobs:
           node --test test/render-v2*.test.mjs
           npx wrangler deploy --dry-run --config wrangler.render-v2.jsonc --outdir dist-v2
 
+      - name: Ensure private R2 artifact bucket
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! npx wrangler r2 bucket list --json | grep -q '"name": *"impresax-render-v2-shadow"'; then
+            npx wrangler r2 bucket create impresax-render-v2-shadow
+          fi
+
       - name: Deploy isolated V2 shadow
         if: steps.gate.outputs.ready == 'true'
         id: deploy
