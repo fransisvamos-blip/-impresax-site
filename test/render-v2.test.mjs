@@ -4,6 +4,7 @@ import { validateRenderSpec, compileRenderSpec } from "../src/render-v2/compiler
 import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-policy.js";
 import { stableStringify, safeExternalHttpUrl } from "../src/render-v2/utils.js";
 import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
+import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "../src/render-v2/design-grammar.js";
 
 const manifests={
   copy:{HERO_HEADLINE:"Titolo",HERO_BODY:"Testo"},
@@ -231,4 +232,49 @@ test("compiler normalizes identity token used inside img src",async()=>{
   assert.ok(result.normalizations.includes("NORMALIZED_IDENTITY_IMAGE_PLACEMENT"));
   assert.match(result.html,/data-official-logo-main/);
   assert.equal(result.html.includes('src="<img'),false);
+});
+
+
+test("direction feasibility gate removes impossible interactive and logo-variation demands",()=>{
+  const d=sanitizeDirectionForExecution({
+    mobile_reinterpretation:"Tabbed Layout",
+    cta_behavior:"Floating Button",
+    signature_device:"Logo Variation Signature",
+    asset_tokens:["PRIMARY_LOGO"],
+    fingerprint:{mobile_pattern:"Accordion",cta_pattern:"Floating Button",signature_device:"Logo Variation"}
+  },{hasEditorialAssets:false});
+  assert.equal(d.asset_tokens.length,0);
+  assert.equal(d.fingerprint.mobile_pattern,"Structured Stacked");
+  assert.equal(d.fingerprint.cta_pattern,"Anchored CTA");
+  assert.equal(d.fingerprint.signature_device,"Geometric Rule System");
+});
+
+test("zero-photo grammar compiles all three variants",async()=>{
+  const copy={
+    HERO_HEADLINE:"DEDIL DONATO S.R.L.",
+    HERO_BODY:"Distribuzione e lavorazione per imprese e professionisti.",
+    LOCALITY_LINE:"Catanzaro",
+    PRIMARY_CTA_LABEL:"Richiedi un preventivo",
+    SECONDARY_CTA_LABEL:"Contatti",
+    FOOTER_LINE:"Soluzioni per il lavoro professionale",
+    SERVICE_1_TITLE:"Vendita all'ingrosso",
+    SERVICE_1_BODY:"Materiali e forniture professionali.",
+    SERVICE_2_TITLE:"Lavorazione del tondo",
+    SERVICE_2_BODY:"Servizio dedicato alle esigenze operative.",
+    TRUST_1:"Presenza locale verificata",
+    TRUST_2:"Contatti verificati",
+    TRUST_3:"Servizi verificati"
+  };
+  for(const variantKey of ["A","B","C"]) {
+    const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true});
+    const result=await compileRenderSpec(built.spec,{
+      businessName:"DEDIL DONATO S.R.L.",
+      logoToken:"identity://PRIMARY_LOGO",
+      copyManifest:copy,
+      assetManifest:{},
+      ctaManifest:{PRIMARY:"tel:+390961000000",SECONDARY:"mailto:info@example.it"}
+    });
+    assert.equal(result.ok,true,variantKey+":"+JSON.stringify(result.issues||[]));
+    assert.match(result.html,/Content-Security-Policy/);
+  }
 });
