@@ -80,9 +80,9 @@ function discoverServiceLinks(doc) {
     if(!href) continue;
     let u; try { u=new URL(href); } catch { continue; }
     if(u.origin!==origin) continue;
-    if(!/(serviz|service|prestaz|trattament|attivit|soluzion|prodott|nolegg|costruzion|odontoiatr|fisioterap|specialit|competen)/i.test(u.pathname+u.search)) continue;
+    if(!/(serviz|service|prestaz|trattament|attivit|soluzion|prodott|nolegg|costruzion|odontoiatr|fisioterap|specialit|competen|contatt|contact|dove|sede|chi-siamo|azienda|about)/i.test(u.pathname+u.search)) continue;
     if(!out.includes(href)) out.push(href);
-    if(out.length>=3) break;
+    if(out.length>=5) break;
   }
   return out;
 }
@@ -104,6 +104,32 @@ function logoCandidate(doc,businessName) {
     if(score>bestScore){bestScore=score;best=url;}
   }
   return bestScore>=4?best:null;
+}
+
+function extractOfferHeadings(docs) {
+  const out=[];
+  const pathSignal=/(serviz|service|prestaz|trattament|attivit|soluzion|prodott|nolegg|costruzion|odontoiatr|fisioterap|specialit|competen)/i;
+  for(const doc of docs) {
+    let u; try { u=new URL(doc.url); } catch { continue; }
+    if(!pathSignal.test(u.pathname+u.search)) continue;
+    const labels=[];
+    for(const m of doc.raw.matchAll(/<(?:h1|h2|h3)\b[^>]*>([\s\S]*?)<\/(?:h1|h2|h3)>/gi)) {
+      const t=cleanText(m[1]);
+      if(t.length>=4 && t.length<=140 && !/(cookie|privacy|newsletter|menu|login|home)/i.test(t)) labels.push(t);
+    }
+    const title=doc.raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+    if(title) {
+      const t=cleanText(title[1]).replace(/\s*[|–—-]\s*[^|–—-]+$/,"").trim();
+      if(t.length>=4 && t.length<=140 && !/(cookie|privacy|home)/i.test(t)) labels.unshift(t);
+    }
+    for(const label of labels) {
+      const key=label.toLowerCase();
+      if(!out.some(x=>x.toLowerCase()===key)) out.push(label);
+      if(out.length>=8) break;
+    }
+    if(out.length>=8) break;
+  }
+  return out;
 }
 
 function extractContacts(docs) {
@@ -257,7 +283,7 @@ async function collectDocs(prospect) {
       if(docs.some(d=>d.url===url)) continue;
       const doc=await fetchDoc(url);
       if(doc&&doc.text.length>80) docs.push(doc);
-      if(docs.length>=9) break;
+      if(docs.length>=11) break;
     }
   }
   return docs;
@@ -271,12 +297,13 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
   const docs=await collectDocs(prospect);
   const contactsFound=extractContacts(docs);
   const ai=await extractServices(env,docs,prospect).catch(()=>({services:[],trust:[]}));
+  const deterministicOffers=extractOfferHeadings(docs);
 
   const existingServices=meaningful(source.verified_services)?String(source.verified_services):"";
   const existingContacts=meaningful(source.verified_contacts)?String(source.verified_contacts):"";
   const existingTrust=meaningful(source.verified_trust)?String(source.verified_trust):"";
 
-  const verifiedServices=existingServices || ai.services.map(x=>x.text).join("; ");
+  const verifiedServices=existingServices || ai.services.map(x=>x.text).join("; ") || deterministicOffers.join("; ");
   const verifiedContacts=existingContacts || contactsFound.value;
   const verifiedTrust=existingTrust || ai.trust.map(x=>x.text).join("; ");
 
@@ -317,6 +344,7 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
   const evidence={
     fetched_sources:docs.map(d=>d.url),
     service_evidence:ai.services,
+    deterministic_offer_headings:deterministicOffers,
     trust_evidence:ai.trust,
     contact_evidence:contactsFound.evidence,
     remediated_at:new Date().toISOString()
