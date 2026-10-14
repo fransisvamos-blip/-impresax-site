@@ -79,24 +79,82 @@ function parseJsonCandidate(value) {
   return null;
 }
 
-function extractStructured(result) {
-  const candidates=[
-    result?.response,
-    result?.response?.response,
-    result?.response?.content,
-    result?.result,
-    result?.result?.response,
-    result?.result?.content,
-    result?.choices?.[0]?.message?.parsed,
-    result?.choices?.[0]?.message?.content,
-    result?.choices?.[0]?.message?.content?.[0]?.text,
-    result?.output_text,
-    result?.text,
-    result?.output?.[0]?.content?.[0]?.text
-  ];
-  for(const value of candidates) {
-    const parsed=parseJsonCandidate(value);
-    if(parsed) return parsed;
+function schemaRootKeys(schema) {
+  return new Set(Object.keys(schema?.properties||{}));
+}
+
+function matchesSchemaRoot(value,schema) {
+  if(!value || typeof value!=="object" || Array.isArray(value)) return false;
+  const keys=schemaRootKeys(schema);
+  if(!keys.size) return true;
+  const own=Object.keys(value);
+  const overlap=own.filter(k=>keys.has(k)).length;
+  const required=Array.isArray(schema?.required)?schema.required:[];
+  const requiredOverlap=required.filter(k=>Object.prototype.hasOwnProperty.call(value,k)).length;
+  return overlap>=Math.min(2,keys.size) || (required.length>0 && requiredOverlap>=Math.min(2,required.length));
+}
+
+function balancedJsonObjects(text) {
+  const s=String(text||"");
+  const out=[];
+  let start=-1,depth=0,inString=false,escape=false;
+  for(let i=0;i<s.length;i++) {
+    const ch=s[i];
+    if(inString) {
+      if(escape) { escape=false; continue; }
+      if(ch==="\\") { escape=true; continue; }
+      if(ch==='"') inString=false;
+      continue;
+    }
+    if(ch==='"') { inString=true; continue; }
+    if(ch==="{") {
+      if(depth===0) start=i;
+      depth++;
+    } else if(ch==="}" && depth>0) {
+      depth--;
+      if(depth===0 && start>=0) {
+        out.push(s.slice(start,i+1));
+        start=-1;
+      }
+    }
+  }
+  return out;
+}
+
+function extractStructured(result,schema) {
+  const queue=[result];
+  const seen=new Set();
+  let visited=0;
+  while(queue.length && visited<500) {
+    const value=queue.shift();
+    visited++;
+    if(value==null) continue;
+
+    if(typeof value==="string") {
+      const direct=parseJsonCandidate(value);
+      if(direct && matchesSchemaRoot(direct,schema)) return direct;
+      for(const raw of balancedJsonObjects(value)) {
+        const parsed=parseJsonCandidate(raw);
+        if(parsed && matchesSchemaRoot(parsed,schema)) return parsed;
+      }
+      continue;
+    }
+
+    if(typeof value!=="object") continue;
+    if(seen.has(value)) continue;
+    seen.add(value);
+
+    if(matchesSchemaRoot(value,schema)) return value;
+
+    const priority=["parsed","response","content","text","output_text","result","message","choices","output","data"];
+    for(const key of priority) if(Object.prototype.hasOwnProperty.call(value,key)) queue.unshift(value[key]);
+    if(Array.isArray(value)) {
+      for(const item of value) queue.push(item);
+    } else {
+      for(const [key,item] of Object.entries(value)) {
+        if(!priority.includes(key)) queue.push(item);
+      }
+    }
   }
   throw new Error("AI_OUTPUT_SCHEMA_INVALID");
 }
@@ -128,7 +186,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
       const result=await env.AI.run(model,inference,runOptions);
-      return {data:extractStructured(result),model,fallback:attempt.fallback,retry:attempt.retry};
+      return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
     } catch(error) {
       lastError=error;
     }
