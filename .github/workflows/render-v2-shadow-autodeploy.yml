@@ -123,7 +123,24 @@ jobs:
               "$V2_URL/shadow/start" || true)
             echo "start_attempt=$i code=$code body=$(cat /tmp/v2-start.json 2>/dev/null || true)"
             if [ "$code" = "202" ]; then
-              echo "CZ-063 V2 workflow started immediately." >> "$GITHUB_STEP_SUMMARY"
+              status=$(jq -r '.workflow_status.status // ""' /tmp/v2-start.json)
+              instance=$(jq -r '.workflow_instance_id // ""' /tmp/v2-start.json)
+              if [ "$status" = "failed" ] && [ -n "$instance" ]; then
+                payload=$(jq -nc --arg id "$instance" '{workflow_instance_id:$id,action:"restart"}')
+                control_code=$(curl -sS -o /tmp/v2-control.json -w '%{http_code}' \
+                  -H "Authorization: Bearer $token" \
+                  -H "Content-Type: application/json" \
+                  --data "$payload" \
+                  "$V2_URL/shadow/control" || true)
+                echo "control_code=$control_code body=$(cat /tmp/v2-control.json 2>/dev/null || true)"
+                if [ "$control_code" != "200" ]; then
+                  echo "CZ-063 workflow restart failed."
+                  exit 1
+                fi
+                echo "CZ-063 failed workflow restarted on the repaired V2 engine." >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "CZ-063 V2 workflow is active." >> "$GITHUB_STEP_SUMMARY"
+              fi
               exit 0
             fi
             sleep 5
