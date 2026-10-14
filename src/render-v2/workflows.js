@@ -693,11 +693,25 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
             select artifact_type,r2_key
             from render_artifacts_v2
             where variant_revision_id=${rev.id}::uuid
-              and artifact_type in ('QA_DESKTOP','QA_MOBILE')`;
+              and artifact_type in ('QA_DESKTOP','QA_MOBILE','BROWSER_DIAGNOSTICS')`;
           const qaByType=Object.fromEntries(qaArtifacts.map(x=>[x.artifact_type,x.r2_key]));
           const d=await readArtifactBytes(this.env,qaByType.QA_DESKTOP||rev.desktop_r2_key);
           const m=await readArtifactBytes(this.env,qaByType.QA_MOBILE||rev.mobile_r2_key);
-          out[key]={desktop:bytesToBase64(d),mobile:bytesToBase64(m),revision_id:rev.id};
+          let browserEvidence={};
+          if(qaByType.BROWSER_DIAGNOSTICS) {
+            const diagBytes=await readArtifactBytes(this.env,qaByType.BROWSER_DIAGNOSTICS);
+            const diag=JSON.parse(new TextDecoder().decode(diagBytes));
+            browserEvidence={
+              deterministic_gate_pass:diag.gate?.pass===true,
+              deterministic_gate_issues:diag.gate?.issues||[],
+              desktop:diag.diagnostics?.desktop||{},
+              mobile:diag.diagnostics?.mobile||{},
+              official_identity_visible:
+                (diag.diagnostics?.desktop?.official_logo_present??false)
+                && (diag.diagnostics?.mobile?.official_logo_present??false)
+            };
+          }
+          out[key]={desktop:bytesToBase64(d),mobile:bytesToBase64(m),revision_id:rev.id,browser_evidence:browserEvidence};
         }
         return out;
       });
