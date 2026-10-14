@@ -21,5 +21,6 @@ export function buildContactManifest(input) {
   const primary=phone ? "tel:"+phone : email ? "mailto:"+email : "";
   const secondary=email ? "mailto:"+email : primary;
   if(!primary) throw new Error("INPUT_DATA:VERIFIED_CONTACT_PATH_UNRESOLVED");
-  return {PRIMARY:primary,SECONDARY:secondary};
+  const address=String(input?.address||"").trim();
+  return {PRIMARY:primary,SECONDARY:secondary,ADDRESS:address};
 }
