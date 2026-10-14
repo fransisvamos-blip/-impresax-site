@@ -5,6 +5,7 @@ import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-
 import { stableStringify, safeExternalHttpUrl } from "../src/render-v2/utils.js";
 import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
 import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "../src/render-v2/design-grammar.js";
+import { extractStructured } from "../src/render-v2/ai.js";
 
 const manifests={
   copy:{HERO_HEADLINE:"Titolo",HERO_BODY:"Testo"},
