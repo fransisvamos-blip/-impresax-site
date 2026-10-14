@@ -9,7 +9,7 @@ import { classifyFailure, failureFingerprint, shouldChangeStrategy } from "./fai
 import { bytesToBase64 } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 import { buildContactManifest } from "./contacts.js";
-import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
+import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
 
 
 async function inputAssetsFromDb(sql,packId,inputPayload) {
@@ -128,7 +128,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const ctaManifest=buildContactManifest(inputPayload);
       const editorialAssetTokens=Object.keys(assets).filter(k=>k!=="PRIMARY_LOGO" && !assets[k]?.unavailable);
       const zeroPhoto=editorialAssetTokens.length===0;
-      const direction=sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:!zeroPhoto});
+      const direction=zeroPhoto
+        ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
+        : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
       return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto};
     });
 
@@ -157,7 +159,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
-              hasIdentity:Boolean(context.assets.PRIMARY_LOGO)
+              hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
+              inputPayload:context.inputPayload
             });
             return {spec:deterministic.spec,model:deterministic.strategy,deterministic:true};
           }
@@ -176,6 +179,21 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         );
         const domain=fail?.failure?.failure_domain||"AI_PROVIDER";
         const budget=domain==="SYSTEM_INVARIANT" && /HARD_BUDGET_EXCEEDED/.test(message);
+        const retryable=fail?.failure?.retryable===true && !budget && cycle<MAX_VISUAL_REVISIONS;
+        if(retryable) {
+          await step.do("r"+cycle+"-generation-provider-retry",async()=>{
+            await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+            await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"PROVIDER_RETRY",errorCode:null,metadata:{retry_domain:domain,retry_cycle:cycle+1}});
+            return {ok:true};
+          });
+          feedback={
+            ...(feedback||{}),
+            reason:"TRANSIENT_PROVIDER_RETRY",
+            issues:[...((feedback?.issues)||[]),"Transient provider failure; preserve the best valid composition and retry without changing factual content."],
+            actions:[...((feedback?.actions)||[]),"Retry the same visual strategy; do not redesign because of an infrastructure timeout."]
+          };
+          continue;
+        }
         await step.do("r"+cycle+"-generation-provider-escalation",async()=>{
           await updateRevision(sql,revision.id,{status:"QA_FAILED"});
           if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
