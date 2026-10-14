@@ -1,8 +1,8 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V1";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_0";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V2_HERO";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_1_HERO";
 export const COMPILER_VERSION = "RS_COMPILER_V1_3_1";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_C";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V3";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V4_HERO";
 
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
 export const MAX_VISUAL_REVISIONS = 5;
@@ -10,6 +10,7 @@ export const SAME_FAILURE_BREAKER = 2;
 
 export const QA_SCORE_KEYS = Object.freeze([
   "first_impression","art_direction","prospect_specificity","brand_fidelity",
+  "hero_strength","hero_relevance","hero_image_quality","hero_mobile_crop",
   "composition","typography","imagery","materiality","signature_visual_language",
   "rhythm","restraint","cta_integration","commercial_clarity","desktop_quality",
   "mobile_quality","footer_quality","no_template_feel","no_saas_feel",
@@ -24,7 +25,8 @@ export const DEFAULT_MODELS = Object.freeze({
   visualQa: "@cf/qwen/qwen3.8-27b",
   setQa: "@cf/qwen/qwen3.8-27b",
   textFallback: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-  visionFallback: "@cf/moonshotai/kimi-k2.7-code"
+  visionFallback: "@cf/moonshotai/kimi-k2.7-code",
+  heroImage: "@cf/black-forest-labs/flux-2-klein-9b"
 });
 
 export const STEP_RETRY = Object.freeze({
