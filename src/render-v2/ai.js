@@ -155,8 +155,8 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         messages:[...messages,...qaJsonInstruction,...retrySuffix],
         temperature:attempt.retry?0:temperature
       };
-      // Qwen vision is not an officially listed Workers AI JSON Mode model.
-      // For multimodal QA we request plain JSON text and validate it ourselves.
+      // Multimodal QA uses plain JSON text plus our deterministic extractor/validator.
+      // This avoids provider-specific structured-output failures on vision routes.
       if(!qaRole) inference.response_format={type:"json_schema",json_schema:schema};
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
