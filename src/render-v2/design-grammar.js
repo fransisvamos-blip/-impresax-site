@@ -111,16 +111,16 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const cTrustRows=trustKeys.map(key=>
     "<div class=\"ixc-trust-row\"><span class=\"ixc-trust-rule\" aria-hidden=\"true\"></span><strong>"+copyToken(key)+"</strong></div>"
   ).join("");
-  const cPositionToken=trustKeys[0]||"LOCALITY_LINE";
-  const cBridgeTitle=serviceTitles[1]||"FOOTER_LINE";
-  const cBridgeBody=serviceBodies[1]||"HERO_BODY";
+  const cPositionToken=Object.prototype.hasOwnProperty.call(copyManifest,"FOOTER_LINE") ? "FOOTER_LINE" : "LOCALITY_LINE";
+  const cBridgeTitle="LOCALITY_LINE";
+  const cBridgeBody=null;
 
   const mainC=[
     "<section id=\"hero\" class=\"ixg ixc-hero ixg-c\"><div class=\"ixg-shell ixc-hero__inner\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h1>"+copyToken("HERO_HEADLINE")+"</h1><div class=\"ixc-hero__lower\"><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div><div class=\"ixc-rail\" aria-hidden=\"true\"><i></i><i></i><i></i></div></div></section>",
     "<section id=\"positioning\" class=\"ixg ixc-positioning ixg-c\"><div class=\"ixg-shell ixc-positioning__grid\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken(cPositionToken)+"</h2></div></section>",
     "<section id=\"services\" class=\"ixg ixc-services ixg-c\"><div class=\"ixg-shell\">"+cServiceRows+"</div></section>",
     "<section id=\"trust\" class=\"ixg ixc-trust ixg-c\"><div class=\"ixg-shell ixc-trust__inner\">"+cTrustRows+"</div></section>",
-    "<section id=\"bridge\" class=\"ixg ixc-bridge ixg-c\"><div class=\"ixg-shell ixc-bridge__inner\"><div class=\"ixc-bridge__rule\" aria-hidden=\"true\"></div><div class=\"ixc-bridge__copy\"><h2>"+copyToken(cBridgeTitle)+"</h2><p>"+copyToken(cBridgeBody)+"</p></div></div></section>",
+    "<section id=\"bridge\" class=\"ixg ixc-bridge ixg-c\"><div class=\"ixg-shell ixc-bridge__inner\"><div class=\"ixc-bridge__rule\" aria-hidden=\"true\"></div><div class=\"ixc-bridge__copy\"><h2>"+copyToken(cBridgeTitle)+"</h2></div></div></section>",
     "<section id=\"contact\" class=\"ixg ixc-contact ixg-c\"><div class=\"ixg-shell ixc-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("PRIMARY_CTA_LABEL")+"</h2></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
@@ -197,7 +197,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixc-trust{background:#e7e4dd;color:#111;padding:clamp(64px,8vw,110px) 0}.ixc-trust__inner{display:grid;grid-template-columns:1fr}.ixc-trust-row{display:grid;grid-template-columns:minmax(90px,.23fr) minmax(0,1fr);gap:28px;align-items:center;padding:26px 0;border-bottom:1px solid rgba(17,17,17,.2)}.ixc-trust-row:first-child{border-top:1px solid rgba(17,17,17,.2)}
 .ixc-trust-rule{height:5px;background:#111;display:block}.ixc-trust-row:nth-child(even) .ixc-trust-rule{width:55%;background:#89857d}.ixc-trust-row strong{font-size:clamp(24px,3vw,44px);line-height:1.05;letter-spacing:-.03em}
 .ixc-bridge{background:#fff;color:#111;padding:clamp(80px,10vw,150px) 0}.ixc-bridge__inner{display:grid;grid-template-columns:12px minmax(0,1fr);gap:clamp(34px,6vw,84px);align-items:stretch}.ixc-bridge__rule{background:#111;min-height:260px}.ixc-bridge__copy{display:grid;gap:30px;max-width:950px}.ixc-bridge__copy h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(52px,7.4vw,108px);line-height:.9;letter-spacing:-.055em}.ixc-bridge__copy p{max-width:52ch;color:#4e4a44}
-.ixc-contact{background:#111;color:#f5f2eb;padding:clamp(68px,8vw,112px) 0}.ixc-contact__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:50px;align-items:end}.ixc-contact h2{font-family:Arial,Helvetica,sans-serif;font-size:clamp(44px,6vw,86px);line-height:.92;letter-spacing:-.045em;max-width:10ch}.ixc-contact .ixg-cta--primary{background:#f5f2eb;color:#111;border-color:#f5f2eb}.ixc-contact .ixg-cta--secondary{color:#f5f2eb;border-color:#f5f2eb}
+.ixc-contact{background:#111;color:#f5f2eb;padding:clamp(68px,8vw,112px) 0}.ixc-contact__inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:50px;align-items:end}.ixc-contact h2{font-family:Arial,Helvetica,sans-serif;font-size:clamp(44px,6vw,86px);line-height:.92;letter-spacing:-.045em;max-width:10ch}
+.ixc-hero .ixg-cta,.ixc-contact .ixg-cta{background:transparent!important;color:inherit!important;border:0!important;border-bottom:1px solid currentColor!important;padding:0 0 7px!important;min-height:0!important;border-radius:0!important;width:auto!important;justify-content:flex-start!important}
+.ixc-hero .ixg-actions,.ixc-contact .ixg-actions{gap:18px 28px}
 @media(max-width:700px){
  .ixc-hero{padding:64px 0 42px}.ixc-hero h1{font-size:clamp(54px,15vw,76px);line-height:.86;max-width:none;margin-top:26px}.ixc-hero__lower{grid-template-columns:1fr;gap:26px;margin-top:42px}.ixc-hero__lower .ixg-actions{display:grid}
  .ixc-rail{height:16px;margin-top:34px;grid-template-columns:1.5fr .7fr .25fr}.ixc-positioning{padding:58px 0}.ixc-positioning__grid{grid-template-columns:1fr;gap:22px}.ixc-positioning h2{font-size:clamp(34px,10vw,50px)}
@@ -225,8 +227,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       section_ids:["hero","positioning","services","trust","bridge","contact"],
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:[],
-      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v1.7 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
+      implementation_notes:"Deterministic ZERO_PHOTO_PREMIUM grammar v1.8 "+variantKey+": unique shell identity, verified copy distribution, structural rule system, responsive 1440/390."
     },
-    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V1_7"
+    strategy:"ZERO_PHOTO_PREMIUM_GRAMMAR_V1_8"
   };
 }
