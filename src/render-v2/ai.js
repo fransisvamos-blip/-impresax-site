@@ -615,7 +615,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     safePrevious?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(safePrevious):""
   ].filter(Boolean).join("\n");
 
-  const role=qaFeedback?"repair":"generator";
+  const role=qaFeedback && qaFeedback.reason!=="ENGINE_CONTRACT_UPGRADE" ? "repair" : "generator";
   const r=await runStructured(env,role,{
     messages:[
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
