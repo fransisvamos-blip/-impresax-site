@@ -627,17 +627,19 @@ const visualQaSchema={
   required:["pass","summary","issues","actions","scores"]
 };
 
-export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,beforeModelAttempt=null}) {
+export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     "PASS only when every score is >=8 and there are no critical/major unresolved issues.",
     "The deterministic shell owns the official logo, contact path and footer. A direction described as logo-centric may use the immutable logo in the shell and at most one compiler-owned hero identity placement; never demand a fake/reinterpreted logo.",
+    "BROWSER EVIDENCE is authoritative for mechanical facts. If it says official_identity_visible=true and broken_images=0, DO NOT claim the official logo is missing, fake, reinterpreted or broken merely because it is visually subtle in the screenshot. Judge its visual prominence separately if needed. If clipped_contacts is empty, do not claim a verified contact is mechanically truncated.",
     "Scripts and forms are prohibited in previews. Judge only what the static preview contract can actually implement; never require accordion/tabs/dark-mode/back-to-top/forms/scroll widgets or other interactive product features.",
     "The QA action list MUST stay within visual composition, typography, spacing, responsive layout, permitted static CTA treatment, immutable identity placement and existing verified content. Never propose new pages, report links, toggles, widgets, invented copy or new assets.",
     "Hard fail generic template/SaaS feel, weak typography/composition, fake or cheap imagery, weak mobile reinterpretation, poor brand fidelity, truth risk, or lack of prospect specificity.",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
-    "VERIFIED INPUT:"+JSON.stringify(inputPayload)
+    "VERIFIED INPUT:"+JSON.stringify(inputPayload),
+    "BROWSER EVIDENCE:"+JSON.stringify(browserEvidence||{})
   ].join("\n");
   const r=await runStructured(env,"visualQa",{
     messages:[
