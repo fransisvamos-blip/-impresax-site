@@ -278,3 +278,31 @@ test("zero-photo grammar compiles all three variants",async()=>{
     assert.match(result.html,/Content-Security-Policy/);
   }
 });
+
+
+test("extractStructured handles nested vision-provider wrappers",()=>{
+  const schema={
+    type:"object",
+    properties:{pass:{type:"boolean"},summary:{type:"string"},issues:{type:"array"}},
+    required:["pass","summary","issues"]
+  };
+  const wrapped={
+    response:{
+      content:[
+        {type:"reasoning",text:"analysis omitted"},
+        {type:"text",text:'<think>done</think>\n\n{"pass":true,"summary":"ok","issues":[]}'}
+      ]
+    }
+  };
+  assert.deepEqual(extractStructured(wrapped,schema),{pass:true,summary:"ok",issues:[]});
+});
+
+test("extractStructured ignores envelope objects and selects schema payload",()=>{
+  const schema={
+    type:"object",
+    properties:{pass:{type:"boolean"},summary:{type:"string"}},
+    required:["pass","summary"]
+  };
+  const wrapped={result:{response:[{foo:"bar"},{content:'prefix {"pass":false,"summary":"x"} suffix'}]}};
+  assert.deepEqual(extractStructured(wrapped,schema),{pass:false,summary:"x"});
+});
