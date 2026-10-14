@@ -46,6 +46,15 @@ jobs:
         if: steps.prereq.outputs.ready == 'true'
         run: npm install --no-audit --no-fund
 
+      - name: Ensure private R2 artifact bucket
+        if: steps.prereq.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! npx wrangler r2 bucket list --json | grep -q '"name": *"impresax-render-v2-shadow"'; then
+            npx wrangler r2 bucket create impresax-render-v2-shadow
+          fi
+
       - name: Deploy isolated V2 shadow Worker
         if: steps.prereq.outputs.ready == 'true'
         id: deploy
