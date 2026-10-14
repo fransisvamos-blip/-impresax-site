@@ -21,6 +21,10 @@ function objectHasValue(v) {
   return meaningfulVerifiedValue(v);
 }
 
+function verifiedOrEmpty(v) {
+  return meaningfulVerifiedValue(v) ? v : "";
+}
+
 function assetCandidates(prospect) {
   const s=prospect.source_data||{};
   const out=[];
@@ -66,12 +70,12 @@ export function buildInputPayload(prospect) {
     official_logo:logo,
     identity_mode:status==="NO_OFFICIAL_LOGO_CONFIRMED"?"TEXT_IDENTITY":"OFFICIAL_LOGO",
     brand_dna:prospect.brand_dna||{},
-    verified_services:s.verified_services||"",
-    verified_contacts:s.verified_contacts||"",
-    verified_trust:s.verified_trust||"",
-    commercial_goal:s.commercial_goal||"",
-    primary_cta:s.primary_cta||"",
-    secondary_cta:s.secondary_cta||"",
+    verified_services:verifiedOrEmpty(s.verified_services),
+    verified_contacts:verifiedOrEmpty(s.verified_contacts),
+    verified_trust:verifiedOrEmpty(s.verified_trust),
+    commercial_goal:verifiedOrEmpty(s.commercial_goal),
+    primary_cta:verifiedOrEmpty(s.primary_cta),
+    secondary_cta:verifiedOrEmpty(s.secondary_cta),
     source_references:ensureArray(s.source_references).map(safeHttpUrl).filter(Boolean),
     assets,
     asset_mode:assets.some(x=>x.role!=="identity")?"VERIFIED_VISUALS":"ZERO_PHOTO_PREMIUM",
