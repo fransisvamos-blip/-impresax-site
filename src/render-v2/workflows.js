@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
 import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS } from "./constants.js";
-import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa } from "./ai.js";
+import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant } from "./browser.js";
@@ -30,7 +30,7 @@ async function inputAssetsFromDb(sql,packId,inputPayload) {
 
 
 async function latestReusableHeroAsset(sql,packId,variantKey) {
-  const prefix="HERO_VISUAL_"+variantKey+"_R";
+  const prefix="HERO_VISUAL_APPROVED_"+variantKey+"_";
   const rows=await sql`
     select artifact_type,r2_key,sha256,mime,bytes,created_at
     from render_artifacts_v2
@@ -47,10 +47,11 @@ async function latestReusableHeroAsset(sql,packId,variantKey) {
   return {
     asset_id:"HERO_VISUAL",
     role:"hero",
-    source_type:"AI_GENERATED_EDITORIAL_REUSED",
+    source_type:"AI_GENERATED_EDITORIAL_REUSED_PREQA_PASS",
     commercial_use_status:"AI_GENERATED_EDITORIAL",
     generated:true,
     reused:true,
+    preqa_pass:true,
     r2_key:a.r2_key,
     mime:a.mime,
     sha256:a.sha256,
@@ -60,42 +61,92 @@ async function latestReusableHeroAsset(sql,packId,variantKey) {
 
 async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,variantKey,workflowInstanceId,cycle=1,revisionId=null,feedback=null}) {
   const model=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-klein-9b";
-  await reserveAiCall(sql,packId,env,"HERO_IMAGE:"+variantKey+":"+model,revisionId);
-  const generated=await generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback});
   const safeInstance=String(workflowInstanceId||"workflow").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,120);
   const base="render-v2/"+inputPayload.prospect_code+"/"+packId+"/"+variantKey+"/hero/";
-  const key=base+safeInstance+"-r"+cycle+".jpg";
-  const type="HERO_VISUAL_"+variantKey+"_R"+cycle;
-  const artifact=await putArtifact(env,sql,{
-    packId,revisionId,type,key,body:generated.bytes,mime:generated.mime,producerStep:"HERO_IMAGE_GENERATION"
-  });
-  const metaKey=base+safeInstance+"-r"+cycle+".json";
-  await putArtifact(env,sql,{
-    packId,revisionId,type:"HERO_VISUAL_META_"+variantKey+"_R"+cycle,key:metaKey,
-    body:new TextEncoder().encode(JSON.stringify({
-      model:generated.model,
-      prompt:generated.prompt,
-      width:generated.width,
-      height:generated.height,
-      generated:true,
-      illustrative_not_documentary:true,
-      cycle
-    })),
-    mime:"application/json",producerStep:"HERO_IMAGE_GENERATION"
-  });
-  return {
-    asset_id:"HERO_VISUAL",
-    role:"hero",
-    source_type:"AI_GENERATED_EDITORIAL",
-    commercial_use_status:"AI_GENERATED_EDITORIAL",
-    generated:true,
-    model:generated.model,
-    r2_key:artifact.r2_key,
-    mime:artifact.mime,
-    sha256:artifact.sha256,
-    bytes:artifact.bytes,
-    generation_cycle:cycle
-  };
+  let lastQa=null;
+  let generationFeedback=feedback;
+
+  for(let attempt=1;attempt<=3;attempt++) {
+    await reserveAiCall(sql,packId,env,"HERO_IMAGE:"+variantKey+":"+model+":A"+attempt,revisionId);
+    const generated=await generatePremiumHeroVisual(env,{
+      inputPayload,direction,variantKey,
+      feedback:generationFeedback
+    });
+    const imageB64=bytesToBase64(generated.bytes);
+    const qa=await runHeroAssetQa(env,{
+      imageB64,
+      inputPayload,
+      direction,
+      variantKey,
+      beforeModelAttempt:({model:qaModel,role})=>
+        reserveAiCall(sql,packId,env,"HERO_PREQA:"+variantKey+":"+role+":"+qaModel+":A"+attempt,revisionId)
+    });
+    lastQa=qa;
+
+    const ext=generated.mime==="image/png"?"png":generated.mime==="image/webp"?"webp":"jpg";
+    const approved=qa.pass===true;
+    const type=(approved?"HERO_VISUAL_APPROVED_":"HERO_VISUAL_REJECTED_")+variantKey+"_R"+cycle+"_A"+attempt;
+    const key=base+safeInstance+"-r"+cycle+"-a"+attempt+(approved?"-approved":"-rejected")+"."+ext;
+    const artifact=await putArtifact(env,sql,{
+      packId,revisionId:null,type,key,body:generated.bytes,mime:generated.mime,
+      producerStep:approved?"HERO_IMAGE_PREQA_PASS":"HERO_IMAGE_PREQA_REJECT"
+    });
+    const metaKey=base+safeInstance+"-r"+cycle+"-a"+attempt+".json";
+    await putArtifact(env,sql,{
+      packId,revisionId:null,
+      type:(approved?"HERO_VISUAL_APPROVED_META_":"HERO_VISUAL_REJECTED_META_")+variantKey+"_R"+cycle+"_A"+attempt,
+      key:metaKey,
+      body:new TextEncoder().encode(JSON.stringify({
+        model:generated.model,
+        prompt:generated.prompt,
+        width:generated.width,
+        height:generated.height,
+        generated:true,
+        illustrative_not_documentary:true,
+        cycle,
+        attempt,
+        preqa:{
+          pass:qa.pass,
+          model:qa.model,
+          summary:qa.summary,
+          scores:qa.scores,
+          issues:qa.issues,
+          regeneration_guidance:qa.regeneration_guidance
+        }
+      })),
+      mime:"application/json",
+      producerStep:"HERO_IMAGE_PREQA"
+    });
+
+    if(approved) {
+      return {
+        asset_id:"HERO_VISUAL",
+        role:"hero",
+        source_type:"AI_GENERATED_EDITORIAL_PREQA_PASS",
+        commercial_use_status:"AI_GENERATED_EDITORIAL",
+        generated:true,
+        preqa_pass:true,
+        model:generated.model,
+        r2_key:artifact.r2_key,
+        mime:artifact.mime,
+        sha256:artifact.sha256,
+        bytes:artifact.bytes,
+        generation_cycle:cycle,
+        generation_attempt:attempt,
+        preqa_scores:qa.scores
+      };
+    }
+
+    generationFeedback=[
+      "RAW HERO PRE-QA REJECTED.",
+      qa.summary||"",
+      ...((qa.issues||[]).map(x=>x?.message||x?.code||String(x))),
+      ...((qa.regeneration_guidance||[]).map(String)),
+      "Generate a materially different photograph. Absolutely no text-like marks, labels, signage, logos, words or numbers."
+    ].filter(Boolean).join(" | ").slice(0,2600);
+  }
+
+  throw new Error("HERO_ASSET_PREQA_FAILED:"+String(lastQa?.summary||"NO_CLEAN_HERO_AFTER_3_ATTEMPTS"));
 }
 
 async function parentInstance(env,id) {
