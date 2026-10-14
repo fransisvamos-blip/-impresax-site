@@ -1,6 +1,20 @@
 import { sha256, bytesToBase64, safeExternalHttpUrl } from "./utils.js";
 import { EXECUTION_ENGINE_VERSION } from "./constants.js";
 
+export function identitySvgIsSafe(svgText) {
+  const s=String(svgText||"");
+  if(!s.trim().startsWith("<svg")) return false;
+  if(/<script\b|<foreignObject\b|<iframe\b|<object\b|<embed\b|<!DOCTYPE\b|<!ENTITY\b|<\?xml-stylesheet\b|\son[a-z]+\s*=|javascript:|@import|url\s*\(/i.test(s)) return false;
+  if(/\b(?:href|xlink:href)\s*=\s*[^"'\s]/i.test(s)) return false;
+  const refs=[...s.matchAll(/\b(?:href|xlink:href)\s*=\s*["']([^"']*)["']/gi)].map(m=>m[1].trim());
+  for(const ref of refs) {
+    if(/^#[A-Za-z_][\w:.-]*$/.test(ref)) continue;
+    if(/^data:image\/(?:png|jpeg|webp|gif|avif);base64,[A-Za-z0-9+/=\s]+$/i.test(ref)) continue;
+    return false;
+  }
+  return true;
+}
+
 function bodyBytes(body) {
   if(typeof body==="string") return new TextEncoder().encode(body);
   if(body instanceof Uint8Array) return body;
@@ -95,9 +109,7 @@ export async function ingestInputAssets(env,sql,{pack,inputPack}) {
       if(bytes.byteLength>maxBytes) throw new Error("INPUT_ASSET_TOO_LARGE");
       if(isSvg) {
         const svgText=new TextDecoder().decode(bytes).slice(0,2_000_000);
-        if(/<script\b|<foreignObject\b|\son[a-z]+\s*=|(?:href|xlink:href)\s*=\s*["']?\s*(?:https?:|javascript:|data:)|url\s*\(/i.test(svgText)) {
-          throw new Error("UNSAFE_IDENTITY_SVG");
-        }
+        if(!identitySvgIsSafe(svgText)) throw new Error("UNSAFE_IDENTITY_SVG");
       }
       const rec=await putArtifact(env,sql,{packId:pack.id,type:"INPUT_ASSET_"+asset.asset_id,key,body:bytes,mime,producerStep:"INPUT_INGEST"});
       assets[asset.asset_id]={...asset,r2_key:key,mime,sha256:rec.sha256,bytes:rec.bytes};
