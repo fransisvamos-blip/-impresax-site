@@ -36,7 +36,7 @@ jobs:
             local key="$3"
             local reset="$4"
             local body
-            body=$(jq -nc --arg pack "$pack" --arg variant "$variant" --arg key "$key" --argjson reset "$reset"               '{pack_id:$pack,variant_key:$variant,run_key:$key,force:true,reset_budget:$reset,event_prefix:"final",reason:"GOLDEN_CONTACT_SYSTEM_V24"}')
+            body=$(jq -nc --arg pack "$pack" --arg variant "$variant" --arg key "$key" --argjson reset "$reset"               '{pack_id:$pack,variant_key:$variant,run_key:$key,force:true,reset_budget:$reset,event_prefix:"final",reason:"GOLDEN_CONTACT_SYSTEM_V25"}')
             local ok=0
             for i in {1..20}; do
               code=$(curl -sS -o /tmp/variant.json -w '%{http_code}'                 -H "Authorization: Bearer $token"                 -H "Content-Type: application/json"                 --data "$body"                 "$V2_URL/shadow/relaunch-variant" || true)
@@ -47,6 +47,6 @@ jobs:
             [ "$ok" = "1" ] || exit 1
             jq -e '.ok == true' /tmp/variant.json >/dev/null
           }
-          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "C" "golden-contact-v24-cz210-c" true
+          call_variant "c07a7358-e019-4b7d-9f77-a61dbdd58518" "C" "golden-contact-v25-cz210-c" true
 
-          echo "CZ-210 C relaunched on trust-layout v2.4 with clean budget." >> "$GITHUB_STEP_SUMMARY"
+          echo "CZ-210 C relaunched on trust-layout v2.5 with clean budget." >> "$GITHUB_STEP_SUMMARY"
