@@ -213,9 +213,12 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   const primaryHref=esc(ctaManifest.PRIMARY||"#");
   const primaryLabel=esc(copyManifest.PRIMARY_CTA_LABEL||"Contatti");
   const headerContact='<a class="ix-v2-header-cta" data-verified-contact href="'+primaryHref+'">'+primaryLabel+'</a>';
-  const footerContacts=[ctaManifest.PRIMARY,ctaManifest.SECONDARY]
-    .filter((v,i,a)=>v&&a.indexOf(v)===i)
-    .map(href=>'<a class="ix-v2-footer-contact" data-verified-contact href="'+esc(href)+'">'+esc(displayContactHref(href))+'</a>')
+  const footerPairs=[
+    [ctaManifest.PRIMARY,ctaManifest.PRIMARY_DISPLAY||displayContactHref(ctaManifest.PRIMARY)],
+    [ctaManifest.SECONDARY,ctaManifest.SECONDARY_DISPLAY||displayContactHref(ctaManifest.SECONDARY)]
+  ].filter(([href],i,a)=>href&&a.findIndex(([x])=>x===href)===i);
+  const footerContacts=footerPairs
+    .map(([href,label])=>'<a class="ix-v2-footer-contact" data-verified-contact href="'+esc(href)+'">'+esc(label)+'</a>')
     .join('');
   const footerAddress=String(ctaManifest.ADDRESS||"").trim()
     ? '<span class="ix-v2-footer-address" data-verified-address>'+esc(ctaManifest.ADDRESS)+'</span>'
@@ -227,15 +230,15 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     "img{max-width:100%;height:auto;display:block}",
     "main a{color:inherit;text-decoration:none}",
     ".ix-v2-identity-main{width:min(420px,72vw);max-height:180px;object-fit:contain}",
-    ".ix-v2-header,.ix-v2-footer{padding:20px clamp(20px,5vw,72px)}",
-    ".ix-v2-header{display:flex;align-items:center;justify-content:space-between;gap:20px}",
-    ".ix-v2-logo{max-width:min(220px,52vw);max-height:76px;object-fit:contain}",
+    ".ix-v2-header,.ix-v2-footer{padding:24px clamp(20px,5vw,72px)}",
+    ".ix-v2-header{display:flex;align-items:center;justify-content:space-between;gap:24px;background:#fff;color:#111;border-bottom:1px solid rgba(17,17,17,.14);min-height:118px}",
+    ".ix-v2-logo{width:auto;max-width:min(320px,58vw);max-height:96px;object-fit:contain}",
     ".ix-v2-header-cta{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:inherit;border-bottom:1px solid currentColor}",
     ".ix-v2-footer{min-height:96px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;border-top:1px solid rgba(17,17,17,.14)}",
     ".ix-v2-footer-contacts{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}",
-    ".ix-v2-footer-address{max-width:48ch;line-height:1.35}",
-    ".ix-v2-footer-contact{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px}",
-    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px}.ix-v2-logo{max-width:150px;max-height:52px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}.ix-v2-footer{align-items:flex-start;flex-direction:column}.ix-v2-footer-contacts{flex-direction:column;align-items:flex-start;gap:10px}}"
+    ".ix-v2-footer-address{max-width:48ch;line-height:1.35;overflow-wrap:anywhere}",
+    ".ix-v2-footer-contact{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px;overflow-wrap:anywhere;word-break:break-word}",
+    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px;min-height:86px}.ix-v2-logo{max-width:180px;max-height:60px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}.ix-v2-footer{align-items:flex-start;flex-direction:column}.ix-v2-footer-contacts{flex-direction:column;align-items:flex-start;gap:10px;width:100%}.ix-v2-footer-contact{max-width:100%}}"
   ].join("");
 
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
