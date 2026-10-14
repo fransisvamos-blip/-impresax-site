@@ -1,4 +1,4 @@
-name: V2 CZ063 C Editorial V17
+name: V2 CZ063 C Editorial V18
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch-c.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"C\",\"run_key\":\"editorial-v17-c\",\"force\":true,\"event_prefix\":\"set1\",\"parent_workflow_instance_id\":\"$FINALIZER_ID\",\"reason\":\"SET_DIVERSITY_EDITORIAL_REBUILD\"}" \
+              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"C\",\"run_key\":\"editorial-v18-c\",\"force\":true,\"event_prefix\":\"set1\",\"parent_workflow_instance_id\":\"$FINALIZER_ID\",\"reason\":\"SET_DIVERSITY_EDITORIAL_REBUILD\"}" \
               "$V2_URL/shadow/relaunch-variant" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch-c.json 2>/dev/null || true)"
             if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
@@ -44,4 +44,4 @@ jobs:
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true and .event_prefix == "set1"' /tmp/relaunch-c.json >/dev/null
-          echo "C set1 replaced with structurally distinct editorial ledger grammar; A/B preserved." >> "$GITHUB_STEP_SUMMARY"
+          echo "C set1 rerun with resilient vision QA; A/B preserved." >> "$GITHUB_STEP_SUMMARY"
