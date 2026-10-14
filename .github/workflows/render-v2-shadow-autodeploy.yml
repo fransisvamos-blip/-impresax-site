@@ -110,7 +110,7 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: contract-v2d
+          V2_CONTRACT_KEY: contract-v2e
         run: |
           set -euo pipefail
           token=$(openssl rand -hex 32)
