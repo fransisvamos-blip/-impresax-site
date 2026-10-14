@@ -139,3 +139,19 @@ test("compiler blocks literal text attributes and shallow section depth",()=>{
   assert.ok(x.issues.some(v=>v.startsWith("UNAUTHORIZED_TEXT_ATTRIBUTE")));
   assert.ok(x.issues.some(v=>v.startsWith("SECTION_DEPTH_REQUIRED")));
 });
+
+
+test("compiler allows justify-content but blocks CSS content property",()=>{
+  const base='<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>'.repeat(12);
+  const safe=validateRenderSpec({
+    main_html:base,
+    custom_css:".x{display:flex;justify-content:center;align-items:center;padding:2rem} @media(max-width:700px){.x{justify-content:flex-start}}".repeat(14)
+  },manifests);
+  assert.equal(safe.issues.includes("UNSAFE_CSS_URL_IMPORT_OR_CONTENT"),false);
+
+  const unsafe=validateRenderSpec({
+    main_html:base,
+    custom_css:".x{display:flex;justify-content:center}.x::before{content:'x'} @media(max-width:700px){.x{display:block}}".repeat(14)
+  },manifests);
+  assert.ok(unsafe.issues.includes("UNSAFE_CSS_URL_IMPORT_OR_CONTENT"));
+});
