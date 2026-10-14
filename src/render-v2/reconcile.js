@@ -18,6 +18,19 @@ function bindingFor(env,type) {
   return type==="VARIANT" ? env.RENDER_VARIANT_WORKFLOW : env.RENDER_PROSPECT_WORKFLOW;
 }
 
+async function startPackFinalizer(env,sql,pack,attempt) {
+  const instanceId="rpv2-finalize-"+pack.id+"-"+attempt;
+  await persistWorkflow(sql,{
+    prospectId:pack.prospect_id,packId:pack.id,type:"PROSPECT",instanceId,status:"QUEUED",
+    metadata:{finalizer:true,finalizer_attempt:attempt,input_pack_id:pack.input_pack_id}
+  });
+  const instance=await env.RENDER_PROSPECT_WORKFLOW.create({
+    id:instanceId,
+    params:{prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id,finalizer:true}
+  });
+  return {pack_id:pack.id,instance_id:instanceId,status:await instance.status(),finalizer_attempt:attempt};
+}
+
 export async function startOrRecoverParent(env,sql,pack) {
   const instanceId="rpv2-"+pack.id;
   await persistWorkflow(sql,{
@@ -57,6 +70,35 @@ export async function reconcileV2(env) {
   for(const pack of orphanPacks) {
     try { summary.started.push(await startOrRecoverParent(env,sql,pack)); }
     catch(error) { summary.errors.push({pack_id:pack.id,error:String(error?.message||error)}); }
+  }
+
+  const finalizable=await sql`
+    select p.id,p.prospect_id,p.input_pack_id,
+           (select count(*)::int from render_workflows_v2 fw
+            where fw.render_pack_id=p.id and fw.workflow_type='PROSPECT'
+              and coalesce((fw.metadata->>'finalizer')::boolean,false)=true) finalizer_count,
+           (select count(*)::int from render_workflows_v2 fw
+            where fw.render_pack_id=p.id and fw.workflow_type='PROSPECT'
+              and coalesce((fw.metadata->>'finalizer')::boolean,false)=true
+              and fw.status in ('QUEUED','RUNNING','PAUSED')) active_finalizers
+    from render_v2_packs p
+    where p.shadow_mode=true
+      and p.status not in ('RENDER_READY','SELECTED','IMPLEMENTED','CANCELLED')
+      and (select count(*) from render_v2_variants v where v.render_pack_id=p.id)=3
+      and (select count(*) from render_v2_variants v
+           where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
+    order by p.updated_at
+    limit 10`;
+
+  for(const pack of finalizable) {
+    const count=Number(pack.finalizer_count||0);
+    if(Number(pack.active_finalizers||0)>0 || count>=3) continue;
+    try {
+      const result=await startPackFinalizer(env,sql,pack,count+1);
+      summary.started.push(result);
+    } catch(error) {
+      summary.errors.push({pack_id:pack.id,finalizer:true,error:String(error?.message||error)});
+    }
   }
 
   const workflows=await sql`
