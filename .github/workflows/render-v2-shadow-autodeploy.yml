@@ -124,8 +124,9 @@ jobs:
             echo "start_attempt=$i code=$code body=$(cat /tmp/v2-start.json 2>/dev/null || true)"
             if [ "$code" = "202" ]; then
               status=$(jq -r '.workflow_status.status // ""' /tmp/v2-start.json)
+              output_status=$(jq -r '.workflow_status.output.status // ""' /tmp/v2-start.json)
               instance=$(jq -r '.workflow_instance_id // ""' /tmp/v2-start.json)
-              if [ "$status" = "failed" ] && [ -n "$instance" ]; then
+              if { [ "$status" = "failed" ] || [ "$output_status" = "ESCALATION_REQUIRED" ] || [ "$output_status" = "INPUT_BLOCKED" ]; } && [ -n "$instance" ]; then
                 payload=$(jq -nc --arg id "$instance" '{workflow_instance_id:$id,action:"restart"}')
                 control_code=$(curl -sS -o /tmp/v2-control.json -w '%{http_code}' \
                   -H "Authorization: Bearer $token" \
