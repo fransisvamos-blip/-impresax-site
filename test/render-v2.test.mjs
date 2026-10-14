@@ -117,9 +117,10 @@ test("external asset URL validator blocks private and metadata networks",()=>{
 
 
 test("compiler unwraps one redundant outer main safely",async()=>{
+  const hero='<section id="hero"><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>';
   const section='<section id="s"><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>';
   const result=await compileRenderSpec({
-    main_html:"<main>"+section.repeat(12)+"</main>",
+    main_html:"<main>"+hero+section.repeat(11)+"</main>",
     custom_css:".x{display:grid;gap:2rem;padding:4rem} @media(max-width:700px){.x{display:block;padding:1.25rem}}".repeat(14)
   },{
     businessName:"Example SRL",
@@ -161,15 +162,16 @@ test("compiler allows justify-content but blocks CSS content property",()=>{
 
 test("compiler safely normalizes bare verified tokens and strips invented literal text",async()=>{
   const block='<section id="x"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
+  const hero='<section id="hero"><h2>{{HERO_HEADLINE}}</h2><p>{{HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
   const copy={...manifests.copy,PRIMARY_CTA_LABEL:"Contatti"};
   const result=await compileRenderSpec({
-    main_html:block.repeat(14),
+    main_html:hero+block.repeat(13),
     custom_css:".x{display:flex;justify-content:center;align-items:center;padding:3rem}.x::before{content:'decorative'} @media(max-width:700px){.x{display:block;padding:1rem}}".repeat(12)
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
     copyManifest:copy,
-    assetManifest:{},
+    assetManifest:{HERO_VISUAL:"asset://HERO_VISUAL"},
     ctaManifest:manifests.cta
   });
   assert.equal(result.ok,true,result.issues?.join("|"));
@@ -184,7 +186,7 @@ test("compiler safely normalizes bare verified tokens and strips invented litera
 
 
 test("compiler owns one optional main identity placement",async()=>{
-  const section='<section><div>{{identity:PRIMARY_LOGO}}</div><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>';
+  const section='<section id="hero"><div>{{identity:PRIMARY_LOGO}}</div><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>';
   const result=await compileRenderSpec({
     main_html:section + '<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>'.repeat(14),
     custom_css:".x{display:grid;justify-content:center;padding:3rem} @media(max-width:700px){.x{display:block}}".repeat(18)
@@ -192,7 +194,7 @@ test("compiler owns one optional main identity placement",async()=>{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
     copyManifest:manifests.copy,
-    assetManifest:{},
+    assetManifest:{HERO_VISUAL:"asset://HERO_VISUAL"},
     ctaManifest:manifests.cta
   });
   assert.equal(result.ok,true,result.issues?.join("|"));
@@ -217,7 +219,7 @@ test("compiler rejects repeated or unknown identity tokens",()=>{
 
 
 test("compiler normalizes identity token used inside img src",async()=>{
-  const hero='<section id="hero"><div><img src="{{identity:PRIMARY_LOGO}}" alt="" class="logo-img"></div><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
+  const hero='<section id="hero"><div><img src="{{identity:PRIMARY_LOGO}}" alt="" class="logo-img"></div><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
   const other='<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
   const result=await compileRenderSpec({
     main_html:hero+other.repeat(14),
@@ -226,7 +228,7 @@ test("compiler normalizes identity token used inside img src",async()=>{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
     copyManifest:manifests.copy,
-    assetManifest:{},
+    assetManifest:{HERO_VISUAL:"asset://HERO_VISUAL"},
     ctaManifest:manifests.cta
   });
   assert.equal(result.ok,true,result.issues?.join("|"));
