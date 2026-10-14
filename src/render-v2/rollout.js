@@ -128,6 +128,92 @@ async function startParent(env,sql,pack,{reason="ROLLOUT",forceNew=false}={}) {
   return {started:true,instance_id:instanceId,status:await instance.status()};
 }
 
+async function resetRecoveryBudget(sql,packId,runKey,attempt) {
+  await sql`
+    update render_v2_packs
+    set metrics=
+      (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+      || jsonb_build_object(
+        'ai_calls',0,
+        'browser_captures',0,
+        'prior_epoch_ai_calls',
+          coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+        'prior_epoch_browser_captures',
+          coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+        'budget_epoch',${runKey}::text,
+        'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+      ),
+      metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+        'budget_epoch_reset_at',now(),
+        'budget_epoch_reason','GOLDEN_RECOVERY',
+        'golden_recovery_attempt',${attempt}::int
+      ),
+      updated_at=now()
+    where id=${packId}::uuid`;
+}
+
+async function recoverGoldenVariants(env,sql,pack) {
+  const variants=await sql`
+    select v.*,
+      (select w.status from render_workflows_v2 w
+       where w.variant_id=v.id and w.workflow_type='VARIANT'
+       order by w.created_at desc limit 1) latest_workflow_status
+    from render_v2_variants v
+    where v.render_pack_id=${pack.id}::uuid
+    order by v.variant_key`;
+  if(!variants.length) return {started:false,reason:"NO_VARIANTS"};
+
+  const active=variants.filter(v=>["QUEUED","RUNNING","PAUSED"].includes(String(v.latest_workflow_status||"")));
+  if(active.length) return {started:false,reason:"VARIANTS_ACTIVE",active:active.map(v=>v.variant_key)};
+
+  const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
+  if(!pending.length) return {started:false,reason:"ALL_VARIANTS_READY"};
+
+  const attempts=await sql`
+    select count(distinct coalesce(metadata->>'golden_recovery_wave',''))::int n
+    from render_workflows_v2
+    where render_pack_id=${pack.id}::uuid
+      and workflow_type='VARIANT'
+      and metadata ? 'golden_recovery_wave'`;
+  const attempt=Number(attempts[0]?.n||0)+1;
+  if(attempt>3) return {started:false,reason:"RECOVERY_LIMIT",attempt};
+
+  const runKey="golden-r"+attempt;
+  await resetRecoveryBudget(sql,pack.id,runKey,attempt);
+  const launched=[];
+  for(const variant of pending) {
+    const instanceId="rv2-"+pack.id+"-"+variant.variant_key+"-"+runKey;
+    const params={
+      prospectId:pack.prospect_id,
+      packId:pack.id,
+      inputPackId:pack.input_pack_id,
+      variantId:variant.id,
+      variantKey:variant.variant_key,
+      parentInstanceId:"rpv2-"+pack.id,
+      eventPrefix:runKey,
+      initialFeedback:{
+        reason:"GOLDEN_RECOVERY",
+        issues:["Golden Set recovery after a typed provider/quality failure."],
+        actions:[
+          "Preserve verified content and identity.",
+          "Use the current deterministic ZERO_PHOTO execution grammar when applicable.",
+          "Do not inherit superseded creative-direction requirements.",
+          "Retry transient provider failures without redesigning valid work."
+        ]
+      }
+    };
+    await persistWorkflow(sql,{
+      prospectId:pack.prospect_id,packId:pack.id,variantId:variant.id,type:"VARIANT",
+      instanceId,status:"QUEUED",
+      metadata:{variant_key:variant.variant_key,event_prefix:runKey,golden_recovery_wave:runKey,golden_recovery_attempt:attempt}
+    });
+    const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
+    launched.push({variant_key:variant.variant_key,instance_id:instanceId,status:await instance.status()});
+  }
+  await setPackStatus(sql,pack.id,"GENERATING",{golden_recovery_wave:runKey,golden_recovery_attempt:attempt});
+  return {started:true,attempt,run_key:runKey,launched};
+}
+
 async function maybeStartFinalizer(env,sql,pack,gate) {
   if(!gate || n(gate.variants_ready)!==3 || n(gate.set_qa_passes)>0) return null;
   const rows=await sql`
@@ -230,11 +316,14 @@ async function tickGolden(env,sql,state,pilotCreated,pilotGate) {
 
     if(n(gate?.variants_ready)===3 && n(gate?.set_qa_passes)===0) {
       await maybeStartFinalizer(env,sql,created.pack,gate);
+    } else if(slots>0 && created.pack.status==="ESCALATION_REQUIRED" && n(gate?.variant_count)>0) {
+      const recovery=await recoverGoldenVariants(env,sql,created.pack);
+      if(recovery.started) slots--;
+    } else if(slots>0 && created.pack.status==="ESCALATION_REQUIRED" && n(gate?.variant_count)===0) {
+      const parent=await startParent(env,sql,created.pack,{reason:"GOLDEN_RECOVERY",forceNew:true});
+      if(parent.started) slots--;
     } else if(slots>0 && !TERMINAL_PACK_STATUSES.includes(String(created.pack.status||""))) {
       const parent=await startParent(env,sql,created.pack,{reason:"GOLDEN",forceNew:false});
-      if(parent.started) slots--;
-    } else if(slots>0 && created.pack.status==="ESCALATION_REQUIRED") {
-      const parent=await startParent(env,sql,created.pack,{reason:"GOLDEN_RECOVERY",forceNew:true});
       if(parent.started) slots--;
     }
     results.push(await upsertGolden(sql,{
