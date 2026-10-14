@@ -9,9 +9,11 @@ function modelFor(env,role,fallback=false) {
     visualQa:"V2_MODEL_VISUAL_QA",
     setQa:"V2_MODEL_SET_QA"
   };
-  if(fallback) return role==="visualQa"||role==="setQa"
-    ? (env.V2_MODEL_VISION_FALLBACK||DEFAULT_MODELS.visionFallback)
-    : (env.V2_MODEL_TEXT_FALLBACK||DEFAULT_MODELS.textFallback);
+  if(fallback) {
+    if(role==="visualQa"||role==="setQa") return env.V2_MODEL_VISION_FALLBACK||DEFAULT_MODELS.visionFallback;
+    if(role==="generator"||role==="repair") return env.V2_MODEL_CODE_FALLBACK||DEFAULT_MODELS.codeFallback;
+    return env.V2_MODEL_TEXT_FALLBACK||DEFAULT_MODELS.textFallback;
+  }
   return env[vars[role]]||DEFAULT_MODELS[role];
 }
 
@@ -294,10 +296,10 @@ export function buildCopyManifest(content) {
 const renderSpecSchema={
   type:"object",additionalProperties:false,
   properties:{
-    main_html:{type:"string"},
-    custom_css:{type:"string"},
-    section_ids:{type:"array",items:{type:"string"}},
-    used_copy_tokens:{type:"array",items:{type:"string"}},
+    main_html:{type:"string",minLength:1400},
+    custom_css:{type:"string",minLength:1400},
+    section_ids:{type:"array",minItems:6,maxItems:10,items:{type:"string"}},
+    used_copy_tokens:{type:"array",minItems:6,items:{type:"string"}},
     used_asset_tokens:{type:"array",items:{type:"string"}},
     implementation_notes:{type:"string"}
   },
@@ -305,31 +307,65 @@ const renderSpecSchema={
 };
 
 export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null}) {
+  const allowedAssets=[...new Set((assetTokens||[]).filter(x=>x&&x!=="PRIMARY_LOGO"))];
+  const safeDirection={
+    ...(direction||{}),
+    asset_tokens:(direction?.asset_tokens||[]).filter(x=>allowedAssets.includes(x))
+  };
+  const zeroPhoto=allowedAssets.length===0;
   const prompt=[
-    "Implement variant "+variantKey+" as a premium full-home visual RenderSpec.",
-    "OUTPUT CONTRACT:",
-    "- main_html contains ONLY markup for <main>; no html/head/body/header/footer.",
-    "- Every visible text node MUST be a token exactly like {{copy:TOKEN_NAME}}. Do not write literal visible copy.",
-    "- Images MUST use src={{asset:TOKEN_NAME}} with an available token. Never write URLs.",
-    "- CTA hrefs MUST use {{cta:PRIMARY}} or {{cta:SECONDARY}}.",
-    "- No scripts, iframes, forms, SVG, external fonts, @import, CSS url(), inline remote URLs.",
-    "- custom_css must contain intentional desktop and mobile art direction with @media rules.",
-    "- Produce a complete homepage with hero, offering/services, trust/context when available, commercial action and closing contact journey.",
-    "- Avoid repeated generic card grids and SaaS template patterns.",
-    "COPY TOKENS:",JSON.stringify(Object.keys(copyManifest)),
-    "ASSET TOKENS:",JSON.stringify(assetTokens),
-    "VERIFIED INPUT:",JSON.stringify(inputPayload),
-    "DIRECTION:",JSON.stringify(direction),
-    qaFeedback?"REWORK FEEDBACK:"+JSON.stringify(qaFeedback):"",
-    previousSpec?"PREVIOUS SPEC TO SURGICALLY IMPROVE:"+JSON.stringify(previousSpec):""
-  ].join("\n");
+    "Implement variant "+variantKey+" as a flagship premium full-home RenderSpec for the VERIFIED prospect.",
+    "This is NOT a wireframe, starter template, generic agency page, SaaS layout or basic implementation.",
+    "The result must feel art-directed, complete, commercially credible and materially different from the other routes.",
+    "",
+    "IDENTITY OWNERSHIP:",
+    "- The official logo is inserted automatically by the deterministic compiler in the locked site shell.",
+    "- PRIMARY_LOGO is NOT an image token available inside main_html.",
+    "- Never reference PRIMARY_LOGO, identity://, logo URLs, or recreate/reinterpret the logo.",
+    zeroPhoto?"- ZERO_PHOTO_PREMIUM MODE IS ACTIVE: there are no editorial image assets. Build visual impact with typography, spacing, geometry, borders, surfaces, rhythm and composition. Do NOT invent imagery.":"",
+    "",
+    "HTML CONTRACT:",
+    "- main_html is the CONTENT INSIDE <main>; NEVER output <main>, <html>, <head>, <body>, <header> or <footer> tags.",
+    "- Use at least 6 substantial <section> blocks with a complete journey: hero, positioning/context, services/offer, proof/trust, commercial transition, CTA/contact close. Add a 7th/8th section only when it improves the direction.",
+    "- Every visible text node, including section labels, eyebrows, numbers, captions, badges and microcopy, MUST be an exact {{copy:TOKEN_NAME}} token.",
+    "- Never write literal visible text such as 'Chi siamo', 'Servizi', '01', 'Scopri', company names, years, statistics or decorative words.",
+    "- CTA href values MUST be exactly {{cta:PRIMARY}} or {{cta:SECONDARY}}.",
+    "- Images, only when allowedAssets is non-empty, MUST be exactly src=\"{{asset:TOKEN_NAME}}\" with a listed token.",
+    "- No scripts, iframes, forms, SVG, external URLs, data URLs, inline styles or event handlers.",
+    "",
+    "CSS CONTRACT:",
+    "- custom_css must be a complete art-direction layer, not placeholder CSS.",
+    "- No @import, @font-face, url(), expression(), javascript:, or CSS content: property.",
+    "- No external fonts. Use strong system-font stacks and typographic composition.",
+    "- Include intentional 1440px desktop composition and a real 390px mobile reinterpretation with @media rules.",
+    "- Avoid repeated equal cards, generic 3-column grids, excessive rounded rectangles, gradients-for-decoration, dashboard/SaaS patterns and default-looking buttons.",
+    "- Use responsive clamp(), grid/flex, spacing rhythm, hierarchy, controlled asymmetry and direction-specific signature devices.",
+    "",
+    "QUALITY FLOOR:",
+    "- main_html and custom_css must both be richly implemented, not minimal examples.",
+    "- The homepage must have clear visual hierarchy, premium whitespace, a distinctive hero, strong CTA integration and a deliberate closing sequence.",
+    "- section_ids must list the actual section ids and contain 6-10 entries.",
+    "- used_copy_tokens and used_asset_tokens must report only tokens actually used.",
+    "",
+    "COPY TOKEN MAP (read values for layout/length/context, but NEVER paste values literally into HTML):",
+    JSON.stringify(copyManifest),
+    "ALLOWED MAIN ASSET TOKENS:",
+    JSON.stringify(allowedAssets),
+    "VERIFIED INPUT:",
+    JSON.stringify(inputPayload),
+    "SANITIZED DIRECTION:",
+    JSON.stringify(safeDirection),
+    qaFeedback?"REWORK FEEDBACK — fix these exact failures without weakening the art direction:"+JSON.stringify(qaFeedback):"",
+    previousSpec?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(previousSpec):""
+  ].filter(Boolean).join("\n");
+
   const role=qaFeedback?"repair":"generator";
   const r=await runStructured(env,role,{
     messages:[
-      {role:"system",content:"You are a world-class frontend art director. Follow the tokenized RenderSpec contract exactly; never invent facts or external assets."},
+      {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; invented facts or assets are forbidden."},
       {role:"user",content:prompt}
     ],
-    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.16:0.28,beforeAttempt:beforeModelAttempt
+    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.12:0.22,beforeAttempt:beforeModelAttempt
   });
   return {spec:r.data,model:r.model};
 }
