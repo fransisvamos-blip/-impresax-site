@@ -218,7 +218,7 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     ".ix-v2-logo{max-width:min(220px,52vw);max-height:76px;object-fit:contain}",
     ".ix-v2-header-cta{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:inherit;border-bottom:1px solid currentColor}",
     ".ix-v2-footer{min-height:96px}",
-    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:16px 20px}}"
+    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px}.ix-v2-logo{max-width:150px;max-height:52px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}}"
   ].join("");
 
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
