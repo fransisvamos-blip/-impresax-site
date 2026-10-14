@@ -110,7 +110,7 @@ jobs:
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
-          V2_CONTRACT_KEY: hero-v2g-20261014
+          V2_CONTRACT_KEY: hero-v2h-20261014
         run: |
           set -euo pipefail
           token=$(printf '%s' "impresax-v2-control-v1:${CLOUDFLARE_API_TOKEN}" | sha256sum | awk '{print $1}')
@@ -146,28 +146,30 @@ jobs:
             [ "$control_code" = "200" ] || { cat /tmp/v2-control.json || true; exit 1; }
           fi
 
-          relaunch_payload=$(jq -nc --arg pack "$pack" --arg key "$V2_CONTRACT_KEY" '{pack_id:$pack,run_key:$key,force:true}')
-          relaunch_code=$(curl -sS -o /tmp/v2-relaunch.json -w '%{http_code}' \
-            -H "Authorization: Bearer $token" \
-            -H "Content-Type: application/json" \
-            --data "$relaunch_payload" \
-            "$V2_URL/shadow/relaunch-variants" || true)
-          echo "relaunch_code=$relaunch_code"
-          if [ "$relaunch_code" != "200" ] && [ "$relaunch_code" != "202" ]; then
-            cat /tmp/v2-relaunch.json || true
-            exit 1
-          fi
-          jq -e '.ok == true' /tmp/v2-relaunch.json >/dev/null
-          applied=$(jq -r '.already_applied // false' /tmp/v2-relaunch.json)
-          forced=$(jq -r '.force // false' /tmp/v2-relaunch.json)
-          launched=$(jq -r '[.launched[] | select(.skipped != true)] | length' /tmp/v2-relaunch.json)
-          if [ "$applied" = "true" ]; then
-            test "$launched" = "0"
-          else
-            test "$forced" = "true"
-            test "$launched" = "3"
-          fi
-          echo "V2 HERO contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied forced=$forced launched=$launched" >> "$GITHUB_STEP_SUMMARY"
+          # Preserve the already-certified B route. Repair only A and C with the industrial documentary hero contract.
+          for variant in A C; do
+            reset=false
+            if [ "$variant" = "A" ]; then reset=true; fi
+            repair_key="$V2_CONTRACT_KEY-$variant"
+            repair_payload=$(jq -nc \
+              --arg pack "$pack" \
+              --arg variant "$variant" \
+              --arg key "$repair_key" \
+              --argjson reset "$reset" \
+              '{pack_id:$pack,variant_key:$variant,run_key:$key,force:true,reset_budget:$reset,reason:"ENGINE_CONTRACT_UPGRADE"}')
+            repair_code=$(curl -sS -o "/tmp/v2-repair-$variant.json" -w '%{http_code}' \
+              -H "Authorization: Bearer $token" \
+              -H "Content-Type: application/json" \
+              --data "$repair_payload" \
+              "$V2_URL/shadow/relaunch-variant" || true)
+            echo "repair_variant=$variant code=$repair_code"
+            if [ "$repair_code" != "200" ] && [ "$repair_code" != "202" ]; then
+              cat "/tmp/v2-repair-$variant.json" || true
+              exit 1
+            fi
+            jq -e '.ok == true' "/tmp/v2-repair-$variant.json" >/dev/null
+          done
+          echo "V2 HERO targeted repair: key=$V2_CONTRACT_KEY variants=A,C B=preserved" >> "$GITHUB_STEP_SUMMARY"
 
 # HERO_CONTRACT_PATCH_6_FAST_SEED
 
@@ -178,3 +180,5 @@ jobs:
 # HERO_PREQA_EVIDENCE_V1
 
 # HERO_FLUX2_DEV_V1
+
+# HERO_INDUSTRIAL_TARGETED_REPAIR_V1
