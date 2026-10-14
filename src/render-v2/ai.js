@@ -531,9 +531,19 @@ const renderSpecSchema={
     section_ids:{type:"array",minItems:6,maxItems:10,items:{type:"string"}},
     used_copy_tokens:{type:"array",minItems:6,items:{type:"string"}},
     used_asset_tokens:{type:"array",items:{type:"string"}},
+    hero_visual_strategy:{type:"string"},
+    hero_subject:{type:"string"},
+    hero_scene_type:{type:"string"},
+    hero_copy_space:{type:"string"},
+    hero_mobile_crop_strategy:{type:"string"},
+    hero_relevance_score:{type:"number",minimum:0,maximum:10},
     implementation_notes:{type:"string"}
   },
-  required:["main_html","custom_css","section_ids","used_copy_tokens","used_asset_tokens","implementation_notes"]
+  required:[
+    "main_html","custom_css","section_ids","used_copy_tokens","used_asset_tokens",
+    "hero_visual_strategy","hero_subject","hero_scene_type","hero_copy_space",
+    "hero_mobile_crop_strategy","hero_relevance_score","implementation_notes"
+  ]
 };
 
 export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null}) {
@@ -560,7 +570,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- The official logo is inserted automatically by the deterministic compiler in the locked site shell.",
     "- PRIMARY_LOGO is NOT a normal asset token. Never use {{asset:PRIMARY_LOGO}}, identity:// URLs, raw logo URLs, or recreate/reinterpret the logo.",
     "- If the approved direction genuinely benefits from one hero/signature logo placement, you MAY use exactly one compiler-owned token: {{identity:PRIMARY_LOGO}}. The compiler replaces it with the immutable official logo.",
-    zeroPhoto?"- ZERO_PHOTO_PREMIUM MODE IS ACTIVE: there are no editorial image assets. Build visual impact with typography, spacing, geometry, borders, surfaces, rhythm and composition. Do NOT invent imagery.":"",
+    zeroPhoto?"- HERO CONTRACT VIOLATION: HERO_VISUAL is missing. A render without a real hero image is not certifiable; do not fake a placeholder.":"",
     "",
     "HTML CONTRACT:",
     "- main_html is the CONTENT INSIDE <main>; NEVER output <main>, <html>, <head>, <body>, <header> or <footer> tags.",
@@ -569,6 +579,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- Never write literal visible text such as 'Chi siamo', 'Servizi', '01', 'Scopri', company names, years, statistics or decorative words.",
     "- CTA href values MUST be exactly {{cta:PRIMARY}} or {{cta:SECONDARY}}.",
     "- Images, only when allowedAssets is non-empty, MUST be exactly src=\"{{asset:TOKEN_NAME}}\" with a listed token.",
+    "- HERO CONTRACT: the first <section id=\"hero\"> MUST contain exactly one real <img> using src=\"{{asset:HERO_VISUAL}}\". HERO_VISUAL is mandatory and must be visually dominant, never hidden, decorative-only or placed below the fold.",
+    "- HERO CONTRACT: desktop must reserve approximately 40-60% of the hero composition for the photographic visual while preserving a deliberate copy field for headline + CTA; mobile must use an intentional crop/object-position that keeps the subject legible at 390px.",
+    "- HERO CONTRACT: do not put headline text inside the image. Keep all copy as verified HTML tokens over/alongside the image with sufficient contrast.",
     "- No scripts, iframes, forms, SVG, external URLs, data URLs, inline styles or event handlers.",
     "",
     "CSS CONTRACT:",
@@ -584,6 +597,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "QUALITY FLOOR:",
     "- main_html and custom_css must both be richly implemented, not minimal examples.",
     "- The homepage must have clear visual hierarchy, premium whitespace, a distinctive hero, strong CTA integration and a deliberate closing sequence.",
+    "- The hero must look sellable at first glance: premium image quality, obvious relevance to this prospect, strong focal hierarchy, believable real-world scene and excellent desktop/mobile cropping.",
+    "- hero_visual_strategy / hero_subject / hero_scene_type / hero_copy_space / hero_mobile_crop_strategy must describe what is ACTUALLY implemented. hero_relevance_score must be your self-check and should be >=8 before returning.",
     "- section_ids must list the actual section ids and contain 6-10 entries.",
     "- used_copy_tokens and used_asset_tokens must report only tokens actually used.",
     "- Do not add a separate <footer> inside main_html; the deterministic shell already owns the site footer.",
@@ -603,7 +618,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   const role=qaFeedback?"repair":"generator";
   const r=await runStructured(env,role,{
     messages:[
-      {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; invented facts or assets are forbidden."},
+      {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
       {role:"user",content:prompt}
     ],
     schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.12:0.22,beforeAttempt:beforeModelAttempt
@@ -636,6 +651,9 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "Scripts and forms are prohibited in previews. Judge only what the static preview contract can actually implement; never require accordion/tabs/dark-mode/back-to-top/forms/scroll widgets or other interactive product features.",
     "The QA action list MUST stay within visual composition, typography, spacing, responsive layout, permitted static CTA treatment, immutable identity placement and existing verified content. Never propose new pages, report links, toggles, widgets, invented copy or new assets.",
     "Hard fail generic template/SaaS feel, weak typography/composition, fake or cheap imagery, weak mobile reinterpretation, poor brand fidelity, truth risk, or lack of prospect specificity.",
+    "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
+    "HERO HARD GATE: fail if the hero image is generic, irrelevant to the verified vertical/services, visually weak, obviously synthetic/cheap, subordinate to empty geometry, missing a clear focal subject, or badly cropped on mobile.",
+    "HERO HARD GATE: the image must materially improve first impression and commercial credibility, with headline/CTA remaining immediately readable.",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
@@ -728,6 +746,7 @@ export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}
     "Judge A/B/C as a SET on a 0-10 score scale.",
     "PASS when every score is at least 8 and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL.",
     "The variants must be premium, prospect-specific and materially different. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE.",
+    "All three variants must open with a genuinely premium, prospect-relevant photographic hero. Fail the set if any one route has a weak/generic/cheap hero, if the hero imagery is not relevant to the verified business, or if mobile cropping destroys the focal subject.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If a variant has official_identity_visible=true and deterministic_gate_pass=true, do not claim its official logo is missing, fake, reinterpreted or broken. Judge prominence separately, but never fail immutable identity on a mechanically verified logo.",
     "Do not lower diversity merely because the same immutable official logo appears across A/B/C; identity consistency is required. Judge diversity from composition, section order, typography, material system, signature device and CTA pattern.",
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
