@@ -28,6 +28,11 @@
       "name": "impresax-render-v2-chaos",
       "binding": "RENDER_CHAOS_WORKFLOW",
       "class_name": "RenderChaosProbeWorkflow"
+    },
+    {
+      "name": "impresax-render-v2-input-remediation",
+      "binding": "RENDER_INPUT_REMEDIATION_WORKFLOW",
+      "class_name": "RenderInputRemediationWorkflow"
     }
   ],
   "vars": {
