@@ -105,46 +105,58 @@ jobs:
           exit 1
 
 
-      - name: Bootstrap CZ-063 immediately
+      - name: Bootstrap and reconcile CZ-063
         if: steps.gate.outputs.ready == 'true'
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
+          V2_CONTRACT_KEY: contract-v2d
         run: |
           set -euo pipefail
           token=$(openssl rand -hex 32)
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
-          code=""
+
+          started=0
           for i in {1..18}; do
             code=$(curl -sS -o /tmp/v2-start.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
               --data '{"prospect_code":"CZ-063"}' \
               "$V2_URL/shadow/start" || true)
-            echo "start_attempt=$i code=$code body=$(cat /tmp/v2-start.json 2>/dev/null || true)"
-            if [ "$code" = "202" ]; then
-              status=$(jq -r '.workflow_status.status // ""' /tmp/v2-start.json)
-              output_status=$(jq -r '.workflow_status.output.status // ""' /tmp/v2-start.json)
-              instance=$(jq -r '.workflow_instance_id // ""' /tmp/v2-start.json)
-              if { [ "$status" = "failed" ] || [ "$output_status" = "ESCALATION_REQUIRED" ] || [ "$output_status" = "INPUT_BLOCKED" ]; } && [ -n "$instance" ]; then
-                payload=$(jq -nc --arg id "$instance" '{workflow_instance_id:$id,action:"restart"}')
-                control_code=$(curl -sS -o /tmp/v2-control.json -w '%{http_code}' \
-                  -H "Authorization: Bearer $token" \
-                  -H "Content-Type: application/json" \
-                  --data "$payload" \
-                  "$V2_URL/shadow/control" || true)
-                echo "control_code=$control_code body=$(cat /tmp/v2-control.json 2>/dev/null || true)"
-                if [ "$control_code" != "200" ]; then
-                  echo "CZ-063 workflow restart failed."
-                  exit 1
-                fi
-                echo "CZ-063 failed workflow restarted on the repaired V2 engine." >> "$GITHUB_STEP_SUMMARY"
-              else
-                echo "CZ-063 V2 workflow is active." >> "$GITHUB_STEP_SUMMARY"
-              fi
-              exit 0
-            fi
+            echo "start_attempt=$i code=$code"
+            if [ "$code" = "202" ]; then started=1; break; fi
             sleep 5
           done
-          echo "CZ-063 immediate bootstrap failed after secret propagation retries."
-          exit 1
+          [ "$started" = "1" ] || { cat /tmp/v2-start.json || true; exit 1; }
+
+          pack=$(jq -r '.pack_id // ""' /tmp/v2-start.json)
+          instance=$(jq -r '.workflow_instance_id // ""' /tmp/v2-start.json)
+          status=$(jq -r '.workflow_status.status // ""' /tmp/v2-start.json)
+          output_status=$(jq -r '.workflow_status.output.status // ""' /tmp/v2-start.json)
+          [ -n "$pack" ] || exit 1
+
+          if { [ "$status" = "failed" ] || [ "$status" = "errored" ] || [ "$output_status" = "ESCALATION_REQUIRED" ] || [ "$output_status" = "INPUT_BLOCKED" ]; } && [ -n "$instance" ]; then
+            payload=$(jq -nc --arg id "$instance" '{workflow_instance_id:$id,action:"restart"}')
+            control_code=$(curl -sS -o /tmp/v2-control.json -w '%{http_code}' \
+              -H "Authorization: Bearer $token" \
+              -H "Content-Type: application/json" \
+              --data "$payload" \
+              "$V2_URL/shadow/control" || true)
+            echo "parent_restart_code=$control_code"
+            [ "$control_code" = "200" ] || { cat /tmp/v2-control.json || true; exit 1; }
+          fi
+
+          relaunch_payload=$(jq -nc --arg pack "$pack" --arg key "$V2_CONTRACT_KEY" '{pack_id:$pack,run_key:$key}')
+          relaunch_code=$(curl -sS -o /tmp/v2-relaunch.json -w '%{http_code}' \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            --data "$relaunch_payload" \
+            "$V2_URL/shadow/relaunch-variants" || true)
+          echo "relaunch_code=$relaunch_code"
+          if [ "$relaunch_code" != "200" ] && [ "$relaunch_code" != "202" ]; then
+            cat /tmp/v2-relaunch.json || true
+            exit 1
+          fi
+          jq -e '.ok == true' /tmp/v2-relaunch.json >/dev/null
+          applied=$(jq -r '.already_applied // false' /tmp/v2-relaunch.json)
+          echo "V2 contract reconciliation: key=$V2_CONTRACT_KEY already_applied=$applied" >> "$GITHUB_STEP_SUMMARY"
