@@ -28,7 +28,7 @@
   "vars": {
     "V2_MODEL_CREATIVE": "@cf/moonshotai/kimi-k2.7-code",
     "V2_MODEL_VARIANT_GENERATOR": "@cf/zai-org/glm-4.7-flash",
-    "V2_MODEL_VARIANT_REPAIR": "@cf/zai-org/glm-4.7-flash",
+    "V2_MODEL_VARIANT_REPAIR": "@cf/moonshotai/kimi-k2.7-code",
     "V2_MODEL_CODE_FALLBACK": "@cf/moonshotai/kimi-k2.7-code",
     "V2_MODEL_VISUAL_QA": "@cf/qwen/qwen3.8-27b",
     "V2_MODEL_SET_QA": "@cf/qwen/qwen3.8-27b",
