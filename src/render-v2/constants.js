@@ -1,8 +1,8 @@
 export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V1";
 export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_0";
-export const COMPILER_VERSION = "RS_COMPILER_V1_2";
+export const COMPILER_VERSION = "RS_COMPILER_V1_3";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_B";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V2";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V3";
 
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
 export const MAX_VISUAL_REVISIONS = 5;
