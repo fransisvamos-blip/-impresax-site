@@ -35,7 +35,7 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"run_key\":\"grammar-v1\"}" \
+              --data "{\"pack_id\":\"$PACK_ID\",\"run_key\":\"grammar-v11\"}" \
               "$V2_URL/shadow/relaunch-variants" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch.json 2>/dev/null || true)"
             if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
@@ -43,4 +43,4 @@ jobs:
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/relaunch.json >/dev/null
-          echo "CZ-063 relaunched on ZERO_PHOTO_PREMIUM_GRAMMAR_V1." >> "$GITHUB_STEP_SUMMARY"
+          echo "CZ-063 relaunched on ZERO_PHOTO_PREMIUM_GRAMMAR_V1.1." >> "$GITHUB_STEP_SUMMARY"
