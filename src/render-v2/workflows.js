@@ -31,8 +31,15 @@ async function parentInstance(env,id) {
 }
 
 async function emitParent(env,parentId,type,payload) {
-  const parent=await parentInstance(env,parentId);
-  await parent.sendEvent({type,payload});
+  try {
+    const parent=await parentInstance(env,parentId);
+    await parent.sendEvent({type,payload});
+    return true;
+  } catch {
+    // Child certification must never be invalidated by a stale/dead parent.
+    // The reconciler can launch a fresh pack finalizer from persisted variant state.
+    return false;
+  }
 }
 
 async function latestCertifiedRevision(sql,variantId) {
