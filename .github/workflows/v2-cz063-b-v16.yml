@@ -1,4 +1,4 @@
-name: V2 CZ063 B Grammar V16
+name: V2 CZ063 B Trust V19
 
 on:
   push:
@@ -16,6 +16,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
       PACK_ID: 8595c9d2-9d53-424b-a660-82102b9db5b3
+      FINALIZER_ID: rpv2-finalize-8595c9d2-9d53-424b-a660-82102b9db5b3-1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,7 +25,7 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Relaunch B only on grammar v1.6
+      - name: Replace B set1 with trust-first industrial poster
         shell: bash
         run: |
           set -euo pipefail
@@ -35,7 +36,7 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch-b.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"B\",\"run_key\":\"grammar-v16-b\"}" \
+              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"B\",\"run_key\":\"trust-v19-b\",\"force\":true,\"event_prefix\":\"set1\",\"parent_workflow_instance_id\":\"$FINALIZER_ID\",\"reason\":\"SET_DIVERSITY_TRUST_FIRST_REBUILD\"}" \
               "$V2_URL/shadow/relaunch-variant" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch-b.json 2>/dev/null || true)"
             if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
@@ -43,4 +44,4 @@ jobs:
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/relaunch-b.json >/dev/null
-          echo "B relaunched on ZERO_PHOTO_PREMIUM_GRAMMAR_V1.6; A/C preserved." >> "$GITHUB_STEP_SUMMARY"
+          echo "B set1 relaunched on trust-first industrial poster v1.9; A/C preserved." >> "$GITHUB_STEP_SUMMARY"
