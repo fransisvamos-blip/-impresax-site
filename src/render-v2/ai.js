@@ -699,6 +699,85 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
   return {...r.data,scores,issues,pass,model:r.model,min_score:min};
 }
 
+
+const heroAssetQaSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    pass:{type:"boolean"},
+    summary:{type:"string"},
+    scores:{
+      type:"object",additionalProperties:false,
+      properties:{
+        relevance:{type:"number"},
+        image_quality:{type:"number"},
+        realism:{type:"number"},
+        text_free:{type:"number"},
+        composition:{type:"number"},
+        crop_safety:{type:"number"}
+      },
+      required:["relevance","image_quality","realism","text_free","composition","crop_safety"]
+    },
+    issues:{type:"array",items:{
+      type:"object",additionalProperties:false,
+      properties:{
+        code:{type:"string"},
+        severity:{type:"string",enum:["critical","major","minor"]},
+        message:{type:"string"}
+      },
+      required:["code","severity","message"]
+    }},
+    regeneration_guidance:{type:"array",items:{type:"string"}}
+  },
+  required:["pass","summary","scores","issues","regeneration_guidance"]
+};
+
+export async function runHeroAssetQa(env,{imageB64,inputPayload,direction,variantKey,beforeModelAttempt=null}) {
+  const text=[
+    "Review this RAW candidate hero photograph BEFORE it is allowed into a website render.",
+    "Be extremely strict. This is a premium B2B website asset gate, not a general image critique.",
+    "HARD FAIL if ANY visible letters, words, numbers, logos, signage, labels, UI, watermarks, pseudo-text, gibberish, invented brand marks, or readable writing appear anywhere in the image. Even plausible-looking fake text is a FAIL.",
+    "HARD FAIL obvious AI artifacts, uncanny people/hands, impossible materials/architecture, cheap stock-photo staging, fake corporate posing, malformed equipment, low detail, oversharpening or synthetic collage/composite appearance.",
+    "HARD FAIL if the scene is generic or not clearly relevant to the verified commercial activity.",
+    "The image must provide a strong focal point, premium photographic realism, enough clean negative space for HTML copy, and a focal subject that can survive a 390px mobile crop.",
+    "Do not require the real company premises, employees, logo or a documented project. This is illustrative editorial imagery and must NOT imply documentary proof.",
+    "Return scores 0-10. text_free must be 10 only when there is no visible text-like material at all.",
+    "VARIANT: "+variantKey,
+    "VERIFIED BUSINESS CATEGORY/SERVICES: "+JSON.stringify({
+      vertical:inputPayload?.vertical||null,
+      verified_services:inputPayload?.verified_services||null,
+      offer:inputPayload?.brand_dna?.offer||null,
+      positioning:inputPayload?.brand_dna?.business_positioning||null,
+      local_context:inputPayload?.brand_dna?.local_context||null
+    }),
+    "ART DIRECTION: "+JSON.stringify({
+      core_idea:direction?.core_idea||null,
+      hero_logic:direction?.hero_logic||null
+    })
+  ].join("\n");
+
+  const r=await runStructured(env,"visualQa",{
+    messages:[
+      {role:"system",content:"You are an independent senior commercial-photography QA gate. Reject anything that could make a premium prospect demo look fake, generic, mislabeled or AI-generated."},
+      {role:"user",content:[
+        {type:"text",text},
+        {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+imageB64}}
+      ]}
+    ],
+    schema:heroAssetQaSchema,maxTokens:1800,temperature:0.02,vision:true,beforeAttempt:beforeModelAttempt
+  });
+  const scores={...(r.data?.scores||{})};
+  const numeric=Object.fromEntries(Object.entries(scores).map(([k,v])=>[k,Number(v)]));
+  const vals=Object.values(numeric);
+  const issues=Array.isArray(r.data?.issues)?r.data.issues:[];
+  const blocking=issues.filter(x=>x?.severity==="critical"||x?.severity==="major");
+  const pass=r.data?.pass===true &&
+    vals.length===6 &&
+    vals.every(v=>Number.isFinite(v)&&v>=8) &&
+    Number(numeric.text_free)===10 &&
+    blocking.length===0;
+  return {...r.data,scores:numeric,issues,pass,model:r.model};
+}
+
 const setQaSchema={
   type:"object",additionalProperties:false,
   properties:{
