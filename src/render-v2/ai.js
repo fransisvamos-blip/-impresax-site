@@ -178,7 +178,7 @@ export function validateContentTruthSources(contentTruth,inputPayload) {
   return {pass:issues.length===0,issues};
 }
 
-export async function createContentTruthPack(env,inputPayload,{beforeModelAttempt=null}={}) {
+export async function generateContentTruthDraft(env,inputPayload,{beforeModelAttempt=null}={}) {
   const prompt=[
     "Create the definitive factual Content Truth Pack for this ImpresaX prospect.",
     "Use ONLY VERIFIED INPUT. Never invent claims, reviews, premises, people, prices, certifications, years, statistics or capabilities.",
@@ -197,24 +197,37 @@ export async function createContentTruthPack(env,inputPayload,{beforeModelAttemp
   });
   const sourceGate=validateContentTruthSources(generated.data,inputPayload);
   if(!sourceGate.pass) throw new Error("CONTENT_TRUTH_SOURCE_INVALID:"+sourceGate.issues.join("|"));
+  return {
+    content_truth:generated.data,
+    generator_model:generated.model,
+    hash:await sha256(stableStringify(generated.data))
+  };
+}
 
+export async function reviewContentTruthDraft(env,inputPayload,draft,{beforeModelAttempt=null}={}) {
   const reviewer=await runStructured(env,"visualQa",{
     messages:[
       {role:"system",content:"You are an independent factual QA reviewer. Reject any claim not directly supported by VERIFIED INPUT. Output the schema only."},
-      {role:"user",content:"VERIFIED INPUT:\n"+JSON.stringify(inputPayload)+"\n\nCONTENT TRUTH PACK:\n"+JSON.stringify(generated.data)}
+      {role:"user",content:"VERIFIED INPUT:\n"+JSON.stringify(inputPayload)+"\n\nCONTENT TRUTH PACK:\n"+JSON.stringify(draft.content_truth)}
     ],
     schema:truthQaSchema,maxTokens:1800,temperature:0,beforeAttempt:beforeModelAttempt
   });
   if(reviewer.data.pass!==true || (reviewer.data.issues||[]).length || (reviewer.data.unsupported_modules||[]).length) {
-    throw new Error("CONTENT_TRUTH_VERIFICATION_FAILED:"+JSON.stringify({issues:reviewer.data.issues||[],unsupported_modules:reviewer.data.unsupported_modules||[]}));
+    throw new Error("CONTENT_TRUTH_VERIFICATION_FAILED:"+JSON.stringify({
+      issues:reviewer.data.issues||[],
+      unsupported_modules:reviewer.data.unsupported_modules||[]
+    }));
   }
   return {
-    content_truth:generated.data,
-    generator_model:generated.model,
     reviewer_model:reviewer.model,
-    verification:reviewer.data,
-    hash:await sha256(stableStringify(generated.data))
+    verification:reviewer.data
   };
+}
+
+export async function createContentTruthPack(env,inputPayload,{beforeModelAttempt=null}={}) {
+  const draft=await generateContentTruthDraft(env,inputPayload,{beforeModelAttempt});
+  const review=await reviewContentTruthDraft(env,inputPayload,draft,{beforeModelAttempt});
+  return {...draft,...review};
 }
 
 export async function createCreativeDirections(env,inputPayload,assetTokens,{beforeModelAttempt=null}={}) {
