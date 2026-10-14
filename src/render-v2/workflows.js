@@ -29,6 +29,35 @@ async function inputAssetsFromDb(sql,packId,inputPayload) {
 }
 
 
+async function latestReusableHeroAsset(sql,packId,variantKey) {
+  const prefix="HERO_VISUAL_"+variantKey+"_R";
+  const rows=await sql`
+    select artifact_type,r2_key,sha256,mime,bytes,created_at
+    from render_artifacts_v2
+    where render_pack_id=${packId}::uuid
+      and variant_revision_id is null
+      and artifact_type like ${prefix+"%"}
+      and mime like 'image/%'
+      and sha256 is not null
+      and bytes>0
+    order by created_at desc
+    limit 1`;
+  if(!rows.length) return null;
+  const a=rows[0];
+  return {
+    asset_id:"HERO_VISUAL",
+    role:"hero",
+    source_type:"AI_GENERATED_EDITORIAL_REUSED",
+    commercial_use_status:"AI_GENERATED_EDITORIAL",
+    generated:true,
+    reused:true,
+    r2_key:a.r2_key,
+    mime:a.mime,
+    sha256:a.sha256,
+    bytes:a.bytes
+  };
+}
+
 async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,variantKey,workflowInstanceId,cycle=1,revisionId=null,feedback=null}) {
   const model=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-klein-9b";
   await reserveAiCall(sql,packId,env,"HERO_IMAGE:"+variantKey+":"+model,revisionId);
@@ -182,6 +211,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const verified=explicitHeroAsset(context.assets);
       if(verified) return verified;
+      if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE") {
+        const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
+        if(reusable) return reusable;
+      }
       return createGeneratedHeroAsset(this.env,sql,{
         packId:params.packId,
         inputPayload:context.inputPayload,
@@ -198,7 +231,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       asset_tokens:[...new Set([...(context.direction?.asset_tokens||[]),"HERO_VISUAL"])],
       hero_logic:String(context.direction?.hero_logic||"")+" HERO_VISUAL is the mandatory dominant photographic anchor; preserve a clear copy field and intentional 390px crop."
     };
-    context.zeroPhoto=false;
+    // Preserve the original no-editorial-photo fact for the fast contract-relaunch seed.
+    // HERO_VISUAL is now a real asset, but the layout can still use the deterministic premium grammar on cycle 1.
+    context.heroOnly=context.zeroPhoto;
 
     let feedback=params.initialFeedback||null;
     let previousSpec=null;
@@ -256,7 +291,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-          if(context.zeroPhoto && cycle===1) {
+          if(context.heroOnly && cycle===1 && feedback?.reason==="ENGINE_CONTRACT_UPGRADE") {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
