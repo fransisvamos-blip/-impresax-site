@@ -23,6 +23,11 @@
       "name": "impresax-render-v2-variant",
       "binding": "RENDER_VARIANT_WORKFLOW",
       "class_name": "RenderVariantWorkflow"
+    },
+    {
+      "name": "impresax-render-v2-chaos",
+      "binding": "RENDER_CHAOS_WORKFLOW",
+      "class_name": "RenderChaosProbeWorkflow"
     }
   ],
   "vars": {
