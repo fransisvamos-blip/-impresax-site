@@ -37,7 +37,7 @@ test("valid tokenized render compiles with mandatory shell",async()=>{
   const main='<section class="hero"><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_01}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>'.repeat(8);
   const result=await compileRenderSpec({
     main_html:main,
-    custom_css:".hero{min-height:80vh;padding:6vw} @media(max-width:700px){.hero{min-height:auto;padding:24px}}".repeat(8)
+    custom_css:".hero{min-height:80vh;padding:6vw;display:grid;gap:32px;align-items:center} .hero h1{font-size:clamp(40px,7vw,110px);line-height:.9;letter-spacing:-.04em} @media(max-width:700px){.hero{min-height:auto;padding:24px;grid-template-columns:1fr}.hero h1{font-size:clamp(38px,12vw,64px)}}".repeat(8)
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
@@ -111,4 +111,31 @@ test("external asset URL validator blocks private and metadata networks",()=>{
   assert.equal(safeExternalHttpUrl("http://192.168.1.5/a.png"),"");
   assert.equal(safeExternalHttpUrl("https://metadata.google.internal/a"),"");
   assert.equal(safeExternalHttpUrl("https://example.com/a.png"),"https://example.com/a.png");
+});
+
+
+test("compiler unwraps one redundant outer main safely",async()=>{
+  const section='<section id="s"><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>';
+  const result=await compileRenderSpec({
+    main_html:"<main>"+section.repeat(12)+"</main>",
+    custom_css:".x{display:grid;gap:2rem;padding:4rem} @media(max-width:700px){.x{display:block;padding:1.25rem}}".repeat(14)
+  },{
+    businessName:"Example SRL",
+    logoToken:"identity://PRIMARY_LOGO",
+    copyManifest:manifests.copy,
+    assetManifest:manifests.assets,
+    ctaManifest:manifests.cta
+  });
+  assert.equal(result.ok,true);
+  assert.equal((result.html.match(/<main>/g)||[]).length,1);
+});
+
+test("compiler blocks literal text attributes and shallow section depth",()=>{
+  const x=validateRenderSpec({
+    main_html:'<section><img alt="Invented"><h1>{{copy:HERO_HEADLINE}}</h1><a href="{{cta:PRIMARY}}"></a></section>'.repeat(4),
+    custom_css:".x{display:grid;gap:2rem} @media(max-width:700px){.x{display:block}}".repeat(20)
+  },manifests);
+  assert.equal(x.pass,false);
+  assert.ok(x.issues.some(v=>v.startsWith("UNAUTHORIZED_TEXT_ATTRIBUTE")));
+  assert.ok(x.issues.some(v=>v.startsWith("SECTION_DEPTH_REQUIRED")));
 });
