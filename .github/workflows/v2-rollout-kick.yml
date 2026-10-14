@@ -32,13 +32,23 @@ jobs:
           set -euo pipefail
           token=$(openssl rand -hex 32)
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+          reconcile_ok=0
+          for i in {1..12}; do
+            code=$(curl -sS -o /tmp/reconcile.json -w '%{http_code}' -H "Authorization: Bearer $token" -H "Content-Type: application/json" --data '{}' "$V2_URL/shadow/reconcile" || true)
+            echo "reconcile_attempt=$i code=$code body=$(cat /tmp/reconcile.json 2>/dev/null || true)"
+            if [ "$code" = "200" ]; then reconcile_ok=1; break; fi
+            sleep 3
+          done
+          [ "$reconcile_ok" = "1" ] || exit 1
+          jq -e '.ok == true' /tmp/reconcile.json >/dev/null
+
           ok=0
           for i in {1..20}; do
-            code=$(curl -sS -o /tmp/tick.json -w '%{http_code}'               -H "Authorization: Bearer $token"               -H "Content-Type: application/json"               --data '{}'               "$V2_URL/shadow/rollout/tick" || true)
-            echo "attempt=$i code=$code body=$(cat /tmp/tick.json 2>/dev/null || true)"
+            code=$(curl -sS -o /tmp/tick.json -w '%{http_code}' -H "Authorization: Bearer $token" -H "Content-Type: application/json" --data '{}' "$V2_URL/shadow/rollout/tick" || true)
+            echo "tick_attempt=$i code=$code body=$(cat /tmp/tick.json 2>/dev/null || true)"
             if [ "$code" = "200" ]; then ok=1; break; fi
             sleep 4
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/tick.json >/dev/null
-          echo "Autonomous V2 rollout controller kicked successfully." >> "$GITHUB_STEP_SUMMARY"
+          echo "V2 reconcile + rollout controller kicked successfully." >> "$GITHUB_STEP_SUMMARY"
