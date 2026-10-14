@@ -10,6 +10,7 @@ const EVENT_HANDLER=/\son[a-z]+\s*=/i;
 const COPY_TOKEN=/\{\{copy:([A-Z0-9_]+)\}\}/g;
 const ASSET_TOKEN=/\{\{asset:([A-Z0-9_]+)\}\}/g;
 const CTA_TOKEN=/\{\{cta:([A-Z0-9_]+)\}\}/g;
+const IDENTITY_TOKEN=/\{\{identity:([A-Z0-9_]+)\}\}/g;
 
 function normalizeMainFragment(value) {
   let main=String(value||"").trim();
@@ -53,7 +54,7 @@ function neutralizeUnsafeTextAttributes(html) {
 
 function keepOnlyCanonicalTokensInTextNode(text) {
   const source=String(text||"");
-  const tokens=source.match(/\{\{(?:copy|asset|cta):[A-Z0-9_]+\}\}/g)||[];
+  const tokens=source.match(/\{\{(?:copy|asset|cta|identity):[A-Z0-9_]+\}\}/g)||[];
   if(tokens.length) return " "+tokens.join(" ")+" ";
   return source.replace(/\S/g,"");
 }
@@ -148,9 +149,12 @@ export function validateRenderSpec(spec, manifests) {
   const copyKeys=new Set(Object.keys(manifests?.copy||{}));
   const assetKeys=new Set(Object.keys(manifests?.assets||{}));
   const ctaKeys=new Set(Object.keys(manifests?.cta||{}));
+  const identityKeys=new Set(Object.keys(manifests?.identity||{}));
 
   for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
   for(const key of tokenSet(main,ASSET_TOKEN)) if(!assetKeys.has(key)) issues.push("UNKNOWN_ASSET_TOKEN:"+key);
+  for(const key of tokenSet(main,IDENTITY_TOKEN)) if(!identityKeys.has(key)) issues.push("UNKNOWN_IDENTITY_TOKEN:"+key);
+  if(tokenSet(main,IDENTITY_TOKEN).length>1) issues.push("IDENTITY_TOKEN_MAX_ONE");
   const ctaUsed=tokenSet(main,CTA_TOKEN);
   for(const key of ctaUsed) if(!ctaKeys.has(key)) issues.push("UNKNOWN_CTA_TOKEN:"+key);
   if(!ctaUsed.length) issues.push("VERIFIED_CONTACT_PATH_REQUIRED");
@@ -166,7 +170,8 @@ function replaceAllTokens(source,re,map,kind) {
 }
 
 export async function compileRenderSpec(spec,{businessName,logoToken,copyManifest,assetManifest,ctaManifest}) {
-  const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest};
+  const identityManifest=logoToken?{PRIMARY_LOGO:logoToken}:{};
+  const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest,identity:identityManifest};
   const normalized=normalizeRenderSpecForCompile(spec,manifests);
   const normalizedSpec=normalized.spec;
   const gate=validateRenderSpec(normalizedSpec,manifests);
@@ -176,6 +181,10 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   main=replaceAllTokens(main,COPY_TOKEN,copyManifest,"COPY");
   main=replaceAllTokens(main,ASSET_TOKEN,assetManifest,"ASSET");
   main=replaceAllTokens(main,CTA_TOKEN,ctaManifest,"CTA");
+  main=String(main).replace(IDENTITY_TOKEN,(_,key)=>{
+    if(key!=="PRIMARY_LOGO" || !logoToken) throw new Error("UNRESOLVED_IDENTITY_TOKEN:"+key);
+    return '<img class="ix-v2-identity-main" data-official-logo-main src="'+esc(logoToken)+'" alt="'+esc(businessName)+'">';
+  });
 
   const logo=logoToken ? '<img class="ix-v2-logo" data-official-logo src="'+esc(logoToken)+'" alt="'+esc(businessName)+'">' : '<strong class="ix-v2-wordmark">'+esc(businessName)+'</strong>';
   const primaryHref=esc(ctaManifest.PRIMARY||"#");
@@ -186,6 +195,8 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     "html,body{margin:0;padding:0}",
     "body{overflow-x:hidden}",
     "img{max-width:100%;height:auto;display:block}",
+    "main a{color:inherit;text-decoration:none}",
+    ".ix-v2-identity-main{width:min(420px,72vw);max-height:180px;object-fit:contain}",
     ".ix-v2-header,.ix-v2-footer{padding:20px clamp(20px,5vw,72px)}",
     ".ix-v2-header{display:flex;align-items:center;justify-content:space-between;gap:20px}",
     ".ix-v2-logo{max-width:min(220px,52vw);max-height:76px;object-fit:contain}",
