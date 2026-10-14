@@ -111,7 +111,7 @@ function visibleLiteralText(html) {
     .replace(/<!--[\s\S]*?-->/g," ")
     .replace(/<style\b[\s\S]*?<\/style>/gi," ")
     .replace(/<[^>]+>/g," ")
-    .replace(/\{\{(?:copy|asset|cta):[A-Z0-9_]+\}\}/g," ")
+    .replace(/\{\{(?:copy|asset|cta|identity):[A-Z0-9_]+\}\}/g," ")
     .replace(/&(?:nbsp|amp|lt|gt|quot|#39);/g," ")
     .replace(/\s+/g," ").trim();
   return x;
@@ -121,6 +121,12 @@ function tokenSet(source,re) {
   const out=[];
   for(const m of String(source||"").matchAll(re)) out.push(m[1]);
   return [...new Set(out)];
+}
+
+function tokenCount(source,re) {
+  let n=0;
+  for(const _ of String(source||"").matchAll(re)) n++;
+  return n;
 }
 
 export function validateRenderSpec(spec, manifests) {
@@ -154,7 +160,7 @@ export function validateRenderSpec(spec, manifests) {
   for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
   for(const key of tokenSet(main,ASSET_TOKEN)) if(!assetKeys.has(key)) issues.push("UNKNOWN_ASSET_TOKEN:"+key);
   for(const key of tokenSet(main,IDENTITY_TOKEN)) if(!identityKeys.has(key)) issues.push("UNKNOWN_IDENTITY_TOKEN:"+key);
-  if(tokenSet(main,IDENTITY_TOKEN).length>1) issues.push("IDENTITY_TOKEN_MAX_ONE");
+  if(tokenCount(main,IDENTITY_TOKEN)>1) issues.push("IDENTITY_TOKEN_MAX_ONE");
   const ctaUsed=tokenSet(main,CTA_TOKEN);
   for(const key of ctaUsed) if(!ctaKeys.has(key)) issues.push("UNKNOWN_CTA_TOKEN:"+key);
   if(!ctaUsed.length) issues.push("VERIFIED_CONTACT_PATH_REQUIRED");
