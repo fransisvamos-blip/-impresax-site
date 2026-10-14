@@ -1,5 +1,5 @@
 export { RenderProspectWorkflow, RenderVariantWorkflow } from "./workflows.js";
-import { db, packSnapshot, persistWorkflow } from "./db.js";
+import { db, packSnapshot, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 import { reconcileV2 } from "./reconcile.js";
@@ -150,6 +150,71 @@ export default {
       const qa=await sql`select * from render_qa_results_v2 where render_pack_id=${packId}::uuid order by created_at desc limit 30`;
       const artifacts=await sql`select id,variant_revision_id,artifact_type,r2_key,sha256,mime,bytes,created_at from render_artifacts_v2 where render_pack_id=${packId}::uuid order by created_at desc`;
       return json({ok:true,...state,qa,artifacts});
+    }
+
+    if(request.method==="POST" && url.pathname==="/shadow/relaunch-variants") {
+      const body=await request.json().catch(()=>({}));
+      const packId=String(body.pack_id||"").trim();
+      const runKey=String(body.run_key||"contract-v2").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
+      if(!packId || !runKey) return json({ok:false,error:"pack_id_and_run_key_required"},400);
+      const sql=db(env);
+      const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
+      if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
+      const pack=packs[0];
+      const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid order by variant_key`;
+      if(variants.length!==3) return json({ok:false,error:"THREE_VARIANTS_REQUIRED"},409);
+
+      const launched=[];
+      for(const variant of variants) {
+        if(variant.status==="RENDER_READY" && variant.certified_revision) {
+          launched.push({variant_key:variant.variant_key,skipped:true,reason:"ALREADY_RENDER_READY"});
+          continue;
+        }
+
+        const prior=await sql`
+          select * from render_workflows_v2
+          where variant_id=${variant.id}::uuid and workflow_type='VARIANT'
+          order by created_at desc limit 1`;
+        if(prior[0] && ["QUEUED","RUNNING","PAUSED"].includes(prior[0].status)) {
+          try {
+            const oldInstance=await env.RENDER_VARIANT_WORKFLOW.get(prior[0].workflow_instance_id);
+            await oldInstance.terminate({rollback:false});
+          } catch {}
+          await sql`update render_workflows_v2
+            set status='CANCELLED',completed_at=now(),last_event_at=now(),
+                metadata=metadata||${JSON.stringify({superseded_by_contract_relaunch:true})}::jsonb
+            where id=${prior[0].id}::uuid`;
+        }
+
+        const instanceId="rv2-"+packId+"-"+variant.variant_key+"-"+runKey;
+        const params={
+          prospectId:pack.prospect_id,
+          packId,
+          inputPackId:pack.input_pack_id,
+          variantId:variant.id,
+          variantKey:variant.variant_key,
+          parentInstanceId:"rpv2-"+packId,
+          eventPrefix:"initial",
+          initialFeedback:{
+            reason:"ENGINE_CONTRACT_UPGRADE",
+            issues:["Previous attempts were generated under a superseded RenderSpec contract."],
+            actions:[
+              "Use the current token-safe RenderSpec contract only.",
+              "Keep official identity outside main_html.",
+              "Produce a complete premium 6-10 section desktop/mobile composition."
+            ]
+          }
+        };
+        await persistWorkflow(sql,{
+          prospectId:pack.prospect_id,packId,variantId:variant.id,type:"VARIANT",
+          instanceId,status:"QUEUED",
+          metadata:{variant_key:variant.variant_key,event_prefix:"initial",run_key:runKey,contract_relaunch:true}
+        });
+        const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
+        launched.push({variant_key:variant.variant_key,workflow_instance_id:instanceId,status:await instance.status()});
+      }
+      await setPackStatus(sql,packId,"GENERATING",{contract_relaunch:runKey});
+      return json({ok:true,pack_id:packId,run_key:runKey,launched},202);
     }
 
     if(request.method==="GET" && url.pathname.startsWith("/shadow/workflow/")) {
