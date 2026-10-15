@@ -94,7 +94,7 @@ jobs:
           for i in {1..24}; do
             code=$(curl -L -sS -o /tmp/v2-health.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$V2_URL/healthz" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/v2-health.json 2>/dev/null || true)"
-            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_2_PREMIUM_HOME"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"hero_contract_required":true' /tmp/v2-health.json               && grep -q '"hero_db_guard":true' /tmp/v2-health.json               && grep -q '"hero_score_floor":8' /tmp/v2-health.json               && grep -q '"hero_certified_variants_required":3' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
+            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/v2-health.json               && grep -q '"engine":"RS_ENGINE_V2_2_PREMIUM_HOME"' /tmp/v2-health.json               && grep -q '"database_connected":true' /tmp/v2-health.json               && grep -q '"hero_contract_required":true' /tmp/v2-health.json               && grep -q '"hero_db_guard":true' /tmp/v2-health.json               && grep -q '"hero_score_floor":8' /tmp/v2-health.json               && grep -q '"hero_certified_variants_required":3' /tmp/v2-health.json               && grep -q '"quality_contract":"RS_QUALITY_V3_PREMIUM_HOME"' /tmp/v2-health.json               && grep -q '"premium_home_contract_required":true' /tmp/v2-health.json               && grep -q '"premium_home_score_floor":8' /tmp/v2-health.json               && grep -q '"ai":true' /tmp/v2-health.json               && grep -q '"browser":true' /tmp/v2-health.json               && grep -q '"r2":true' /tmp/v2-health.json               && grep -q '"parent_workflow":true' /tmp/v2-health.json               && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
               echo "V2_URL=$V2_URL" >> "$GITHUB_ENV"
               echo "V2 shadow is deployed and healthy. Queue-wide autonomous recovery is armed." >> "$GITHUB_STEP_SUMMARY"
               exit 0
@@ -115,7 +115,7 @@ jobs:
           code=$(curl -sS -o /tmp/v2-health-final.json -w '%{http_code}' \
             --connect-timeout 8 --max-time 20 "$V2_URL/healthz" || true)
           test "$code" = "200" || { cat /tmp/v2-health-final.json || true; exit 1; }
-          jq -e '.ok == true and .engine == "RS_ENGINE_V2_2_PREMIUM_HOME"' /tmp/v2-health-final.json >/dev/null
+          jq -e '.ok == true and .engine == "RS_ENGINE_V2_2_PREMIUM_HOME" and .quality_contract == "RS_QUALITY_V3_PREMIUM_HOME" and .premium_home_contract_required == true and .premium_home_score_floor == 8' /tmp/v2-health-final.json >/dev/null
           echo "V2 autonomous queue recovery is deployed; Worker cron runs reconcile + rollout tick every 5 minutes." >> "$GITHUB_STEP_SUMMARY"
 
 # HERO_CONTRACT_PATCH_6_FAST_SEED
@@ -161,3 +161,5 @@ jobs:
 # PREMIUM_FULL_HOME_V3_PATCH_2
 
 # PREMIUM_FULL_HOME_V3_HEALTH
+
+# PREMIUM_HOME_HEALTH_INVARIANT_V1
