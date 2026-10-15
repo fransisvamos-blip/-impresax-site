@@ -1,6 +1,7 @@
 import { db, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { renderConcurrencyState } from "./concurrency.js";
+import { prospectCircuitState } from "./circuit.js";
 
 export const GOLDEN_CASES=[
   {code:"CZ-063",expected:"PASS"},
@@ -106,6 +107,10 @@ async function latestParent(sql,packId) {
 }
 
 async function startParent(env,sql,pack,{reason="ROLLOUT",forceNew=false}={}) {
+  const circuit=await prospectCircuitState(sql,pack.prospect_id);
+  if(circuit.open) {
+    return {started:false,status:"CIRCUIT_OPEN",reason:"PROSPECT_CIRCUIT_BREAKER"};
+  }
   const prior=await latestParent(sql,pack.id);
   if(prior && ["QUEUED","RUNNING","PAUSED"].includes(prior.status)) {
     return {started:false,instance_id:prior.workflow_instance_id,status:prior.status};
@@ -154,6 +159,8 @@ async function resetRecoveryBudget(sql,packId,runKey,attempt) {
 }
 
 async function recoverGoldenVariants(env,sql,pack,availableSlots) {
+  const circuit=await prospectCircuitState(sql,pack.prospect_id);
+  if(circuit.open) return {started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
   const variants=await sql`
     select v.*,
       (select w.status from render_workflows_v2 w
@@ -445,6 +452,9 @@ async function drainQueue(env,sql,state) {
       select p.id,p.rank,p.business_name
       from prospects p
       where p.rank is not null and p.rank<=50
+        and p.retry_count<p.max_retries
+        and coalesce(p.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+        and coalesce(p.current_step,'')<>'GENERATION_HOLD'
         and (
           not exists (select 1 from render_v2_packs rp where rp.prospect_id=p.id)
           or exists (
