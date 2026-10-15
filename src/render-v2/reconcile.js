@@ -139,6 +139,120 @@ function contractSlug(value) {
   return String(value||"quality").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,42);
 }
 
+
+async function preemptLowerPriorityRecoveryForQualityUpgrade(env,sql) {
+  const state=await renderConcurrencyState(sql);
+  if(state.slots>=state.limit) return {preempted:[],slots_added:0,target:null};
+
+  const targets=await sql`
+    select p.id,pr.rank,pr.business_name
+    from render_v2_packs p
+    join prospects pr on pr.id=p.prospect_id
+    where p.shadow_mode=true
+      and p.approved_reference=false
+      and p.selected_variant_revision_id is null
+      and (
+        (
+          p.status='RENDER_READY'
+          and p.quality_contract_version<>${QUALITY_CONTRACT_VERSION}
+          and (select count(*) from render_v2_variants v
+               where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
+        )
+        or
+        (
+          p.status in ('GENERATING','ESCALATION_REQUIRED','REWORK','PREVIEW_PARTIAL','PREVIEW_READY','QA_RUNNING')
+          and p.quality_contract_version=${QUALITY_CONTRACT_VERSION}
+          and p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION}
+        )
+      )
+    order by
+      case when p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION} then 0 else 1 end,
+      pr.rank asc nulls last,p.priority asc,p.render_ready_at asc nulls first
+    limit 1`;
+  if(!targets.length) return {preempted:[],slots_added:0,target:null};
+
+  const target=targets[0];
+  const targetRank=Number(target.rank ?? 2147483647);
+  const desiredSlots=Math.min(3,state.limit);
+  let need=Math.max(0,desiredSlots-state.slots);
+  if(need<=0) return {preempted:[],slots_added:0,target};
+
+  const lower=await sql`
+    select w.workflow_instance_id,w.render_pack_id,w.variant_id,w.metadata,
+           pr.rank,pr.business_name
+    from render_workflows_v2 w
+    join render_v2_packs p on p.id=w.render_pack_id
+    join prospects pr on pr.id=p.prospect_id
+    where w.workflow_type='VARIANT'
+      and w.status in ('QUEUED','RUNNING','PAUSED')
+      and coalesce((w.metadata->>'auto_recovery')::boolean,false)=true
+      and coalesce(pr.rank,2147483647)>${targetRank}
+    order by pr.rank desc nulls first,w.created_at desc`;
+
+  const preempted=[];
+  const affected=new Map();
+  for(const row of lower) {
+    if(need<=0) break;
+    try {
+      const instance=await env.RENDER_VARIANT_WORKFLOW.get(row.workflow_instance_id);
+      await instance.terminate({rollback:false});
+    } catch {}
+    await updateWorkflow(sql,row.workflow_instance_id,{
+      status:"CANCELLED",
+      currentStep:"PRIORITY_PREEMPTED",
+      errorCode:null,
+      metadata:{
+        priority_preempted:true,
+        priority_preempted_at:new Date().toISOString(),
+        preempted_for_pack_id:target.id,
+        preempted_for_rank:target.rank
+      }
+    });
+    preempted.push({
+      workflow_instance_id:row.workflow_instance_id,
+      pack_id:row.render_pack_id,
+      business_name:row.business_name,
+      rank:row.rank
+    });
+    const attempt=Number(row.metadata?.auto_recovery_attempt||0);
+    const existing=affected.get(row.render_pack_id)||{attempt,business_name:row.business_name,rank:row.rank};
+    existing.attempt=Math.max(existing.attempt,attempt);
+    affected.set(row.render_pack_id,existing);
+    need--;
+  }
+
+  for(const [packId,info] of affected.entries()) {
+    const activeRows=await sql`
+      select count(*)::int n
+      from render_workflows_v2
+      where render_pack_id=${packId}::uuid
+        and workflow_type='VARIANT'
+        and status in ('QUEUED','RUNNING','PAUSED')`;
+    if(Number(activeRows[0]?.n||0)===0) {
+      const restoredAttempt=Math.max(0,Number(info.attempt||0)-1);
+      await sql`
+        update render_v2_packs
+        set status='ESCALATION_REQUIRED',
+            metadata=(coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'auto_recovery_attempt',${restoredAttempt},
+                'priority_preempted_at',to_jsonb(now()),
+                'priority_preempted_for_pack_id',${target.id}::text,
+                'priority_preempted_for_rank',${String(target.rank??"")}::text,
+                'priority_preemption_retry_restored',true
+              )),
+            updated_at=now()
+        where id=${packId}::uuid`;
+    }
+  }
+
+  return {
+    target:{pack_id:target.id,business_name:target.business_name,rank:target.rank},
+    preempted,
+    slots_added:preempted.length
+  };
+}
+
 async function upgradeLegacyReadyPack(env,sql,availableSlots) {
   let slots=Math.max(0,Number(availableSlots||0));
   if(slots<=0) return {started:false,reason:"CONCURRENCY_CAP",slots_used:0};
@@ -460,6 +574,16 @@ export async function reconcileV2(env) {
   const summary={started:[],reconciled:[],errors:[]};
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
   let renderSlots=summary.concurrency.slots;
+
+  const priorityPreemption=await preemptLowerPriorityRecoveryForQualityUpgrade(env,sql);
+  if(priorityPreemption.preempted.length) {
+    summary.reconciled.push({
+      reason:"QUALITY_UPGRADE_PRIORITY_PREEMPTION",
+      target:priorityPreemption.target,
+      preempted:priorityPreemption.preempted
+    });
+    renderSlots=(await renderConcurrencyState(sql)).slots;
+  }
 
   if(renderSlots>0) {
     try {
