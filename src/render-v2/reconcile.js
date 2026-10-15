@@ -1,5 +1,6 @@
 import { db, persistWorkflow, updateWorkflow, setPackStatus, setVariantStatus } from "./db.js";
 import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVariants } from "./concurrency.js";
+import { prospectCircuitState, packCircuitOverridePending, consumePackCircuitOverride } from "./circuit.js";
 import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 const QUALITY_UPGRADE_MAX_ATTEMPTS=3;
 
@@ -19,6 +20,45 @@ function dbStatus(platform) {
 
 function bindingFor(env,type) {
   return type==="VARIANT" ? env.RENDER_VARIANT_WORKFLOW : env.RENDER_PROSPECT_WORKFLOW;
+}
+
+async function enforceProspectCircuitBreakers(env,sql) {
+  const rows=await sql`
+    select w.workflow_instance_id,w.render_pack_id,w.variant_id,w.metadata,
+           p.prospect_id,pr.retry_count,pr.max_retries,pr.error,pr.current_step
+    from render_workflows_v2 w
+    join render_v2_packs p on p.id=w.render_pack_id
+    join prospects pr on pr.id=p.prospect_id
+    where w.workflow_type='VARIANT'
+      and w.status in ('QUEUED','RUNNING','PAUSED')
+      and (
+        pr.retry_count>=pr.max_retries
+        or pr.error='GENERATION_CIRCUIT_BREAKER'
+        or pr.current_step='GENERATION_HOLD'
+      )
+      and coalesce((w.metadata->>'circuit_breaker_override')::boolean,false)=false`;
+  const terminated=[];
+  for(const row of rows) {
+    try {
+      const instance=await env.RENDER_VARIANT_WORKFLOW.get(row.workflow_instance_id);
+      await instance.terminate({rollback:false});
+    } catch {}
+    await updateWorkflow(sql,row.workflow_instance_id,{
+      status:"CANCELLED",
+      currentStep:"CIRCUIT_BREAKER_HOLD",
+      errorCode:"GENERATION_CIRCUIT_BREAKER",
+      metadata:{circuit_breaker_enforced:true,circuit_breaker_enforced_at:new Date().toISOString()}
+    });
+    if(row.variant_id) {
+      await setVariantStatus(sql,row.variant_id,{status:"ESCALATION_REQUIRED"});
+    }
+    await setPackStatus(sql,row.render_pack_id,"ESCALATION_REQUIRED",{
+      circuit_breaker_enforced:true,
+      circuit_breaker_enforced_at:new Date().toISOString()
+    });
+    terminated.push(row.workflow_instance_id);
+  }
+  return terminated;
 }
 
 async function enforceGlobalVariantConcurrency(env,sql) {
@@ -153,6 +193,10 @@ async function preemptLowerPriorityRecoveryForQualityUpgrade(env,sql) {
       and p.approved_reference=false
       and p.selected_variant_revision_id is null
       and (
+        (pr.retry_count<pr.max_retries and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER' and coalesce(pr.current_step,'')<>'GENERATION_HOLD')
+        or coalesce((p.metadata->>'generation_circuit_breaker_override_pending')::boolean,false)=true
+      )
+      and (
         (
           p.status='RENDER_READY'
           and p.quality_contract_version<>${QUALITY_CONTRACT_VERSION}
@@ -259,7 +303,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
   if(slots<=0) return {started:false,reason:"CONCURRENCY_CAP",slots_used:0};
 
   const rows=await sql`
-    select p.*,pr.rank,pr.business_name
+    select p.*,pr.rank,pr.business_name,pr.retry_count,pr.max_retries,pr.error as prospect_error,pr.current_step as prospect_current_step
     from render_v2_packs p
     join prospects pr on pr.id=p.prospect_id
     where p.shadow_mode=true
@@ -286,6 +330,18 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
   if(!rows.length) return {started:false,reason:"NO_LEGACY_READY_PACK",slots_used:0};
 
   const pack=rows[0];
+  const qualityCircuitOpen=
+    Number(pack.retry_count||0)>=Number(pack.max_retries||3) ||
+    String(pack.prospect_error||"")==="GENERATION_CIRCUIT_BREAKER" ||
+    String(pack.prospect_current_step||"")==="GENERATION_HOLD";
+  let qualityCircuitOverride=false;
+  if(qualityCircuitOpen) {
+    qualityCircuitOverride=await consumePackCircuitOverride(sql,pack.id,"PREMIUM_HOME_QUALITY_RECOVERY");
+    if(!qualityCircuitOverride) {
+      return {started:false,reason:"PROSPECT_CIRCUIT_BREAKER",pack_id:pack.id,slots_used:0};
+    }
+  }
+
   const variants=await sql`
     select v.*,
            r.id certified_revision_id,
@@ -392,7 +448,8 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
         quality_contract_upgrade:true,
         quality_upgrade_attempt:attempt,
         previous_quality_contract:previousContract,
-        quality_contract_version:QUALITY_CONTRACT_VERSION
+        quality_contract_version:QUALITY_CONTRACT_VERSION,
+        circuit_breaker_override:qualityCircuitOverride
       }
     });
     const params={
@@ -474,6 +531,15 @@ async function startPackFinalizer(env,sql,pack,attempt) {
 }
 
 async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
+  const circuitState=await prospectCircuitState(sql,pack.prospect_id);
+  let circuitOverride=false;
+  if(circuitState.open) {
+    const pending=await packCircuitOverridePending(sql,pack.id);
+    if(!pending) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
+    circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
+    if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
+  }
+
   const variants=await sql`
     select v.*,
       (select w.status from render_workflows_v2 w where w.variant_id=v.id and w.workflow_type='VARIANT'
@@ -549,7 +615,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,packId:pack.id,variantId:variant.id,type:"VARIANT",
       instanceId,status:"QUEUED",
-      metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt}
+      metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt,circuit_breaker_override:circuitOverride}
     });
     const instance=await env.RENDER_VARIANT_WORKFLOW.create({
       id:instanceId,
@@ -590,6 +656,7 @@ export async function startOrRecoverParent(env,sql,pack) {
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
+  summary.circuit_breaker_terminated=await enforceProspectCircuitBreakers(env,sql);
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
   let renderSlots=summary.concurrency.slots;
 
@@ -634,9 +701,13 @@ export async function reconcileV2(env) {
     select p.id,p.prospect_id,p.input_pack_id
     from render_v2_packs p
     join render_input_packs i on i.id=p.input_pack_id
+    join prospects pr on pr.id=p.prospect_id
     where p.shadow_mode=true
       and p.status='INPUT_READY'
       and i.certification_status='PASS'
+      and pr.retry_count<pr.max_retries
+      and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+      and coalesce(pr.current_step,'')<>'GENERATION_HOLD'
       and not exists (
         select 1 from render_workflows_v2 w
         where w.render_pack_id=p.id and w.workflow_type='PROSPECT'
@@ -741,9 +812,14 @@ export async function reconcileV2(env) {
     const escalated=await sql`
       select p.*
       from render_v2_packs p
+      join prospects pr on pr.id=p.prospect_id
       where p.shadow_mode=true
         and p.status='ESCALATION_REQUIRED'
         and coalesce((p.metadata->>'auto_recovery_attempt')::int,0)<3
+        and (
+          (pr.retry_count<pr.max_retries and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER' and coalesce(pr.current_step,'')<>'GENERATION_HOLD')
+          or coalesce((p.metadata->>'generation_circuit_breaker_override_pending')::boolean,false)=true
+        )
         and not exists (
           select 1 from render_workflows_v2 w
           where w.render_pack_id=p.id and w.status in ('QUEUED','RUNNING','PAUSED')
