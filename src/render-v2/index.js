@@ -285,7 +285,7 @@ export default {
           ok:false,error:"RENDER_CONCURRENCY_FULL",status:"DEFERRED_CONCURRENCY",
           pack_id:packId,variant_key:variantKey,required_slots:1,available_slots:capacity.slots,
           active_variants:capacity.active,max_concurrency:capacity.limit,
-          targeted_relaunch:true,available_slots:capacity.slots
+          targeted_relaunch:true
         },409);
       }
 
