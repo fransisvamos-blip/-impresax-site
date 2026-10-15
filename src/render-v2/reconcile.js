@@ -181,12 +181,6 @@ async function fillUnstartedInitialVariants(env,sql,availableSlots) {
     };
     try { await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
     catch { await env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
-    if(pack.status!=="GENERATING" && launched.length===0) {
-      await setPackStatus(sql,pack.id,"GENERATING",{
-        quality_upgrade_to:QUALITY_CONTRACT_VERSION,
-        quality_upgrade_mode:"STAGED_GLOBAL_CONCURRENCY"
-      });
-    }
     launched.push({pack_id:row.render_pack_id,variant_key:row.variant_key,instance_id:instanceId});
     slots--;
   }
@@ -516,6 +510,12 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     };
     try { await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
     catch { await env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
+    if(pack.status!=="GENERATING" && launched.length===0) {
+      await setPackStatus(sql,pack.id,"GENERATING",{
+        quality_upgrade_to:QUALITY_CONTRACT_VERSION,
+        quality_upgrade_mode:"STAGED_GLOBAL_CONCURRENCY"
+      });
+    }
     launched.push({
       variant_key:key,
       instance_id:instanceId,
