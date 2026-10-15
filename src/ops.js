@@ -511,7 +511,8 @@ async function prospectDetail(sql, id) {
     sql`select
           v.id,v.render_pack_id,v.variant_key,v.status,v.current_revision,v.best_preview_revision,
           v.best_qa_revision,v.certified_revision,v.direction_fingerprint,v.created_at,v.updated_at,
-          p.status as pack_status,p.selected_variant_revision_id,p.approved_reference,p.shadow_mode,p.created_at as pack_created_at,
+          p.status as pack_status,p.quality_contract_version,p.execution_engine_version,p.metadata as pack_metadata,
+          p.selected_variant_revision_id,p.approved_reference,p.shadow_mode,p.created_at as pack_created_at,
           r.id as certified_revision_id,r.revision,r.status as revision_status,r.render_spec,r.source_hash,
           r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score,
           exists(
@@ -534,8 +535,8 @@ async function prospectDetail(sql, id) {
     name:"Versione "+v.variant_key,
     reference_score:v.score,
     selected:Boolean(v.certified_revision_id && String(v.selected_variant_revision_id||"")===String(v.certified_revision_id)),
-    desktop_render_url:v.certified_revision_id && v.desktop_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
-    mobile_render_url:v.certified_revision_id && v.mobile_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
+    desktop_render_url:["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) && v.status==="RENDER_READY" && v.certified_revision_id && v.desktop_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
+    mobile_render_url:["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) && v.status==="RENDER_READY" && v.certified_revision_id && v.mobile_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
   }));
 
   return {
