@@ -539,6 +539,15 @@ export async function reconcileV2(env) {
       and (select count(*) from render_v2_variants v where v.render_pack_id=p.id)=3
       and (select count(*) from render_v2_variants v
            where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
+      and (
+        p.quality_contract_version<>${QUALITY_CONTRACT_VERSION}
+        or
+        (select count(*) from render_v2_variants v
+          join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+          where v.render_pack_id=p.id
+            and v.status='RENDER_READY'
+            and r.compiler_version=${COMPILER_VERSION})=3
+      )
     order by p.updated_at
     limit 10`;
   for(const pack of finalizable) {
