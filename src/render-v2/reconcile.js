@@ -1,6 +1,6 @@
 import { db, persistWorkflow, updateWorkflow, setPackStatus, setVariantStatus } from "./db.js";
 import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVariants } from "./concurrency.js";
-import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION } from "./constants.js";
+import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 
 function platformStatus(value) {
   const raw=typeof value==="string" ? value : value?.status;
