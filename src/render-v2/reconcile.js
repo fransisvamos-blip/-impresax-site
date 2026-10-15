@@ -227,7 +227,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
             ),
           updated_at=now()
       where id=${pack.id}::uuid`;
-  } else if(pack.status<>'GENERATING') {
+  } else if(pack.status!=="GENERATING") {
     await setPackStatus(sql,pack.id,"GENERATING",{
       quality_upgrade_to:QUALITY_CONTRACT_VERSION,
       quality_upgrade_mode:"STAGED_GLOBAL_CONCURRENCY"
