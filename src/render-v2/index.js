@@ -31,8 +31,42 @@ async function writeControlEvent(sql,row,action,payload={}) {
 export default {
   async scheduled(controller,env,ctx) {
     ctx.waitUntil((async()=>{
-      await reconcileV2(env).catch(()=>null);
-      await tickRollout(env).catch(()=>null);
+      const sql=db(env);
+      let reconcileResult=null;
+      let reconcileError=null;
+      try {
+        reconcileResult=await reconcileV2(env);
+      } catch(error) {
+        reconcileError=String(error?.stack||error?.message||error).slice(0,5000);
+      }
+      try {
+        await sql`
+          update render_v2_rollout_state
+          set metadata=(coalesce(metadata,'{}'::jsonb)
+                -'scheduled_reconcile_last_error'
+                -'scheduled_reconcile_last_result')
+              || jsonb_build_object(
+                'scheduled_reconcile_last_at',to_jsonb(now()),
+                'scheduled_reconcile_last_ok',${reconcileError===null},
+                'scheduled_reconcile_last_error',${reconcileError},
+                'scheduled_reconcile_last_result',${JSON.stringify(reconcileResult||{})}::jsonb
+              ),
+              updated_at=now()
+          where id=1`;
+      } catch {}
+      await tickRollout(env).catch(async(error)=>{
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'scheduled_rollout_last_error',${String(error?.stack||error?.message||error).slice(0,5000)},
+                'scheduled_rollout_last_error_at',to_jsonb(now())
+              ),
+                updated_at=now()
+            where id=1`;
+        } catch {}
+      });
       const ref=String(env.V2_SHADOW_AUTOSTART||"").trim();
       if(!ref || !env.RENDER_PROSPECT_WORKFLOW) return;
       try {
