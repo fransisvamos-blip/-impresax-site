@@ -523,27 +523,90 @@ export async function combineCreativePlan(contentTruth,directions) {
 }
 
 export function buildCopyManifest(content) {
-  const out={
-    HERO_HEADLINE:content.hero_headline,
-    HERO_BODY:content.hero_body,
-    POSITIONING_TITLE:content.positioning_title||content.hero_headline,
-    POSITIONING_BODY:content.positioning_body||content.hero_body,
-    SERVICES_TITLE:content.services_title||"Servizi",
-    SERVICES_INTRO:content.services_intro||content.hero_body,
-    TRUST_TITLE:content.trust_title||"Perché scegliere noi",
-    TRUST_INTRO:content.trust_intro||((content.trust_points||[])[0]?.text)||content.locality_line||content.hero_body,
-    CLOSING_TITLE:content.closing_title||content.primary_cta_label||"Contatti",
-    CLOSING_BODY:content.closing_body||content.hero_body,
-    LOCALITY_LINE:content.locality_line,
-    PRIMARY_CTA_LABEL:content.primary_cta_label,
-    SECONDARY_CTA_LABEL:content.secondary_cta_label,
-    FOOTER_LINE:content.footer_line
+  const services=Array.isArray(content?.services)?content.services:[];
+  const trustPoints=Array.isArray(content?.trust_points)?content.trust_points:[];
+  const serviceTitles=services.map(x=>String(x?.title||"").trim()).filter(Boolean);
+  const serviceBodies=services.map(x=>String(x?.description||"").trim()).filter(Boolean);
+  const trustTexts=trustPoints.map(x=>String(x?.text||"").trim()).filter(Boolean);
+  const norm=value=>String(value||"").replace(/\s+/g," ").trim().toLowerCase();
+  const used=new Set();
+  const choose=(candidates,fallback="")=>{
+    for(const candidate of candidates) {
+      const value=String(candidate||"").replace(/\s+/g," ").trim();
+      if(!value) continue;
+      const key=norm(value);
+      if(used.has(key)) continue;
+      used.add(key);
+      return value;
+    }
+    const value=String(fallback||"").replace(/\s+/g," ").trim();
+    if(value) used.add(norm(value));
+    return value;
   };
-  (content.services||[]).forEach((s,i)=>{
-    out["SERVICE_"+(i+1)+"_TITLE"]=s.title;
-    out["SERVICE_"+(i+1)+"_BODY"]=s.description;
+
+  const heroHeadline=choose([content?.hero_headline,serviceTitles[0],content?.footer_line],"Azienda");
+  const heroBody=choose([content?.hero_body,serviceBodies[0],content?.locality_line],"");
+  const positioningTitle=choose([
+    content?.positioning_title,
+    serviceTitles[0],
+    serviceTitles[1],
+    content?.footer_line
+  ],heroHeadline);
+  const positioningBody=choose([
+    content?.positioning_body,
+    serviceBodies[0],
+    serviceBodies[1],
+    content?.locality_line,
+    content?.footer_line
+  ],heroBody);
+  const servicesTitle=choose([content?.services_title,"Servizi"],"Servizi");
+  const servicesIntro=choose([
+    content?.services_intro,
+    serviceBodies.slice(0,2).join(" "),
+    serviceTitles.slice(0,3).join(" · "),
+    content?.locality_line
+  ],positioningBody);
+  const trustTitle=choose([content?.trust_title,"Perché scegliere noi"],"Perché scegliere noi");
+  const trustIntro=choose([
+    content?.trust_intro,
+    trustTexts.slice(0,2).join(" · "),
+    trustTexts[0],
+    content?.locality_line
+  ],positioningBody);
+  const closingTitle=choose([
+    content?.closing_title,
+    content?.primary_cta_label,
+    "Parliamone"
+  ],"Contatti");
+  const closingBody=choose([
+    content?.closing_body,
+    content?.footer_line,
+    content?.locality_line,
+    serviceBodies[serviceBodies.length-1],
+    trustTexts[trustTexts.length-1]
+  ],positioningBody);
+
+  const out={
+    HERO_HEADLINE:heroHeadline,
+    HERO_BODY:heroBody,
+    POSITIONING_TITLE:positioningTitle,
+    POSITIONING_BODY:positioningBody,
+    SERVICES_TITLE:servicesTitle,
+    SERVICES_INTRO:servicesIntro,
+    TRUST_TITLE:trustTitle,
+    TRUST_INTRO:trustIntro,
+    CLOSING_TITLE:closingTitle,
+    CLOSING_BODY:closingBody,
+    LOCALITY_LINE:String(content?.locality_line||"").trim(),
+    PRIMARY_CTA_LABEL:String(content?.primary_cta_label||"Contatti").trim(),
+    SECONDARY_CTA_LABEL:String(content?.secondary_cta_label||"Approfondisci").trim(),
+    FOOTER_LINE:String(content?.footer_line||"").trim()
+  };
+  services.forEach((s,i)=>{
+    out["SERVICE_"+(i+1)+"_TITLE"]=String(s?.title||"").trim();
+    out["SERVICE_"+(i+1)+"_BODY"]=String(s?.description||"").trim();
   });
-  (content.trust_points||[]).forEach((s,i)=>{ out["TRUST_"+(i+1)]=s.text; });
+  trustPoints.forEach((s,i)=>{ out["TRUST_"+(i+1)]=String(s?.text||"").trim(); });
   return out;
 }
 
@@ -606,6 +669,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- positioning MUST visibly use {{copy:POSITIONING_TITLE}} and {{copy:POSITIONING_BODY}}.",
     "- final-cta MUST visibly use {{copy:CLOSING_TITLE}}, {{copy:CLOSING_BODY}} and at least {{cta:PRIMARY}}.",
     "- Do not create a thin brochure: each section needs clear purpose, editorial hierarchy and enough breathing room to feel intentionally art-directed.",
+    "- NEVER repeat the same sentence verbatim across HERO_BODY, POSITIONING_BODY, SERVICES_INTRO, TRUST_INTRO and CLOSING_BODY. Each section must advance the story with a distinct verified angle.",
+    "- Do not repeat a trust statement as both section intro and trust card copy. Use the intro to frame the proof; use the cards for the proof itself.",
+    "- Hero anchors must look like designed buttons, not tiny inline text links: give both clear button classes, minimum touch target around 44px, visible padding/border/fill and strong hierarchy between primary and secondary actions.",
     "- Every visible text node, including section labels, eyebrows, numbers, captions, badges and microcopy, MUST be an exact {{copy:TOKEN_NAME}} token.",
     "- Never write literal visible text such as 'Chi siamo', 'Servizi', '01', 'Scopri', company names, years, statistics or decorative words.",
     "- CTA href values MUST be exactly {{cta:PRIMARY}} or {{cta:SECONDARY}}.",
@@ -630,6 +696,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- main_html and custom_css must both be richly implemented, not minimal examples.",
     "- The homepage must have clear visual hierarchy, premium whitespace, a distinctive hero, strong CTA integration and a deliberate closing sequence.",
     "- Header/navigation must look premium and intentional, with the official identity clearly visible, readable navigation and a designed CTA.",
+    "- Hero primary CTA must be visually dominant and the secondary CTA clearly visible but subordinate; both must read as interactive controls at first glance.",
     "- Footer must feel like a real finishing section, not a thin legal strip: brand, navigation and verified contact details must be visually composed.",
     "- The page must feel complete enough to show directly to a paying prospect without explaining that it is a mockup.",
     "- The hero must look sellable at first glance: premium image quality, obvious relevance to this prospect, strong focal hierarchy, believable real-world scene and excellent desktop/mobile cropping.",
