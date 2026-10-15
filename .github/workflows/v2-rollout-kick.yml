@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: premium-home-v3-compiler-14
+# rollout kick trigger: premium-home-v3-typed-sql
 
 on:
   push:
