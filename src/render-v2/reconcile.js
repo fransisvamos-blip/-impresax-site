@@ -204,9 +204,9 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     await sql`
       update render_v2_packs
       set status='GENERATING',
-          quality_contract_version=${QUALITY_CONTRACT_VERSION},
-          execution_engine_version=${EXECUTION_ENGINE_VERSION},
-          model_route_version=${MODEL_ROUTE_VERSION},
+          quality_contract_version=${QUALITY_CONTRACT_VERSION}::text,
+          execution_engine_version=${EXECUTION_ENGINE_VERSION}::text,
+          model_route_version=${MODEL_ROUTE_VERSION}::text,
           render_ready_at=null,
           metrics=
             (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
@@ -215,13 +215,13 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
               'browser_captures',0,
               'prior_epoch_ai_calls',coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
               'prior_epoch_browser_captures',coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
-              'budget_epoch',${runKey},
+              'budget_epoch',${runKey}::text,
               'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
             ),
           metadata=(coalesce(metadata,'{}'::jsonb)-'error')
             || jsonb_build_object(
-              'quality_upgrade_from',${previousContract},
-              'quality_upgrade_to',${QUALITY_CONTRACT_VERSION},
+              'quality_upgrade_from',${previousContract}::text,
+              'quality_upgrade_to',${QUALITY_CONTRACT_VERSION}::text,
               'quality_upgrade_started_at',to_jsonb(now()),
               'quality_upgrade_mode','STAGED_GLOBAL_CONCURRENCY'
             ),
