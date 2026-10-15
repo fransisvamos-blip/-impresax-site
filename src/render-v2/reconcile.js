@@ -23,8 +23,15 @@ function bindingFor(env,type) {
 }
 
 function workflowEpochTag(value) {
-  const raw=String(value||"").replace(/[^0-9A-Za-z]+/g,"").toLowerCase();
-  return raw ? raw.slice(-18) : "base";
+  const raw=String(value||"").trim();
+  const ms=Date.parse(raw);
+  if(Number.isFinite(ms)) return "t"+Math.trunc(ms).toString(36);
+  let h=2166136261;
+  for(let i=0;i<raw.length;i++) {
+    h^=raw.charCodeAt(i);
+    h=Math.imul(h,16777619);
+  }
+  return raw ? "h"+(h>>>0).toString(36) : "base";
 }
 
 async function enforceProspectCircuitBreakers(env,sql) {
@@ -174,6 +181,12 @@ async function fillUnstartedInitialVariants(env,sql,availableSlots) {
     };
     try { await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
     catch { await env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
+    if(pack.status!=="GENERATING" && launched.length===0) {
+      await setPackStatus(sql,pack.id,"GENERATING",{
+        quality_upgrade_to:QUALITY_CONTRACT_VERSION,
+        quality_upgrade_mode:"STAGED_GLOBAL_CONCURRENCY"
+      });
+    }
     launched.push({pack_id:row.render_pack_id,variant_key:row.variant_key,instance_id:instanceId});
     slots--;
   }
@@ -403,14 +416,10 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
             ),
           updated_at=now()
       where id=${pack.id}::uuid`;
-  } else if(pack.status!=="GENERATING") {
-    await setPackStatus(sql,pack.id,"GENERATING",{
-      quality_upgrade_to:QUALITY_CONTRACT_VERSION,
-      quality_upgrade_mode:"STAGED_GLOBAL_CONCURRENCY"
-    });
   }
 
   const launched=[];
+  const exhaustedKeys=[];
   for(const variant of variants) {
     if(slots<=0) break;
     const alreadyCurrent=
@@ -434,6 +443,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
       effectiveAttempts=Number(rows[0]?.n||0);
     }
     if(effectiveAttempts>=QUALITY_UPGRADE_MAX_ATTEMPTS) {
+      exhaustedKeys.push(String(variant.variant_key));
       await setVariantStatus(sql,variant.id,{status:"ESCALATION_REQUIRED"});
       continue;
     }
@@ -523,6 +533,38 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
   }).length;
 
   if(!launched.length) {
+    const activeRemaining=variants.filter(v=>{
+      const current=v.status==="RENDER_READY" &&
+        v.certified_revision_id &&
+        String(v.certified_compiler_version||"")===COMPILER_VERSION;
+      return !current && v.active_variant_workflow;
+    }).length;
+    const terminalExhausted=remaining>0 && activeRemaining===0 && exhaustedKeys.length>=remaining;
+    if(terminalExhausted) {
+      await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+        quality_upgrade_exhausted:true,
+        quality_upgrade_exhausted_at:new Date().toISOString(),
+        quality_upgrade_exhausted_variants:exhaustedKeys,
+        ghost_generating_prevented:true
+      });
+      await sql`
+        update prospects
+        set render_status='ESCALATION_REQUIRED',
+            current_step='QUALITY_RECOVERY_EXHAUSTED',
+            error='V2_QUALITY_RECOVERY_EXHAUSTED',
+            next_action='CABINA_RENDERING_REVIEW',
+            updated_at=now()
+        where id=${pack.prospect_id}::uuid
+          and pipeline_status='RENDERING'`;
+      return {
+        started:false,
+        reason:"QUALITY_UPGRADE_EXHAUSTED",
+        pack_id:pack.id,
+        slots_used:0,
+        remaining,
+        exhausted_variants:exhaustedKeys
+      };
+    }
     return {
       started:false,
       reason:remaining===0?"QUALITY_UPGRADE_VARIANTS_COMPLETE":"QUALITY_UPGRADE_WAITING",
@@ -842,11 +884,32 @@ export async function reconcileV2(env) {
       order by p.updated_at
       limit 10`;
     for(const pack of staleGenerating) {
+      const recoveryAttempts=Number(pack.metadata?.auto_recovery_attempt||0);
+      const exhausted=recoveryAttempts>=3;
       await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
         stale_generating_reconciled_at:new Date().toISOString(),
-        stale_generating_previous_status:"GENERATING"
+        stale_generating_previous_status:"GENERATING",
+        auto_recovery_exhausted:exhausted,
+        auto_recovery_exhausted_at:exhausted?new Date().toISOString():null
       });
-      summary.reconciled.push({pack_id:pack.id,from_status:"GENERATING",to_status:"ESCALATION_REQUIRED",reason:"NO_ACTIVE_WORKFLOW"});
+      if(exhausted) {
+        await sql`
+          update prospects
+          set render_status='ESCALATION_REQUIRED',
+              current_step='AUTO_RECOVERY_EXHAUSTED',
+              error='V2_AUTO_RECOVERY_EXHAUSTED',
+              next_action='CABINA_RENDERING_REVIEW',
+              updated_at=now()
+          where id=${pack.prospect_id}::uuid
+            and pipeline_status='RENDERING'`;
+      }
+      summary.reconciled.push({
+        pack_id:pack.id,
+        from_status:"GENERATING",
+        to_status:"ESCALATION_REQUIRED",
+        reason:exhausted?"AUTO_RECOVERY_EXHAUSTED":"NO_ACTIVE_WORKFLOW",
+        auto_recovery_attempt:recoveryAttempts
+      });
     }
 
     const escalated=await sql`
