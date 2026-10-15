@@ -22,6 +22,11 @@ function bindingFor(env,type) {
   return type==="VARIANT" ? env.RENDER_VARIANT_WORKFLOW : env.RENDER_PROSPECT_WORKFLOW;
 }
 
+function workflowEpochTag(value) {
+  const raw=String(value||"").replace(/[^0-9A-Za-z]+/g,"").toLowerCase();
+  return raw ? raw.slice(-18) : "base";
+}
+
 async function enforceProspectCircuitBreakers(env,sql) {
   const rows=await sql`
     select w.workflow_instance_id,w.render_pack_id,w.variant_id,w.metadata,
@@ -433,14 +438,11 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
       continue;
     }
     const attempt=effectiveAttempts+1;
-    const instanceId="rv2-"+pack.id+"-"+key+"-quality-"+runKey+"-"+attempt;
-    if(qualityCircuitOpen) {
-      if(launched.length>0) break;
-      qualityCircuitOverride=await consumePackCircuitOverride(sql,pack.id,"PREMIUM_HOME_QUALITY_RECOVERY");
-      if(!qualityCircuitOverride) break;
-    }
+    const retryEpoch=workflowEpochTag(retryResetAt||pack.updated_at||pack.created_at);
+    const instanceId="rv2-"+pack.id+"-"+key+"-quality-"+runKey+"-"+attempt+"-"+retryEpoch;
+    if(qualityCircuitOpen && launched.length>0) break;
     await setVariantStatus(sql,variant.id,{status:"GENERATING"});
-    await persistWorkflow(sql,{
+    const reserved=await persistWorkflow(sql,{
       prospectId:pack.prospect_id,
       packId:pack.id,
       variantId:variant.id,
@@ -452,11 +454,34 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
         event_prefix:"quality-"+runKey,
         quality_contract_upgrade:true,
         quality_upgrade_attempt:attempt,
+        quality_retry_epoch:retryEpoch,
         previous_quality_contract:previousContract,
         quality_contract_version:QUALITY_CONTRACT_VERSION,
-        circuit_breaker_override:qualityCircuitOverride
+        circuit_breaker_override_reserved:qualityCircuitOpen
       }
     });
+    if(["COMPLETED","FAILED","CANCELLED"].includes(String(reserved?.status||""))) {
+      await setVariantStatus(sql,variant.id,{status:"ESCALATION_REQUIRED"});
+      continue;
+    }
+    if(qualityCircuitOpen) {
+      qualityCircuitOverride=await consumePackCircuitOverride(sql,pack.id,"PREMIUM_HOME_QUALITY_RECOVERY");
+      if(!qualityCircuitOverride) {
+        await updateWorkflow(sql,instanceId,{
+          status:"CANCELLED",
+          currentStep:"CIRCUIT_OVERRIDE_NOT_AVAILABLE",
+          errorCode:"GENERATION_CIRCUIT_BREAKER"
+        });
+        await setVariantStatus(sql,variant.id,{status:"ESCALATION_REQUIRED"});
+        break;
+      }
+      await updateWorkflow(sql,instanceId,{
+        status:"QUEUED",
+        currentStep:"CIRCUIT_OVERRIDE_RESERVED",
+        errorCode:null,
+        metadata:{circuit_breaker_override:true,circuit_breaker_override_reserved:false}
+      });
+    }
     const params={
       prospectId:pack.prospect_id,
       packId:pack.id,
@@ -571,7 +596,8 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   if(attempts>=3) return {pack_id:pack.id,started:false,reason:"AUTO_RECOVERY_LIMIT"};
 
   const attempt=attempts+1;
-  const runKey="auto-r"+attempt;
+  const recoveryEpoch=workflowEpochTag(pack.updated_at||pack.metadata?.stale_generating_reconciled_at||pack.created_at);
+  const runKey="auto-r"+attempt+"-"+recoveryEpoch;
 
   await sql`
     update render_v2_packs
