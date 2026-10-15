@@ -519,11 +519,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"BROWSER_CAPTURE",error:captured.error,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BROWSER_V2"})
         );
         const domain=fail?.failure?.failure_domain||"BROWSER";
-        const budget=domain==="SYSTEM_INVARIANT" && /HARD_BUDGET_EXCEEDED/.test(captured.error);
+        const budget=/HARD_BUDGET_EXCEEDED/.test(String(captured.error||""));
         await step.do("r"+cycle+"-browser-escalation",async()=>{
           await updateRevision(sql,revision.id,{status:"QA_FAILED"});
           if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
-          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"BROWSER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"BROWSER_CAPTURE_FAILED"});
+          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"BROWSER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"BROWSER_CAPTURE_FAILED",metadata:{budget_terminal:budget}});
           await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
           return {ok:true};
         });
