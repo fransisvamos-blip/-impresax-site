@@ -8,10 +8,31 @@ import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "../src
 import { extractStructured, normalizeSetQaResult } from "../src/render-v2/ai.js";
 
 const manifests={
-  copy:{HERO_HEADLINE:"Titolo",HERO_BODY:"Testo"},
+  copy:{
+    HERO_HEADLINE:"Titolo",HERO_BODY:"Testo",
+    POSITIONING_TITLE:"Posizionamento",POSITIONING_BODY:"Contesto verificato",
+    SERVICES_TITLE:"Servizi",SERVICES_INTRO:"Una selezione di servizi verificati",
+    TRUST_TITLE:"Perché scegliere noi",TRUST_INTRO:"Elementi verificati",
+    CLOSING_TITLE:"Parliamone",CLOSING_BODY:"Contattaci per approfondire",
+    PRIMARY_CTA_LABEL:"Contatta",SECONDARY_CTA_LABEL:"Scrivici",
+    LOCALITY_LINE:"Catanzaro",FOOTER_LINE:"Example SRL",
+    SERVICE_1_TITLE:"Servizio",SERVICE_1_BODY:"Descrizione",
+    TRUST_1:"Presenza verificata"
+  },
   assets:{HERO_01:"asset://HERO_01",HERO_VISUAL:"asset://HERO_VISUAL"},
-  cta:{PRIMARY:"tel:+390000000"}
+  cta:{PRIMARY:"tel:+390000000",SECONDARY:"mailto:info@example.it"}
 };
+
+const premiumMain=[
+  '<section id="hero" class="hero"><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><div><a href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a><a href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></section>',
+  '<section id="positioning"><h2>{{copy:POSITIONING_TITLE}}</h2><p>{{copy:POSITIONING_BODY}}</p></section>',
+  '<section id="services"><h2>{{copy:SERVICES_TITLE}}</h2><p>{{copy:SERVICES_INTRO}}</p><article><h3>{{copy:SERVICE_1_TITLE}}</h3><p>{{copy:SERVICE_1_BODY}}</p></article></section>',
+  '<section id="trust"><h2>{{copy:TRUST_TITLE}}</h2><p>{{copy:TRUST_INTRO}}</p><p>{{copy:TRUST_1}}</p></section>',
+  '<section id="bridge"><h2>{{copy:POSITIONING_TITLE}}</h2><p>{{copy:POSITIONING_BODY}}</p></section>',
+  '<section id="final-cta"><h2>{{copy:CLOSING_TITLE}}</h2><p>{{copy:CLOSING_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a></section>'
+].join("");
+
+const premiumCss=".ix-v2-header{background:#fff}.ix-v2-nav{display:flex}.ix-v2-footer{background:#111}.hero{min-height:80vh;padding:6vw;display:grid;gap:32px;align-items:center}.hero h1{font-size:clamp(40px,7vw,110px);line-height:.9;letter-spacing:-.04em}section{padding:5vw}@media(max-width:700px){.hero{min-height:auto;padding:24px;grid-template-columns:1fr}.hero h1{font-size:clamp(38px,12vw,64px)}}";
 
 test("stableStringify is deterministic",()=>{
   assert.equal(stableStringify({b:1,a:2}),stableStringify({a:2,b:1}));
@@ -36,10 +57,9 @@ test("compiler blocks literal unverified copy",()=>{
 });
 
 test("valid tokenized render compiles with mandatory shell",async()=>{
-  const main='<section id="hero" class="hero"><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>'.repeat(8);
   const result=await compileRenderSpec({
-    main_html:main,
-    custom_css:".hero{min-height:80vh;padding:6vw;display:grid;gap:32px;align-items:center} .hero h1{font-size:clamp(40px,7vw,110px);line-height:.9;letter-spacing:-.04em} @media(max-width:700px){.hero{min-height:auto;padding:24px;grid-template-columns:1fr}.hero h1{font-size:clamp(38px,12vw,64px)}}".repeat(8)
+    main_html:premiumMain,
+    custom_css:premiumCss
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
@@ -117,11 +137,9 @@ test("external asset URL validator blocks private and metadata networks",()=>{
 
 
 test("compiler unwraps one redundant outer main safely",async()=>{
-  const hero='<section id="hero"><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>';
-  const section='<section id="s"><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}"></a></section>';
   const result=await compileRenderSpec({
-    main_html:"<main>"+hero+section.repeat(11)+"</main>",
-    custom_css:".x{display:grid;gap:2rem;padding:4rem} @media(max-width:700px){.x{display:block;padding:1.25rem}}".repeat(14)
+    main_html:"<main>"+premiumMain+"</main>",
+    custom_css:premiumCss
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
@@ -129,7 +147,7 @@ test("compiler unwraps one redundant outer main safely",async()=>{
     assetManifest:manifests.assets,
     ctaManifest:manifests.cta
   });
-  assert.equal(result.ok,true);
+  assert.equal(result.ok,true,result.issues?.join("|"));
   assert.equal((result.html.match(/<main>/g)||[]).length,1);
 });
 
@@ -161,16 +179,14 @@ test("compiler allows justify-content but blocks CSS content property",()=>{
 
 
 test("compiler safely normalizes bare verified tokens and strips invented literal text",async()=>{
-  const block='<section id="x"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
-  const hero='<section id="hero"><h2>{{HERO_HEADLINE}}</h2><p>{{HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
-  const copy={...manifests.copy,PRIMARY_CTA_LABEL:"Contatti"};
+  const extra='<section id="extra"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
   const result=await compileRenderSpec({
-    main_html:hero+block.repeat(13),
-    custom_css:".x{display:flex;justify-content:center;align-items:center;padding:3rem}.x::before{content:'decorative'} @media(max-width:700px){.x{display:block;padding:1rem}}".repeat(12)
+    main_html:premiumMain+extra,
+    custom_css:premiumCss+".x::before{content:'decorative'}"
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
-    copyManifest:copy,
+    copyManifest:manifests.copy,
     assetManifest:{HERO_VISUAL:"asset://HERO_VISUAL"},
     ctaManifest:manifests.cta
   });
@@ -186,10 +202,10 @@ test("compiler safely normalizes bare verified tokens and strips invented litera
 
 
 test("compiler owns one optional main identity placement",async()=>{
-  const section='<section id="hero"><div>{{identity:PRIMARY_LOGO}}</div><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}"></a></section>';
+  const withIdentity=premiumMain.replace('<section id="hero" class="hero">','<section id="hero" class="hero"><div>{{identity:PRIMARY_LOGO}}</div>');
   const result=await compileRenderSpec({
-    main_html:section + '<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>'.repeat(14),
-    custom_css:".x{display:grid;justify-content:center;padding:3rem} @media(max-width:700px){.x{display:block}}".repeat(18)
+    main_html:withIdentity,
+    custom_css:premiumCss
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
@@ -219,11 +235,10 @@ test("compiler rejects repeated or unknown identity tokens",()=>{
 
 
 test("compiler normalizes identity token used inside img src",async()=>{
-  const hero='<section id="hero"><div><img src="{{identity:PRIMARY_LOGO}}" alt="" class="logo-img"></div><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
-  const other='<section><h2>{{copy:HERO_HEADLINE}}</h2><p>{{copy:HERO_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:HERO_HEADLINE}}</a></section>';
+  const withImg=premiumMain.replace('<section id="hero" class="hero">','<section id="hero" class="hero"><div><img src="{{identity:PRIMARY_LOGO}}" alt="" class="logo-img"></div>');
   const result=await compileRenderSpec({
-    main_html:hero+other.repeat(14),
-    custom_css:".logo-img{width:240px}.x{display:grid;justify-content:center;padding:3rem}@media(max-width:700px){.x{display:block}}".repeat(18)
+    main_html:withImg,
+    custom_css:premiumCss+".logo-img{width:240px}"
   },{
     businessName:"Example SRL",
     logoToken:"identity://PRIMARY_LOGO",
