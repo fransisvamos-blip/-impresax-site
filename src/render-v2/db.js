@@ -40,10 +40,12 @@ export async function getV2Pack(sql,id) {
 }
 
 export async function setPackStatus(sql,packId,status,metadata={}) {
+  const healthyTerminal=["RENDER_READY","SELECTED","IMPLEMENTED"].includes(String(status||""));
   const rows=await sql`
     update render_v2_packs
     set status=${status},
-        metadata=coalesce(metadata,'{}'::jsonb)||${JSON.stringify(metadata)}::jsonb,
+        metadata=(case when ${healthyTerminal} then coalesce(metadata,'{}'::jsonb)-'error' else coalesce(metadata,'{}'::jsonb) end)
+                 ||${JSON.stringify(metadata)}::jsonb,
         preview_ready_at=case when ${status}='PREVIEW_READY' then coalesce(preview_ready_at,now()) else preview_ready_at end,
         render_ready_at=case when ${status}='RENDER_READY' then coalesce(render_ready_at,now()) else render_ready_at end,
         updated_at=now()
