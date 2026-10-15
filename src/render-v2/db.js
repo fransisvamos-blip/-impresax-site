@@ -239,7 +239,7 @@ export async function allocateRevision(sql,variantId,parentRevisionId=null,alloc
   return r;
 }
 
-export async function updateRevision(sql,revisionId,{status,renderSpec=null,sourceHash=null,htmlKey=null,desktopKey=null,mobileKey=null,score=null}) {
+export async function updateRevision(sql,revisionId,{status,renderSpec=null,sourceHash=null,htmlKey=null,desktopKey=null,mobileKey=null,score=null,compilerVersion=null}) {
   const currentRows=await sql`select * from render_variant_revisions where id=${revisionId}::uuid limit 1`;
   const current=currentRows[0];
   if(!current) throw new Error("SYSTEM_INVARIANT:REVISION_NOT_FOUND");
@@ -251,7 +251,8 @@ export async function updateRevision(sql,revisionId,{status,renderSpec=null,sour
     const sameDesktop=desktopKey===null || current.desktop_r2_key===desktopKey;
     const sameMobile=mobileKey===null || current.mobile_r2_key===mobileKey;
     const sameScore=score===null || Number(current.score)===Number(score);
-    if(sameStatus&&sameSpec&&sameSource&&sameHtml&&sameDesktop&&sameMobile&&sameScore) return current;
+    const sameCompiler=compilerVersion===null || String(current.compiler_version||"")===String(compilerVersion);
+    if(sameStatus&&sameSpec&&sameSource&&sameHtml&&sameDesktop&&sameMobile&&sameScore&&sameCompiler) return current;
     throw new Error("SYSTEM_INVARIANT:TERMINAL_VARIANT_REVISION_IMMUTABLE");
   }
   const rows=await sql`
@@ -263,6 +264,7 @@ export async function updateRevision(sql,revisionId,{status,renderSpec=null,sour
       desktop_r2_key=coalesce(${desktopKey},desktop_r2_key),
       mobile_r2_key=coalesce(${mobileKey},mobile_r2_key),
       score=coalesce(${score},score),
+      compiler_version=coalesce(${compilerVersion}::text,compiler_version),
       completed_at=case when ${status} in ('PREVIEW_READY','RENDER_READY','QA_FAILED','SUPERSEDED') then now() else completed_at end
     where id=${revisionId}::uuid returning *`;
   return rows[0];
