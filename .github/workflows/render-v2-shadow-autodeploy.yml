@@ -11,7 +11,7 @@ on:
 
 concurrency:
   group: rendering-v2-shadow-autodeploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy-shadow:
@@ -161,3 +161,5 @@ jobs:
 # STALE_GENERATING_RECOVERY_V1
 
 # GENERIC_QUEUE_RECONCILE_V1
+
+# LATEST_RUN_WINS_V1
