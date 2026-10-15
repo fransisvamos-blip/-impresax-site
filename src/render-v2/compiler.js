@@ -155,7 +155,14 @@ export function validateRenderSpec(spec, manifests) {
   if(/<main\b/i.test(main)) issues.push("NESTED_MAIN_FORBIDDEN");
   const sectionCount=(main.match(/<section\b/gi)||[]).length;
   if(sectionCount<6) issues.push("SECTION_DEPTH_REQUIRED:"+sectionCount);
+  const sectionIds=[...main.matchAll(/<section\b[^>]*\bid\s*=\s*["']([^"']+)["']/gi)].map(m=>m[1]);
+  for(const requiredId of ["hero","positioning","services","trust","bridge","final-cta"]) {
+    if(!sectionIds.includes(requiredId)) issues.push("PREMIUM_SECTION_REQUIRED:"+requiredId);
+  }
   if(!/@media/i.test(css)) issues.push("MOBILE_RULES_REQUIRED");
+  for(const selector of [".ix-v2-header",".ix-v2-nav",".ix-v2-footer"]) {
+    if(!css.includes(selector)) issues.push("SHELL_ART_DIRECTION_REQUIRED:"+selector);
+  }
 
   const literal=visibleLiteralText(main);
   if(literal) issues.push("UNAUTHORIZED_LITERAL_COPY:"+literal.slice(0,120));
@@ -182,7 +189,34 @@ export function validateRenderSpec(spec, manifests) {
       if(!/<img\b[^>]*\bsrc\s*=\s*["']\{\{asset:HERO_VISUAL\}\}["'][^>]*>/i.test(heroHtml)) {
         issues.push("HERO_VISUAL_REAL_IMG_REQUIRED");
       }
+      if(!/<h1\b[^>]*>[\s\S]*?\{\{copy:HERO_HEADLINE\}\}[\s\S]*?<\/h1>/i.test(heroHtml)) {
+        issues.push("HERO_H1_HEADLINE_REQUIRED");
+      }
+      if(!heroHtml.includes("{{copy:HERO_BODY}}")) issues.push("HERO_BODY_REQUIRED");
+      if(!heroHtml.includes("{{cta:PRIMARY}}")) issues.push("HERO_PRIMARY_CTA_REQUIRED");
+      if(!heroHtml.includes("{{cta:SECONDARY}}")) issues.push("HERO_SECONDARY_CTA_REQUIRED");
     }
+  }
+
+  const sectionHtml=id=>{
+    const re=new RegExp('<section\\b[^>]*\\bid\\s*=\\s*["\\\']'+id+'["\\\'][^>]*>[\\s\\S]*?<\\/section>','i');
+    return (main.match(re)||[])[0]||"";
+  };
+  const positioningHtml=sectionHtml("positioning");
+  if(positioningHtml && (!positioningHtml.includes("{{copy:POSITIONING_TITLE}}") || !positioningHtml.includes("{{copy:POSITIONING_BODY}}"))) {
+    issues.push("POSITIONING_COPY_REQUIRED");
+  }
+  const servicesHtml=sectionHtml("services");
+  if(servicesHtml && (!servicesHtml.includes("{{copy:SERVICES_TITLE}}") || !servicesHtml.includes("{{copy:SERVICES_INTRO}}"))) {
+    issues.push("SERVICES_EDITORIAL_HEADER_REQUIRED");
+  }
+  const trustHtml=sectionHtml("trust");
+  if(trustHtml && (!trustHtml.includes("{{copy:TRUST_TITLE}}") || !trustHtml.includes("{{copy:TRUST_INTRO}}"))) {
+    issues.push("TRUST_EDITORIAL_HEADER_REQUIRED");
+  }
+  const closingHtml=sectionHtml("final-cta");
+  if(closingHtml && (!closingHtml.includes("{{copy:CLOSING_TITLE}}") || !closingHtml.includes("{{copy:CLOSING_BODY}}") || !closingHtml.includes("{{cta:PRIMARY}}"))) {
+    issues.push("FINAL_CTA_CONTRACT_REQUIRED");
   }
 
   for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
@@ -233,7 +267,13 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     : '<strong class="ix-v2-footer-wordmark">'+esc(businessName)+'</strong>';
   const primaryHref=esc(ctaManifest.PRIMARY||"#");
   const primaryLabel=esc(copyManifest.PRIMARY_CTA_LABEL||"Contatti");
+  const headerNav='<nav class="ix-v2-nav" aria-label="Navigazione principale">'
+    +'<a href="#services">Servizi</a>'
+    +'<a href="#trust">Perché noi</a>'
+    +'<a href="#final-cta">Contatti</a>'
+    +'</nav>';
   const headerContact='<a class="ix-v2-header-cta" data-verified-contact href="'+primaryHref+'">'+primaryLabel+'</a>';
+  const header='<header class="ix-v2-header"><div class="ix-v2-header-inner"><a class="ix-v2-brand" href="#hero">'+logo+'</a>'+headerNav+headerContact+'</div></header>';
   const footerPairs=[
     [ctaManifest.PRIMARY,ctaManifest.PRIMARY_DISPLAY||displayContactHref(ctaManifest.PRIMARY)],
     [ctaManifest.SECONDARY,ctaManifest.SECONDARY_DISPLAY||displayContactHref(ctaManifest.SECONDARY)]
@@ -244,28 +284,51 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   const footerAddress=String(ctaManifest.ADDRESS||"").trim()
     ? '<span class="ix-v2-footer-address" data-verified-address>'+esc(ctaManifest.ADDRESS)+'</span>'
     : '';
+  const footerTagline=String(copyManifest.FOOTER_LINE||"").trim()
+    ? '<p class="ix-v2-footer-tagline">'+esc(copyManifest.FOOTER_LINE)+'</p>'
+    : '';
+  const footerNav='<nav class="ix-v2-footer-nav" aria-label="Navigazione footer">'
+    +'<a href="#hero">Home</a>'
+    +'<a href="#services">Servizi</a>'
+    +'<a href="#trust">Perché noi</a>'
+    +'<a href="#final-cta">Contatti</a>'
+    +'</nav>';
+  const footer='<footer class="ix-v2-footer"><div class="ix-v2-footer-grid">'
+    +'<div class="ix-v2-footer-brand">'+footerIdentity+footerTagline+'</div>'
+    +footerNav
+    +'<div class="ix-v2-footer-contact-block">'+footerAddress+'<span class="ix-v2-footer-contacts">'+footerContacts+'</span></div>'
+    +'</div></footer>';
   const baseCss=[
     "*{box-sizing:border-box}",
+    "html{scroll-behavior:smooth}",
     "html,body{margin:0;padding:0}",
-    "body{overflow-x:hidden}",
+    "body{overflow-x:hidden;background:#fff;color:#111}",
     "img{max-width:100%;height:auto;display:block}",
     "main a{color:inherit;text-decoration:none}",
     ".ix-v2-identity-main{width:min(420px,72vw);max-height:180px;object-fit:contain}",
-    ".ix-v2-header,.ix-v2-footer{padding:24px clamp(20px,5vw,72px)}",
-    ".ix-v2-header{display:flex;align-items:center;justify-content:space-between;gap:24px;background:#fff;color:#111;border-bottom:1px solid rgba(17,17,17,.14);min-height:118px}",
-    ".ix-v2-logo{width:auto;max-width:min(320px,58vw);max-height:96px;object-fit:contain}",
-    ".ix-v2-header-cta{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:inherit;border-bottom:1px solid currentColor}",
-    ".ix-v2-footer{min-height:96px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;border-top:1px solid rgba(17,17,17,.14)}",
-    ".ix-v2-footer-identity{display:flex;align-items:center;min-height:56px}",
-    ".ix-v2-footer-logo{max-width:min(260px,48vw);max-height:72px;object-fit:contain}",
-    ".ix-v2-footer-contacts{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:flex-end;max-width:min(100%,720px)}",
-    ".ix-v2-footer-address{max-width:40ch;line-height:1.35;overflow-wrap:anywhere;font-size:13px}",
-    ".ix-v2-footer-contact{color:inherit;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:2px;overflow-wrap:anywhere;word-break:break-word;max-width:min(100%,34ch);font-size:13px;line-height:1.35}",
-    "@media(max-width:700px){.ix-v2-header,.ix-v2-footer{padding:14px 20px}.ix-v2-header{gap:12px;min-height:86px}.ix-v2-logo{max-width:180px;max-height:60px}.ix-v2-header-cta{font-size:11px;line-height:1.1;white-space:nowrap;min-height:38px}.ix-v2-footer{align-items:flex-start;flex-direction:column}.ix-v2-footer-contacts{flex-direction:column;align-items:flex-start;gap:10px;width:100%}.ix-v2-footer-contact{max-width:100%;word-break:break-all}.ix-v2-footer-address{max-width:100%}}"
+    ".ix-v2-header{position:relative;z-index:20;background:rgba(255,255,255,.96);color:#111;border-bottom:1px solid rgba(17,17,17,.1)}",
+    ".ix-v2-header-inner{width:min(1440px,calc(100% - clamp(40px,8vw,120px)));margin:0 auto;min-height:96px;display:grid;grid-template-columns:minmax(180px,1fr) auto auto;align-items:center;gap:clamp(24px,4vw,64px)}",
+    ".ix-v2-brand{display:inline-flex;align-items:center;width:max-content;max-width:100%;text-decoration:none;color:inherit}",
+    ".ix-v2-logo{width:auto;max-width:min(250px,42vw);max-height:68px;object-fit:contain}",
+    ".ix-v2-wordmark{font:700 clamp(18px,2vw,28px)/1.05 Arial,Helvetica,sans-serif;letter-spacing:-.03em}",
+    ".ix-v2-nav{display:flex;align-items:center;gap:clamp(18px,2.6vw,38px)}",
+    ".ix-v2-nav a,.ix-v2-footer-nav a{color:inherit;text-decoration:none;font:600 13px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.02em}",
+    ".ix-v2-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border:1px solid currentColor;text-decoration:none;color:inherit;font:700 13px/1 Arial,Helvetica,sans-serif;letter-spacing:.02em}",
+    ".ix-v2-footer{background:#111;color:#f7f6f2;padding:clamp(64px,8vw,110px) clamp(24px,6vw,90px)}",
+    ".ix-v2-footer-grid{width:min(1320px,100%);margin:0 auto;display:grid;grid-template-columns:minmax(260px,1.25fr) minmax(150px,.55fr) minmax(260px,.9fr);gap:clamp(36px,6vw,96px);align-items:start}",
+    ".ix-v2-footer-brand{display:grid;gap:22px}.ix-v2-footer-identity{display:flex;align-items:center;min-height:58px}",
+    ".ix-v2-footer-logo{max-width:min(260px,48vw);max-height:72px;object-fit:contain;filter:none}",
+    ".ix-v2-footer-wordmark{font:700 28px/1 Arial,Helvetica,sans-serif}",
+    ".ix-v2-footer-tagline{margin:0;max-width:42ch;color:rgba(247,246,242,.7);font:400 15px/1.55 Arial,Helvetica,sans-serif}",
+    ".ix-v2-footer-nav{display:grid;gap:16px}.ix-v2-footer-nav a{color:rgba(247,246,242,.82)}",
+    ".ix-v2-footer-contact-block{display:grid;gap:18px}.ix-v2-footer-contacts{display:grid;gap:12px}",
+    ".ix-v2-footer-address{max-width:38ch;color:rgba(247,246,242,.68);font:400 13px/1.45 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}",
+    ".ix-v2-footer-contact{color:#f7f6f2;text-decoration:none;font:600 13px/1.4 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}",
+    "@media(max-width:820px){.ix-v2-header-inner{width:min(calc(100% - 32px),1440px);min-height:84px;grid-template-columns:1fr auto;gap:14px}.ix-v2-nav{grid-column:1/-1;grid-row:2;overflow-x:auto;gap:22px;padding:0 0 14px;white-space:nowrap}.ix-v2-header-cta{grid-column:2;grid-row:1;min-height:40px;padding:0 14px}.ix-v2-logo{max-width:170px;max-height:54px}.ix-v2-footer{padding:56px 20px}.ix-v2-footer-grid{grid-template-columns:1fr;gap:34px}.ix-v2-footer-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}}"
   ].join("");
 
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
-  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body><header class="ix-v2-header">'+logo+headerContact+'</header><main>'+main+'</main><footer class="ix-v2-footer">'+footerIdentity+'<span class="ix-v2-footer-contacts">'+footerAddress+footerContacts+'</span></footer></body></html>';
+  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="'+esc(csp)+'"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+esc(businessName)+' · ImpresaX Preview</title><style>'+baseCss+String(spec.custom_css)+'</style></head><body>'+header+'<main>'+main+'</main>'+footer+'</body></html>';
   const sourceHash=await sha256(html);
   return {ok:true,html,source_hash:sourceHash,compiler_version:COMPILER_VERSION,render_spec_hash:await sha256(stableStringify(normalizedSpec)),normalized_spec:normalizedSpec,normalizations:normalized.normalizations};
 }
