@@ -1,4 +1,5 @@
 import { db, persistWorkflow, updateWorkflow, setPackStatus } from "./db.js";
+import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVariants } from "./concurrency.js";
 
 function platformStatus(value) {
   const raw=typeof value==="string" ? value : value?.status;
@@ -18,6 +19,120 @@ function bindingFor(env,type) {
   return type==="VARIANT" ? env.RENDER_VARIANT_WORKFLOW : env.RENDER_PROSPECT_WORKFLOW;
 }
 
+async function enforceGlobalVariantConcurrency(env,sql) {
+  const state=await renderConcurrencyState(sql);
+  const rows=await activeVariantWorkflowRows(sql);
+  const live=[];
+
+  for(const row of rows) {
+    try {
+      const instance=await env.RENDER_VARIANT_WORKFLOW.get(row.workflow_instance_id);
+      const current=await instance.status();
+      const pstatus=platformStatus(current);
+      const mapped=dbStatus(pstatus);
+      if(!["QUEUED","RUNNING","PAUSED"].includes(mapped)) {
+        await updateWorkflow(sql,row.workflow_instance_id,{
+          status:mapped,
+          currentStep:null,
+          errorCode:pstatus==="errored"?"PLATFORM_WORKFLOW_ERRORED":null,
+          metadata:{platform_status:pstatus,concurrency_reconciled_at:new Date().toISOString()}
+        });
+        continue;
+      }
+      live.push({...row,instance,platform_status:pstatus});
+    } catch(error) {
+      await updateWorkflow(sql,row.workflow_instance_id,{
+        status:"FAILED",
+        currentStep:"CONCURRENCY_STATUS_FAILED",
+        errorCode:"PLATFORM_STATUS_UNAVAILABLE",
+        metadata:{concurrency_status_error:String(error?.message||error)}
+      });
+    }
+  }
+
+  const keep=live.slice(0,state.limit);
+  const excess=live.slice(state.limit);
+  const affectedPacks=new Set();
+
+  for(const row of excess) {
+    try { await row.instance.terminate({rollback:false}); } catch {}
+    await updateWorkflow(sql,row.workflow_instance_id,{
+      status:"CANCELLED",
+      currentStep:"CONCURRENCY_DEFERRED",
+      errorCode:null,
+      metadata:{
+        concurrency_deferred:true,
+        concurrency_limit:state.limit,
+        deferred_at:new Date().toISOString()
+      }
+    });
+    affectedPacks.add(row.render_pack_id);
+  }
+
+  for(const packId of affectedPacks) {
+    const rows2=await sql`
+      select
+        (select count(*)::int from render_workflows_v2 w
+         where w.render_pack_id=${packId}::uuid
+           and w.workflow_type='VARIANT'
+           and w.status in ('QUEUED','RUNNING','PAUSED')) active_variants,
+        (select count(*)::int from render_v2_variants v
+         where v.render_pack_id=${packId}::uuid
+           and not (v.status='RENDER_READY' and v.certified_revision is not null)) pending_variants`;
+    const x=rows2[0]||{};
+    if(Number(x.active_variants||0)===0 && Number(x.pending_variants||0)>0) {
+      await setPackStatus(sql,packId,"ESCALATION_REQUIRED",{
+        concurrency_deferred:true,
+        concurrency_limit:state.limit,
+        concurrency_deferred_at:new Date().toISOString()
+      });
+    }
+  }
+
+  return {
+    limit:state.limit,
+    active_before:live.length,
+    kept:keep.map(x=>x.workflow_instance_id),
+    cancelled:excess.map(x=>x.workflow_instance_id),
+    slots:Math.max(0,state.limit-keep.length)
+  };
+}
+
+async function fillUnstartedInitialVariants(env,sql,availableSlots) {
+  let slots=Math.max(0,Number(availableSlots||0));
+  const launched=[];
+  if(slots<=0) return {launched,slots};
+
+  const pending=await unstartedInitialVariants(sql,30);
+  for(const row of pending) {
+    if(slots<=0) break;
+    const instanceId="rv2-"+row.render_pack_id+"-"+row.variant_key+"-initial";
+    await persistWorkflow(sql,{
+      prospectId:row.prospect_id,
+      packId:row.render_pack_id,
+      variantId:row.variant_id,
+      type:"VARIANT",
+      instanceId,
+      status:"QUEUED",
+      metadata:{variant_key:row.variant_key,event_prefix:"initial",concurrency_scheduled:true}
+    });
+    const params={
+      prospectId:row.prospect_id,
+      packId:row.render_pack_id,
+      inputPackId:row.input_pack_id,
+      variantId:row.variant_id,
+      variantKey:row.variant_key,
+      parentInstanceId:row.parent_instance_id,
+      eventPrefix:"initial"
+    };
+    try { await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
+    catch { await env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
+    launched.push({pack_id:row.render_pack_id,variant_key:row.variant_key,instance_id:instanceId});
+    slots--;
+  }
+  return {launched,slots};
+}
+
 async function startPackFinalizer(env,sql,pack,attempt) {
   const instanceId="rpv2-finalize-"+pack.id+"-"+attempt;
   await persistWorkflow(sql,{
@@ -31,7 +146,7 @@ async function startPackFinalizer(env,sql,pack,attempt) {
   return {pack_id:pack.id,instance_id:instanceId,status:await instance.status(),finalizer_attempt:attempt};
 }
 
-async function recoverEscalatedQueuePack(env,sql,pack) {
+async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   const variants=await sql`
     select v.*,
       (select w.status from render_workflows_v2 w where w.variant_id=v.id and w.workflow_type='VARIANT'
@@ -42,6 +157,16 @@ async function recoverEscalatedQueuePack(env,sql,pack) {
 
   if(variants.some(v=>["QUEUED","RUNNING","PAUSED"].includes(String(v.latest_workflow_status||"")))) {
     return {pack_id:pack.id,started:false,reason:"ACTIVE_WORKFLOW"};
+  }
+
+  const requiredCapacityBeforeRecovery=variants.length
+    ? variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision)).length
+    : 3;
+  if(Number(availableSlots||0)<requiredCapacityBeforeRecovery) {
+    return {
+      pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",
+      required_slots:requiredCapacityBeforeRecovery,available_slots:Number(availableSlots||0),slots_used:0
+    };
   }
 
   const attempts=Number(pack.metadata?.auto_recovery_attempt||0);
@@ -81,10 +206,16 @@ async function recoverEscalatedQueuePack(env,sql,pack) {
       params:{prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id}
     });
     await setPackStatus(sql,pack.id,"PLANNING",{auto_recovery_attempt:attempt});
-    return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status()};
+    return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status(),slots_used:3};
   }
 
   const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
+  const slots=Math.max(0,Number(availableSlots||0));
+  const required=variants.length ? pending.length : 3;
+  if(required===0) return {pack_id:pack.id,started:false,reason:"ALL_VARIANTS_READY",slots_used:0};
+  if(slots<required) {
+    return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:required,available_slots:slots,slots_used:0};
+  }
   const launched=[];
   for(const variant of pending) {
     const instanceId="rv2-"+pack.id+"-"+variant.variant_key+"-"+runKey;
@@ -108,7 +239,7 @@ async function recoverEscalatedQueuePack(env,sql,pack) {
     launched.push({variant_key:variant.variant_key,instance_id:instanceId,status:await instance.status()});
   }
   await setPackStatus(sql,pack.id,"GENERATING",{auto_recovery_attempt:attempt,auto_recovery_run_key:runKey});
-  return {pack_id:pack.id,started:true,type:"VARIANT_SET",attempt,launched};
+  return {pack_id:pack.id,started:true,type:"VARIANT_SET",attempt,launched,slots_used:launched.length};
 }
 
 export async function startOrRecoverParent(env,sql,pack) {
@@ -132,6 +263,12 @@ export async function startOrRecoverParent(env,sql,pack) {
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
+  summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
+  let renderSlots=summary.concurrency.slots;
+
+  const initialFill=await fillUnstartedInitialVariants(env,sql,renderSlots);
+  if(initialFill.launched.length) summary.started.push(...initialFill.launched);
+  renderSlots=initialFill.slots;
 
   const orphanPacks=await sql`
     select p.id,p.prospect_id,p.input_pack_id
@@ -148,8 +285,14 @@ export async function reconcileV2(env) {
     limit 10`;
 
   for(const pack of orphanPacks) {
-    try { summary.started.push(await startOrRecoverParent(env,sql,pack)); }
-    catch(error) { summary.errors.push({pack_id:pack.id,error:String(error?.message||error)}); }
+    if(renderSlots<3) break;
+    try {
+      const started=await startOrRecoverParent(env,sql,pack);
+      summary.started.push(started);
+      renderSlots=Math.max(0,renderSlots-3);
+    } catch(error) {
+      summary.errors.push({pack_id:pack.id,error:String(error?.message||error)});
+    }
   }
 
   const finalizable=await sql`
@@ -202,7 +345,7 @@ export async function reconcileV2(env) {
     }
   }
 
-  const rollout=await sql`select queue_enabled from render_v2_rollout_state where id=1 limit 1`;
+  const rollout=await sql`select queue_enabled,max_concurrency from render_v2_rollout_state where id=1 limit 1`;
   if(rollout[0]?.queue_enabled===true) {
     const staleGenerating=await sql`
       select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.updated_at
@@ -239,9 +382,15 @@ export async function reconcileV2(env) {
       order by p.updated_at
       limit 5`;
     for(const pack of escalated) {
+      if(renderSlots<=0) break;
       try {
-        const recovered=await recoverEscalatedQueuePack(env,sql,pack);
-        if(recovered.started) summary.started.push(recovered);
+        const recovered=await recoverEscalatedQueuePack(env,sql,pack,renderSlots);
+        if(recovered.started) {
+          summary.started.push(recovered);
+          renderSlots=Math.max(0,renderSlots-Number(recovered.slots_used||0));
+        } else if(recovered.reason==="CONCURRENCY_CAP") {
+          summary.reconciled.push({pack_id:pack.id,status:"DEFERRED",reason:"CONCURRENCY_CAP",available_slots:renderSlots});
+        }
       } catch(error) {
         summary.errors.push({pack_id:pack.id,auto_recovery:true,error:String(error?.message||error)});
       }
@@ -272,5 +421,6 @@ export async function reconcileV2(env) {
       summary.errors.push({instance_id:row.workflow_instance_id,error:String(error?.message||error)});
     }
   }
+  summary.concurrency_after=await renderConcurrencyState(sql);
   return summary;
 }
