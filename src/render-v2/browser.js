@@ -12,6 +12,12 @@ async function renderPage(browser,html,width,height) {
       const logo=document.querySelector("[data-official-logo]");
       const bodyStyle=getComputedStyle(document.body);
       const verifiedContacts=[...document.querySelectorAll("[data-verified-contact]")];
+      const header=document.querySelector(".ix-v2-header");
+      const nav=document.querySelector(".ix-v2-nav");
+      const footer=document.querySelector(".ix-v2-footer");
+      const hero=document.querySelector("main #hero");
+      const finalCta=document.querySelector("main #final-cta");
+      const requiredSections=["hero","positioning","services","trust","bridge","final-cta"];
       return {
         horizontal_overflow:root.scrollWidth>root.clientWidth+2,
         broken_images:images.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.getAttribute("src")||"").slice(0,12),
@@ -24,6 +30,17 @@ async function renderPage(browser,html,width,height) {
         logo_height:logo?logo.getBoundingClientRect().height:0,
         official_logo_present:Boolean(logo && logo.complete && logo.naturalWidth>0),
         verified_contact_count:verifiedContacts.length,
+        header_present:Boolean(header),
+        nav_link_count:nav?[...nav.querySelectorAll("a")].length:0,
+        header_cta_present:Boolean(document.querySelector(".ix-v2-header-cta")),
+        footer_present:Boolean(footer),
+        footer_nav_link_count:footer?[...footer.querySelectorAll(".ix-v2-footer-nav a")].length:0,
+        h1_count:document.querySelectorAll("main h1").length,
+        section_count:document.querySelectorAll("main section").length,
+        required_sections_present:requiredSections.filter(id=>document.getElementById(id)),
+        hero_action_count:hero?[...hero.querySelectorAll("a")].length:0,
+        final_cta_present:Boolean(finalCta),
+        final_cta_action_count:finalCta?[...finalCta.querySelectorAll("a")].length:0,
         clipped_contacts:verifiedContacts
           .filter(el=>el.scrollWidth>el.clientWidth+2 || el.scrollHeight>el.clientHeight+2)
           .map(el=>(el.textContent||"").trim()).filter(Boolean).slice(0,8)
@@ -46,6 +63,17 @@ export function deterministicBrowserGate(desktop,mobile,inputPayload) {
   if(Number(mobile.diagnostics.body_font_px||0)>0 && Number(mobile.diagnostics.body_font_px)<14) issues.push("MOBILE_BODY_TYPE_TOO_SMALL");
   if(desktop.diagnostics.clipped_contacts?.length) issues.push("DESKTOP_VERIFIED_CONTACT_CLIPPED");
   if(mobile.diagnostics.clipped_contacts?.length) issues.push("MOBILE_VERIFIED_CONTACT_CLIPPED");
+  for(const [label,diag] of [["DESKTOP",desktop.diagnostics],["MOBILE",mobile.diagnostics]]) {
+    if(!diag.header_present) issues.push(label+"_PREMIUM_HEADER_MISSING");
+    if(Number(diag.nav_link_count||0)<3) issues.push(label+"_NAVIGATION_INCOMPLETE");
+    if(!diag.header_cta_present) issues.push(label+"_HEADER_CTA_MISSING");
+    if(Number(diag.h1_count||0)!==1) issues.push(label+"_H1_COUNT_INVALID");
+    if(Number(diag.hero_action_count||0)<2) issues.push(label+"_HERO_ACTIONS_INCOMPLETE");
+    if(Number(diag.section_count||0)<6) issues.push(label+"_PAGE_ARCHITECTURE_TOO_SHALLOW");
+    if((diag.required_sections_present||[]).length<6) issues.push(label+"_REQUIRED_SECTIONS_MISSING");
+    if(!diag.final_cta_present || Number(diag.final_cta_action_count||0)<1) issues.push(label+"_FINAL_CTA_INCOMPLETE");
+    if(!diag.footer_present || Number(diag.footer_nav_link_count||0)<4) issues.push(label+"_PREMIUM_FOOTER_INCOMPLETE");
+  }
   const needsLogo=String(inputPayload?.official_logo?.status||"").toUpperCase()!=="NO_OFFICIAL_LOGO_CONFIRMED";
   if(needsLogo && (desktop.diagnostics.logo_width<40 || mobile.diagnostics.logo_width<32)) issues.push("OFFICIAL_IDENTITY_NOT_VISIBLE");
   return {pass:issues.length===0,issues};
