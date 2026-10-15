@@ -260,13 +260,49 @@ async function validateApprovedVisualQa(sql, packId) {
           where p.id=${v2PackId}::uuid
             and p.status='APPROVED'
             and p.approved_reference=true
-            and p.selected_variant_revision_id is not null) as approved_selected_pack`;
+            and p.selected_variant_revision_id is not null) as approved_selected_pack,
+        (select quality_contract_version
+           from render_v2_packs p
+          where p.id=${v2PackId}::uuid) as quality_contract_version,
+        (select count(*)::int
+           from render_v2_variants v
+           join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+          where v.render_pack_id=${v2PackId}::uuid
+            and v.status='RENDER_READY'
+            and r.status='RENDER_READY'
+            and r.compiler_version='RS_COMPILER_V1_4_PREMIUM_HOME') as premium_home_compiler_variants,
+        (select count(*)::int
+           from render_v2_variants v
+           join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+          where v.render_pack_id=${v2PackId}::uuid
+            and exists(
+              select 1
+              from render_qa_results_v2 q
+              where q.render_pack_id=${v2PackId}::uuid
+                and q.variant_revision_id=r.id
+                and q.qa_type='VARIANT_VISUAL'
+                and q.status='PASS'
+                and coalesce((q.scores->>'header_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'navigation_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'page_architecture')::numeric,0)>=8
+                and coalesce((q.scores->>'section_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'final_cta_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'footer_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'desktop_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'mobile_quality')::numeric,0)>=8
+            )) as premium_home_qa_variants`;
     const state=rows[0] || {};
-    return Number(state.certified_variants||0)===3 &&
+    const basePass=Number(state.certified_variants||0)===3 &&
       Number(state.certified_variant_qa||0)===3 &&
       Number(state.certified_hero_qa||0)===3 &&
       Number(state.set_qa_passes||0)>=1 &&
       Number(state.approved_selected_pack||0)===1;
+    if(!basePass) return false;
+    if(String(state.quality_contract_version||"")==="RS_QUALITY_V3_PREMIUM_HOME") {
+      return Number(state.premium_home_compiler_variants||0)===3 &&
+        Number(state.premium_home_qa_variants||0)===3;
+    }
+    return true;
   }
 
   const rows=await sql`
