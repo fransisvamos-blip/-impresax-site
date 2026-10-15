@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: premium-home-v3-priority-final
+# rollout kick trigger: premium-home-v3-compiler-stamp-proof
 
 on:
   push:
