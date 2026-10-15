@@ -103,16 +103,26 @@ renderRenderingList = function() {
     html = '<div class="empty">Nessuna azienda con proposte visive disponibili.</div>';
   } else {
     rows.forEach(p => {
+      const v2ReadyCount=Number(p.render_v2_ready_count||0);
+      const v2Ready=String(p.render_v2_status||"").toUpperCase()==="RENDER_READY" && v2ReadyCount===3;
+      const visualStatus=v2Ready ? "RENDER_READY" : (p.render_status || p.pipeline_status);
+      const visualLabel=v2Ready ? "3 VERSIONI PRONTE" : tStatus(visualStatus);
       html += '<article class="render-prospect-row ' + (state.renderingSelected === p.id_prospect ? 'selected' : '') + '">';
       html += '<button class="render-prospect-open" data-render-prospect="' + esc(p.id_prospect) + '">';
       html += '<span><strong>' + esc(p.azienda) + '</strong><small>' + esc(tVertical(p.vertical)) + '</small></span>';
-      html += '<span class="' + statusClass(p.pipeline_status) + '">' + esc(tStatus(p.render_status || p.pipeline_status)) + '</span>';
+      html += '<span class="' + statusClass(v2Ready ? "RENDER_READY" : p.pipeline_status) + '">' + esc(visualLabel) + '</span>';
       html += '</button>';
       html += '<div class="render-prospect-actions">';
-      if (p.live_url) {
+      if (v2Ready) {
+        html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri A / B / C →</button>';
+      } else if (v2ReadyCount>0) {
+        html += '<span class="preview-site disabled">' + esc(v2ReadyCount) + '/3 versioni certificate</span>';
+      } else if (String(p.render_v2_status||"").toUpperCase()==="GENERATING") {
+        html += '<span class="preview-site disabled">Rendering V3 in corso</span>';
+      } else if (p.live_url) {
         html += '<a class="preview-site" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
       } else {
-        html += '<span class="preview-site disabled">Anteprima non disponibile</span>';
+        html += '<span class="preview-site disabled">Nessun render pronto</span>';
       }
       html += '</div></article>';
     });
