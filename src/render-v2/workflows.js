@@ -1061,6 +1061,15 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         }
         await step.do("certify-pack",async()=>{
           await setPackStatus(sql,p.packId,"RENDER_READY",{set_qa_cycle:setCycle,hero_visual_qa_passed:3});
+          await sql`
+            update prospects
+            set render_status='RENDER_READY',
+                current_step='CABINA_RENDER_REVIEW',
+                error=null,
+                next_action='CABINA_RENDER_SELECTION',
+                updated_at=now()
+            where id=${p.prospectId}::uuid
+              and pipeline_status='RENDERING'`;
           await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"RENDER_READY"});
           return {ok:true};
         });
