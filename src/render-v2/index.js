@@ -6,6 +6,7 @@ import { reconcileV2 } from "./reconcile.js";
 import { budgetSnapshot } from "./metrics.js";
 import { selectCertifiedVariant, buildReferenceManifest } from "./manifest.js";
 import { tickRollout, rolloutStatus } from "./rollout.js";
+import { renderConcurrencyState } from "./concurrency.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -116,6 +117,14 @@ export default {
       }
       const instanceId="rpv2-"+created.pack.id;
       const sql=db(env);
+      const capacity=await renderConcurrencyState(sql);
+      if(capacity.slots<3) {
+        return json({
+          ok:false,error:"RENDER_CONCURRENCY_FULL",status:"DEFERRED_CONCURRENCY",
+          pack_id:created.pack.id,required_slots:3,available_slots:capacity.slots,
+          active_variants:capacity.active,max_concurrency:capacity.limit
+        },409);
+      }
       await persistWorkflow(sql,{
         prospectId:created.pack.prospect_id,packId:created.pack.id,type:"PROSPECT",
         instanceId,status:"QUEUED",metadata:{input_pack_id:created.input_pack.id,api_started:true}
@@ -266,6 +275,16 @@ export default {
           where id=${prior[0].id}::uuid`;
       }
 
+      const capacity=await renderConcurrencyState(sql);
+      if(capacity.slots<1) {
+        return json({
+          ok:false,error:"RENDER_CONCURRENCY_FULL",status:"DEFERRED_CONCURRENCY",
+          pack_id:packId,variant_key:variantKey,required_slots:1,available_slots:capacity.slots,
+          active_variants:capacity.active,max_concurrency:capacity.limit,
+          targeted_relaunch:true,available_slots:capacity.slots
+        },409);
+      }
+
       const params={
         prospectId:pack.prospect_id,
         packId,
@@ -310,6 +329,23 @@ export default {
       }
       const variants=await sql`select * from render_v2_variants where render_pack_id=${packId}::uuid order by variant_key`;
       if(variants.length!==3) return json({ok:false,error:"THREE_VARIANTS_REQUIRED"},409);
+
+      const launchCandidates=variants.filter(v=>force || !(v.status==="RENDER_READY" && v.certified_revision));
+      const activeReplaceableRows=await sql`
+        select count(*)::int n
+        from render_workflows_v2
+        where render_pack_id=${packId}::uuid
+          and workflow_type='VARIANT'
+          and status in ('QUEUED','RUNNING','PAUSED')`;
+      const capacity=await renderConcurrencyState(sql);
+      const effectiveSlots=capacity.slots+Number(activeReplaceableRows[0]?.n||0);
+      if(launchCandidates.length>effectiveSlots) {
+        return json({
+          ok:false,error:"RENDER_CONCURRENCY_FULL",status:"DEFERRED_CONCURRENCY",
+          pack_id:packId,required_slots:launchCandidates.length,available_slots:effectiveSlots,
+          active_variants:capacity.active,max_concurrency:capacity.limit,whole_pack_relaunch:true
+        },409);
+      }
 
       await sql`
         update render_v2_packs
