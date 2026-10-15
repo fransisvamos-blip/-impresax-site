@@ -12,6 +12,7 @@ import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
 import { remediateBlockedPack } from "./remediation.js";
 import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
+import { renderConcurrencyState } from "./concurrency.js";
 
 
 async function inputAssetsFromDb(sql,packId,inputPayload) {
@@ -857,17 +858,30 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     });
 
     await step.do("spawn-initial-variants",async()=>{
+      let {slots,limit,active}=await renderConcurrencyState(sql);
+      const launched=[],deferred=[];
       for(const key of ["A","B","C"]) {
+        if(slots<=0) {
+          deferred.push(key);
+          continue;
+        }
         const instanceId="rv2-"+p.packId+"-"+key+"-initial";
         const params={
           prospectId:p.prospectId,packId:p.packId,inputPackId:p.inputPackId,
           variantId:persisted.variants[key],variantKey:key,parentInstanceId:event.instanceId,eventPrefix:"initial"
         };
-        await persistWorkflow(sql,{prospectId:p.prospectId,packId:p.packId,variantId:persisted.variants[key],type:"VARIANT",instanceId,status:"QUEUED",metadata:{variant_key:key,event_prefix:"initial"}});
+        await persistWorkflow(sql,{
+          prospectId:p.prospectId,packId:p.packId,variantId:persisted.variants[key],type:"VARIANT",
+          instanceId,status:"QUEUED",
+          metadata:{variant_key:key,event_prefix:"initial",concurrency_limit:limit,concurrency_scheduled:true}
+        });
         try { await this.env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
         catch { await this.env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
+        launched.push(key);
+        slots--;
+        active++;
       }
-      return {ok:true};
+      return {ok:true,launched,deferred,concurrency_limit:limit,active_after:active};
     });
 
     const previewEvents={};
