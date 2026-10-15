@@ -901,7 +901,34 @@ async function api(request, env, pathname) {
                 and cv.variant_key in ('A','B','C')
             )) as hero_qa_passed,
         (select count(*)::int from render_qa_results_v2 sq
-          where sq.render_pack_id=${renderPackId}::uuid and sq.qa_type='SET_VISUAL' and sq.status='PASS') as set_qa_passed
+          where sq.render_pack_id=${renderPackId}::uuid and sq.qa_type='SET_VISUAL' and sq.status='PASS') as set_qa_passed,
+        (select quality_contract_version from render_v2_packs qp where qp.id=${renderPackId}::uuid) as quality_contract_version,
+        (select count(*)::int
+           from render_v2_variants pv
+           join render_variant_revisions pr on pr.variant_id=pv.id and pr.revision=pv.certified_revision
+          where pv.render_pack_id=${renderPackId}::uuid
+            and pv.status='RENDER_READY'
+            and pr.status='RENDER_READY'
+            and pr.compiler_version='RS_COMPILER_V1_4_PREMIUM_HOME') as premium_home_compiler_variants,
+        (select count(*)::int
+           from render_v2_variants pv
+           join render_variant_revisions pr on pr.variant_id=pv.id and pr.revision=pv.certified_revision
+          where pv.render_pack_id=${renderPackId}::uuid
+            and exists(
+              select 1 from render_qa_results_v2 pq
+              where pq.render_pack_id=${renderPackId}::uuid
+                and pq.variant_revision_id=pr.id
+                and pq.qa_type='VARIANT_VISUAL'
+                and pq.status='PASS'
+                and coalesce((pq.scores->>'header_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'navigation_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'page_architecture')::numeric,0)>=8
+                and coalesce((pq.scores->>'section_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'final_cta_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'footer_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'desktop_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'mobile_quality')::numeric,0)>=8
+            )) as premium_home_qa_variants
       from render_v2_variants v
       join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
       left join render_qa_results_v2 q on q.render_pack_id=v.render_pack_id
@@ -913,8 +940,16 @@ async function api(request, env, pathname) {
         and r.desktop_r2_key is not null
         and r.mobile_r2_key is not null`;
     const gates=gateRows[0]||{};
-    if(Number(gates.variants_ready)!==3 || Number(gates.variant_qa_passed)!==3 || Number(gates.hero_qa_passed)!==3 || Number(gates.set_qa_passed)<1) {
-      return json({ok:false,error:"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED"},409);
+    const baseGatePass=
+      Number(gates.variants_ready)===3 &&
+      Number(gates.variant_qa_passed)===3 &&
+      Number(gates.hero_qa_passed)===3 &&
+      Number(gates.set_qa_passed)>=1;
+    const premiumHomeGatePass=
+      String(gates.quality_contract_version||"")!=="RS_QUALITY_V3_PREMIUM_HOME" ||
+      (Number(gates.premium_home_compiler_variants)===3 && Number(gates.premium_home_qa_variants)===3);
+    if(!baseGatePass || !premiumHomeGatePass) {
+      return json({ok:false,error:!baseGatePass?"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED":"V2_PREMIUM_HOME_V3_GATE_REQUIRED"},409);
     }
 
     await sql`update render_v2_packs
@@ -1007,7 +1042,34 @@ async function api(request, env, pathname) {
                 and cv.variant_key in ('A','B','C')
             )) as hero_qa_passed,
         (select count(*)::int from render_qa_results_v2 sq
-          where sq.render_pack_id=${renderPackId}::uuid and sq.qa_type='SET_VISUAL' and sq.status='PASS') as set_qa_passed
+          where sq.render_pack_id=${renderPackId}::uuid and sq.qa_type='SET_VISUAL' and sq.status='PASS') as set_qa_passed,
+        (select quality_contract_version from render_v2_packs qp where qp.id=${renderPackId}::uuid) as quality_contract_version,
+        (select count(*)::int
+           from render_v2_variants pv
+           join render_variant_revisions pr on pr.variant_id=pv.id and pr.revision=pv.certified_revision
+          where pv.render_pack_id=${renderPackId}::uuid
+            and pv.status='RENDER_READY'
+            and pr.status='RENDER_READY'
+            and pr.compiler_version='RS_COMPILER_V1_4_PREMIUM_HOME') as premium_home_compiler_variants,
+        (select count(*)::int
+           from render_v2_variants pv
+           join render_variant_revisions pr on pr.variant_id=pv.id and pr.revision=pv.certified_revision
+          where pv.render_pack_id=${renderPackId}::uuid
+            and exists(
+              select 1 from render_qa_results_v2 pq
+              where pq.render_pack_id=${renderPackId}::uuid
+                and pq.variant_revision_id=pr.id
+                and pq.qa_type='VARIANT_VISUAL'
+                and pq.status='PASS'
+                and coalesce((pq.scores->>'header_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'navigation_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'page_architecture')::numeric,0)>=8
+                and coalesce((pq.scores->>'section_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'final_cta_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'footer_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'desktop_quality')::numeric,0)>=8
+                and coalesce((pq.scores->>'mobile_quality')::numeric,0)>=8
+            )) as premium_home_qa_variants
       from render_v2_variants v
       join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
       left join render_qa_results_v2 q on q.render_pack_id=v.render_pack_id
@@ -1019,8 +1081,16 @@ async function api(request, env, pathname) {
         and r.desktop_r2_key is not null
         and r.mobile_r2_key is not null`;
     const gates=gateRows[0]||{};
-    if(Number(gates.variants_ready)!==3 || Number(gates.variant_qa_passed)!==3 || Number(gates.hero_qa_passed)!==3 || Number(gates.set_qa_passed)<1) {
-      return json({ok:false,error:"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED"},409);
+    const baseGatePass=
+      Number(gates.variants_ready)===3 &&
+      Number(gates.variant_qa_passed)===3 &&
+      Number(gates.hero_qa_passed)===3 &&
+      Number(gates.set_qa_passed)>=1;
+    const premiumHomeGatePass=
+      String(gates.quality_contract_version||"")!=="RS_QUALITY_V3_PREMIUM_HOME" ||
+      (Number(gates.premium_home_compiler_variants)===3 && Number(gates.premium_home_qa_variants)===3);
+    if(!baseGatePass || !premiumHomeGatePass) {
+      return json({ok:false,error:!baseGatePass?"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED":"V2_PREMIUM_HOME_V3_GATE_REQUIRED"},409);
     }
 
     const htmlObject=await env.RENDER_ARTIFACTS.get(row.html_r2_key);
