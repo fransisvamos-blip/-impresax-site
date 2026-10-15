@@ -469,7 +469,18 @@ export async function reconcileV2(env) {
         renderSlots=Math.max(0,renderSlots-Number(upgrade.slots_used||0));
       }
     } catch(error) {
-      summary.errors.push({quality_contract_upgrade:true,error:String(error?.message||error)});
+      const message=String(error?.stack||error?.message||error).slice(0,4000);
+      summary.errors.push({quality_contract_upgrade:true,error:message});
+      try {
+        await sql`
+          update render_v2_rollout_state
+          set metadata=coalesce(metadata,'{}'::jsonb) || jsonb_build_object(
+                'quality_upgrade_last_error',${message},
+                'quality_upgrade_last_error_at',to_jsonb(now())
+              ),
+              updated_at=now()
+          where id=1`;
+      } catch {}
     }
   }
 
