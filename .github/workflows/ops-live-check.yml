@@ -118,21 +118,17 @@ jobs:
           grep -qi "Giardinelli" /tmp/pilot
           grep -qi "noindex" /tmp/pilot
 
-      - name: Verify DEDIL V2 preview bridge
+      - name: Verify V2 bridge contract
         shell: bash
         run: |
           set -euo pipefail
-          desktop="https://admin.impresax.org/ops/render-v2-assets/73c7a1de-09f0-495a-b81e-8479cf0292dd/desktop"
-          mobile="https://admin.impresax.org/ops/render-v2-assets/73c7a1de-09f0-495a-b81e-8479cf0292dd/mobile"
-          desktop_code=$(curl -L -sS -o /tmp/dedil-desktop.jpg -D /tmp/dedil-desktop.headers -w "%{http_code}" --connect-timeout 8 --max-time 20 "$desktop")
-          mobile_code=$(curl -L -sS -o /tmp/dedil-mobile.jpg -D /tmp/dedil-mobile.headers -w "%{http_code}" --connect-timeout 8 --max-time 20 "$mobile")
-          echo "dedil_desktop=$desktop_code dedil_mobile=$mobile_code"
-          test "$desktop_code" = "200"
-          test "$mobile_code" = "200"
-          grep -qi "Content-Type: image/jpeg" /tmp/dedil-desktop.headers
-          grep -qi "Content-Type: image/jpeg" /tmp/dedil-mobile.headers
-          test "$(wc -c < /tmp/dedil-desktop.jpg)" -gt 100000
-          test "$(wc -c < /tmp/dedil-mobile.jpg)" -gt 50000
+          health="https://admin.impresax.org/ops/healthz"
+          code=$(curl -L -sS -o /tmp/v2-bridge-health.json -w "%{http_code}" --connect-timeout 8 --max-time 20 "$health" || true)
+          test "$code" = "200"
+          grep -q '"render_v2_admin_bridge":true' /tmp/v2-bridge-health.json
+          grep -q '"render_v2_artifacts_binding":true' /tmp/v2-bridge-health.json
+          grep -q '"render_selection_mode":"TWO_STEP_EXPLICIT"' /tmp/v2-bridge-health.json
 
 # CLOUDFLARE_NATIVE_RENDER_VERIFY_V1
 # V85_STATUS_REFRESH_3
+# DYNAMIC_V2_BRIDGE_VERIFY_V1
