@@ -1,6 +1,7 @@
 import { db, persistWorkflow, updateWorkflow, setPackStatus, setVariantStatus } from "./db.js";
 import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVariants } from "./concurrency.js";
 import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
+const QUALITY_UPGRADE_MAX_ATTEMPTS=3;
 
 function platformStatus(value) {
   const raw=typeof value==="string" ? value : value?.status;
@@ -358,7 +359,24 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     if(alreadyCurrent || variant.active_variant_workflow) continue;
 
     const key=String(variant.variant_key);
-    const attempt=Number(variant.quality_attempts||0)+1;
+    const priorAttempts=Number(variant.quality_attempts||0);
+    const retryResetAt=String(pack.metadata?.quality_upgrade_retry_reset_at||"").trim();
+    let effectiveAttempts=priorAttempts;
+    if(retryResetAt) {
+      const rows=await sql`
+        select count(*)::int n
+        from render_workflows_v2 qw
+        where qw.variant_id=${variant.id}::uuid
+          and qw.workflow_type='VARIANT'
+          and coalesce((qw.metadata->>'quality_contract_upgrade')::boolean,false)=true
+          and qw.created_at > ${retryResetAt}::timestamptz`;
+      effectiveAttempts=Number(rows[0]?.n||0);
+    }
+    if(effectiveAttempts>=QUALITY_UPGRADE_MAX_ATTEMPTS) {
+      await setVariantStatus(sql,variant.id,{status:"ESCALATION_REQUIRED"});
+      continue;
+    }
+    const attempt=effectiveAttempts+1;
     const instanceId="rv2-"+pack.id+"-"+key+"-quality-"+runKey+"-"+attempt;
     await setVariantStatus(sql,variant.id,{status:"GENERATING"});
     await persistWorkflow(sql,{
