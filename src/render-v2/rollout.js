@@ -1,5 +1,6 @@
 import { db, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
+import { renderConcurrencyState } from "./concurrency.js";
 
 export const GOLDEN_CASES=[
   {code:"CZ-063",expected:"PASS"},
@@ -152,7 +153,7 @@ async function resetRecoveryBudget(sql,packId,runKey,attempt) {
     where id=${packId}::uuid`;
 }
 
-async function recoverGoldenVariants(env,sql,pack) {
+async function recoverGoldenVariants(env,sql,pack,availableSlots) {
   const variants=await sql`
     select v.*,
       (select w.status from render_workflows_v2 w
@@ -167,7 +168,11 @@ async function recoverGoldenVariants(env,sql,pack) {
   if(active.length) return {started:false,reason:"VARIANTS_ACTIVE",active:active.map(v=>v.variant_key)};
 
   const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
-  if(!pending.length) return {started:false,reason:"ALL_VARIANTS_READY"};
+  if(!pending.length) return {started:false,reason:"ALL_VARIANTS_READY",slots_used:0};
+  const slots=Math.max(0,Number(availableSlots||0));
+  if(slots<pending.length) {
+    return {started:false,reason:"CONCURRENCY_CAP",required_slots:pending.length,available_slots:slots,slots_used:0};
+  }
 
   const attempts=await sql`
     select count(distinct coalesce(metadata->>'golden_recovery_wave',''))::int n
@@ -211,7 +216,7 @@ async function recoverGoldenVariants(env,sql,pack) {
     launched.push({variant_key:variant.variant_key,instance_id:instanceId,status:await instance.status()});
   }
   await setPackStatus(sql,pack.id,"GENERATING",{golden_recovery_wave:runKey,golden_recovery_attempt:attempt});
-  return {started:true,attempt,run_key:runKey,launched};
+  return {started:true,attempt,run_key:runKey,launched,slots_used:launched.length};
 }
 
 async function maybeStartFinalizer(env,sql,pack,gate) {
@@ -273,10 +278,7 @@ async function tickGolden(env,sql,state,pilotCreated,pilotGate) {
         updated_at=now()
     where id=1`;
 
-  const active=await sql`
-    select count(*)::int n from render_v2_packs
-    where shadow_mode=true and status=any(${ACTIVE_PACK_STATUSES})`;
-  let slots=Math.max(0,n(state.max_concurrency)-n(active[0]?.n));
+  let {slots}=await renderConcurrencyState(sql);
 
   for(const test of GOLDEN_CASES.filter(x=>x.code!=="CZ-063")) {
     const created=await createShadowInputPack(env,test.code);
@@ -317,14 +319,14 @@ async function tickGolden(env,sql,state,pilotCreated,pilotGate) {
     if(n(gate?.variants_ready)===3 && n(gate?.set_qa_passes)===0) {
       await maybeStartFinalizer(env,sql,created.pack,gate);
     } else if(slots>0 && created.pack.status==="ESCALATION_REQUIRED" && n(gate?.variant_count)>0) {
-      const recovery=await recoverGoldenVariants(env,sql,created.pack);
-      if(recovery.started) slots--;
-    } else if(slots>0 && created.pack.status==="ESCALATION_REQUIRED" && n(gate?.variant_count)===0) {
+      const recovery=await recoverGoldenVariants(env,sql,created.pack,slots);
+      if(recovery.started) slots=Math.max(0,slots-Number(recovery.slots_used||0));
+    } else if(slots>=3 && created.pack.status==="ESCALATION_REQUIRED" && n(gate?.variant_count)===0) {
       const parent=await startParent(env,sql,created.pack,{reason:"GOLDEN_RECOVERY",forceNew:true});
-      if(parent.started) slots--;
-    } else if(slots>0 && !TERMINAL_PACK_STATUSES.includes(String(created.pack.status||""))) {
+      if(parent.started) slots=Math.max(0,slots-3);
+    } else if(slots>=3 && !TERMINAL_PACK_STATUSES.includes(String(created.pack.status||""))) {
       const parent=await startParent(env,sql,created.pack,{reason:"GOLDEN",forceNew:false});
-      if(parent.started) slots--;
+      if(parent.started) slots=Math.max(0,slots-3);
     }
     results.push(await upsertGolden(sql,{
       code:test.code,expected:test.expected,packId:created.pack.id,actual:"PASS",
@@ -378,10 +380,7 @@ async function tickChaos(env,sql) {
 async function drainQueue(env,sql,state) {
   if(!state.queue_enabled) return {enabled:false,started:[],blocked:[],remediation_started:[]};
 
-  const active=await sql`
-    select count(*)::int n from render_v2_packs
-    where shadow_mode=true and status=any(${ACTIVE_PACK_STATUSES})`;
-  let slots=Math.max(0,n(state.max_concurrency)-n(active[0]?.n));
+  let {slots}=await renderConcurrencyState(sql);
 
   const activeRemediation=await sql`
     select count(*)::int n
@@ -441,7 +440,7 @@ async function drainQueue(env,sql,state) {
   }
 
   const started=[],blocked=[];
-  if(slots>0) {
+  if(slots>=3) {
     const prospects=await sql`
       select p.id,p.rank,p.business_name
       from prospects p
@@ -464,7 +463,7 @@ async function drainQueue(env,sql,state) {
       limit 30`;
 
     for(const prospect of prospects) {
-      if(slots<=0) break;
+      if(slots<3) break;
       const created=await createShadowInputPack(env,prospect.id);
       if(created.input_pack?.certification_status!=="PASS") {
         blocked.push({
@@ -477,7 +476,7 @@ async function drainQueue(env,sql,state) {
       }
       const parent=await startParent(env,sql,created.pack,{reason:"QUEUE"});
       if(parent.started) {
-        slots--;
+        slots=Math.max(0,slots-3);
         started.push({
           prospect_id:prospect.id,
           rank:prospect.rank,
