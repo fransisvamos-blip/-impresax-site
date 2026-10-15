@@ -163,82 +163,12 @@ export async function reconcileV2(env) {
               )) finalizer_count,
            (select coalesce(max(
               case
-                when (fw.metadata->>'finalizer_attempt') ~ '^[0-9]+
-    from render_v2_packs p
-    where p.shadow_mode=true
-      and p.status not in ('RENDER_READY','SELECTED','IMPLEMENTED','CANCELLED')
-      and (select count(*) from render_v2_variants v where v.render_pack_id=p.id)=3
-      and (select count(*) from render_v2_variants v
-           where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
-    order by p.updated_at
-    limit 10`;
-
-  for(const pack of finalizable) {
-    const maxAttempt=Number(pack.finalizer_max_attempt||0);
-    if(Number(pack.active_finalizers||0)>0 || maxAttempt>=8) continue;
-    try {
-      const result=await startPackFinalizer(env,sql,pack,maxAttempt+1);
-      summary.started.push(result);
-    } catch(error) {
-      summary.errors.push({pack_id:pack.id,finalizer:true,error:String(error?.message||error)});
-    }
-  }
-
-  const rollout=await sql`select queue_enabled from render_v2_rollout_state where id=1 limit 1`;
-  if(rollout[0]?.queue_enabled===true) {
-    const escalated=await sql`
-      select p.*
-      from render_v2_packs p
-      where p.shadow_mode=true
-        and p.status='ESCALATION_REQUIRED'
-        and coalesce((p.metadata->>'auto_recovery_attempt')::int,0)<3
-        and not exists (
-          select 1 from render_workflows_v2 w
-          where w.render_pack_id=p.id and w.status in ('QUEUED','RUNNING','PAUSED')
-        )
-      order by p.updated_at
-      limit 5`;
-    for(const pack of escalated) {
-      try {
-        const recovered=await recoverEscalatedQueuePack(env,sql,pack);
-        if(recovered.started) summary.started.push(recovered);
-      } catch(error) {
-        summary.errors.push({pack_id:pack.id,auto_recovery:true,error:String(error?.message||error)});
-      }
-    }
-  }
-
-  const workflows=await sql`
-    select workflow_instance_id,workflow_type,status
-    from render_workflows_v2
-    where status in ('QUEUED','RUNNING','PAUSED')
-    order by last_event_at asc
-    limit 50`;
-
-  for(const row of workflows) {
-    try {
-      const instance=await bindingFor(env,row.workflow_type).get(row.workflow_instance_id);
-      const current=await instance.status();
-      const pstatus=platformStatus(current);
-      const mapped=dbStatus(pstatus);
-      await updateWorkflow(sql,row.workflow_instance_id,{
-        status:mapped,
-        currentStep:null,
-        errorCode:pstatus==="errored" ? "PLATFORM_WORKFLOW_ERRORED" : null,
-        metadata:{platform_status:pstatus,reconciled_at:new Date().toISOString()}
-      });
-      summary.reconciled.push({instance_id:row.workflow_instance_id,platform_status:pstatus,db_status:mapped});
-    } catch(error) {
-      summary.errors.push({instance_id:row.workflow_instance_id,error:String(error?.message||error)});
-    }
-  }
-  return summary;
-}
-
+                when (fw.metadata->>'finalizer_attempt') ~ '^[0-9]+$'
                   then (fw.metadata->>'finalizer_attempt')::int
                 else null
               end
-            ),0)::int from render_workflows_v2 fw
+            ),0)::int
+            from render_workflows_v2 fw
             where fw.render_pack_id=p.id and fw.workflow_type='PROSPECT'
               and (
                 coalesce((fw.metadata->>'finalizer')::boolean,false)=true
@@ -261,12 +191,11 @@ export async function reconcileV2(env) {
            where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
     order by p.updated_at
     limit 10`;
-
   for(const pack of finalizable) {
-    const count=Number(pack.finalizer_count||0);
-    if(Number(pack.active_finalizers||0)>0 || count>=5) continue;
+    const maxAttempt=Number(pack.finalizer_max_attempt||0);
+    if(Number(pack.active_finalizers||0)>0 || maxAttempt>=8) continue;
     try {
-      const result=await startPackFinalizer(env,sql,pack,count+1);
+      const result=await startPackFinalizer(env,sql,pack,maxAttempt+1);
       summary.started.push(result);
     } catch(error) {
       summary.errors.push({pack_id:pack.id,finalizer:true,error:String(error?.message||error)});
