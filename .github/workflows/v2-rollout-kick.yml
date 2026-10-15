@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: premium-home-v3-compiler-stamp-proof
+# rollout kick trigger: dedil-c-provider-failover-live
 
 on:
   push:
