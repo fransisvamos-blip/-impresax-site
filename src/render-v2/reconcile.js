@@ -1,5 +1,6 @@
-import { db, persistWorkflow, updateWorkflow, setPackStatus } from "./db.js";
+import { db, persistWorkflow, updateWorkflow, setPackStatus, setVariantStatus } from "./db.js";
 import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVariants } from "./concurrency.js";
+import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION } from "./constants.js";
 
 function platformStatus(value) {
   const raw=typeof value==="string" ? value : value?.status;
@@ -131,6 +132,133 @@ async function fillUnstartedInitialVariants(env,sql,availableSlots) {
     slots--;
   }
   return {launched,slots};
+}
+
+
+function contractSlug(value) {
+  return String(value||"quality").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,42);
+}
+
+async function upgradeLegacyReadyPack(env,sql,availableSlots) {
+  const slots=Math.max(0,Number(availableSlots||0));
+  if(slots<3) return {started:false,reason:"CONCURRENCY_CAP",slots_used:0};
+
+  const rows=await sql`
+    select p.*,pr.rank,pr.business_name
+    from render_v2_packs p
+    join prospects pr on pr.id=p.prospect_id
+    where p.shadow_mode=true
+      and p.status='RENDER_READY'
+      and p.approved_reference=false
+      and p.selected_variant_revision_id is null
+      and p.quality_contract_version<>${QUALITY_CONTRACT_VERSION}
+      and not exists (
+        select 1 from render_workflows_v2 w
+        where w.render_pack_id=p.id
+          and w.workflow_type='VARIANT'
+          and w.status in ('QUEUED','RUNNING','PAUSED')
+      )
+      and (select count(*) from render_v2_variants v
+           where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
+    order by pr.rank asc nulls last,p.priority asc,p.render_ready_at asc nulls first
+    limit 1`;
+  if(!rows.length) return {started:false,reason:"NO_LEGACY_READY_PACK",slots_used:0};
+
+  const pack=rows[0];
+  const variants=await sql`
+    select v.*,r.id certified_revision_id
+    from render_v2_variants v
+    join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+    where v.render_pack_id=${pack.id}::uuid
+    order by v.variant_key`;
+  if(variants.length!==3) return {started:false,reason:"THREE_CERTIFIED_VARIANTS_REQUIRED",pack_id:pack.id,slots_used:0};
+
+  const previousContract=pack.quality_contract_version;
+  const runKey=contractSlug(QUALITY_CONTRACT_VERSION);
+  await sql`
+    update render_v2_packs
+    set status='GENERATING',
+        quality_contract_version=${QUALITY_CONTRACT_VERSION},
+        execution_engine_version=${EXECUTION_ENGINE_VERSION},
+        model_route_version=${MODEL_ROUTE_VERSION},
+        render_ready_at=null,
+        metrics=
+          (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+          || jsonb_build_object(
+            'ai_calls',0,
+            'browser_captures',0,
+            'prior_epoch_ai_calls',coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+            'prior_epoch_browser_captures',coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+            'budget_epoch',${runKey},
+            'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+          ),
+        metadata=(coalesce(metadata,'{}'::jsonb)-'error')
+          || jsonb_build_object(
+            'quality_upgrade_from',${previousContract},
+            'quality_upgrade_to',${QUALITY_CONTRACT_VERSION},
+            'quality_upgrade_started_at',to_jsonb(now())
+          ),
+        updated_at=now()
+    where id=${pack.id}::uuid`;
+
+  const launched=[];
+  for(const variant of variants) {
+    const key=String(variant.variant_key);
+    const instanceId="rv2-"+pack.id+"-"+key+"-quality-"+runKey;
+    await setVariantStatus(sql,variant.id,{status:"GENERATING"});
+    await persistWorkflow(sql,{
+      prospectId:pack.prospect_id,
+      packId:pack.id,
+      variantId:variant.id,
+      type:"VARIANT",
+      instanceId,
+      status:"QUEUED",
+      metadata:{
+        variant_key:key,
+        event_prefix:"quality-"+runKey,
+        quality_contract_upgrade:true,
+        previous_quality_contract:previousContract,
+        quality_contract_version:QUALITY_CONTRACT_VERSION
+      }
+    });
+    const params={
+      prospectId:pack.prospect_id,
+      packId:pack.id,
+      inputPackId:pack.input_pack_id,
+      variantId:variant.id,
+      variantKey:key,
+      parentInstanceId:null,
+      eventPrefix:"quality-"+runKey,
+      parentRevisionId:variant.certified_revision_id,
+      initialFeedback:{
+        reason:"ENGINE_CONTRACT_UPGRADE",
+        issues:["Previous certified output predates the premium full-home contract."],
+        actions:[
+          "Preserve verified content and the approved visual direction.",
+          "Rebuild the page as a complete premium homepage from header to footer.",
+          "Hero must include headline, body and two designed actions.",
+          "Use a premium integrated menu/header, substantial services and trust sections, strong final CTA and premium footer.",
+          "Reuse the already-approved HERO_VISUAL when it still passes the hero contract."
+        ]
+      }
+    };
+    try { await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
+    catch { await env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
+    launched.push({variant_key:key,instance_id:instanceId,parent_revision_id:variant.certified_revision_id});
+  }
+
+  return {
+    started:true,
+    type:"QUALITY_CONTRACT_UPGRADE",
+    pack_id:pack.id,
+    prospect_id:pack.prospect_id,
+    business_name:pack.business_name,
+    rank:pack.rank,
+    from:previousContract,
+    to:QUALITY_CONTRACT_VERSION,
+    launched,
+    slots_used:3
+  };
 }
 
 async function startPackFinalizer(env,sql,pack,attempt) {
@@ -265,6 +393,18 @@ export async function reconcileV2(env) {
   const summary={started:[],reconciled:[],errors:[]};
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
   let renderSlots=summary.concurrency.slots;
+
+  if(renderSlots>=3) {
+    try {
+      const upgrade=await upgradeLegacyReadyPack(env,sql,renderSlots);
+      if(upgrade.started) {
+        summary.started.push(upgrade);
+        renderSlots=Math.max(0,renderSlots-Number(upgrade.slots_used||0));
+      }
+    } catch(error) {
+      summary.errors.push({quality_contract_upgrade:true,error:String(error?.message||error)});
+    }
+  }
 
   const initialFill=await fillUnstartedInitialVariants(env,sql,renderSlots);
   if(initialFill.launched.length) summary.started.push(...initialFill.launched);
