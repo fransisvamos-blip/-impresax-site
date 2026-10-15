@@ -58,6 +58,9 @@ export async function unstartedInitialVariants(sql,limit=20) {
     ) pw on true
     where p.shadow_mode=true
       and p.status in ('GENERATING','PREVIEW_PARTIAL','PREVIEW_READY','QA_RUNNING','REWORK')
+      and pr.retry_count<pr.max_retries
+      and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+      and coalesce(pr.current_step,'')<>'GENERATION_HOLD'
       and not (v.status='RENDER_READY' and v.certified_revision is not null)
       and not exists (
         select 1 from render_workflows_v2 vw
