@@ -149,16 +149,21 @@ openRenderingProspect = async function(id) {
 
     let renderContent = "";
 
-    if (latestV2Pack && certifiedV2Variants.length) {
-      renderContent += '<div class="render-contract-note"><strong>RENDERING V2 · ' + certifiedV2Variants.length + '/3 VERSIONI DISPONIBILI</strong><span>Queste sono le revisioni certificate reali del nuovo motore. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+    const v2PackStatus = String(latestV2Pack?.status || "").toUpperCase();
+    const premiumUpgrade = latestV2Pack && (
+      String(latestV2Pack.quality_contract_version || "") === "RS_QUALITY_V3_PREMIUM_HOME" &&
+      !["RENDER_READY","SELECTED","APPROVED"].includes(v2PackStatus)
+    );
+
+    if (premiumUpgrade) {
+      renderContent += '<div class="render-contract-note warning"><strong>UPGRADE PREMIUM HOME IN CORSO</strong><span>Stiamo ricostruendo le 3 proposte con header/menu premium, hero completa con CTA, sezioni commerciali, trust, CTA finale e footer. Le nuove versioni compariranno insieme solo dopo la certificazione completa A/B/C.</span></div>';
+    } else if (latestV2Pack && certifiedV2Variants.length) {
+      renderContent += '<div class="render-contract-note"><strong>PREMIUM HOME · ' + certifiedV2Variants.length + '/3 VERSIONI CERTIFICATE</strong><span>Queste sono le revisioni complete certificate. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
       certifiedV2Variants.forEach(v => {
         renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
       });
     } else if (latestV2Pack) {
-      renderContent += '<div class="render-contract-note warning"><strong>RENDERING V2 IN LAVORAZIONE</strong><span>Le versioni certificate compariranno qui automaticamente appena avranno desktop e mobile pronti.</span></div>';
-      latestV2Variants.forEach(v => {
-        renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
-      });
+      renderContent += '<div class="render-contract-note warning"><strong>RENDERING V2 IN LAVORAZIONE</strong><span>Le 3 versioni complete compariranno qui automaticamente solo quando saranno certificate.</span></div>';
     } else if (variants.length) {
       renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Prima scegli la versione. Solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
       variants.forEach(v => {
