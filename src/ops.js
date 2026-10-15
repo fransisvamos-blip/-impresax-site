@@ -470,7 +470,7 @@ async function renderV2AssetResponse(sql, env, revisionId, mode) {
 }
 
 async function dashboard(sql) {
-  const [counts, board, events, queue] = await Promise.all([
+  const [counts, board, events, queue, v2Summary] = await Promise.all([
     sql`select * from ops_dashboard_counts`,
     sql`select * from ops_prospect_board order by rank nulls last, azienda asc limit 500`,
     sql`select id,prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload,created_at
@@ -479,11 +479,42 @@ async function dashboard(sql) {
         from orchestrator_queue
         where status in ('QUEUED','RUNNING','FAILED')
         order by case status when 'RUNNING' then 0 when 'FAILED' then 1 else 2 end, priority asc, id asc
-        limit 100`
+        limit 100`,
+    sql`select distinct on (p.prospect_id)
+          p.prospect_id,
+          p.id as render_v2_pack_id,
+          p.status as render_v2_status,
+          p.quality_contract_version as render_v2_quality_contract,
+          p.render_ready_at as render_v2_ready_at,
+          (
+            select count(*)::int
+            from render_v2_variants v
+            join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+            where v.render_pack_id=p.id
+              and v.status='RENDER_READY'
+              and r.status='RENDER_READY'
+              and r.desktop_r2_key is not null
+              and r.mobile_r2_key is not null
+              and exists(
+                select 1 from render_qa_results_v2 hq
+                where hq.variant_revision_id=r.id
+                  and hq.qa_type='HERO_VISUAL'
+                  and hq.status='PASS'
+              )
+          ) as render_v2_ready_count
+        from render_v2_packs p
+        where p.shadow_mode=true
+          and p.status not in ('CANCELLED','SUPERSEDED')
+        order by p.prospect_id,p.created_at desc`
   ]);
+  const v2ByProspect=new Map(v2Summary.map(x=>[String(x.prospect_id),x]));
+  const enrichedBoard=board.map(row=>{
+    const v2=v2ByProspect.get(String(row.id_prospect))||{};
+    return {...row,...v2};
+  });
   return {
     counts: counts[0] || {},
-    prospects: board,
+    prospects: enrichedBoard,
     recent_events: events,
     queue,
     generated_at: new Date().toISOString(),
