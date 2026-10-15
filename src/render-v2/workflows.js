@@ -6,7 +6,7 @@ import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactB
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant } from "./browser.js";
 import { classifyFailure, failureFingerprint, shouldChangeStrategy } from "./failure-policy.js";
-import { bytesToBase64 } from "./utils.js";
+import { bytesToBase64, sha256 } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
@@ -105,34 +105,39 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
     const ext=generated.mime==="image/png"?"png":generated.mime==="image/webp"?"webp":"jpg";
     const approved=qa.pass===true;
     const type=(approved?"HERO_VISUAL_APPROVED_":"HERO_VISUAL_REJECTED_")+variantKey+"_R"+cycle+"_A"+attempt;
-    const key=base+safeInstance+"-r"+cycle+"-a"+attempt+(approved?"-approved":"-rejected")+"."+ext;
+    const imageHash=await sha256(generated.bytes);
+    const key=base+safeInstance+"-r"+cycle+"-a"+attempt+"-"+imageHash.slice(0,16)+(approved?"-approved":"-rejected")+"."+ext;
     const artifact=await putArtifact(env,sql,{
       packId,revisionId:null,type,key,body:generated.bytes,mime:generated.mime,
       producerStep:approved?"HERO_IMAGE_PREQA_PASS":"HERO_IMAGE_PREQA_REJECT"
     });
-    const metaKey=base+safeInstance+"-r"+cycle+"-a"+attempt+".json";
+    const metaPayload={
+      model:generated.model,
+      prompt:generated.prompt,
+      width:generated.width,
+      height:generated.height,
+      generated:true,
+      illustrative_not_documentary:true,
+      cycle,
+      attempt,
+      image_sha256:imageHash,
+      preqa:{
+        pass:qa.pass,
+        model:qa.model,
+        summary:qa.summary,
+        scores:qa.scores,
+        issues:qa.issues,
+        regeneration_guidance:qa.regeneration_guidance
+      }
+    };
+    const metaBytes=new TextEncoder().encode(JSON.stringify(metaPayload));
+    const metaHash=await sha256(metaBytes);
+    const metaKey=base+safeInstance+"-r"+cycle+"-a"+attempt+"-"+metaHash.slice(0,16)+".json";
     await putArtifact(env,sql,{
       packId,revisionId:null,
       type:(approved?"HERO_VISUAL_APPROVED_META_":"HERO_VISUAL_REJECTED_META_")+variantKey+"_R"+cycle+"_A"+attempt,
       key:metaKey,
-      body:new TextEncoder().encode(JSON.stringify({
-        model:generated.model,
-        prompt:generated.prompt,
-        width:generated.width,
-        height:generated.height,
-        generated:true,
-        illustrative_not_documentary:true,
-        cycle,
-        attempt,
-        preqa:{
-          pass:qa.pass,
-          model:qa.model,
-          summary:qa.summary,
-          scores:qa.scores,
-          issues:qa.issues,
-          regeneration_guidance:qa.regeneration_guidance
-        }
-      })),
+      body:metaBytes,
       mime:"application/json",
       producerStep:"HERO_IMAGE_PREQA"
     });
@@ -406,9 +411,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         );
         const domain=fail?.failure?.failure_domain||"AI_PROVIDER";
         const budget=/HARD_BUDGET_EXCEEDED/.test(message);
-        const premiumUpgrade=params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE";
-        const deterministicFailover=premiumUpgrade && !budget &&
-          ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER"].includes(String(domain));
+        const deterministicRecovery=
+          ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"].includes(String(params.initialFeedback?.reason||""));
+        const deterministicFailover=deterministicRecovery && !budget &&
+          ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER","UNKNOWN"].includes(String(domain));
 
         if(deterministicFailover) {
           const deterministic=buildZeroPhotoPremiumSpec({
