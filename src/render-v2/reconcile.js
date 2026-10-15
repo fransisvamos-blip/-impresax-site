@@ -204,6 +204,28 @@ export async function reconcileV2(env) {
 
   const rollout=await sql`select queue_enabled from render_v2_rollout_state where id=1 limit 1`;
   if(rollout[0]?.queue_enabled===true) {
+    const staleGenerating=await sql`
+      select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.updated_at
+      from render_v2_packs p
+      where p.shadow_mode=true
+        and p.status='GENERATING'
+        and p.updated_at < now()-interval '10 minutes'
+        and (select count(*) from render_v2_variants v where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)<3
+        and not exists (
+          select 1 from render_workflows_v2 w
+          where w.render_pack_id=p.id
+            and w.status in ('QUEUED','RUNNING','PAUSED')
+        )
+      order by p.updated_at
+      limit 10`;
+    for(const pack of staleGenerating) {
+      await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+        stale_generating_reconciled_at:new Date().toISOString(),
+        stale_generating_previous_status:"GENERATING"
+      });
+      summary.reconciled.push({pack_id:pack.id,from_status:"GENERATING",to_status:"ESCALATION_REQUIRED",reason:"NO_ACTIVE_WORKFLOW"});
+    }
+
     const escalated=await sql`
       select p.*
       from render_v2_packs p
