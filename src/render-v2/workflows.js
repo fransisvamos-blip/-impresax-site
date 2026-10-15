@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION } from "./constants.js";
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
@@ -446,7 +446,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       if(!compiled.ok) {
         const msg="RENDER_SPEC_COMPILE_FAILED:"+compiled.issues.join("|");
         const fail=await step.do("r"+cycle+"-record-compile-failure",async()=>
-          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COMPILE",error:msg,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"RS_COMPILER_V1"})
+          recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COMPILE",error:msg,variantKey:params.variantKey,revision:revision.revision,strategyVersion:COMPILER_VERSION})
         );
         await updateRevision(sql,revision.id,{status:"QA_FAILED",renderSpec:generated.spec});
         feedback={
@@ -468,7 +468,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const htmlArtifact=await step.do("r"+cycle+"-persist-source",{retries:{limit:2,delay:"2 seconds",backoff:"exponential"}},async()=>{
         return putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"SOURCE_HTML",key:htmlKey,body:compiled.html,mime:"text/html; charset=utf-8",producerStep:"COMPILE"});
       });
-      await updateRevision(sql,revision.id,{status:"CAPTURING",renderSpec:compiled.normalized_spec||generated.spec,sourceHash:compiled.source_hash,htmlKey:htmlKey});
+      await updateRevision(sql,revision.id,{status:"CAPTURING",renderSpec:compiled.normalized_spec||generated.spec,sourceHash:compiled.source_hash,htmlKey:htmlKey,compilerVersion:compiled.compiler_version||COMPILER_VERSION});
 
       let captured;
       try {
