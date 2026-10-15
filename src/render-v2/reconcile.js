@@ -334,13 +334,13 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     Number(pack.retry_count||0)>=Number(pack.max_retries||3) ||
     String(pack.prospect_error||"")==="GENERATION_CIRCUIT_BREAKER" ||
     String(pack.prospect_current_step||"")==="GENERATION_HOLD";
-  let qualityCircuitOverride=false;
-  if(qualityCircuitOpen) {
-    qualityCircuitOverride=await consumePackCircuitOverride(sql,pack.id,"PREMIUM_HOME_QUALITY_RECOVERY");
-    if(!qualityCircuitOverride) {
-      return {started:false,reason:"PROSPECT_CIRCUIT_BREAKER",pack_id:pack.id,slots_used:0};
-    }
+  const qualityOverridePending=qualityCircuitOpen
+    ? await packCircuitOverridePending(sql,pack.id)
+    : false;
+  if(qualityCircuitOpen && !qualityOverridePending) {
+    return {started:false,reason:"PROSPECT_CIRCUIT_BREAKER",pack_id:pack.id,slots_used:0};
   }
+  let qualityCircuitOverride=false;
 
   const variants=await sql`
     select v.*,
@@ -434,6 +434,11 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     }
     const attempt=effectiveAttempts+1;
     const instanceId="rv2-"+pack.id+"-"+key+"-quality-"+runKey+"-"+attempt;
+    if(qualityCircuitOpen) {
+      if(launched.length>0) break;
+      qualityCircuitOverride=await consumePackCircuitOverride(sql,pack.id,"PREMIUM_HOME_QUALITY_RECOVERY");
+      if(!qualityCircuitOverride) break;
+    }
     await setVariantStatus(sql,variant.id,{status:"GENERATING"});
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,
@@ -532,13 +537,13 @@ async function startPackFinalizer(env,sql,pack,attempt) {
 
 async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   const circuitState=await prospectCircuitState(sql,pack.prospect_id);
-  let circuitOverride=false;
-  if(circuitState.open) {
-    const pending=await packCircuitOverridePending(sql,pack.id);
-    if(!pending) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
-    circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
-    if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
+  const recoveryOverridePending=circuitState.open
+    ? await packCircuitOverridePending(sql,pack.id)
+    : false;
+  if(circuitState.open && !recoveryOverridePending) {
+    return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
   }
+  let circuitOverride=false;
 
   const variants=await sql`
     select v.*,
@@ -589,6 +594,10 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     where id=${pack.id}::uuid`;
 
   if(!variants.length) {
+    if(circuitState.open) {
+      circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
+      if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
+    }
     const instanceId="rpv2-auto-"+pack.id+"-"+attempt;
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,packId:pack.id,type:"PROSPECT",instanceId,status:"QUEUED",
@@ -611,6 +620,11 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   }
   const launched=[];
   for(const variant of pending) {
+    if(circuitState.open) {
+      if(launched.length>0) break;
+      circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
+      if(!circuitOverride) break;
+    }
     const instanceId="rv2-"+pack.id+"-"+variant.variant_key+"-"+runKey;
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,packId:pack.id,variantId:variant.id,type:"VARIANT",
