@@ -24,15 +24,31 @@ const manifests={
 };
 
 const premiumMain=[
-  '<section id="hero" class="hero"><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><img src="{{asset:HERO_VISUAL}}" alt=""><div><a href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a><a href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></section>',
-  '<section id="positioning"><h2>{{copy:POSITIONING_TITLE}}</h2><p>{{copy:POSITIONING_BODY}}</p></section>',
-  '<section id="services"><h2>{{copy:SERVICES_TITLE}}</h2><p>{{copy:SERVICES_INTRO}}</p><article><h3>{{copy:SERVICE_1_TITLE}}</h3><p>{{copy:SERVICE_1_BODY}}</p></article></section>',
-  '<section id="trust"><h2>{{copy:TRUST_TITLE}}</h2><p>{{copy:TRUST_INTRO}}</p><p>{{copy:TRUST_1}}</p></section>',
-  '<section id="bridge"><h2>{{copy:POSITIONING_TITLE}}</h2><p>{{copy:POSITIONING_BODY}}</p></section>',
-  '<section id="final-cta"><h2>{{copy:CLOSING_TITLE}}</h2><p>{{copy:CLOSING_BODY}}</p><a href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a></section>'
+  '<section id="hero" class="hero"><div class="hero-copy"><p>{{copy:LOCALITY_LINE}}</p><h1>{{copy:HERO_HEADLINE}}</h1><p>{{copy:HERO_BODY}}</p><div class="hero-actions"><a class="primary" href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a><a class="secondary" href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></div><figure class="hero-media"><img src="{{asset:HERO_VISUAL}}" alt=""></figure></section>',
+  '<section id="positioning"><div class="section-shell"><header class="section-head"><p>{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2></header><div class="section-body"><p>{{copy:POSITIONING_BODY}}</p><p>{{copy:POSITIONING_BODY}}</p><p>{{copy:LOCALITY_LINE}}</p></div></div></section>',
+  '<section id="services"><div class="section-shell"><header class="section-head"><h2>{{copy:SERVICES_TITLE}}</h2><p>{{copy:SERVICES_INTRO}}</p></header><div class="service-grid"><article><h3>{{copy:SERVICE_1_TITLE}}</h3><p>{{copy:SERVICE_1_BODY}}</p></article><article><h3>{{copy:SERVICE_1_TITLE}}</h3><p>{{copy:SERVICE_1_BODY}}</p></article><article><h3>{{copy:SERVICE_1_TITLE}}</h3><p>{{copy:SERVICE_1_BODY}}</p></article></div></div></section>',
+  '<section id="trust"><div class="section-shell"><header class="section-head"><h2>{{copy:TRUST_TITLE}}</h2><p>{{copy:TRUST_INTRO}}</p></header><div class="trust-grid"><article><p>{{copy:TRUST_1}}</p></article><article><p>{{copy:TRUST_1}}</p></article><article><p>{{copy:TRUST_1}}</p></article></div></div></section>',
+  '<section id="bridge"><div class="section-shell bridge-grid"><div><p>{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2></div><div><p>{{copy:POSITIONING_BODY}}</p><a href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></div></section>',
+  '<section id="final-cta"><div class="section-shell final-grid"><div><p>{{copy:LOCALITY_LINE}}</p><h2>{{copy:CLOSING_TITLE}}</h2><p>{{copy:CLOSING_BODY}}</p></div><div><a href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a><a href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></div></section>'
 ].join("");
 
-const premiumCss=".ix-v2-header{background:#fff}.ix-v2-nav{display:flex}.ix-v2-footer{background:#111}.hero{min-height:80vh;padding:6vw;display:grid;gap:32px;align-items:center}.hero h1{font-size:clamp(40px,7vw,110px);line-height:.9;letter-spacing:-.04em}section{padding:5vw}@media(max-width:700px){.hero{min-height:auto;padding:24px;grid-template-columns:1fr}.hero h1{font-size:clamp(38px,12vw,64px)}}";
+const premiumCss=(
+  ".ix-v2-header{background:#fff;color:#111;border-bottom:1px solid rgba(17,17,17,.12)}"+
+  ".ix-v2-header-inner{min-height:96px;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:32px}"+
+  ".ix-v2-nav{display:flex;align-items:center;gap:28px}.ix-v2-nav a{text-decoration:none;font-weight:600}"+
+  ".ix-v2-header-cta{display:inline-flex;min-height:46px;padding:0 22px;align-items:center;justify-content:center;background:#111;color:#fff}"+
+  ".ix-v2-footer{background:#111;color:#fff;padding:72px 5vw}.ix-v2-footer-grid{display:grid;grid-template-columns:1.2fr .6fr 1fr;gap:56px}"+
+  ".ix-v2-footer-nav{display:grid;gap:16px}.ix-v2-footer-contact-block{display:grid;gap:18px}"+
+  ".hero{min-height:82vh;padding:6vw;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}"+
+  ".hero-copy{display:grid;gap:22px}.hero h1{font-size:clamp(48px,7vw,112px);line-height:.9;letter-spacing:-.05em;margin:0}"+
+  ".hero-media{min-height:560px;margin:0;overflow:hidden}.hero-media img{width:100%;height:100%;object-fit:cover}"+
+  ".hero-actions{display:flex;gap:12px;flex-wrap:wrap}.hero-actions a{display:inline-flex;min-height:52px;padding:0 24px;align-items:center;justify-content:center;text-decoration:none;border:1px solid currentColor}"+
+  ".section-shell{width:min(1240px,calc(100% - 64px));margin:0 auto}.section-head{display:grid;grid-template-columns:.65fr 1.35fr;gap:42px;align-items:end;margin-bottom:42px}"+
+  ".section-body,.service-grid,.trust-grid,.bridge-grid,.final-grid{display:grid;gap:28px}.service-grid,.trust-grid{grid-template-columns:repeat(3,1fr)}"+
+  "section{padding:clamp(72px,8vw,126px) 0}article{padding:32px;border-top:1px solid rgba(17,17,17,.18)}"+
+  ".bridge-grid,.final-grid{grid-template-columns:1.1fr .9fr;align-items:end}.final-grid a{display:inline-flex;margin:8px;padding:14px 20px;border:1px solid currentColor;text-decoration:none}"+
+  "@media(max-width:700px){.ix-v2-header-inner{grid-template-columns:1fr auto}.ix-v2-nav{grid-column:1/-1;overflow-x:auto;padding-bottom:14px}.ix-v2-footer-grid,.hero,.section-head,.service-grid,.trust-grid,.bridge-grid,.final-grid{grid-template-columns:1fr}.hero{min-height:auto;padding:48px 20px}.hero-media{min-height:340px}.hero h1{font-size:clamp(42px,12vw,64px)}.section-shell{width:min(calc(100% - 40px),1240px)}section{padding:60px 0}}"
+);
 
 test("stableStringify is deterministic",()=>{
   assert.equal(stableStringify({b:1,a:2}),stableStringify({a:2,b:1}));
@@ -67,7 +83,7 @@ test("valid tokenized render compiles with mandatory shell",async()=>{
     assetManifest:manifests.assets,
     ctaManifest:manifests.cta
   });
-  assert.equal(result.ok,true);
+  assert.equal(result.ok,true,result.issues?.join("|"));
   assert.match(result.html,/<main>/);
   assert.match(result.html,/data-official-logo/);
   assert.match(result.html,/viewport/);
@@ -271,6 +287,14 @@ test("zero-photo grammar compiles all three variants",async()=>{
   const copy={
     HERO_HEADLINE:"DEDIL DONATO S.R.L.",
     HERO_BODY:"Distribuzione e lavorazione per imprese e professionisti.",
+    POSITIONING_TITLE:"Materiali e lavorazioni professionali",
+    POSITIONING_BODY:"Distribuzione e lavorazione per esigenze operative verificate.",
+    SERVICES_TITLE:"Servizi",
+    SERVICES_INTRO:"Materiali e lavorazioni disponibili per imprese e professionisti.",
+    TRUST_TITLE:"Affidabilità operativa",
+    TRUST_INTRO:"Presenza, contatti e servizi verificati.",
+    CLOSING_TITLE:"Parliamo della tua esigenza",
+    CLOSING_BODY:"Contatta DEDIL DONATO per approfondire materiali e lavorazioni.",
     LOCALITY_LINE:"Catanzaro",
     PRIMARY_CTA_LABEL:"Richiedi un preventivo",
     SECONDARY_CTA_LABEL:"Contatti",
