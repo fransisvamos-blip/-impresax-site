@@ -405,30 +405,64 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"VARIANT_GENERATION_PROVIDER",error:message,variantKey:params.variantKey,revision:revision.revision,strategyVersion:MODEL_ROUTE_VERSION})
         );
         const domain=fail?.failure?.failure_domain||"AI_PROVIDER";
-        const budget=domain==="SYSTEM_INVARIANT" && /HARD_BUDGET_EXCEEDED/.test(message);
-        const retryable=fail?.failure?.retryable===true && !budget && cycle<MAX_VISUAL_REVISIONS;
-        if(retryable) {
-          await step.do("r"+cycle+"-generation-provider-retry",async()=>{
-            await updateRevision(sql,revision.id,{status:"QA_FAILED"});
-            await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"PROVIDER_RETRY",errorCode:null,metadata:{retry_domain:domain,retry_cycle:cycle+1}});
+        const budget=/HARD_BUDGET_EXCEEDED/.test(message);
+        const premiumUpgrade=params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE";
+        const deterministicFailover=premiumUpgrade && !budget &&
+          ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER"].includes(String(domain));
+
+        if(deterministicFailover) {
+          const deterministic=buildZeroPhotoPremiumSpec({
+            variantKey:params.variantKey,
+            copyManifest:context.copyManifest,
+            hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
+            inputPayload:context.inputPayload
+          });
+          generated={
+            spec:deterministic.spec,
+            model:deterministic.strategy,
+            deterministic:true,
+            provider_failover:true,
+            provider_failure_domain:domain
+          };
+          await step.do("r"+cycle+"-generation-provider-deterministic-failover",async()=>{
+            await updateWorkflow(sql,event.instanceId,{
+              status:"RUNNING",
+              currentStep:"DETERMINISTIC_PROVIDER_FAILOVER",
+              errorCode:null,
+              metadata:{
+                provider_failover:true,
+                provider_failure_domain:domain,
+                deterministic_strategy:deterministic.strategy,
+                fallback_revision:revision.revision
+              }
+            });
             return {ok:true};
           });
-          feedback={
-            ...(feedback||{}),
-            reason:"TRANSIENT_PROVIDER_RETRY",
-            issues:[...((feedback?.issues)||[]),"Transient provider failure; preserve the best valid composition and retry without changing factual content."],
-            actions:[...((feedback?.actions)||[]),"Retry the same visual strategy; do not redesign because of an infrastructure timeout."]
-          };
-          continue;
+        } else {
+          const retryable=fail?.failure?.retryable===true && !budget && cycle<MAX_VISUAL_REVISIONS;
+          if(retryable) {
+            await step.do("r"+cycle+"-generation-provider-retry",async()=>{
+              await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+              await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"PROVIDER_RETRY",errorCode:null,metadata:{retry_domain:domain,retry_cycle:cycle+1}});
+              return {ok:true};
+            });
+            feedback={
+              ...(feedback||{}),
+              reason:"TRANSIENT_PROVIDER_RETRY",
+              issues:[...((feedback?.issues)||[]),"Transient provider failure; preserve the best valid composition and retry without changing factual content."],
+              actions:[...((feedback?.actions)||[]),"Retry the same visual strategy; do not redesign because of an infrastructure timeout."]
+            };
+            continue;
+          }
+          await step.do("r"+cycle+"-generation-provider-escalation",async()=>{
+            await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+            if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
+            await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"AI_PROVIDER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"VARIANT_GENERATION_PROVIDER_FAILED"});
+            await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
+            return {ok:true};
+          });
+          return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:domain};
         }
-        await step.do("r"+cycle+"-generation-provider-escalation",async()=>{
-          await updateRevision(sql,revision.id,{status:"QA_FAILED"});
-          if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
-          await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"AI_PROVIDER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"VARIANT_GENERATION_PROVIDER_FAILED"});
-          await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
-          return {ok:true};
-        });
-        return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:domain};
       }
 
       previousSpec=generated.spec;
