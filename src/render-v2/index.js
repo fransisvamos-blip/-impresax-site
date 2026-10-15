@@ -93,6 +93,10 @@ export default {
         hero_db_guard,
         hero_score_floor:8,
         hero_certified_variants_required:3,
+        premium_home_contract_required:true,
+        premium_home_score_floor:8,
+        premium_home_required_sections:["hero","positioning","services","trust","bridge","final-cta"],
+        premium_home_shell_required:["header","navigation","header_cta","footer_navigation"],
         bindings
       },healthy?200:503);
     }
