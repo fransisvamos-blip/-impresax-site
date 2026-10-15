@@ -15,6 +15,15 @@ import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
 
 
+async function waitForVariantSlot(step,sql,label,{maxChecks=60,delay="30 seconds"}={}) {
+  for(let i=1;i<=maxChecks;i++) {
+    const state=await step.do(label+"-capacity-"+i,async()=>renderConcurrencyState(sql));
+    if(Number(state.slots||0)>0) return state;
+    await step.sleep(label+"-wait-"+i,delay);
+  }
+  throw new Error("RENDER_CONCURRENCY_SLOT_TIMEOUT");
+}
+
 async function inputAssetsFromDb(sql,packId,inputPayload) {
   const rows=await sql`
     select artifact_type,r2_key,sha256,mime,bytes
@@ -1037,6 +1046,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       const variantId=persisted.variants[weakest];
       const prior=await step.do("set-"+setCycle+"-prior-"+weakest,async()=>latestCertifiedRevision(sql,variantId));
       const prefix="set"+setCycle;
+      await waitForVariantSlot(step,sql,"set-"+setCycle+"-"+weakest,{maxChecks:60,delay:"30 seconds"});
       await step.do("set-"+setCycle+"-spawn-"+weakest,async()=>{
         const instanceId="rv2-"+p.packId+"-"+weakest+"-"+prefix;
         const params={
