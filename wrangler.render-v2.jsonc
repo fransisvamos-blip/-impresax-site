@@ -47,7 +47,6 @@
     "V2_MODEL_HERO_IMAGE": "@cf/black-forest-labs/flux-2-dev",
     "V2_MODEL_HERO_IMAGE_FALLBACK": "@cf/black-forest-labs/flux-2-klein-9b",
     "V2_MAX_AI_CALLS_PER_PACK": "90",
-    "V2_MAX_BROWSER_CAPTURES_PER_PACK": "18",
-    "V2_SHADOW_AUTOSTART": "CZ-063"
+    "V2_MAX_BROWSER_CAPTURES_PER_PACK": "18"
   }
 }
