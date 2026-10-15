@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: dedil-c-provider-failover-live
+# rollout kick trigger: bl-ac-repair-content-addressed-hero-v1
 
 on:
   push:
