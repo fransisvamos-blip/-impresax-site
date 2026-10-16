@@ -72,6 +72,9 @@ export function buildInputPayload(prospect) {
     brand_dna:prospect.brand_dna||{},
     verified_services:verifiedOrEmpty(s.verified_services),
     verified_contacts:verifiedOrEmpty(s.verified_contacts),
+    contact_data_state:String(s.contact_data_state||""),
+    contact_remediation_status:String(s.v2_remediation_status||""),
+    contact_verification_evidence:ensureArray(s.v2_remediation_evidence?.contact_evidence),
     verified_trust:verifiedOrEmpty(s.verified_trust),
     commercial_goal:verifiedOrEmpty(s.commercial_goal),
     primary_cta:verifiedOrEmpty(s.primary_cta),
@@ -100,6 +103,18 @@ export function certifyInputPayload(payload) {
   for(const key of REQUIRED_DNA) if(!objectHasValue(payload?.brand_dna?.[key])) issues.push("BRAND_DNA_MISSING:"+key);
   if(!meaningfulVerifiedValue(payload?.verified_services)) issues.push("VERIFIED_SERVICES_REQUIRED");
   if(!meaningfulVerifiedValue(payload?.verified_contacts)) issues.push("VERIFIED_CONTACTS_REQUIRED");
+  const contactState=String(payload?.contact_data_state||"").toUpperCase();
+  const remediatedContact=Boolean(String(payload?.contact_remediation_status||"").trim());
+  const highConfidenceContactEvidence=ensureArray(payload?.contact_verification_evidence).some(e=>
+    String(e?.scope||"").toUpperCase()==="BUSINESS_CONTACT" &&
+    String(e?.confidence||"").toUpperCase()==="HIGH"
+  );
+  if(
+    meaningfulVerifiedValue(payload?.verified_contacts) &&
+    remediatedContact &&
+    !["VERIFICATO","V2_FIRST_PARTY_VERIFIED"].includes(contactState) &&
+    !highConfidenceContactEvidence
+  ) issues.push("VERIFIED_CONTACT_PROVENANCE_REQUIRED");
   if(!meaningfulVerifiedValue(payload?.address)) issues.push("VERIFIED_LOCATION_REQUIRED");
   if(!payload?.source_references?.length) issues.push("SOURCE_REFERENCES_REQUIRED");
   const ids=payload?.assets?.map(x=>x.asset_id)||[];
