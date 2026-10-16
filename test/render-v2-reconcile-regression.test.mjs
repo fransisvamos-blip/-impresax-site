@@ -415,3 +415,11 @@ test("ImpresaX master preserves official logo inside intentional brand plaques",
   assert.match(grammar,/\.ix-v2-footer-identity\{display:inline-flex!important;width:max-content!important/);
   assert.match(grammar,/\.ix-v2-footer-logo\{display:block!important;max-height:54px!important/);
 });
+
+test("ImpresaX pilot logo has no synthetic white box and mobile nav can breathe",()=>{
+  assert.match(grammar,/\.ix-v2-brand\{[^}]*background:transparent!important/);
+  assert.match(grammar,/\.ix-v2-footer-identity\{[^}]*background:transparent!important/);
+  assert.match(grammar,/justify-content:flex-start!important;gap:22px!important;overflow-x:auto!important/);
+  assert.match(grammar,/flex:0 0 auto!important/);
+  assert.doesNotMatch(grammar,/\.ix-v2-brand\{[^}]*background:#f7f6f2!important/);
+});
