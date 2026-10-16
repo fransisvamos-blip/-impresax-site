@@ -285,3 +285,11 @@ test("active recovery variant state follows workflow lifecycle",()=>{
   assert.match(reconcile,/row\.variant_status!=="GENERATING"/);
   assert.match(reconcile,/setVariantStatus\(sql,row\.variant_id,\{status:"GENERATING"\}\)/);
 });
+
+test("construction hero grammar forbids empty sky dominance",()=>{
+  assert.match(hero,/function isConstructionContext/);
+  assert.match(hero,/roughly 65–80% of the frame/);
+  assert.match(hero,/sky to about 20% or less/);
+  assert.match(hero,/never let blank sky dominate/);
+  assert.match(hero,/390px portrait crop remains dense and credible/);
+});
