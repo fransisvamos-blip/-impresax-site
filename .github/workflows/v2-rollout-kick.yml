@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: post-exhausted-selector-fix-20261016-1453
+# rollout kick trigger: instrumented-reconcile-20261016-1457
 
 on:
   push:
