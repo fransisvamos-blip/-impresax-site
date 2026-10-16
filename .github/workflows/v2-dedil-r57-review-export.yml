@@ -1,0 +1,53 @@
+name: V2 DEDIL R57 Review Export
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-dedil-r57-review-export.yml'
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rendering-v2-shadow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Export DEDIL rev57 screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+          mkdir -p review
+          fetch_artifact() {
+            local id="$1"
+            local out="$2"
+            local ok=0
+            for i in {1..20}; do
+              code=$(curl -sSL -o "$out" -w '%{http_code}' -H "Authorization: Bearer $token" "$V2_URL/shadow/artifact/$id" || true)
+              echo "artifact=$id attempt=$i code=$code"
+              if [ "$code" = "200" ]; then ok=1; break; fi
+              if [ "$code" != "401" ] && [ "$code" != "503" ]; then break; fi
+              sleep 3
+            done
+            [ "$ok" = "1" ] || exit 1
+          }
+          fetch_artifact dde109d5-33db-49a4-9bf1-6dd0836715cc review/dedil-r57-desktop.jpg
+          fetch_artifact 9031a544-9248-4cbd-8506-e385d0561057 review/dedil-r57-mobile.jpg
+          file review/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dedil-r57-review
+          path: review/
+          if-no-files-found: error
