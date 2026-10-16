@@ -396,7 +396,16 @@ export async function generateContentTruthDraft(env,inputPayload,{beforeModelAtt
     schema:contentTruthSchema,maxTokens:4500,temperature:0.12,beforeAttempt:beforeModelAttempt
   });
   const sourceGate=validateContentTruthSources(generated.data,inputPayload);
-  if(!sourceGate.pass) throw new Error("CONTENT_TRUTH_SOURCE_INVALID:"+sourceGate.issues.join("|"));
+  if(!sourceGate.pass) {
+    const fallback=await buildVerifiedFallbackTruth(inputPayload);
+    return {
+      content_truth:fallback.content_truth,
+      generator_model:generated.model,
+      hash:fallback.hash,
+      source_sanitized:true,
+      source_gate_issues:sourceGate.issues
+    };
+  }
   return {
     content_truth:generated.data,
     generator_model:generated.model,
