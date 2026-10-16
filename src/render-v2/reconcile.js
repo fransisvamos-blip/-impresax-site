@@ -691,6 +691,9 @@ async function startPackFinalizer(env,sql,pack,attempt) {
 }
 
 async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
+  const slots=Math.max(0,Number(availableSlots||0));
+  if(slots<=0) return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:1,available_slots:0,slots_used:0};
+
   const circuitState=await prospectCircuitState(sql,pack.prospect_id);
   const recoveryOverridePending=circuitState.open
     ? await packCircuitOverridePending(sql,pack.id)
@@ -708,22 +711,83 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     where v.render_pack_id=${pack.id}::uuid
     order by v.variant_key`;
 
-  if(variants.some(v=>["QUEUED","RUNNING","PAUSED"].includes(String(v.latest_workflow_status||"")))) {
-    return {pack_id:pack.id,started:false,reason:"ACTIVE_WORKFLOW"};
+  const priorAttempts=Number(pack.metadata?.auto_recovery_attempt||0);
+
+  if(!variants.length) {
+    if(slots<3) {
+      return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:3,available_slots:slots,slots_used:0};
+    }
+    if(priorAttempts>=3) {
+      const exhaustedAt=new Date().toISOString();
+      await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+        auto_recovery_exhausted:true,
+        auto_recovery_exhausted_at:pack.metadata?.auto_recovery_exhausted_at||exhaustedAt,
+        recovery_exhausted:true,
+        recovery_exhausted_at:pack.metadata?.recovery_exhausted_at||exhaustedAt,
+        ghost_generating_closed:true,
+        ghost_generating_closed_at:exhaustedAt,
+        ghost_state_close_reason:"AUTO_RECOVERY_LIMIT_REACHED_NO_ACTIVE_WORKFLOW"
+      });
+      return {pack_id:pack.id,started:false,reason:"AUTO_RECOVERY_LIMIT",slots_used:0};
+    }
+    const attempt=priorAttempts+1;
+    const recoveryEpoch=workflowEpochTag(pack.updated_at||pack.metadata?.stale_generating_reconciled_at||pack.created_at);
+    const runKey="auto-r"+attempt+"-"+recoveryEpoch;
+    if(circuitState.open) {
+      circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
+      if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
+    }
+    await sql`
+      update render_v2_packs
+      set metrics=
+        (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+        || jsonb_build_object(
+          'ai_calls',0,'browser_captures',0,
+          'prior_epoch_ai_calls',coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+          'prior_epoch_browser_captures',coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+          'budget_epoch',${runKey}::text,
+          'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+        ),
+        metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+          'auto_recovery_attempt',${attempt}::int,
+          'auto_recovery_run_key',${runKey}::text,
+          'auto_recovery_partial_open',false,
+          'budget_epoch_reset_at',now(),
+          'budget_epoch_reason','QUEUE_AUTO_RECOVERY'
+        ),
+        updated_at=now()
+      where id=${pack.id}::uuid`;
+    const instanceId="rpv2-auto-"+pack.id+"-"+attempt;
+    await persistWorkflow(sql,{
+      prospectId:pack.prospect_id,packId:pack.id,type:"PROSPECT",instanceId,status:"QUEUED",
+      metadata:{input_pack_id:pack.input_pack_id,auto_recovery:true,auto_recovery_attempt:attempt}
+    });
+    const instance=await env.RENDER_PROSPECT_WORKFLOW.create({
+      id:instanceId,
+      params:{prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id}
+    });
+    await setPackStatus(sql,pack.id,"PLANNING",{auto_recovery_attempt:attempt,auto_recovery_run_key:runKey});
+    return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status(),slots_used:3};
   }
 
-  const requiredCapacityBeforeRecovery=variants.length
-    ? variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision)).length
-    : 3;
-  if(Number(availableSlots||0)<requiredCapacityBeforeRecovery) {
-    return {
-      pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",
-      required_slots:requiredCapacityBeforeRecovery,available_slots:Number(availableSlots||0),slots_used:0
-    };
-  }
+  const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
+  if(pending.length===0) return {pack_id:pack.id,started:false,reason:"ALL_VARIANTS_READY",slots_used:0};
 
-  const attempts=Number(pack.metadata?.auto_recovery_attempt||0);
-  if(attempts>=3) {
+  const activeRecoveryRows=await sql`
+    select metadata->>'event_prefix' run_key,
+           coalesce((metadata->>'auto_recovery_attempt')::int,0) attempt
+    from render_workflows_v2
+    where render_pack_id=${pack.id}::uuid
+      and workflow_type='VARIANT'
+      and status in ('QUEUED','RUNNING','PAUSED')
+      and coalesce((metadata->>'auto_recovery')::boolean,false)=true
+    order by created_at desc
+    limit 1`;
+  const activeRecovery=activeRecoveryRows[0]||null;
+  const packPartialOpen=pack.metadata?.auto_recovery_partial_open===true && Boolean(pack.metadata?.auto_recovery_run_key);
+  const reuseWave=Boolean(activeRecovery?.run_key)||packPartialOpen;
+
+  if(!reuseWave && priorAttempts>=3) {
     const exhaustedAt=new Date().toISOString();
     await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
       auto_recovery_exhausted:true,
@@ -737,59 +801,71 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     return {pack_id:pack.id,started:false,reason:"AUTO_RECOVERY_LIMIT",slots_used:0};
   }
 
-  const attempt=attempts+1;
+  const attempt=reuseWave
+    ? Number(activeRecovery?.attempt||priorAttempts||1)
+    : priorAttempts+1;
   const recoveryEpoch=workflowEpochTag(pack.updated_at||pack.metadata?.stale_generating_reconciled_at||pack.created_at);
-  const runKey="auto-r"+attempt+"-"+recoveryEpoch;
+  const runKey=reuseWave
+    ? String(activeRecovery?.run_key||pack.metadata?.auto_recovery_run_key)
+    : "auto-r"+attempt+"-"+recoveryEpoch;
 
-  await sql`
-    update render_v2_packs
-    set metrics=
-      (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
-      || jsonb_build_object(
-        'ai_calls',0,'browser_captures',0,
-        'prior_epoch_ai_calls',coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
-        'prior_epoch_browser_captures',coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
-        'budget_epoch',${runKey}::text,
-        'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
-      ),
-      metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
-        'auto_recovery_attempt',${attempt}::int,
-        'auto_recovery_run_key',${runKey}::text,
-        'budget_epoch_reset_at',now(),
-        'budget_epoch_reason','QUEUE_AUTO_RECOVERY'
-      ),
-      updated_at=now()
-    where id=${pack.id}::uuid`;
+  if(!reuseWave) {
+    await sql`
+      update render_v2_packs
+      set metrics=
+        (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+        || jsonb_build_object(
+          'ai_calls',0,'browser_captures',0,
+          'prior_epoch_ai_calls',coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+          'prior_epoch_browser_captures',coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+          'budget_epoch',${runKey}::text,
+          'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+        ),
+        metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+          'auto_recovery_attempt',${attempt}::int,
+          'auto_recovery_run_key',${runKey}::text,
+          'auto_recovery_partial_open',true,
+          'auto_recovery_wave_started_at',to_jsonb(now()),
+          'budget_epoch_reset_at',now(),
+          'budget_epoch_reason','QUEUE_AUTO_RECOVERY'
+        ),
+        updated_at=now()
+      where id=${pack.id}::uuid`;
+  }
 
-  if(!variants.length) {
-    if(circuitState.open) {
-      circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
-      if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
+  const attemptedRows=await sql`
+    select distinct variant_id
+    from render_workflows_v2
+    where render_pack_id=${pack.id}::uuid
+      and workflow_type='VARIANT'
+      and metadata->>'event_prefix'=${runKey}
+      and variant_id is not null`;
+  const attempted=new Set(attemptedRows.map(r=>String(r.variant_id)));
+  const activeStatuses=new Set(["QUEUED","RUNNING","PAUSED"]);
+  const launchable=pending.filter(v=>
+    !activeStatuses.has(String(v.latest_workflow_status||"")) &&
+    !attempted.has(String(v.id))
+  );
+
+  if(launchable.length===0) {
+    const hasActive=pending.some(v=>activeStatuses.has(String(v.latest_workflow_status||"")));
+    if(hasActive) {
+      return {pack_id:pack.id,started:false,reason:"RECOVERY_WAVE_IN_PROGRESS",attempt,run_key:runKey,slots_used:0};
     }
-    const instanceId="rpv2-auto-"+pack.id+"-"+attempt;
-    await persistWorkflow(sql,{
-      prospectId:pack.prospect_id,packId:pack.id,type:"PROSPECT",instanceId,status:"QUEUED",
-      metadata:{input_pack_id:pack.input_pack_id,auto_recovery:true,auto_recovery_attempt:attempt}
+    await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+      auto_recovery_attempt:attempt,
+      auto_recovery_run_key:runKey,
+      auto_recovery_partial_open:false,
+      auto_recovery_wave_completed_at:new Date().toISOString(),
+      recovery_wave_needs_next_attempt:true
     });
-    const instance=await env.RENDER_PROSPECT_WORKFLOW.create({
-      id:instanceId,
-      params:{prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id}
-    });
-    await setPackStatus(sql,pack.id,"PLANNING",{auto_recovery_attempt:attempt});
-    return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status(),slots_used:3};
+    return {pack_id:pack.id,started:false,reason:"RECOVERY_WAVE_COMPLETE",attempt,run_key:runKey,slots_used:0};
   }
 
-  const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
-  const slots=Math.max(0,Number(availableSlots||0));
-  const required=variants.length ? pending.length : 3;
-  if(required===0) return {pack_id:pack.id,started:false,reason:"ALL_VARIANTS_READY",slots_used:0};
-  if(slots<required) {
-    return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:required,available_slots:slots,slots_used:0};
-  }
   const launched=[];
-  for(const variant of pending) {
+  const maxLaunch=circuitState.open?1:slots;
+  for(const variant of launchable.slice(0,maxLaunch)) {
     if(circuitState.open) {
-      if(launched.length>0) break;
       circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
       if(!circuitOverride) break;
     }
@@ -813,13 +889,15 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     });
     launched.push({variant_key:variant.variant_key,instance_id:instanceId,status:await instance.status()});
   }
+
   if(launched.length===0) {
     const blockedAt=new Date().toISOString();
     await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
       recovery_launch_blocked:true,
       recovery_launch_blocked_at:blockedAt,
       recovery_launch_blocked_reason:circuitState.open&&!circuitOverride?"GENERATION_CIRCUIT_BREAKER":"NO_WORKFLOW_LAUNCHED",
-      ghost_generating_prevented:true
+      ghost_generating_prevented:true,
+      auto_recovery_partial_open:false
     });
     return {
       pack_id:pack.id,
@@ -829,8 +907,26 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
       slots_used:0
     };
   }
-  await setPackStatus(sql,pack.id,"GENERATING",{auto_recovery_attempt:attempt,auto_recovery_run_key:runKey});
-  return {pack_id:pack.id,started:true,type:"VARIANT_SET",attempt,launched,slots_used:launched.length};
+
+  const unattemptedRemaining=Math.max(0,launchable.length-launched.length);
+  await setPackStatus(sql,pack.id,"GENERATING",{
+    auto_recovery_attempt:attempt,
+    auto_recovery_run_key:runKey,
+    auto_recovery_partial_open:unattemptedRemaining>0,
+    auto_recovery_wave_launch_count:launched.length,
+    auto_recovery_wave_unattempted_remaining:unattemptedRemaining,
+    auto_recovery_wave_last_launch_at:new Date().toISOString()
+  });
+  return {
+    pack_id:pack.id,
+    started:true,
+    type:"VARIANT_SET_STAGED",
+    attempt,
+    run_key:runKey,
+    launched,
+    partial_open:unattemptedRemaining>0,
+    slots_used:launched.length
+  };
 }
 
 export async function startOrRecoverParent(env,sql,pack) {
