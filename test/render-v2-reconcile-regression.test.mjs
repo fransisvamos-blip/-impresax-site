@@ -8,6 +8,8 @@ const hero=fs.readFileSync(new URL("../src/render-v2/hero.js",import.meta.url),"
 const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
 const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.meta.url),"utf8");
 const rollout=fs.readFileSync(new URL("../src/render-v2/rollout.js",import.meta.url),"utf8");
+const remediation=fs.readFileSync(new URL("../src/render-v2/remediation.js",import.meta.url),"utf8");
+const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
@@ -112,4 +114,13 @@ test("queue finalizes current certified sets while active",()=>{
   assert.match(rollout,/q\.artifact_hashes->>'C_revision_id'/);
   assert.match(rollout,/p\.quality_contract_version=\$\{QUALITY_CONTRACT_VERSION\}/);
   assert.match(rollout,/p\.execution_engine_version=\$\{EXECUTION_ENGINE_VERSION\}/);
+});
+
+test("remediation budget is scoped to the current policy version",()=>{
+  assert.match(constants,/REMEDIATION_POLICY_VERSION/);
+  assert.match(remediation,/sameRemediationPolicy/);
+  assert.match(remediation,/v2_remediation_policy_version:REMEDIATION_POLICY_VERSION/);
+  assert.match(rollout,/v2_remediation_policy_version/);
+  assert.match(rollout,/remediationPolicyTag/);
+  assert.match(rollout,/remediation_policy_version:REMEDIATION_POLICY_VERSION/);
 });
