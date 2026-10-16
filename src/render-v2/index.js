@@ -7,6 +7,7 @@ import { budgetSnapshot } from "./metrics.js";
 import { selectCertifiedVariant, buildReferenceManifest } from "./manifest.js";
 import { tickRollout, rolloutStatus } from "./rollout.js";
 import { renderConcurrencyState } from "./concurrency.js";
+import { prospectCircuitState, packCircuitOverridePending, consumePackCircuitOverride } from "./circuit.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -273,29 +274,15 @@ export default {
         return json({ok:true,pack_id:packId,variant_key:variantKey,already_applied:true,workflow_instance_id:instanceId,status,latest_qa:qaRows[0]||null},200);
       }
 
-      if(resetBudget) {
-        await sql`
-          update render_v2_packs
-          set metrics=
-            (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
-            || jsonb_build_object(
-              'ai_calls',0,
-              'browser_captures',0,
-              'prior_epoch_ai_calls',
-                coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
-              'prior_epoch_browser_captures',
-                coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
-              'budget_epoch',${runKey}::text,
-              'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
-            ),
-            metadata=coalesce(metadata,'{}'::jsonb)
-              || jsonb_build_object(
-                'budget_epoch_reset_at',now(),
-                'budget_epoch_reason','TARGETED_RELAUNCH',
-                'targeted_budget_variant',${variantKey}::text
-              ),
-            updated_at=now()
-          where id=${packId}::uuid`;
+      const circuitState=await prospectCircuitState(sql,pack.prospect_id);
+      const circuitOverridePending=circuitState.open
+        ? await packCircuitOverridePending(sql,packId)
+        : false;
+      if(circuitState.open && !circuitOverridePending) {
+        return json({
+          ok:false,error:"GENERATION_CIRCUIT_BREAKER",status:"ESCALATION_REQUIRED",
+          pack_id:packId,variant_key:variantKey,targeted_relaunch:true
+        },409);
       }
 
       const prior=await sql`
@@ -323,6 +310,31 @@ export default {
         },409);
       }
 
+      if(resetBudget) {
+        await sql`
+          update render_v2_packs
+          set metrics=
+            (coalesce(metrics,'{}'::jsonb)-'ai_calls'-'browser_captures'-'budget_epoch'-'previous_budget_epoch')
+            || jsonb_build_object(
+              'ai_calls',0,
+              'browser_captures',0,
+              'prior_epoch_ai_calls',
+                coalesce((metrics->>'prior_epoch_ai_calls')::int,0)+coalesce((metrics->>'ai_calls')::int,0),
+              'prior_epoch_browser_captures',
+                coalesce((metrics->>'prior_epoch_browser_captures')::int,0)+coalesce((metrics->>'browser_captures')::int,0),
+              'budget_epoch',${runKey}::text,
+              'previous_budget_epoch',coalesce(metrics->>'budget_epoch','')
+            ),
+            metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'budget_epoch_reset_at',now(),
+                'budget_epoch_reason','TARGETED_RELAUNCH',
+                'targeted_budget_variant',${variantKey}::text
+              ),
+            updated_at=now()
+          where id=${packId}::uuid`;
+      }
+
       const params={
         prospectId:pack.prospect_id,
         packId,
@@ -345,11 +357,66 @@ export default {
       await persistWorkflow(sql,{
         prospectId:pack.prospect_id,packId,variantId:variant.id,type:"VARIANT",
         instanceId,status:"QUEUED",
-        metadata:{variant_key:variantKey,event_prefix:eventPrefix,run_key:runKey,targeted_relaunch:true,force_relaunch:force,reset_budget:resetBudget,parent_workflow_instance_id:parentWorkflowInstanceId,relaunch_reason:relaunchReason}
+        metadata:{
+          variant_key:variantKey,event_prefix:eventPrefix,run_key:runKey,targeted_relaunch:true,
+          force_relaunch:force,reset_budget:resetBudget,parent_workflow_instance_id:parentWorkflowInstanceId,
+          relaunch_reason:relaunchReason,circuit_breaker_override:circuitOverridePending
+        }
       });
-      const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
-      await setPackStatus(sql,packId,"GENERATING",{targeted_relaunch:{variant_key:variantKey,run_key:runKey,force,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId}});
-      return json({ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,force,reset_budget:resetBudget,event_prefix:eventPrefix,parent_workflow_instance_id:parentWorkflowInstanceId,status:await instance.status()},202);
+      let instance;
+      try {
+        instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
+      } catch(error) {
+        await sql`
+          update render_workflows_v2
+          set status='FAILED',completed_at=now(),last_event_at=now(),
+              current_step='TARGETED_RELAUNCH_CREATE_FAILED',
+              error_code='WORKFLOW_CREATE_FAILED',
+              metadata=coalesce(metadata,'{}'::jsonb)
+                || ${JSON.stringify({targeted_relaunch_create_failed:true})}::jsonb
+                || jsonb_build_object('create_error',${String(error?.message||error).slice(0,1000)}::text)
+          where workflow_instance_id=${instanceId}`;
+        await setPackStatus(sql,packId,"ESCALATION_REQUIRED",{
+          targeted_relaunch_create_failed:true,
+          targeted_relaunch_run_key:runKey
+        });
+        return json({ok:false,error:"WORKFLOW_CREATE_FAILED",pack_id:packId,variant_key:variantKey},502);
+      }
+
+      if(circuitOverridePending) {
+        const consumed=await consumePackCircuitOverride(sql,packId,"TARGETED_RELAUNCH:"+runKey);
+        if(!consumed) {
+          try { await instance.terminate({rollback:false}); } catch {}
+          await sql`
+            update render_workflows_v2
+            set status='CANCELLED',completed_at=now(),last_event_at=now(),
+                current_step='CIRCUIT_OVERRIDE_CONSUME_FAILED',
+                error_code='GENERATION_CIRCUIT_BREAKER',
+                metadata=coalesce(metadata,'{}'::jsonb)
+                  || ${JSON.stringify({circuit_override_consume_failed:true})}::jsonb
+            where workflow_instance_id=${instanceId}`;
+          await setPackStatus(sql,packId,"ESCALATION_REQUIRED",{
+            circuit_override_consume_failed:true,
+            circuit_override_run_key:runKey
+          });
+          return json({ok:false,error:"CIRCUIT_OVERRIDE_CONSUME_FAILED",pack_id:packId,variant_key:variantKey},409);
+        }
+      }
+
+      await setPackStatus(sql,packId,"GENERATING",{
+        targeted_relaunch:{
+          variant_key:variantKey,run_key:runKey,force,event_prefix:eventPrefix,
+          parent_workflow_instance_id:parentWorkflowInstanceId,
+          circuit_breaker_override:circuitOverridePending
+        }
+      });
+      return json({
+        ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,
+        force,reset_budget:resetBudget,event_prefix:eventPrefix,
+        parent_workflow_instance_id:parentWorkflowInstanceId,
+        circuit_breaker_override:circuitOverridePending,
+        status:await instance.status()
+      },202);
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/relaunch-variants") {
