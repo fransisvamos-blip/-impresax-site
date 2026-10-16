@@ -306,3 +306,11 @@ test("single verified service renders as intentional feature",()=>{
   assert.match(grammar,/\.ixb-service-row--feature\{min-height:360px/);
   assert.match(grammar,/\.ixb-service-row--feature\{min-height:0;grid-template-columns:1fr/);
 });
+
+test("execution sanitizes legacy service placeholders and duplicate trust intro",()=>{
+  assert.match(ai,/\^servizi\?o\\s\*\\d\+\$\/i/);
+  assert.match(ai,/verifiedServiceTitle\(body\)\|\|title/);
+  assert.match(ai,/const trustNorms=new Set\(trustTexts\.map\(norm\)\)/);
+  assert.match(ai,/rawTrustIntro && !trustNorms\.has\(norm\(rawTrustIntro\)\)/);
+  assert.match(ai,/"Dati verificati"/);
+});
