@@ -562,8 +562,15 @@ export async function combineCreativePlan(contentTruth,directions) {
 export function buildCopyManifest(content) {
   const services=Array.isArray(content?.services)?content.services:[];
   const trustPoints=Array.isArray(content?.trust_points)?content.trust_points:[];
-  const serviceTitles=services.map(x=>String(x?.title||"").trim()).filter(Boolean);
   const serviceBodies=services.map(x=>String(x?.description||"").trim()).filter(Boolean);
+  const serviceTitles=services.map((x,i)=>{
+    const title=String(x?.title||"").replace(/\s+/g," ").trim();
+    const body=String(x?.description||"").replace(/\s+/g," ").trim();
+    if(/^servizi?o\s*\d+$/i.test(title) || /^service\s*\d+$/i.test(title)) {
+      return verifiedServiceTitle(body)||title;
+    }
+    return title;
+  }).filter(Boolean);
   const trustTexts=trustPoints.map(x=>String(x?.text||"").trim()).filter(Boolean);
   const norm=value=>String(value||"").replace(/\s+/g," ").trim().toLowerCase();
   const used=new Set();
@@ -604,11 +611,12 @@ export function buildCopyManifest(content) {
     content?.locality_line
   ],positioningBody);
   const trustTitle=choose([content?.trust_title,"Perché scegliere noi"],"Perché scegliere noi");
+  const trustNorms=new Set(trustTexts.map(norm));
+  const rawTrustIntro=String(content?.trust_intro||"").replace(/\s+/g," ").trim();
   const trustIntro=choose([
-    content?.trust_intro,
-    trustTexts.slice(0,2).join(" · "),
-    trustTexts[0],
-    content?.locality_line
+    rawTrustIntro && !trustNorms.has(norm(rawTrustIntro)) ? rawTrustIntro : "",
+    content?.locality_line,
+    "Dati verificati"
   ],positioningBody);
   const closingTitle=choose([
     content?.closing_title,
@@ -640,8 +648,13 @@ export function buildCopyManifest(content) {
     FOOTER_LINE:String(content?.footer_line||"").trim()
   };
   services.forEach((s,i)=>{
-    out["SERVICE_"+(i+1)+"_TITLE"]=String(s?.title||"").trim();
-    out["SERVICE_"+(i+1)+"_BODY"]=String(s?.description||"").trim();
+    const rawTitle=String(s?.title||"").replace(/\s+/g," ").trim();
+    const body=String(s?.description||"").replace(/\s+/g," ").trim();
+    out["SERVICE_"+(i+1)+"_TITLE"]=
+      (/^servizi?o\s*\d+$/i.test(rawTitle) || /^service\s*\d+$/i.test(rawTitle))
+        ? (verifiedServiceTitle(body)||rawTitle)
+        : rawTitle;
+    out["SERVICE_"+(i+1)+"_BODY"]=body;
   });
   trustPoints.forEach((s,i)=>{ out["TRUST_"+(i+1)]=String(s?.text||"").trim(); });
   return out;
