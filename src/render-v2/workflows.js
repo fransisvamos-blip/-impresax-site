@@ -292,7 +292,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const planRows=await sql`select * from render_creative_plans_v2 where render_pack_id=${params.packId}::uuid limit 1`;
       if(!planRows.length) throw new Error("SYSTEM_INVARIANT:CREATIVE_PLAN_NOT_FOUND");
       const plan=planRows[0];
-      const inputPayload=input.payload;
+      const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
+      const renderProfile=String(packRows[0]?.metadata?.render_profile||"").trim();
+      const inputPayload=renderProfile
+        ? {...input.payload,render_profile:renderProfile}
+        : input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack,inputPayload);
       if(inputPayload.primary_cta) copyManifest.PRIMARY_CTA_LABEL=String(inputPayload.primary_cta);
