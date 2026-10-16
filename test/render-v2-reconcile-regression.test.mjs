@@ -456,3 +456,33 @@ test("locked pilot hero also uses deterministic Premium V3 layout",()=>{
   assert.match(workflows,/context\.heroOnly && cycle===1/);
   assert.match(workflows,/buildZeroPhotoPremiumSpec/);
 });
+
+
+test("logo-first master profile drives visual system from official logo",()=>{
+  assert.match(workflows,/logo_first_brand_profile/);
+  assert.match(workflows,/brand_gate_mode:"LOGO_FIRST_V1"/);
+  assert.match(grammar,/logoFirstBrandProfile/);
+  assert.match(grammar,/LOGO_FIRST_MASTER_V1/);
+  assert.match(grammar,/HORIZONTAL_SPEED_LINES_ECHOING_LOGO_D|repeating-linear-gradient/);
+  assert.match(grammar,/border-radius:2px!important/);
+  assert.match(grammar,/font-family:Arial,Helvetica,sans-serif!important/);
+});
+
+test("logo-first master approval requires 9 of 10 desirability gates",()=>{
+  assert.match(constants,/logo_integration_quality/);
+  assert.match(constants,/hero_full_bleed_quality/);
+  assert.match(constants,/wow_effect/);
+  assert.match(constants,/preview_sales_power/);
+  assert.match(ai,/masterGateFloor>=9/);
+  assert.match(ai,/prospect_desire/);
+  assert.match(ai,/preview_sales_power/);
+});
+
+test("single-prospect pilot hard-locks rollout and reconciler",()=>{
+  assert.match(rollout,/function pilotMasterLocked/);
+  assert.match(rollout,/awaiting:"APPROVED_MASTER_REFERENCE"/);
+  assert.match(rollout,/phase='PILOT_SINGLE_PROSPECT'/);
+  assert.match(reconcile,/pilot_awaiting_cabina_approval/);
+  assert.match(reconcile,/global_queue:false/);
+  assert.match(reconcile,/awaiting:"APPROVED_MASTER_REFERENCE"/);
+});
