@@ -29,6 +29,17 @@ function isIndustrialMaterialsContext(inputPayload={}) {
     /edil|costruz|cement|materiali|rebar|tondo|acciaio/.test(hay);
 }
 
+function isConstructionContext(inputPayload={}) {
+  const hay=[
+    inputPayload.vertical,
+    inputPayload.verified_services,
+    inputPayload.brand_dna?.offer,
+    inputPayload.brand_dna?.business_type,
+    inputPayload.brand_dna?.business_positioning
+  ].map(x=>String(x||"").toLowerCase()).join(" ");
+  return /edil|costruz|construction|cantiere|ristruttur|immobil|architett/.test(hay);
+}
+
 function isGeneralContractorInfrastructureContext(inputPayload={}) {
   const hay=[
     inputPayload.vertical,
@@ -67,6 +78,9 @@ function variantComposition(variantKey,inputPayload={}) {
   if(variantKey==="C") {
     return "Trust-and-collaboration composition: two relevant professionals or a professional with a client reviewing the work/context; subjects placed away from the copy area; sophisticated editorial realism.";
   }
+  if(isConstructionContext(inputPayload)) {
+    return "Construction-first flagship composition: use a close-to-medium exterior site perspective where the actual structure, façade, concrete/steel frame, scaffolding or active construction geometry occupies roughly 65–80% of the frame. The building/site is the dominant focal subject, not the sky. Keep visible sky to about 20% or less and never use a large pale/white sky area as breathing room. Place the strongest structural focal point inside the central 55% horizontally and central 65% vertically so a 390px portrait crop remains dense and credible. Human presence may be small and secondary. Avoid empty horizon, distant tiny buildings, luxury staging, generic office imagery and decorative negative space.";
+  }
   return "Flagship operational composition: one relevant professional supervising or performing the core work in a premium real-world setting; subject placed within a mobile-safe composition with natural breathing room for later HTML copy.";
 }
 
@@ -86,7 +100,7 @@ function sectorDirection(inputPayload={}) {
     return "Show a believable high-capacity Italian general-contractor context tied to the verified offer: civil, industrial, hospital/institutional construction, technological installations or road/infrastructure works. Prefer EXTERIOR works in progress, structural scale, authentic site logistics, concrete/steel and real construction texture. Do not depict luxury residential interiors, finished villas, domestic renovation, glossy showroom architecture, staged tablet meetings or invented branded projects. The image must communicate execution scale and technical credibility without claiming a specific completed project.";
   }
   if(/edil|costruz|ristruttur|cantiere|immobil|architett/.test(hay)) {
-    return "Show a believable high-end Italian construction / renovation context: quality building site, refined residential or commercial architecture, scaffolding or materials only where natural, clean professional workwear, credible site supervision or craftsmanship. Avoid generic corporate offices.";
+    return "Show a believable high-end Italian construction / renovation context: quality building site, refined residential or commercial architecture, scaffolding or materials only where natural, clean professional workwear, credible site supervision or craftsmanship. Make the built structure or active construction geometry fill most of the frame; keep sky to roughly 20% or less and never let blank sky dominate the upper half. Avoid distant tiny subjects, empty horizons, generic corporate offices and decorative negative space.";
   }
   if(/dent|odont|medic|fisioter|clinic|salute|sanit/.test(hay)) {
     return "Show a premium, clean, believable healthcare environment relevant to the verified service, with professional staff and equipment appropriate to the field. Avoid fake procedures, dramatic illness, or generic office imagery.";
@@ -138,7 +152,7 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
     "Avoid obvious AI artifacts, uncanny hands/faces, impossible architecture, oversaturated advertising gloss, generic stock-photo poses and empty decorative scenes.",
     sector,
     variantComposition(variantKey,inputPayload),
-    "This output must be a FULL-FRAME RAW PHOTOGRAPH only — never a web mockup, split-layout graphic, copy panel, poster, collage, UI or composed landing-page hero. Natural empty wall/floor/air can provide breathing room, but do not create a blank graphic rectangle or text area inside the image. Strong focal point, premium realistic depth/light/materiality, and a center-safe subject must survive a 390px mobile crop.",
+    "This output must be a FULL-FRAME RAW PHOTOGRAPH only — never a web mockup, split-layout graphic, copy panel, poster, collage, UI or composed landing-page hero. Natural breathing room is allowed only when it remains visually subordinate to the verified subject; never let blank sky, wall, floor or air dominate the frame. Strong focal point, premium realistic depth/light/materiality, and a center-safe subject must survive a 390px mobile crop.",
     "Use natural European/Italian visual cues only when compatible with the verified city/context; do not invent a recognizable exact location.",
     "Direction intent: "+clean(direction?.hero_logic||direction?.core_idea,700),
     feedback?"REWORK FEEDBACK FROM PRIOR HERO QA: "+clean(feedback,1200):"",
