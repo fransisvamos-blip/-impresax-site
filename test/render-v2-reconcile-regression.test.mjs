@@ -13,6 +13,8 @@ const concurrency=fs.readFileSync(new URL("../src/render-v2/concurrency.js",impo
 const grammar=fs.readFileSync(new URL("../src/render-v2/design-grammar.js",import.meta.url),"utf8");
 const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
 const failurePolicy=fs.readFileSync(new URL("../src/render-v2/failure-policy.js",import.meta.url),"utf8");
+const health=fs.readFileSync(new URL("../src/render-v2/health.js",import.meta.url),"utf8");
+const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
@@ -313,4 +315,17 @@ test("execution sanitizes legacy service placeholders and duplicate trust intro"
   assert.match(ai,/const trustNorms=new Set\(trustTexts\.map\(norm\)\)/);
   assert.match(ai,/rawTrustIntro && !trustNorms\.has\(norm\(rawTrustIntro\)\)/);
   assert.match(ai,/"Dati verificati"/);
+});
+
+test("healthz exposes authoritative operational invariants",()=>{
+  assert.match(health,/export async function operationalInvariantSnapshot/);
+  assert.match(health,/invalid_v3_ready/);
+  assert.match(health,/duplicate_active_variant_workflows/);
+  assert.match(health,/ghost_generating/);
+  assert.match(health,/partial_wave_incoherent/);
+  assert.match(health,/exhausted_input_projection_stale/);
+  assert.match(health,/ready_projection_stale/);
+  assert.match(health,/v\.status in \('GENERATING','PREVIEW_READY','QA_RUNNING','REWORK'\)/);
+  assert.match(index,/operational_ok:operational_invariants\?\.operational_ok===true/);
+  assert.match(index,/operational_invariants/);
 });
