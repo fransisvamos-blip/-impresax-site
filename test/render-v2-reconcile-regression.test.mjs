@@ -6,6 +6,7 @@ const reconcile=fs.readFileSync(new URL("../src/render-v2/reconcile.js",import.m
 const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
 const hero=fs.readFileSync(new URL("../src/render-v2/hero.js",import.meta.url),"utf8");
 const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.meta.url),"utf8");
+const rollout=fs.readFileSync(new URL("../src/render-v2/rollout.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
@@ -74,4 +75,17 @@ test("targeted circuit override is consumed only after workflow creation",()=>{
   assert.ok(createAt>=0 && consumeAt>createAt,"override must be consumed after successful workflow creation");
   assert.match(index,/WORKFLOW_CREATE_FAILED/);
   assert.match(index,/CIRCUIT_OVERRIDE_CONSUME_FAILED/);
+});
+
+test("obsolete escalations are rebuilt instead of recycled",()=>{
+  assert.match(inputPack,/superseded_by_contract_upgrade/);
+  assert.match(inputPack,/superseded_to_quality_contract/);
+  assert.match(inputPack,/status='SUPERSEDED'/);
+  assert.match(inputPack,/status in \('QUEUED','RUNNING','PAUSED'\)/);
+});
+
+test("queue admits obsolete escalation packs for Premium V3 migration",()=>{
+  assert.match(rollout,/rp\.status='ESCALATION_REQUIRED'/);
+  assert.match(rollout,/QUALITY_CONTRACT_VERSION/);
+  assert.match(rollout,/EXECUTION_ENGINE_VERSION/);
 });
