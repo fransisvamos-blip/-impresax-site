@@ -134,3 +134,10 @@ test("fully deferred initial packs stay PLANNING until a variant starts",()=>{
   assert.match(reconcile,/INITIAL_VARIANTS_DEFERRED_CONCURRENCY/);
   assert.match(reconcile,/deferred_concurrency_released_at/);
 });
+
+test("unverified content refs sanitize to deterministic verified fallback",()=>{
+  assert.match(ai,/source_sanitized:true/);
+  assert.match(ai,/source_gate_issues:sourceGate\.issues/);
+  assert.match(ai,/buildVerifiedFallbackTruth\(inputPayload\)/);
+  assert.doesNotMatch(ai,/if\(!sourceGate\.pass\) throw new Error\("CONTENT_TRUTH_SOURCE_INVALID/);
+});
