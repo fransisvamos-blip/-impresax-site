@@ -132,7 +132,34 @@ export function certifyInputPayload(payload) {
 export async function createShadowInputPack(env,prospectRef) {
   const sql=db(env);
   const prospect=await getProspect(sql,prospectRef);
-  const existing=await findActiveV2Pack(sql,prospect.id);
+  let existing=await findActiveV2Pack(sql,prospect.id);
+  if(existing && (
+    String(existing.quality_contract_version||"")!==QUALITY_CONTRACT_VERSION ||
+    String(existing.execution_engine_version||"")!==EXECUTION_ENGINE_VERSION
+  )) {
+    const activeRows=await sql`
+      select count(*)::int n
+      from render_workflows_v2
+      where render_pack_id=${existing.id}::uuid
+        and status in ('QUEUED','RUNNING','PAUSED')`;
+    const migratable=["ESCALATION_REQUIRED","INPUT_READY","INPUT_BLOCKED"].includes(String(existing.status||""));
+    if(Number(activeRows[0]?.n||0)===0 && migratable) {
+      await sql`
+        update render_v2_packs
+        set status='SUPERSEDED',
+            metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+              'superseded_by_contract_upgrade',true,
+              'superseded_from_quality_contract',coalesce(quality_contract_version,''),
+              'superseded_from_engine',coalesce(execution_engine_version,''),
+              'superseded_to_quality_contract',${QUALITY_CONTRACT_VERSION}::text,
+              'superseded_to_engine',${EXECUTION_ENGINE_VERSION}::text,
+              'superseded_at',to_jsonb(now())
+            ),
+            updated_at=now()
+        where id=${existing.id}::uuid`;
+      existing=null;
+    }
+  }
   if(existing) {
     const rows=await sql`select * from render_input_packs where render_pack_id=${existing.id}::uuid limit 1`;
     if(rows.length) {
