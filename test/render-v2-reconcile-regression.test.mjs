@@ -408,3 +408,10 @@ test("ImpresaX pilot headline is derived from verified service titles",()=>{
   assert.match(ai,/render_profile\|\|""\)===\"IMPRESAX_MASTER_V1\"/);
   assert.match(ai,/serviceTitles\.slice\(0,2\)/);
 });
+
+
+test("ImpresaX master preserves official logo inside intentional brand plaques",()=>{
+  assert.match(grammar,/\.ix-v2-brand\{position:relative;background:#f7f6f2!important/);
+  assert.match(grammar,/\.ix-v2-footer-identity\{display:inline-flex!important;width:max-content!important/);
+  assert.match(grammar,/\.ix-v2-footer-logo\{display:block!important;max-height:54px!important/);
+});
