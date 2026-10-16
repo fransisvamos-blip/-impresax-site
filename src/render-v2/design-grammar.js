@@ -50,7 +50,8 @@ function verifiedAccent(inputPayload) {
 
 export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
   const accent=verifiedAccent(inputPayload);
-  const impresaxMasterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
+  const logoFirstDirection=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1";
+  const impresaxMasterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1" || logoFirstDirection;
   const shared={
     asset_tokens:["HERO_VISUAL"],
     execution_constraints:{
