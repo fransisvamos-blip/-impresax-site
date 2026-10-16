@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: diagnose-idle-queue-20261016-1447
+# rollout kick trigger: post-exhausted-selector-fix-20261016-1453
 
 on:
   push:
