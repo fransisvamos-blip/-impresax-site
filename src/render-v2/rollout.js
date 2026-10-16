@@ -2,7 +2,7 @@ import { db, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { prospectCircuitState } from "./circuit.js";
-import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION } from "./constants.js";
+import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, REMEDIATION_POLICY_VERSION } from "./constants.js";
 
 export const GOLDEN_CASES=[
   {code:"CZ-063",expected:"PASS"},
@@ -439,13 +439,20 @@ async function drainQueue(env,sql,state) {
   if(remediationSlots>0 && env.RENDER_INPUT_REMEDIATION_WORKFLOW) {
     const blockedPacks=await sql`
       select rp.id pack_id,rp.prospect_id,p.rank,p.business_name,
-             coalesce((p.source_data->>'v2_remediation_attempts')::int,0) remediation_attempts
+             case
+               when coalesce(p.source_data->>'v2_remediation_policy_version','')=${REMEDIATION_POLICY_VERSION}
+                 then coalesce((p.source_data->>'v2_remediation_attempts')::int,0)
+               else 0
+             end remediation_attempts
       from render_v2_packs rp
       join prospects p on p.id=rp.prospect_id
       where rp.shadow_mode=true
         and rp.status='INPUT_BLOCKED'
         and p.rank is not null and p.rank<=50
-        and coalesce((p.source_data->>'v2_remediation_attempts')::int,0)<2
+        and (
+          coalesce(p.source_data->>'v2_remediation_policy_version','')<>${REMEDIATION_POLICY_VERSION}
+          or coalesce((p.source_data->>'v2_remediation_attempts')::int,0)<2
+        )
         and not exists (
           select 1 from render_workflows_v2 w
           where w.render_pack_id=rp.id
@@ -458,7 +465,8 @@ async function drainQueue(env,sql,state) {
     for(const item of blockedPacks) {
       if(remediationSlots<=0) break;
       const attempt=n(item.remediation_attempts)+1;
-      const instanceId="rv2-remediate-"+item.pack_id+"-"+attempt;
+      const remediationPolicyTag=String(REMEDIATION_POLICY_VERSION).toLowerCase().replace(/[^a-z0-9]+/g,"-").slice(0,28);
+      const instanceId="rv2-remediate-"+item.pack_id+"-"+remediationPolicyTag+"-"+attempt;
       const existing=await sql`select 1 from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
       if(existing.length) continue;
       await persistWorkflow(sql,{
@@ -467,7 +475,7 @@ async function drainQueue(env,sql,state) {
         type:"INPUT_REMEDIATION",
         instanceId,
         status:"QUEUED",
-        metadata:{attempt,rank:item.rank}
+        metadata:{attempt,rank:item.rank,remediation_policy_version:REMEDIATION_POLICY_VERSION}
       });
       const instance=await env.RENDER_INPUT_REMEDIATION_WORKFLOW.create({
         id:instanceId,
