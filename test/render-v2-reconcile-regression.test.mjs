@@ -356,7 +356,9 @@ test("render profile is pack scoped and injected without mutating certified inpu
   assert.match(workflows,/select metadata from render_v2_packs where id=\$\{params\.packId\}::uuid/);
   assert.match(workflows,/const packMetadata=packRows\[0\]\?\.metadata\|\|\{\}/);
   assert.match(workflows,/String\(packMetadata\.render_profile\|\|""\)\.trim\(\)/);
-  assert.match(workflows,/\{\.\.\.input\.payload,render_profile:renderProfile\}/);
+  assert.match(workflows,/logoFirstBrandProfile=packMetadata\.logo_first_brand_profile\|\|null/);
+  assert.match(workflows,/\.\.\.input\.payload/);
+  assert.match(workflows,/brand_gate_mode:"LOGO_FIRST_V1"/);
 });
 
 
