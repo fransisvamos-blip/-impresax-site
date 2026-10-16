@@ -851,6 +851,88 @@ export async function startOrRecoverParent(env,sql,pack) {
   return {instance_id:instanceId,status:await instance.status()};
 }
 
+async function syncProspectRenderProjection(sql) {
+  const rows=await sql`
+    with latest_pack as (
+      select distinct on (p.prospect_id)
+        p.prospect_id,p.id pack_id,p.status,p.metadata,p.quality_contract_version,p.execution_engine_version,p.created_at,
+        (
+          select f.failure_code
+          from render_failures_v2 f
+          where f.render_pack_id=p.id
+          order by f.created_at desc
+          limit 1
+        ) latest_failure_code
+      from render_v2_packs p
+      join prospects pr0 on pr0.id=p.prospect_id
+      where p.status not in ('SUPERSEDED','CANCELLED','ARCHIVED')
+        and pr0.rank is not null
+        and pr0.rank<=50
+      order by p.prospect_id,p.created_at desc
+    ),
+    desired as (
+      select prospect_id,pack_id,
+        case
+          when status='RENDER_READY' then 'RENDER_READY'
+          when status='GENERATING' then 'GENERATING'
+          when status='QA_RUNNING' then 'QA_RUNNING'
+          when status in ('PREVIEW_READY','PREVIEW_PARTIAL') then 'PREVIEW_READY'
+          when status='REWORK' then 'REWORK'
+          when status='PLANNING' then 'PLANNING'
+          when status='INPUT_READY' then 'INPUT_READY'
+          when status='ESCALATION_REQUIRED' then 'ESCALATION_REQUIRED'
+          when status='INPUT_BLOCKED' then 'INPUT_BLOCKED'
+          else status
+        end render_status,
+        case
+          when status='RENDER_READY' then 'CABINA_RENDER_REVIEW'
+          when status='GENERATING' then 'RENDER_V2_GENERATING'
+          when status='QA_RUNNING' then 'RENDER_V2_QA'
+          when status in ('PREVIEW_READY','PREVIEW_PARTIAL') then 'RENDER_V2_PREVIEW'
+          when status='REWORK' then 'RENDER_V2_REWORK'
+          when status='PLANNING' then 'RENDER_V2_PLANNING'
+          when status='INPUT_READY' then 'RENDER_QUEUE_WAIT'
+          when status='ESCALATION_REQUIRED' then 'RENDER_ESCALATION_REQUIRED'
+          when status='INPUT_BLOCKED' and coalesce((metadata->>'remediation_exhausted')::boolean,false)=true then 'INPUT_EVIDENCE_REQUIRED'
+          when status='INPUT_BLOCKED' then 'INPUT_REMEDIATION'
+          else 'RENDER_V2_'||status
+        end current_step,
+        case
+          when status in ('RENDER_READY','GENERATING','QA_RUNNING','PREVIEW_READY','PREVIEW_PARTIAL','REWORK','PLANNING','INPUT_READY') then null
+          when status='INPUT_BLOCKED' and coalesce((metadata->>'remediation_exhausted')::boolean,false)=true then 'V2_INPUT_EVIDENCE_EXHAUSTED'
+          when status='INPUT_BLOCKED' then 'V2_INPUT_BLOCKED'
+          when status='ESCALATION_REQUIRED' then coalesce(latest_failure_code,'V2_RENDER_ESCALATION_REQUIRED')
+          else latest_failure_code
+        end error,
+        case
+          when status='RENDER_READY' then 'CABINA_RENDER_SELECTION'
+          when status in ('GENERATING','QA_RUNNING','PREVIEW_READY','PREVIEW_PARTIAL','REWORK','PLANNING') then 'AUTO_RENDERING'
+          when status='INPUT_READY' then 'WAIT_RENDER_CAPACITY'
+          when status='ESCALATION_REQUIRED' then 'AUTO_RECOVERY_OR_CABINA'
+          when status='INPUT_BLOCKED' and coalesce((metadata->>'remediation_exhausted')::boolean,false)=true then 'SOURCE_ENRICHMENT_REQUIRED'
+          when status='INPUT_BLOCKED' then 'INPUT_REMEDIATION'
+          else 'MONITOR'
+        end next_action
+      from latest_pack
+    )
+    update prospects pr
+    set render_status=d.render_status,
+        current_step=d.current_step,
+        error=d.error,
+        next_action=d.next_action,
+        updated_at=now()
+    from desired d
+    where pr.id=d.prospect_id
+      and (
+        pr.render_status is distinct from d.render_status
+        or pr.current_step is distinct from d.current_step
+        or pr.error is distinct from d.error
+        or pr.next_action is distinct from d.next_action
+      )
+    returning pr.id,d.pack_id,pr.render_status,pr.current_step,pr.error,pr.next_action`;
+  return {updated:rows.length,prospects:rows};
+}
+
 async function syncCurrentSetQaCaches(sql) {
   const rows=await sql`
     with current_revs as (
@@ -909,6 +991,7 @@ async function syncCurrentSetQaCaches(sql) {
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
+  summary.prospect_projection_sync=await syncProspectRenderProjection(sql);
   summary.set_qa_cache_sync=await syncCurrentSetQaCaches(sql);
   summary.circuit_breaker_terminated=await enforceProspectCircuitBreakers(env,sql);
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
