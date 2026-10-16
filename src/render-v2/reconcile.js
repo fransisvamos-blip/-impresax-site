@@ -226,6 +226,25 @@ async function preemptLowerPriorityRecoveryForQualityUpgrade(env,sql) {
           and p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION}
         )
       )
+      and exists (
+        select 1
+        from render_v2_variants lv
+        left join render_variant_revisions lr
+          on lr.variant_id=lv.id and lr.revision=lv.certified_revision
+        where lv.render_pack_id=p.id
+          and not (
+            lv.status='RENDER_READY'
+            and lv.certified_revision is not null
+            and coalesce(lr.compiler_version,'')=${COMPILER_VERSION}
+          )
+          and not exists (
+            select 1
+            from render_workflows_v2 law
+            where law.variant_id=lv.id
+              and law.workflow_type='VARIANT'
+              and law.status in ('QUEUED','RUNNING','PAUSED')
+          )
+      )
     order by
       case when p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION} then 0 else 1 end,
       pr.rank asc nulls last,p.priority asc,p.render_ready_at asc nulls first
