@@ -144,6 +144,10 @@ export function explicitHeroAsset(assets={}) {
 
 export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null}) {
   const sector=sectorDirection(inputPayload);
+  const masterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
+  const masterFullBleed=masterProfile
+    ? "IMPRESAX MASTER FULL-BLEED CONTRACT: the ENTIRE 3:2 frame must remain a continuous real photograph with credible material/environment detail from left edge to right edge and top to bottom. ZERO blank copy panels, gray fields, flat gradients baked into the image, empty walls, empty sky, artificial negative-space blocks or split-layout composition. Do NOT reserve a blank side for text. HTML will overlay the copy later. Keep photographic detail underneath the future text area; readability will be handled by a CSS gradient. For construction-materials/rebar imagery, use layered steel/rebar depth across the full width, with the primary material subject spanning the frame and no dead half-frame."
+    : "";
   return [
     "Create ONE premium photorealistic editorial hero photograph for a high-end business website.",
     "The image must be visually arresting, commercially credible, realistic and directly relevant to the VERIFIED business context below.",
@@ -151,6 +155,7 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
     "ABSOLUTE NO-TEXT RULE: render ZERO visible letters, words, numbers, logos, signage, labels, UI, watermarks, certification marks, number plates or typographic shapes anywhere in the photograph. Surfaces that would normally contain writing must be blank, turned away, out of focus or non-readable. Do not invent pseudo-text or gibberish.",
     "Avoid obvious AI artifacts, uncanny hands/faces, impossible architecture, oversaturated advertising gloss, generic stock-photo poses and empty decorative scenes.",
     sector,
+    masterFullBleed,
     variantComposition(variantKey,inputPayload),
     "This output must be a FULL-FRAME RAW PHOTOGRAPH only — never a web mockup, split-layout graphic, copy panel, poster, collage, UI or composed landing-page hero. Natural breathing room is allowed only when it remains visually subordinate to the verified subject; never let blank sky, wall, floor or air dominate the frame. Strong focal point, premium realistic depth/light/materiality, and a center-safe subject must survive a 390px mobile crop.",
     "Use natural European/Italian visual cues only when compatible with the verified city/context; do not invent a recognizable exact location.",
