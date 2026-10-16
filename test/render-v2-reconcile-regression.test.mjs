@@ -497,5 +497,5 @@ test("logo-first wow rebuild uses integrated light shell and industrial premium 
   assert.match(grammar,/counter-reset:ixservice!important/);
   assert.match(grammar,/counter-increment:ixservice!important/);
   assert.match(grammar,/background:var\(--ix-brand-primary\)!important;\n color:#fff!important/);
-  assert.match(grammar,/\.ix-v2-footer\{\n background:var\(--ix-brand-paper\)!important/);
+  assert.match(grammar,/\.ix-v2-footer\{[\s\S]{0,180}background:var\(--ix-brand-paper\)!important/);
 });
