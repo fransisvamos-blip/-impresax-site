@@ -696,6 +696,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     asset_tokens:(direction?.asset_tokens||[]).filter(x=>allowedAssets.includes(x))
   };
   const zeroPhoto=allowedAssets.length===0;
+  const impresaxMasterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
   const layoutContext={
     locale:inputPayload?.locale||"it-IT",
     asset_mode:inputPayload?.asset_mode||null,
@@ -725,7 +726,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- positioning MUST visibly use {{copy:POSITIONING_TITLE}} and {{copy:POSITIONING_BODY}}.",
     "- final-cta MUST visibly use {{copy:CLOSING_TITLE}}, {{copy:CLOSING_BODY}} and at least {{cta:PRIMARY}}.",
     "- Do not create a thin brochure: each section needs clear purpose, editorial hierarchy and enough breathing room to feel intentionally art-directed.",
-    "- NEVER repeat the same sentence verbatim across HERO_BODY, POSITIONING_BODY, SERVICES_INTRO, TRUST_INTRO and CLOSING_BODY. Each section must advance the story with a distinct verified angle.",
+    "- NEVER repeat the same sentence verbatim across HERO_BODY, POSITIONING_BODY, SERVICES_INTRO, TRUST_INTRO, BRIDGE_BODY and CLOSING_BODY. Each section must advance the story with a distinct verified angle.",
+    impresaxMasterProfile?"- IMPRESAX MASTER BRIDGE: bridge must visibly use {{copy:BRIDGE_TITLE}} and {{copy:BRIDGE_BODY}}; do not reuse {{copy:POSITIONING_BODY}} in bridge. Keep bridge visually distinct from final-cta.":"",
+    impresaxMasterProfile?"- IMPRESAX MASTER MOBILE NAV: keep the compiler-owned navigation visibly readable as a deliberate second row under logo/CTA; do not hide it or visually collapse it.":"",
     "- Do not repeat a trust statement as both section intro and trust card copy. Use the intro to frame the proof; use the cards for the proof itself.",
     "- Hero anchors must look like designed buttons, not tiny inline text links: give both clear button classes, minimum touch target around 44px, visible padding/border/fill and strong hierarchy between primary and secondary actions.",
     "- Every visible text node, including section labels, eyebrows, numbers, captions, badges and microcopy, MUST be an exact {{copy:TOKEN_NAME}} token.",
@@ -733,8 +736,12 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- CTA href values MUST be exactly {{cta:PRIMARY}} or {{cta:SECONDARY}}.",
     "- Images, only when allowedAssets is non-empty, MUST be exactly src=\"{{asset:TOKEN_NAME}}\" with a listed token.",
     "- HERO CONTRACT: the first <section id=\"hero\"> MUST contain exactly one real <img> using src=\"{{asset:HERO_VISUAL}}\". HERO_VISUAL is mandatory and must be visually dominant, never hidden, decorative-only or placed below the fold.",
-    "- HERO CONTRACT: desktop must reserve approximately 40-60% of the hero composition for the photographic visual while preserving a deliberate copy field for headline + CTA; mobile must use an intentional crop/object-position that keeps the subject legible at 390px.",
-    "- HERO CONTRACT: do not put headline text inside the image. Keep all copy as verified HTML tokens over/alongside the image with sufficient contrast.",
+    impresaxMasterProfile
+      ? "- IMPRESAX MASTER HERO CONTRACT: HERO_VISUAL must fill the ENTIRE hero background edge-to-edge at desktop and mobile, with zero side gutters or split-panel geometry. The verified headline, body and both CTAs MUST be overlaid inside the photographic field as HTML, protected by a deliberate readability gradient. The transparent site header must sit over the image. Mobile must preserve the same overlay concept with an intentional crop and bottom-weighted readability veil."
+      : "- HERO CONTRACT: desktop must reserve approximately 40-60% of the hero composition for the photographic visual while preserving a deliberate copy field for headline + CTA; mobile must use an intentional crop/object-position that keeps the subject legible at 390px.",
+    impresaxMasterProfile
+      ? "- IMPRESAX MASTER HERO CONTRACT: never move hero copy below/beside the image during rework; never convert the hero to a split layout; never create blank gradient geometry beside the photo."
+      : "- HERO CONTRACT: do not put headline text inside the image. Keep all copy as verified HTML tokens over/alongside the image with sufficient contrast.",
     "- No scripts, iframes, forms, SVG, external URLs, data URLs, inline styles or event handlers.",
     "",
     "CSS CONTRACT:",
