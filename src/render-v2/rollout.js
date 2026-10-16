@@ -39,7 +39,27 @@ async function packGate(sql,packId) {
     select p.id,p.status,p.created_at,p.preview_ready_at,p.render_ready_at,p.metrics,p.metadata,
       (select count(*)::int from render_v2_variants v where v.render_pack_id=p.id) variant_count,
       (select count(*)::int from render_v2_variants v where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null) variants_ready,
-      (select count(*)::int from render_qa_results_v2 q where q.render_pack_id=p.id and q.qa_type='SET_VISUAL' and q.status='PASS') set_qa_passes,
+      (select count(*)::int
+       from render_qa_results_v2 q
+       where q.render_pack_id=p.id
+         and q.qa_type='SET_VISUAL'
+         and q.status='PASS'
+         and q.artifact_hashes->>'A_revision_id'=(
+           select r.id::text from render_v2_variants v
+           join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+           where v.render_pack_id=p.id and v.variant_key='A'
+         )
+         and q.artifact_hashes->>'B_revision_id'=(
+           select r.id::text from render_v2_variants v
+           join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+           where v.render_pack_id=p.id and v.variant_key='B'
+         )
+         and q.artifact_hashes->>'C_revision_id'=(
+           select r.id::text from render_v2_variants v
+           join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+           where v.render_pack_id=p.id and v.variant_key='C'
+         )
+      ) set_qa_passes,
       (select count(*)::int from render_qa_results_v2 q
        join render_variant_revisions r on r.id=q.variant_revision_id
        where q.render_pack_id=p.id and q.qa_type='VARIANT_VISUAL'
@@ -386,7 +406,26 @@ async function tickChaos(env,sql) {
 }
 
 async function drainQueue(env,sql,state) {
-  if(!state.queue_enabled) return {enabled:false,started:[],blocked:[],remediation_started:[]};
+  if(!state.queue_enabled) return {enabled:false,started:[],blocked:[],remediation_started:[],finalizers_started:[]};
+
+  const finalizersStarted=[];
+  const finalizerCandidates=await sql`
+    select p.*
+    from render_v2_packs p
+    where p.shadow_mode=true
+      and p.status not in ('RENDER_READY','SELECTED','IMPLEMENTED','CANCELLED','SUPERSEDED','APPROVED')
+      and p.quality_contract_version=${QUALITY_CONTRACT_VERSION}
+      and p.execution_engine_version=${EXECUTION_ENGINE_VERSION}
+      and (select count(*) from render_v2_variants v
+           where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
+    order by p.priority,p.updated_at
+    limit 10`;
+  for(const pack of finalizerCandidates) {
+    const gate=await packGate(sql,pack.id);
+    if(n(gate?.variants_ready)!==3 || n(gate?.set_qa_passes)>0) continue;
+    const finalizer=await maybeStartFinalizer(env,sql,pack,gate);
+    if(finalizer) finalizersStarted.push({pack_id:pack.id,...finalizer});
+  }
 
   let {slots}=await renderConcurrencyState(sql);
 
@@ -508,7 +547,7 @@ async function drainQueue(env,sql,state) {
     }
   }
 
-  return {enabled:true,started,blocked,remediation_started:remediationStarted,slots,remediation_slots:remediationSlots};
+  return {enabled:true,started,blocked,remediation_started:remediationStarted,finalizers_started:finalizersStarted,slots,remediation_slots:remediationSlots};
 }
 
 export async function rolloutStatus(env) {
