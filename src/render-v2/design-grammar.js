@@ -403,9 +403,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  box-shadow:none!important
 }
 .ix-v2-logo{
- max-width:260px!important;
- max-height:56px!important;
- display:block!important
+ max-width:292px!important;
+ max-height:60px!important;
+ display:block!important;
+ mix-blend-mode:multiply!important
 }
 .ix-v2-nav{gap:30px!important}
 .ix-v2-nav a{
@@ -541,7 +542,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
 .ixg-positioning{
  position:relative!important;
- padding:clamp(92px,9vw,132px) 0!important;
+ padding:clamp(76px,7vw,104px) 0!important;
  background:var(--ix-brand-paper)!important;
  color:var(--ix-brand-ink)!important;
  border:0!important
@@ -569,6 +570,18 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  )
 }
 .ixg-positioning .ixg-shell{position:relative;z-index:1}
+.ixg-positioning .ixg-shell:after{
+ content:"01";
+ position:absolute;
+ right:0;
+ bottom:-.28em;
+ z-index:-1;
+ font-size:clamp(150px,19vw,300px);
+ line-height:1;
+ font-weight:900;
+ letter-spacing:-.08em;
+ color:rgba(32,34,36,.035)
+}
 .ixg-split{
  grid-template-columns:minmax(0,1.05fr) minmax(340px,.72fr)!important;
  gap:clamp(70px,10vw,150px)!important;
@@ -808,26 +821,53 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 }
 
 .ix-v2-footer{
+ position:relative!important;
  background:var(--ix-brand-paper)!important;
  color:var(--ix-brand-ink)!important;
  border-top:0!important;
- padding-top:70px!important
+ padding:86px clamp(28px,6vw,90px) 64px!important
 }
 .ix-v2-footer:before{
  content:"";
- display:block;
+ position:absolute;
+ left:0;
+ top:0;
  width:100%;
- height:10px;
- margin:-70px 0 60px;
+ height:12px;
+ margin:0;
  background:repeating-linear-gradient(
   180deg,
   var(--ix-brand-primary) 0 2px,
   transparent 2px 4px
  )
 }
+.ix-v2-footer-grid{
+ grid-template-columns:minmax(320px,1.2fr) minmax(160px,.55fr) minmax(280px,.8fr)!important;
+ gap:clamp(48px,7vw,110px)!important;
+ padding-top:0!important;
+ border-top:1px solid rgba(32,34,36,.12)!important
+}
+.ix-v2-footer-brand{padding-top:34px!important}
+.ix-v2-footer-nav,.ix-v2-footer-contact-block{padding-top:38px!important}
 .ix-v2-footer-nav a,
 .ix-v2-footer a{
- color:var(--ix-brand-ink)!important
+ color:var(--ix-brand-ink)!important;
+ font-weight:800!important;
+ text-transform:uppercase!important;
+ letter-spacing:.08em!important
+}
+.ix-v2-footer-tagline{
+ color:rgba(32,34,36,.62)!important;
+ font-size:15px!important;
+ max-width:34ch!important
+}
+.ix-v2-footer-address{
+ color:rgba(32,34,36,.58)!important;
+ font-size:13px!important
+}
+.ix-v2-footer-contact{
+ color:var(--ix-brand-ink)!important;
+ font-weight:800!important
 }
 .ix-v2-footer-identity{
  background:transparent!important;
@@ -835,8 +875,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  filter:none!important
 }
 .ix-v2-footer-logo{
- max-width:270px!important;
- max-height:62px!important
+ max-width:300px!important;
+ max-height:68px!important;
+ mix-blend-mode:multiply!important
 }
 
 @media(max-width:700px){
@@ -846,7 +887,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   grid-template-columns:1fr auto!important;
   row-gap:7px!important
  }
- .ix-v2-logo{max-width:155px!important;max-height:44px!important}
+ .ix-v2-logo{max-width:170px!important;max-height:46px!important;mix-blend-mode:multiply!important}
  .ix-v2-header-cta{
   min-height:38px!important;
   padding:0 12px!important;
@@ -900,7 +941,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  .ixg-shell{width:calc(100% - 28px)!important}
 
  .ixg-positioning{
-  padding:68px 0 76px!important
+  padding:58px 0 64px!important
  }
  .ixg-split{
   grid-template-columns:1fr!important;
@@ -985,10 +1026,17 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  }
  .ixg-contact .ixg-cta{width:100%!important}
  .ix-v2-footer{
-  padding-top:56px!important
+  padding:66px 20px 46px!important
+ }
+ .ix-v2-footer-grid{
+  grid-template-columns:1fr!important;
+  gap:30px!important
+ }
+ .ix-v2-footer-brand,.ix-v2-footer-nav,.ix-v2-footer-contact-block{
+  padding-top:26px!important
  }
  .ix-v2-footer:before{
-  margin:-56px 0 44px!important
+  margin:0!important
  }
 }}`:"";
 
