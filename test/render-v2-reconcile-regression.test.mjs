@@ -201,3 +201,14 @@ test("terminal variant workflow normalizes stale GENERATING state",()=>{
   assert.match(reconcile,/tw\.status in \('FAILED','CANCELLED'\)/);
   assert.match(reconcile,/setVariantStatus\(sql,v\.id,\{status:"ESCALATION_REQUIRED"\}\)/);
 });
+
+test("legacy upgrades yield to higher-priority V3 escalations",()=>{
+  const start=reconcile.indexOf("async function upgradeLegacyReadyPack");
+  const end=reconcile.indexOf("async function startPackFinalizer",start);
+  assert.ok(start>=0 && end>start);
+  const upgrade=reconcile.slice(start,end);
+  assert.match(upgrade,/hp\.status='ESCALATION_REQUIRED'/);
+  assert.match(upgrade,/hpr\.rank < pr\.rank/);
+  assert.match(upgrade,/hp\.quality_contract_version=\$\{QUALITY_CONTRACT_VERSION\}/);
+  assert.match(upgrade,/hp\.execution_engine_version=\$\{EXECUTION_ENGINE_VERSION\}/);
+});
