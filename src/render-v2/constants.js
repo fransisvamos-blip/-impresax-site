@@ -16,7 +16,10 @@ export const QA_SCORE_KEYS = Object.freeze([
   "composition","typography","imagery","materiality","signature_visual_language",
   "rhythm","restraint","cta_integration","commercial_clarity","desktop_quality",
   "mobile_quality","footer_quality","no_template_feel","no_saas_feel",
-  "no_ai_feel","truth_integrity","consistency"
+  "no_ai_feel","truth_integrity","consistency",
+  "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
+  "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
+  "premium_feel","wow_effect","prospect_desire","preview_sales_power"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
