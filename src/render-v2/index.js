@@ -8,6 +8,7 @@ import { selectCertifiedVariant, buildReferenceManifest } from "./manifest.js";
 import { tickRollout, rolloutStatus } from "./rollout.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { prospectCircuitState, packCircuitOverridePending, consumePackCircuitOverride } from "./circuit.js";
+import { operationalInvariantSnapshot } from "./health.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -94,6 +95,7 @@ export default {
     if(url.pathname==="/healthz") {
       let database_connected=false;
       let hero_db_guard=false;
+      let operational_invariants=null;
       try {
         const sql=db(env);
         const ping=await sql`select
@@ -112,6 +114,9 @@ export default {
           ) as hero_db_guard`;
         database_connected=Number(ping[0]?.ok||0)===1;
         hero_db_guard=Boolean(ping[0]?.hero_db_guard);
+        operational_invariants=await operationalInvariantSnapshot(sql,{
+          maxAiCalls:Number(env.V2_MAX_AI_CALLS_PER_PACK||90)
+        });
       } catch {}
       const bindings={
         ai:Boolean(env.AI),browser:Boolean(env.BROWSER),r2:Boolean(env.RENDER_ARTIFACTS),
@@ -132,6 +137,8 @@ export default {
         premium_home_score_floor:8,
         premium_home_required_sections:["hero","positioning","services","trust","bridge","final-cta"],
         premium_home_shell_required:["header","navigation","header_cta","footer_navigation"],
+        operational_ok:operational_invariants?.operational_ok===true,
+        operational_invariants,
         bindings
       },healthy?200:503);
     }
