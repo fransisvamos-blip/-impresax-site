@@ -71,20 +71,29 @@ async function fetchDoc(url) {
 
 function discoverServiceLinks(doc) {
   if(!doc?.raw) return [];
-  const out=[];
+  const candidates=[];
+  const seen=new Set();
   const origin=(()=>{try{return new URL(doc.url).origin}catch{return null}})();
-  if(!origin) return out;
+  if(!origin) return [];
   const re=/<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  let order=0;
   for(const m of doc.raw.matchAll(re)) {
     const href=absUrl(m[1],doc.url);
-    if(!href) continue;
+    if(!href||seen.has(href)) continue;
     let u; try { u=new URL(href); } catch { continue; }
     if(u.origin!==origin) continue;
-    if(!/(serviz|service|prestaz|trattament|attivit|soluzion|prodott|nolegg|costruzion|odontoiatr|fisioterap|specialit|competen|contatt|contact|dove|sede|chi-siamo|azienda|about)/i.test(u.pathname+u.search)) continue;
-    if(!out.includes(href)) out.push(href);
-    if(out.length>=5) break;
+    const signal=u.pathname+u.search;
+    if(!/(serviz|service|prestaz|trattament|attivit|soluzion|prodott|nolegg|costruzion|odontoiatr|fisioterap|specialit|competen|contatt|contact|dove|sede|chi-siamo|azienda|about)/i.test(signal)) continue;
+    seen.add(href);
+    const priority=/(contatt|contact|dove|sede)/i.test(signal)?0:
+      /(chi-siamo|azienda|about)/i.test(signal)?1:2;
+    candidates.push({href,priority,order:order++});
+    if(candidates.length>=40) break;
   }
-  return out;
+  return candidates
+    .sort((a,b)=>a.priority-b.priority||a.order-b.order)
+    .slice(0,5)
+    .map(x=>x.href);
 }
 
 function logoCandidate(doc,businessName) {
@@ -132,30 +141,93 @@ function extractOfferHeadings(docs) {
   return out;
 }
 
-function extractContacts(docs) {
-  const emails=new Set(),phones=new Set(),evidence=[];
+function contactPageSignal(doc) {
+  try {
+    const u=new URL(doc.url);
+    const path=(u.pathname+u.search).toLowerCase();
+    return path==="/" || /(contatt|contact|dove|sede|chi-siamo|azienda|about)/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
+function contactKey(type,value) {
+  if(type==="email") return String(value||"").trim().toLowerCase();
+  return String(value||"").replace(/\D/g,"");
+}
+
+function extractContacts(docs,prospect) {
+  const observations=[];
+  let officialOrigin=null;
+  try {
+    officialOrigin=new URL(prospect?.website_url||prospect?.source_data?.current_site||"").origin;
+  } catch {}
+
+  const pushObservation=(type,value,doc)=>{
+    const key=contactKey(type,value);
+    if(!key) return;
+    observations.push({type,value,key,source_url:doc.url,official:officialOrigin?new URL(doc.url).origin===officialOrigin:false,authoritative:contactPageSignal(doc)});
+  };
+
   for(const doc of docs) {
     for(const m of doc.raw.matchAll(/mailto:([^"'?\s>]+)/gi)) {
       const value=decodeURIComponent(m[1]).trim().toLowerCase();
-      if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-        emails.add(value); evidence.push({type:"email",value,source_url:doc.url});
-      }
+      if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) pushObservation("email",value,doc);
     }
     for(const m of doc.text.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)) {
-      const value=m[0].toLowerCase();
-      emails.add(value); evidence.push({type:"email",value,source_url:doc.url});
+      pushObservation("email",m[0].toLowerCase(),doc);
     }
     for(const m of doc.raw.matchAll(/tel:([^"'\s>]+)/gi)) {
       const value=decodeURIComponent(m[1]).replace(/[^+\d]/g,"");
       const digits=value.replace(/\D/g,"");
-      if(digits.length>=7&&digits.length<=13) {
-        phones.add(value); evidence.push({type:"phone",value,source_url:doc.url});
-      }
+      if(digits.length>=7&&digits.length<=13) pushObservation("phone",value,doc);
     }
   }
+
+  const sourcesByKey=new Map();
+  const originsByKey=new Map();
+  for(const o of observations) {
+    if(!sourcesByKey.has(o.key)) sourcesByKey.set(o.key,new Set());
+    sourcesByKey.get(o.key).add(o.source_url);
+    let origin="";
+    try { origin=new URL(o.source_url).origin; } catch {}
+    if(!originsByKey.has(o.key)) originsByKey.set(o.key,new Set());
+    if(origin) originsByKey.get(o.key).add(origin);
+  }
+
+  const accepted=[];
+  const rejected=[];
+  const seen=new Set();
+  for(const o of observations) {
+    const distinctSources=sourcesByKey.get(o.key)?.size||0;
+    const distinctOrigins=originsByKey.get(o.key)?.size||0;
+    const pass=officialOrigin
+      ? o.official && (o.authoritative || distinctSources>=2)
+      : distinctOrigins>=2;
+    const enriched={
+      type:o.type,
+      value:o.value,
+      source_url:o.source_url,
+      scope:pass?"BUSINESS_CONTACT":"UNVERIFIED_CONTACT",
+      confidence:pass?"HIGH":"REJECTED",
+      evidence_rule:officialOrigin
+        ? (o.authoritative?"FIRST_PARTY_CONTACT_SURFACE":distinctSources>=2?"FIRST_PARTY_REPEATED":"FIRST_PARTY_CONTEXT_INSUFFICIENT")
+        : (distinctOrigins>=2?"MULTI_SOURCE_CORROBORATED":"SINGLE_THIRD_PARTY_SOURCE")
+    };
+    if(pass) {
+      if(!seen.has(o.key)) accepted.push(enriched);
+      seen.add(o.key);
+    } else {
+      rejected.push(enriched);
+    }
+  }
+
+  const phones=accepted.filter(x=>x.type==="phone").map(x=>x.value);
+  const emails=accepted.filter(x=>x.type==="email").map(x=>x.value);
   return {
     value:[...phones,...emails].slice(0,8).join(" | "),
-    evidence:evidence.slice(0,12)
+    evidence:accepted.slice(0,12),
+    rejected_evidence:rejected.slice(0,12)
   };
 }
 
@@ -295,12 +367,18 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
   const source=prospect.source_data||{};
   const attempts=Number(source.v2_remediation_attempts||0)+1;
   const docs=await collectDocs(prospect);
-  const contactsFound=extractContacts(docs);
+  const contactsFound=extractContacts(docs,prospect);
   const ai=await extractServices(env,docs,prospect).catch(()=>({services:[],trust:[]}));
   const deterministicOffers=extractOfferHeadings(docs);
 
   const existingServices=meaningful(source.verified_services)?String(source.verified_services):"";
-  const existingContacts=meaningful(source.verified_contacts)?String(source.verified_contacts):"";
+  const rawExistingContacts=meaningful(source.verified_contacts)?String(source.verified_contacts):"";
+  const priorContactEvidence=ensureArray(source.v2_remediation_evidence?.contact_evidence);
+  const remediationDerivedContacts=
+    Boolean(source.v2_remediation_status) &&
+    String(source.contact_data_state||"").toUpperCase()!=="VERIFICATO" &&
+    priorContactEvidence.length>0;
+  const existingContacts=remediationDerivedContacts?"":rawExistingContacts;
   const existingTrust=meaningful(source.verified_trust)?String(source.verified_trust):"";
 
   const verifiedServices=existingServices || ai.services.map(x=>x.text).join("; ") || deterministicOffers.join("; ");
@@ -347,6 +425,8 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
     deterministic_offer_headings:deterministicOffers,
     trust_evidence:ai.trust,
     contact_evidence:contactsFound.evidence,
+    rejected_contact_evidence:contactsFound.rejected_evidence,
+    contact_verification_rule:"FIRST_PARTY_CONTACT_SURFACE_OR_REPEATED_OFFICIAL_EVIDENCE",
     remediated_at:new Date().toISOString()
   };
 
@@ -358,6 +438,9 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
         source_data=coalesce(source_data,'{}'::jsonb)||${JSON.stringify({
           verified_services:verifiedServices||"NON_DISPONIBILE",
           verified_contacts:verifiedContacts||"NON_DISPONIBILE",
+          contact_data_state:existingContacts
+            ? (source.contact_data_state||"VERIFICATO")
+            : (contactsFound.value?"V2_FIRST_PARTY_VERIFIED":(source.contact_data_state||"NON_VERIFICATO")),
           verified_trust:verifiedTrust||source.verified_trust||"NON_DISPONIBILE",
           v2_remediation_attempts:attempts,
           v2_remediation_status:canCertify?"EVIDENCE_READY":"EVIDENCE_INCOMPLETE",
