@@ -1197,6 +1197,14 @@ export async function reconcileV2(env) {
       if(upgrade.started) {
         summary.started.push(upgrade);
         renderSlots=Math.max(0,renderSlots-Number(upgrade.slots_used||0));
+      } else {
+        summary.reconciled.push({
+          quality_contract_upgrade_skipped:true,
+          reason:upgrade.reason||"UNKNOWN",
+          pack_id:upgrade.pack_id||null,
+          remaining:upgrade.remaining??null,
+          exhausted_variants:upgrade.exhausted_variants||[]
+        });
       }
     } catch(error) {
       const message=String(error?.stack||error?.message||error).slice(0,4000);
