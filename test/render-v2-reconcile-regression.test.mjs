@@ -168,3 +168,8 @@ test("zero-photo Premium V3 provider failures use deterministic failover",()=>{
   assert.match(workflows,/provider_failover:true/);
   assert.match(workflows,/buildZeroPhotoPremiumSpec/);
 });
+
+test("terminal provider escalation closes variant state",()=>{
+  assert.match(workflows,/setVariantStatus\(sql,params\.variantId,\{status:"ESCALATION_REQUIRED"\}\)/);
+  assert.match(workflows,/AI_PROVIDER_ESCALATION/);
+});
