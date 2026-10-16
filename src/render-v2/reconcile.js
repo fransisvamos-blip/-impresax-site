@@ -181,6 +181,10 @@ async function fillUnstartedInitialVariants(env,sql,availableSlots) {
     };
     try { await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params}); }
     catch { await env.RENDER_VARIANT_WORKFLOW.get(instanceId); }
+    await setPackStatus(sql,row.render_pack_id,"GENERATING",{
+      variant_spawn_pending:true,
+      deferred_concurrency_released_at:new Date().toISOString()
+    });
     launched.push({pack_id:row.render_pack_id,variant_key:row.variant_key,instance_id:instanceId});
     slots--;
   }
@@ -801,6 +805,45 @@ export async function reconcileV2(env) {
           where id=1`;
       } catch {}
     }
+  }
+
+  const deferredPlanning=await sql`
+    select p.id
+    from render_v2_packs p
+    where p.shadow_mode=true
+      and p.status='GENERATING'
+      and exists (
+        select 1 from render_workflows_v2 pw
+        where pw.render_pack_id=p.id
+          and pw.workflow_type='PROSPECT'
+          and pw.status in ('QUEUED','RUNNING','PAUSED')
+          and coalesce((pw.metadata->>'finalizer')::boolean,false)=false
+          and coalesce((pw.metadata->>'rollout_finalizer')::boolean,false)=false
+      )
+      and not exists (
+        select 1 from render_workflows_v2 vw
+        where vw.render_pack_id=p.id
+          and vw.workflow_type='VARIANT'
+          and vw.status in ('QUEUED','RUNNING','PAUSED')
+      )
+      and exists (
+        select 1 from render_v2_variants v
+        where v.render_pack_id=p.id
+          and not (v.status='RENDER_READY' and v.certified_revision is not null)
+          and not exists (
+            select 1 from render_workflows_v2 anyvw
+            where anyvw.variant_id=v.id and anyvw.workflow_type='VARIANT'
+          )
+      )
+    order by p.updated_at
+    limit 20`;
+  for(const row of deferredPlanning) {
+    await setPackStatus(sql,row.id,"PLANNING",{
+      deferred_concurrency:true,
+      variant_spawn_pending:true,
+      deferred_concurrency_normalized_at:new Date().toISOString()
+    });
+    summary.reconciled.push({pack_id:row.id,from_status:"GENERATING",to_status:"PLANNING",reason:"INITIAL_VARIANTS_DEFERRED_CONCURRENCY"});
   }
 
   const initialFill=await fillUnstartedInitialVariants(env,sql,renderSlots);
