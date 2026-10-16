@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: current-set-finalizer-and-v3-backlog-20261016
+# rollout kick trigger: deferred-normalization-remediation-v2-20261016
 
 on:
   push:
