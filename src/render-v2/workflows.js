@@ -313,7 +313,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const verified=explicitHeroAsset(context.assets);
       if(verified) return verified;
-      if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE") {
+      const masterProfile=String(context.inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
+      if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE" && !masterProfile) {
         const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
         if(reusable) return reusable;
       }
