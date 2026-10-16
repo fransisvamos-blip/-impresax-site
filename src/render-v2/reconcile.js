@@ -1093,6 +1093,75 @@ export async function reconcileV2(env) {
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
   let renderSlots=summary.concurrency.slots;
 
+  const completedRecoveryWaves=await sql`
+    select p.*
+    from render_v2_packs p
+    where p.shadow_mode=true
+      and p.status='GENERATING'
+      and p.metadata ? 'auto_recovery_wave_last_launch_at'
+      and coalesce((p.metadata->>'auto_recovery_partial_open')::boolean,false)=false
+      and not exists (
+        select 1 from render_workflows_v2 aw
+        where aw.render_pack_id=p.id
+          and aw.workflow_type='VARIANT'
+          and aw.status in ('QUEUED','RUNNING','PAUSED')
+      )
+      and exists (
+        select 1 from render_v2_variants v
+        where v.render_pack_id=p.id
+          and not (v.status='RENDER_READY' and v.certified_revision is not null)
+      )
+    order by p.updated_at
+    limit 20`;
+  for(const pack of completedRecoveryWaves) {
+    await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+      auto_recovery_partial_open:false,
+      auto_recovery_wave_completed_at:new Date().toISOString(),
+      recovery_wave_needs_next_attempt:true,
+      ghost_generating_prevented:true
+    });
+    summary.reconciled.push({
+      pack_id:pack.id,
+      from_status:"GENERATING",
+      to_status:"ESCALATION_REQUIRED",
+      reason:"STAGED_RECOVERY_WAVE_TERMINAL"
+    });
+  }
+
+  if(renderSlots>0) {
+    const partialRecoveryPacks=await sql`
+      select p.*
+      from render_v2_packs p
+      join prospects pr on pr.id=p.prospect_id
+      where p.shadow_mode=true
+        and p.status='GENERATING'
+        and coalesce((p.metadata->>'auto_recovery_partial_open')::boolean,false)=true
+        and pr.retry_count<pr.max_retries
+        and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+        and coalesce(pr.current_step,'')<>'GENERATION_HOLD'
+      order by pr.rank asc nulls last,p.priority asc,p.updated_at
+      limit 10`;
+    for(const pack of partialRecoveryPacks) {
+      if(renderSlots<=0) break;
+      try {
+        const recovered=await recoverEscalatedQueuePack(env,sql,pack,renderSlots);
+        if(recovered.started) {
+          summary.started.push(recovered);
+          renderSlots=Math.max(0,renderSlots-Number(recovered.slots_used||0));
+        } else if(recovered.reason!=="RECOVERY_WAVE_IN_PROGRESS") {
+          summary.reconciled.push({
+            pack_id:pack.id,
+            status:"DEFERRED",
+            reason:recovered.reason,
+            available_slots:renderSlots
+          });
+        }
+      } catch(error) {
+        summary.errors.push({pack_id:pack.id,staged_auto_recovery:true,error:String(error?.message||error)});
+      }
+    }
+  }
+
   const priorityPreemption=await preemptLowerPriorityRecoveryForQualityUpgrade(env,sql);
   if(priorityPreemption.preempted.length) {
     summary.reconciled.push({
