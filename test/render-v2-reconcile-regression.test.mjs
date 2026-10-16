@@ -293,3 +293,16 @@ test("construction hero grammar forbids empty sky dominance",()=>{
   assert.match(hero,/never let blank sky dominate/);
   assert.match(hero,/390px portrait crop remains dense and credible/);
 });
+
+test("fallback service titles remain verbatim-grounded",()=>{
+  assert.match(ai,/function verifiedServiceTitle/);
+  assert.match(ai,/text\.split\(\/\\s\*\(\?:\\\/\|:\|—\|–\)\\s\*\//);
+  assert.doesNotMatch(ai,/title:text\.length<=72\?text:\("Servizio "\+\(i\+1\)\)/);
+  assert.match(ai,/title:verifiedServiceTitle\(text\)/);
+});
+
+test("single verified service renders as intentional feature",()=>{
+  assert.match(grammar,/serviceTitles\.length===1\?" ixb-service-row--feature":""/);
+  assert.match(grammar,/\.ixb-service-row--feature\{min-height:360px/);
+  assert.match(grammar,/\.ixb-service-row--feature\{min-height:0;grid-template-columns:1fr/);
+});
