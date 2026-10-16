@@ -383,3 +383,20 @@ test("ImpresaX raw hero QA rewards full photographic density",()=>{
   assert.match(ai,/HTML copy readability is handled later by a CSS gradient overlay/);
   assert.match(ai,/HARD FAIL blank gray\/flat copy panels/);
 });
+
+
+test("ImpresaX master rework cannot regress to split hero",()=>{
+  assert.match(ai,/IMPRESAX MASTER HERO CONTRACT/);
+  assert.match(ai,/ENTIRE hero background edge-to-edge/);
+  assert.match(ai,/MUST be overlaid inside the photographic field/);
+  assert.match(ai,/never move hero copy below\/beside the image/);
+  assert.match(ai,/never convert the hero to a split layout/);
+});
+
+test("ImpresaX master bridge and mobile nav remain distinct",()=>{
+  assert.match(grammar,/copyToken\("BRIDGE_TITLE"\)/);
+  assert.match(grammar,/copyToken\("BRIDGE_BODY"\)/);
+  assert.match(grammar,/justify-content:space-between!important/);
+  assert.match(grammar,/font-size:10px!important/);
+  assert.match(ai,/do not reuse \{\{copy:POSITIONING_BODY\}\} in bridge/);
+});
