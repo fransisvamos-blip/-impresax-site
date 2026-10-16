@@ -606,6 +606,7 @@ export function buildCopyManifest(content,inputPayload={}) {
     const cleaned=String(value||"")
       .replace(/^vendita\s+all['’]ingrosso\s+di\s+/i,"")
       .replace(/^lavorazione\s+e\s+trasformazione\s+del\s+/i,"")
+      .replace(/\bmateriali\s+per\s+edilizia\b/i,"materiali per l’edilizia")
       .replace(/\s+/g," ")
       .trim()
       .replace(/[.]+$/,"");
@@ -616,11 +617,25 @@ export function buildCopyManifest(content,inputPayload={}) {
     : "";
   const heroHeadline=uniqueOr([masterHeroHeadline,content?.hero_headline,serviceTitles[0],content?.footer_line],"Azienda");
   const heroBody=uniqueOr([content?.hero_body,serviceBodies[0]],"Attività verificata.");
+  const masterPositioningTitle=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1"
+    ? (()=>{
+        const body=String(serviceBodies[0]||"").replace(/\s+/g," ").trim();
+        const match=body.match(/\bper\s+(.+?)[.]?$/i);
+        if(!match?.[1]) return "";
+        const audience=match[1].replace(/[.]+$/,"").trim();
+        return audience ? "Per "+audience+"." : "";
+      })()
+    : "";
+  const masterPositioningBody=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1"
+    ? String(serviceBodies[0]||"").trim()
+    : "";
   const positioningTitle=uniqueOr([
+    masterPositioningTitle,
     content?.positioning_title,
     serviceTitles[1]
   ],"Profilo operativo");
   const positioningBody=uniqueOr([
+    masterPositioningBody,
     content?.positioning_body,
     serviceBodies[1],
     serviceBodies[2]
