@@ -635,7 +635,19 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   }
 
   const attempts=Number(pack.metadata?.auto_recovery_attempt||0);
-  if(attempts>=3) return {pack_id:pack.id,started:false,reason:"AUTO_RECOVERY_LIMIT"};
+  if(attempts>=3) {
+    const exhaustedAt=new Date().toISOString();
+    await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+      auto_recovery_exhausted:true,
+      auto_recovery_exhausted_at:pack.metadata?.auto_recovery_exhausted_at||exhaustedAt,
+      recovery_exhausted:true,
+      recovery_exhausted_at:pack.metadata?.recovery_exhausted_at||exhaustedAt,
+      ghost_generating_closed:true,
+      ghost_generating_closed_at:exhaustedAt,
+      ghost_state_close_reason:"AUTO_RECOVERY_LIMIT_REACHED_NO_ACTIVE_WORKFLOW"
+    });
+    return {pack_id:pack.id,started:false,reason:"AUTO_RECOVERY_LIMIT",slots_used:0};
+  }
 
   const attempt=attempts+1;
   const recoveryEpoch=workflowEpochTag(pack.updated_at||pack.metadata?.stale_generating_reconciled_at||pack.created_at);
@@ -712,6 +724,22 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
       }
     });
     launched.push({variant_key:variant.variant_key,instance_id:instanceId,status:await instance.status()});
+  }
+  if(launched.length===0) {
+    const blockedAt=new Date().toISOString();
+    await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
+      recovery_launch_blocked:true,
+      recovery_launch_blocked_at:blockedAt,
+      recovery_launch_blocked_reason:circuitState.open&&!circuitOverride?"GENERATION_CIRCUIT_BREAKER":"NO_WORKFLOW_LAUNCHED",
+      ghost_generating_prevented:true
+    });
+    return {
+      pack_id:pack.id,
+      started:false,
+      reason:circuitState.open&&!circuitOverride?"PROSPECT_CIRCUIT_BREAKER":"NO_WORKFLOW_LAUNCHED",
+      attempt,
+      slots_used:0
+    };
   }
   await setPackStatus(sql,pack.id,"GENERATING",{auto_recovery_attempt:attempt,auto_recovery_run_key:runKey});
   return {pack_id:pack.id,started:true,type:"VARIANT_SET",attempt,launched,slots_used:launched.length};
@@ -874,7 +902,10 @@ export async function reconcileV2(env) {
       from render_v2_packs p
       where p.shadow_mode=true
         and p.status='GENERATING'
-        and p.updated_at < now()-interval '10 minutes'
+        and (
+          coalesce((p.metadata->>'auto_recovery_attempt')::int,0)>=3
+          or p.updated_at < now()-interval '10 minutes'
+        )
         and (select count(*) from render_v2_variants v where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)<3
         and not exists (
           select 1 from render_workflows_v2 w
@@ -886,11 +917,17 @@ export async function reconcileV2(env) {
     for(const pack of staleGenerating) {
       const recoveryAttempts=Number(pack.metadata?.auto_recovery_attempt||0);
       const exhausted=recoveryAttempts>=3;
+      const closedAt=new Date().toISOString();
       await setPackStatus(sql,pack.id,"ESCALATION_REQUIRED",{
-        stale_generating_reconciled_at:new Date().toISOString(),
+        stale_generating_reconciled_at:closedAt,
         stale_generating_previous_status:"GENERATING",
         auto_recovery_exhausted:exhausted,
-        auto_recovery_exhausted_at:exhausted?new Date().toISOString():null
+        auto_recovery_exhausted_at:exhausted?closedAt:null,
+        recovery_exhausted:exhausted,
+        recovery_exhausted_at:exhausted?closedAt:null,
+        ghost_generating_closed:true,
+        ghost_generating_closed_at:closedAt,
+        ghost_state_close_reason:exhausted?"AUTO_RECOVERY_LIMIT_REACHED_NO_ACTIVE_WORKFLOW":"NO_ACTIVE_WORKFLOW"
       });
       if(exhausted) {
         await sql`
