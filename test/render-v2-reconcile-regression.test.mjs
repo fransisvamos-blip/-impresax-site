@@ -432,3 +432,9 @@ test("ImpresaX pilot editorial positioning derives only from verified service ev
   assert.match(ai,/const masterPositioningBody=/);
   assert.match(ai,/String\(serviceBodies\[0\]\|\|""\)\.trim\(\)/);
 });
+
+test("DEDIL pilot final polish improves mobile tap targets and positioning balance",()=>{
+  assert.match(grammar,/min-height:36px!important;padding:0 3px!important/);
+  assert.match(grammar,/\.ixg-positioning__body\{position:relative;padding-top:18px!important;border-top:1px solid rgba\(17,17,17,.18\)!important\}/);
+  assert.match(grammar,/\.ixg-positioning__body:after/);
+});
