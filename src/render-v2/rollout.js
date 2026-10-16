@@ -24,6 +24,13 @@ const TERMINAL_PACK_STATUSES=["RENDER_READY","SELECTED","IMPLEMENTED","INPUT_BLO
 
 function n(v){ return Number(v||0); }
 
+function pilotMasterLocked(state) {
+  const meta=state?.metadata||{};
+  return meta.pilot_single_prospect===true
+    && meta.pilot_awaiting_cabina_approval===true
+    && meta.pilot_master_approved!==true;
+}
+
 async function rolloutRow(sql) {
   const rows=await sql`select * from render_v2_rollout_state where id=1 limit 1`;
   if(rows.length) return rows[0];
@@ -385,8 +392,22 @@ async function tickChaos(env,sql) {
     if(pass) {
       await sql`
         update render_v2_rollout_state
-        set phase='QUEUE_READY',chaos_passed_at=coalesce(chaos_passed_at,now()),
-            queue_enabled=true,updated_at=now()
+        set phase=case
+              when coalesce((metadata->>'pilot_single_prospect')::boolean,false)
+               and coalesce((metadata->>'pilot_awaiting_cabina_approval')::boolean,false)
+               and not coalesce((metadata->>'pilot_master_approved')::boolean,false)
+              then 'PILOT_SINGLE_PROSPECT'
+              else 'QUEUE_READY'
+            end,
+            chaos_passed_at=coalesce(chaos_passed_at,now()),
+            queue_enabled=case
+              when coalesce((metadata->>'pilot_single_prospect')::boolean,false)
+               and coalesce((metadata->>'pilot_awaiting_cabina_approval')::boolean,false)
+               and not coalesce((metadata->>'pilot_master_approved')::boolean,false)
+              then false
+              else true
+            end,
+            updated_at=now()
         where id=1`;
     }
     return {pass,probe};
@@ -570,6 +591,27 @@ export async function tickRollout(env) {
   const sql=db(env);
   let state=await rolloutRow(sql);
   await sql`update render_v2_rollout_state set last_tick_at=now(),updated_at=now() where id=1`;
+  state=await rolloutRow(sql);
+
+  if(pilotMasterLocked(state)) {
+    await sql`
+      update render_v2_rollout_state
+      set queue_enabled=false,
+          phase='PILOT_SINGLE_PROSPECT',
+          metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+            'global_queue_must_remain_paused',true,
+            'pilot_lock_enforced_at',to_jsonb(now())
+          ),
+          updated_at=now()
+      where id=1`;
+    return {
+      phase:"PILOT_SINGLE_PROSPECT",
+      queue_enabled:false,
+      pilot_locked:true,
+      pilot_pack_id:state.pilot_pack_id,
+      awaiting:"APPROVED_MASTER_REFERENCE"
+    };
+  }
 
   if(state.queue_enabled) {
     const queue=await drainQueue(env,sql,state);
