@@ -488,3 +488,14 @@ test("single-prospect pilot hard-locks rollout and reconciler",()=>{
   assert.match(reconcile,/global_queue:false/);
   assert.match(reconcile,/awaiting:"APPROVED_MASTER_REFERENCE"/);
 });
+
+
+test("logo-first wow rebuild uses integrated light shell and industrial premium sections",()=>{
+  assert.match(grammar,/background:rgba\(248,248,246,.96\)!important/);
+  assert.match(grammar,/min-height:clamp\(680px,70vw,880px\)!important/);
+  assert.match(grammar,/max-width:13\.5ch!important/);
+  assert.match(grammar,/counter-reset:ixservice!important/);
+  assert.match(grammar,/counter-increment:ixservice!important/);
+  assert.match(grammar,/background:var\(--ix-brand-primary\)!important;\n color:#fff!important/);
+  assert.match(grammar,/\.ix-v2-footer\{\n background:var\(--ix-brand-paper\)!important/);
+});
