@@ -328,3 +328,12 @@ test("healthz exposes authoritative operational invariants",()=>{
   assert.match(index,/operational_ok:operational_invariants\?\.operational_ok===true/);
   assert.match(index,/operational_invariants/);
 });
+
+test("exhausted V3 quality upgrades cannot block legacy migration",()=>{
+  const start=reconcile.indexOf("async function upgradeLegacyReadyPack");
+  const end=reconcile.indexOf("async function startPackFinalizer",start);
+  assert.ok(start>=0 && end>start);
+  const upgrade=reconcile.slice(start,end);
+  assert.match(upgrade,/quality_upgrade_exhausted/);
+  assert.match(upgrade,/coalesce\(\(p\.metadata->>'quality_upgrade_exhausted'\)::boolean,false\)=false/);
+});
