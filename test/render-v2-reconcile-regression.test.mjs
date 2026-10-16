@@ -5,6 +5,7 @@ import fs from "node:fs";
 const reconcile=fs.readFileSync(new URL("../src/render-v2/reconcile.js",import.meta.url),"utf8");
 const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
 const hero=fs.readFileSync(new URL("../src/render-v2/hero.js",import.meta.url),"utf8");
+const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
 const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.meta.url),"utf8");
 const rollout=fs.readFileSync(new URL("../src/render-v2/rollout.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
@@ -94,4 +95,11 @@ test("generic page imagery issues do not trigger hero repair",()=>{
   assert.match(workflows,/const explicitHero=/);
   assert.match(workflows,/const focalCrop=/);
   assert.doesNotMatch(workflows,/\/hero\|imagery\|image\|crop\|focal\|generic\|stock\|synthetic\|ai\[- \]\?feel\//);
+});
+
+test("structured AI calls have bounded per-attempt deadlines",()=>{
+  assert.match(ai,/function withAiDeadline/);
+  assert.match(ai,/AI_PROVIDER_CALL_TIMEOUT/);
+  assert.match(ai,/V2_AI_CALL_TIMEOUT_MS/);
+  assert.match(ai,/105000/);
 });
