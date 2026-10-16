@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: bl-costruzioni-a-premium-v3-repair
+# rollout kick trigger: current-set-finalizer-and-v3-backlog-20261016
 
 on:
   push:
