@@ -31,7 +31,7 @@ export function classifyFailure(error, context={}) {
   if (/truth|unsupported claim|semantic/.test(lower)) {
     failure_domain="CONTENT_TRUTH"; failure_code="CONTENT_TRUTH_FAILURE"; retryable=false;
   }
-  if (/visual quality|quality_below|typography|composition|mobile quality/.test(lower)) {
+  if (/hero_visual_below_bar|hero visual below bar|visual[_ ]quality[_ ]below[_ ]bar|visual quality|quality_below|typography|composition|mobile quality/.test(lower)) {
     failure_domain="VISUAL_QUALITY"; failure_code="VISUAL_QUALITY_FAILURE"; retryable=false;
   }
   if (/diversity|too similar|set qa/.test(lower)) {
