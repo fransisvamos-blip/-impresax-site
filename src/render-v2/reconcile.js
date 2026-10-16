@@ -358,6 +358,28 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
           and p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION}
         )
       )
+      and not exists (
+        select 1
+        from render_v2_packs hp
+        join prospects hpr on hpr.id=hp.prospect_id
+        where hp.shadow_mode=true
+          and hp.status='ESCALATION_REQUIRED'
+          and hp.quality_contract_version=${QUALITY_CONTRACT_VERSION}
+          and hp.execution_engine_version=${EXECUTION_ENGINE_VERSION}
+          and hpr.rank is not null
+          and pr.rank is not null
+          and hpr.rank < pr.rank
+          and coalesce((hp.metadata->>'auto_recovery_attempt')::int,0)<3
+          and hpr.retry_count<hpr.max_retries
+          and coalesce(hpr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+          and coalesce(hpr.current_step,'')<>'GENERATION_HOLD'
+          and not exists (
+            select 1
+            from render_workflows_v2 haw
+            where haw.render_pack_id=hp.id
+              and haw.status in ('QUEUED','RUNNING','PAUSED')
+          )
+      )
       and exists (
         select 1
         from render_v2_variants lv
