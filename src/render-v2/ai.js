@@ -559,7 +559,7 @@ export async function combineCreativePlan(contentTruth,directions) {
   return {plan,hash:await sha256(stableStringify(plan))};
 }
 
-export function buildCopyManifest(content) {
+export function buildCopyManifest(content,inputPayload={}) {
   const services=Array.isArray(content?.services)?content.services:[];
   const trustPoints=Array.isArray(content?.trust_points)?content.trust_points:[];
   const serviceBodies=services.map(x=>String(x?.description||"").trim()).filter(Boolean);
@@ -588,64 +588,70 @@ export function buildCopyManifest(content) {
     return value;
   };
 
-  const heroHeadline=choose([content?.hero_headline,serviceTitles[0],content?.footer_line],"Azienda");
-  const heroBody=choose([content?.hero_body,serviceBodies[0],content?.locality_line],"");
-  const positioningTitle=choose([
+  const rawLocality=String(content?.locality_line||"").replace(/\s+/g," ").trim();
+  const shortLocality=String(inputPayload?.city||inputPayload?.locality||"").replace(/\s+/g," ").trim()
+    || rawLocality.split(",").slice(-2,-1)[0]?.trim()
+    || rawLocality;
+  const verifiedContact=String(inputPayload?.verified_contacts||"").replace(/\s+/g," ").trim();
+
+  const uniqueOr=(candidates,generic)=>{
+    const chosen=choose(candidates,"");
+    if(chosen) return chosen;
+    const value=String(generic||"").trim();
+    if(value) used.add(norm(value));
+    return value;
+  };
+
+  const heroHeadline=uniqueOr([content?.hero_headline,serviceTitles[0],content?.footer_line],"Azienda");
+  const heroBody=uniqueOr([content?.hero_body,serviceBodies[0]],"Attività verificata.");
+  const positioningTitle=uniqueOr([
     content?.positioning_title,
-    serviceTitles[0],
-    serviceTitles[1],
-    content?.footer_line
-  ],heroHeadline);
-  const positioningBody=choose([
+    serviceTitles[1]
+  ],"Profilo operativo");
+  const positioningBody=uniqueOr([
     content?.positioning_body,
-    serviceBodies[0],
     serviceBodies[1],
-    content?.locality_line,
-    content?.footer_line
-  ],heroBody);
-  const servicesTitle=choose([content?.services_title,"Servizi"],"Servizi");
-  const servicesIntro=choose([
+    serviceBodies[2]
+  ],shortLocality ? "Operatività a "+shortLocality+"." : "Informazioni operative verificate.");
+  const servicesTitle=uniqueOr([content?.services_title],"Ambito operativo");
+  const servicesIntro=uniqueOr([
     content?.services_intro,
-    serviceBodies.slice(0,2).join(" "),
-    serviceTitles.slice(0,3).join(" · "),
-    content?.locality_line
-  ],positioningBody);
-  const trustTitle=choose([content?.trust_title,"Perché scegliere noi"],"Perché scegliere noi");
+    serviceTitles.length>1 ? serviceTitles.join(" · ") : ""
+  ],serviceTitles.length===1 ? "Ambito verificato dell’attività." : "Servizi verificati.");
+  const trustTitle=uniqueOr([content?.trust_title],"Dati verificati");
   const trustNorms=new Set(trustTexts.map(norm));
   const rawTrustIntro=String(content?.trust_intro||"").replace(/\s+/g," ").trim();
-  const trustIntro=choose([
-    rawTrustIntro && !trustNorms.has(norm(rawTrustIntro)) ? rawTrustIntro : "",
-    content?.locality_line,
-    "Dati verificati"
-  ],positioningBody);
-  const closingTitle=choose([
+  const trustIntro=uniqueOr([
+    rawTrustIntro && !trustNorms.has(norm(rawTrustIntro)) ? rawTrustIntro : ""
+  ],"Informazioni verificate.");
+  const bridgeTitle="Contatto diretto";
+  const bridgeBody=verifiedContact || (shortLocality ? "Sede operativa: "+shortLocality : "Contatto aziendale verificato.");
+  const closingTitle=uniqueOr([
     content?.closing_title,
-    content?.primary_cta_label,
-    "Parliamone"
-  ],"Contatti");
-  const closingBody=choose([
-    content?.closing_body,
-    content?.footer_line,
-    content?.locality_line,
-    serviceBodies[serviceBodies.length-1],
-    trustTexts[trustTexts.length-1]
-  ],positioningBody);
+    content?.primary_cta_label
+  ],"Parliamone");
+  const closingBody=uniqueOr([],"Raccontaci il tuo progetto.");
 
   const out={
     HERO_HEADLINE:heroHeadline,
     HERO_BODY:heroBody,
+    POSITIONING_KICKER:"Profilo",
     POSITIONING_TITLE:positioningTitle,
     POSITIONING_BODY:positioningBody,
     SERVICES_TITLE:servicesTitle,
     SERVICES_INTRO:servicesIntro,
     TRUST_TITLE:trustTitle,
     TRUST_INTRO:trustIntro,
+    BRIDGE_TITLE:bridgeTitle,
+    BRIDGE_BODY:bridgeBody,
+    FINAL_KICKER:"Contatti",
     CLOSING_TITLE:closingTitle,
     CLOSING_BODY:closingBody,
-    LOCALITY_LINE:String(content?.locality_line||"").trim(),
+    LOCALITY_LINE:shortLocality||rawLocality,
     PRIMARY_CTA_LABEL:String(content?.primary_cta_label||"Contatti").trim(),
     SECONDARY_CTA_LABEL:String(content?.secondary_cta_label||"Approfondisci").trim(),
-    FOOTER_LINE:String(content?.footer_line||"").trim()
+    FOOTER_LINE:String(content?.footer_line||rawLocality||"").trim(),
+    CONTACT_LINE:verifiedContact
   };
   services.forEach((s,i)=>{
     const rawTitle=String(s?.title||"").replace(/\s+/g," ").trim();
