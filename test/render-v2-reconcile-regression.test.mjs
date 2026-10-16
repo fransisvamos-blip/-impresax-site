@@ -362,3 +362,16 @@ test("health accepts intentional isolated pilot mode",()=>{
   assert.match(health,/operating_mode:pilotMode\?"PILOT_SINGLE_PROSPECT"/);
   assert.match(health,/operational_ok:\(queueReady\|\|pilotMode\)/);
 });
+
+
+test("ImpresaX master never reuses split-era hero assets",()=>{
+  assert.match(workflows,/const masterProfile=String\(context\.inputPayload\?\.render_profile\|\|""\)==="IMPRESAX_MASTER_V1"/);
+  assert.match(workflows,/ENGINE_CONTRACT_UPGRADE" && !masterProfile/);
+});
+
+test("ImpresaX master hero prompt forbids blank copy space",()=>{
+  assert.match(hero,/IMPRESAX MASTER FULL-BLEED CONTRACT/);
+  assert.match(hero,/ZERO blank copy panels/);
+  assert.match(hero,/Do NOT reserve a blank side for text/);
+  assert.match(hero,/photographic detail underneath the future text area/);
+});
