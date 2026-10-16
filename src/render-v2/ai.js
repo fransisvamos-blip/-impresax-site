@@ -893,13 +893,17 @@ const heroAssetQaSchema={
 };
 
 export async function runHeroAssetQa(env,{imageB64,inputPayload,direction,variantKey,beforeModelAttempt=null}) {
+  const masterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
+  const compositionRule=masterProfile
+    ? "IMPRESAX MASTER FULL-BLEED QA: do NOT require blank or clean negative space for HTML copy. The entire frame SHOULD remain a continuous photograph with useful real material/environment detail edge-to-edge. Dense photographic texture is valid and desirable when focal hierarchy remains clear. HTML copy readability is handled later by a CSS gradient overlay. HARD FAIL blank gray/flat copy panels, dead half-frames, split-layout geometry baked into the image, or large non-photographic voids. Judge composition by premium photographic balance, full-frame continuity, focal hierarchy and 390px crop survival."
+    : "The image must provide a strong focal point, premium photographic realism, enough clean negative space for HTML copy, and a focal subject that can survive a 390px mobile crop.";
   const text=[
     "Review this RAW candidate hero photograph BEFORE it is allowed into a website render.",
     "Be extremely strict. This is a premium B2B website asset gate, not a general image critique.",
     "HARD FAIL if ANY visible letters, words, numbers, logos, signage, labels, UI, watermarks, pseudo-text, gibberish, invented brand marks, or readable writing appear anywhere in the image. Even plausible-looking fake text is a FAIL.",
     "HARD FAIL obvious AI artifacts, uncanny people/hands, impossible materials/architecture, cheap stock-photo staging, fake corporate posing, malformed equipment, low detail, oversharpening or synthetic collage/composite appearance.",
     "HARD FAIL if the scene is generic or not clearly relevant to the verified commercial activity.",
-    "The image must provide a strong focal point, premium photographic realism, enough clean negative space for HTML copy, and a focal subject that can survive a 390px mobile crop.",
+    compositionRule,
     "Do not require the real company premises, employees, logo or a documented project. This is illustrative editorial imagery and must NOT imply documentary proof.",
     "Return scores 0-10. text_free must be 10 only when there is no visible text-like material at all.",
     "VARIANT: "+variantKey,
