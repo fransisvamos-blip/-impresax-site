@@ -1032,6 +1032,37 @@ export async function reconcileV2(env) {
     }
   }
 
+  const staleVariantStates=await sql`
+    select v.id,v.render_pack_id,v.variant_key
+    from render_v2_variants v
+    join render_v2_packs p on p.id=v.render_pack_id
+    where v.status='GENERATING'
+      and p.status='ESCALATION_REQUIRED'
+      and not exists (
+        select 1 from render_workflows_v2 aw
+        where aw.variant_id=v.id
+          and aw.workflow_type='VARIANT'
+          and aw.status in ('QUEUED','RUNNING','PAUSED')
+      )
+      and exists (
+        select 1 from render_workflows_v2 tw
+        where tw.variant_id=v.id
+          and tw.workflow_type='VARIANT'
+          and tw.status in ('FAILED','CANCELLED')
+      )
+    order by p.updated_at
+    limit 50`;
+  for(const v of staleVariantStates) {
+    await setVariantStatus(sql,v.id,{status:"ESCALATION_REQUIRED"});
+    summary.reconciled.push({
+      pack_id:v.render_pack_id,
+      variant_key:v.variant_key,
+      from_status:"GENERATING",
+      to_status:"ESCALATION_REQUIRED",
+      reason:"TERMINAL_VARIANT_WORKFLOW_STATE_NORMALIZATION"
+    });
+  }
+
   const rollout=await sql`select queue_enabled,max_concurrency from render_v2_rollout_state where id=1 limit 1`;
   if(rollout[0]?.queue_enabled===true) {
     const staleGenerating=await sql`
