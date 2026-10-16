@@ -870,23 +870,36 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
       if(!circuitOverride) break;
     }
     const instanceId="rv2-"+pack.id+"-"+variant.variant_key+"-"+runKey;
+    await setVariantStatus(sql,variant.id,{status:"GENERATING"});
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,packId:pack.id,variantId:variant.id,type:"VARIANT",
       instanceId,status:"QUEUED",
       metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt,circuit_breaker_override:circuitOverride}
     });
-    const instance=await env.RENDER_VARIANT_WORKFLOW.create({
-      id:instanceId,
-      params:{
-        prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id,
-        variantId:variant.id,variantKey:variant.variant_key,parentInstanceId:"rpv2-"+pack.id,eventPrefix:runKey,
-        initialFeedback:{
-          reason:"QUEUE_AUTO_RECOVERY",
-          issues:["Typed failure recovery on the current V2 execution contract."],
-          actions:["Preserve verified content and identity.","Retry only the uncertified variant.","Use the executable deterministic grammar when in ZERO_PHOTO_PREMIUM mode."]
+    let instance;
+    try {
+      instance=await env.RENDER_VARIANT_WORKFLOW.create({
+        id:instanceId,
+        params:{
+          prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id,
+          variantId:variant.id,variantKey:variant.variant_key,parentInstanceId:"rpv2-"+pack.id,eventPrefix:runKey,
+          initialFeedback:{
+            reason:"QUEUE_AUTO_RECOVERY",
+            issues:["Typed failure recovery on the current V2 execution contract."],
+            actions:["Preserve verified content and identity.","Retry only the uncertified variant.","Use the executable deterministic grammar when in ZERO_PHOTO_PREMIUM mode."]
+          }
         }
-      }
-    });
+      });
+    } catch(error) {
+      await updateWorkflow(sql,instanceId,{
+        status:"FAILED",
+        currentStep:"RECOVERY_WORKFLOW_CREATE_FAILED",
+        errorCode:"WORKFLOW_CREATE_FAILED",
+        metadata:{workflow_create_error:String(error?.message||error)}
+      });
+      await setVariantStatus(sql,variant.id,{status:"ESCALATION_REQUIRED"});
+      continue;
+    }
     launched.push({variant_key:variant.variant_key,instance_id:instanceId,status:await instance.status()});
   }
 
