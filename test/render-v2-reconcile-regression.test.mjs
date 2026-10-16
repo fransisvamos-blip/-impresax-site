@@ -11,6 +11,7 @@ const rollout=fs.readFileSync(new URL("../src/render-v2/rollout.js",import.meta.
 const remediation=fs.readFileSync(new URL("../src/render-v2/remediation.js",import.meta.url),"utf8");
 const concurrency=fs.readFileSync(new URL("../src/render-v2/concurrency.js",import.meta.url),"utf8");
 const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
+const failurePolicy=fs.readFileSync(new URL("../src/render-v2/failure-policy.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
@@ -211,4 +212,9 @@ test("legacy upgrades yield to higher-priority V3 escalations",()=>{
   assert.match(upgrade,/hpr\.rank < pr\.rank/);
   assert.match(upgrade,/hp\.quality_contract_version=\$\{QUALITY_CONTRACT_VERSION\}/);
   assert.match(upgrade,/hp\.execution_engine_version=\$\{EXECUTION_ENGINE_VERSION\}/);
+});
+
+test("hard budget exhaustion is not a system invariant",()=>{
+  assert.match(failurePolicy,/failure_domain="BUDGET"; failure_code="HARD_BUDGET_EXCEEDED"; retryable=false/);
+  assert.doesNotMatch(failurePolicy,/hard_budget_exceeded[\s\S]{0,120}failure_domain="SYSTEM_INVARIANT"/);
 });
