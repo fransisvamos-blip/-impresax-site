@@ -417,6 +417,18 @@ function splitVerifiedList(value) {
   return String(value||"").split(/\s*;\s*/).map(x=>x.trim()).filter(Boolean);
 }
 
+function verifiedServiceTitle(value) {
+  const text=String(value||"").replace(/\s+/g," ").trim();
+  if(!text) return "";
+  if(text.length<=72) return text;
+  const segments=text.split(/\s*(?:\/|:|—|–)\s*/).map(x=>x.trim()).filter(Boolean);
+  const exactSegment=segments.find(x=>x.length>=4 && x.length<=72);
+  if(exactSegment) return exactSegment;
+  const head=text.slice(0,72);
+  const boundary=head.lastIndexOf(" ");
+  return (boundary>=24?head.slice(0,boundary):head).trim();
+}
+
 async function buildVerifiedFallbackTruth(inputPayload) {
   const refs=[...new Set((inputPayload?.source_references||[]).map(String).filter(Boolean))];
   const safeRefs=refs.length?refs:["about:blank"];
@@ -426,11 +438,11 @@ async function buildVerifiedFallbackTruth(inputPayload) {
   const address=String(inputPayload?.address||"").trim();
   const city=String(inputPayload?.city||"").trim();
   const locality=address||city||String(inputPayload?.country||"").trim();
-  const serviceItems=(services.length?services:[String(inputPayload?.vertical||"Servizi verificati")]).map((text,i)=>({
-    title:text.length<=72?text:("Servizio "+(i+1)),
+  const serviceItems=(services.length?services:[String(inputPayload?.vertical||"Servizi verificati")]).map(text=>({
+    title:verifiedServiceTitle(text),
     description:text,
     source_refs:safeRefs
-  }));
+  })).filter(x=>x.title);
   const truth={
     hero_headline:business,
     hero_body:String(inputPayload?.verified_services||inputPayload?.vertical||business).trim(),
