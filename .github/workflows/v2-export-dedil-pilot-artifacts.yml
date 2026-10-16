@@ -1,0 +1,44 @@
+name: V2 Export DEDIL Pilot Artifacts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-export-dedil-pilot-artifacts.yml'
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rendering-v2-shadow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Export protected screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+          mkdir -p /tmp/dedil-pilot
+          for spec in             "r45-desktop 0be3620f-ce4e-4aca-b3e4-030540c5d7d6"             "r45-mobile 1dc10a6d-1046-4db5-819b-67d88a813dca"             "r46-desktop 10f32843-b3d4-420f-aa57-7fa5f34f4e6b"             "r46-mobile 76dfa742-ea38-4b30-b19b-03f82f6733e0"
+          do
+            name=$(echo "$spec" | awk '{print $1}')
+            id=$(echo "$spec" | awk '{print $2}')
+            curl -fsS -H "Authorization: Bearer $token" "$V2_URL/shadow/artifact/$id" -o "/tmp/dedil-pilot/$name.jpg"
+            file "/tmp/dedil-pilot/$name.jpg"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dedil-pilot-r45-r46
+          path: /tmp/dedil-pilot/*.jpg
+          retention-days: 1
