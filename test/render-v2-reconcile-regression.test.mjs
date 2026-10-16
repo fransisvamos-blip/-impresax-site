@@ -228,3 +228,14 @@ test("deterministic A/B grammar carries verified content through bridge",()=>{
   assert.match(grammar,/copyToken\("POSITIONING_BODY"\)/);
   assert.match(grammar,/\.ix-v2-nav a\{color:#f4f1ea;font-size:15px/);
 });
+
+test("legacy migration yields to higher-priority INPUT_READY when a full set can start",()=>{
+  const start=reconcile.indexOf("async function upgradeLegacyReadyPack");
+  const end=reconcile.indexOf("async function startPackFinalizer",start);
+  assert.ok(start>=0 && end>start);
+  const upgrade=reconcile.slice(start,end);
+  assert.match(upgrade,/ip\.status='INPUT_READY'/);
+  assert.match(upgrade,/iip\.certification_status='PASS'/);
+  assert.match(upgrade,/ipr\.rank < pr\.rank/);
+  assert.match(upgrade,/\$\{slots\}::int>=3/);
+});
