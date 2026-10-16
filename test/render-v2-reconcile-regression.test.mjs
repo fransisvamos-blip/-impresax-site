@@ -190,3 +190,14 @@ test("exhausted remediation becomes explicit evidence-required state",()=>{
   assert.match(remediation,/V2_INPUT_EVIDENCE_EXHAUSTED/);
   assert.match(remediation,/SOURCE_ENRICHMENT_REQUIRED/);
 });
+
+test("zero-photo queue recovery takes deterministic path before provider call",()=>{
+  assert.match(workflows,/\["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"\]\.includes\(String\(feedback\?\.reason\|\|""\)\)/);
+  assert.match(workflows,/buildZeroPhotoPremiumSpec/);
+});
+
+test("terminal variant workflow normalizes stale GENERATING state",()=>{
+  assert.match(reconcile,/TERMINAL_VARIANT_WORKFLOW_STATE_NORMALIZATION/);
+  assert.match(reconcile,/tw\.status in \('FAILED','CANCELLED'\)/);
+  assert.match(reconcile,/setVariantStatus\(sql,v\.id,\{status:"ESCALATION_REQUIRED"\}\)/);
+});
