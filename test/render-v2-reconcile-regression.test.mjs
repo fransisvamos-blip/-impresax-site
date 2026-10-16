@@ -204,7 +204,9 @@ test("exhausted remediation becomes explicit evidence-required state",()=>{
 });
 
 test("zero-photo queue recovery takes deterministic path before provider call",()=>{
-  assert.match(workflows,/\["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"\]\.includes\(String\(feedback\?\.reason\|\|""\)\)/);
+  assert.match(workflows,/ENGINE_CONTRACT_UPGRADE/);
+  assert.match(workflows,/QUEUE_AUTO_RECOVERY/);
+  assert.match(workflows,/PILOT_LAYOUT_MICROPOLISH_REUSE_HERO/);
   assert.match(workflows,/buildZeroPhotoPremiumSpec/);
 });
 
@@ -447,4 +449,10 @@ test("pilot layout micropolish can lock exact pre-QA hero SHA",()=>{
   assert.match(workflows,/PILOT_LOCKED_HERO_NOT_FOUND_OR_NOT_PREQA_PASS/);
   assert.match(workflows,/AI_GENERATED_EDITORIAL_LOCKED_PREQA_PASS/);
   assert.match(workflows,/q\.artifact_hashes->>'hero_sha256'=a\.sha256/);
+});
+
+test("locked pilot hero also uses deterministic Premium V3 layout",()=>{
+  assert.match(workflows,/PILOT_LAYOUT_MICROPOLISH_REUSE_HERO/);
+  assert.match(workflows,/context\.heroOnly && cycle===1/);
+  assert.match(workflows,/buildZeroPhotoPremiumSpec/);
 });
