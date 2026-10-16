@@ -358,6 +358,30 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
           and p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION}
         )
       )
+      and not (
+        ${slots}::int>=3
+        and exists (
+          select 1
+          from render_v2_packs ip
+          join prospects ipr on ipr.id=ip.prospect_id
+          join render_input_packs iip on iip.id=ip.input_pack_id
+          where ip.shadow_mode=true
+            and ip.status='INPUT_READY'
+            and iip.certification_status='PASS'
+            and ipr.rank is not null
+            and pr.rank is not null
+            and ipr.rank < pr.rank
+            and ipr.retry_count<ipr.max_retries
+            and coalesce(ipr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+            and coalesce(ipr.current_step,'')<>'GENERATION_HOLD'
+            and not exists (
+              select 1
+              from render_workflows_v2 iaw
+              where iaw.render_pack_id=ip.id
+                and iaw.status in ('QUEUED','RUNNING','PAUSED')
+            )
+        )
+      )
       and not exists (
         select 1
         from render_v2_packs hp
