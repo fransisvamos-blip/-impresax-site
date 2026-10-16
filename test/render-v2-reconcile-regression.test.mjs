@@ -103,3 +103,13 @@ test("structured AI calls have bounded per-attempt deadlines",()=>{
   assert.match(ai,/V2_AI_CALL_TIMEOUT_MS/);
   assert.match(ai,/105000/);
 });
+
+test("queue finalizes current certified sets while active",()=>{
+  assert.match(rollout,/finalizersStarted/);
+  assert.match(rollout,/maybeStartFinalizer\(env,sql,pack,gate\)/);
+  assert.match(rollout,/q\.artifact_hashes->>'A_revision_id'/);
+  assert.match(rollout,/q\.artifact_hashes->>'B_revision_id'/);
+  assert.match(rollout,/q\.artifact_hashes->>'C_revision_id'/);
+  assert.match(rollout,/p\.quality_contract_version=\$\{QUALITY_CONTRACT_VERSION\}/);
+  assert.match(rollout,/p\.execution_engine_version=\$\{EXECUTION_ENGINE_VERSION\}/);
+});
