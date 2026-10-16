@@ -1,5 +1,5 @@
 {
-  "version": "RENDER_V2_GOLDEN_SET_1",
+  "version": "RENDER_V2_GOLDEN_SET_1-r2",
   "frozen_at": "2026-10-13",
   "cases": [
     {
@@ -65,7 +65,9 @@
         "medical",
         "known_visual_history"
       ],
-      "expected_input": "INPUT_BLOCKED_UNTIL_IDENTITY_VERIFIED"
+      "expected_input": "PASS",
+      "identity_evidence": "OFFICIAL_LOGO_LOCKED_FROM_FIRST_PARTY_HTML_SIGNAL",
+      "identity_evidence_source": "https://studiodentisticogiardinelli.com/"
     },
     {
       "code": "CZ-089",
