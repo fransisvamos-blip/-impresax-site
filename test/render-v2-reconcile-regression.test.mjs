@@ -396,7 +396,8 @@ test("ImpresaX master rework cannot regress to split hero",()=>{
 test("ImpresaX master bridge and mobile nav remain distinct",()=>{
   assert.match(grammar,/copyToken\("BRIDGE_TITLE"\)/);
   assert.match(grammar,/copyToken\("BRIDGE_BODY"\)/);
-  assert.match(grammar,/justify-content:space-between!important/);
+  assert.match(grammar,/justify-content:flex-start!important/);
+  assert.match(grammar,/overflow-x:auto!important/);
   assert.match(grammar,/font-size:10px!important/);
   assert.match(ai,/do not reuse \{\{copy:POSITIONING_BODY\}\} in bridge/);
 });
@@ -410,9 +411,9 @@ test("ImpresaX pilot headline is derived from verified service titles",()=>{
 });
 
 
-test("ImpresaX master preserves official logo inside intentional brand plaques",()=>{
-  assert.match(grammar,/\.ix-v2-brand\{position:relative;background:#f7f6f2!important/);
-  assert.match(grammar,/\.ix-v2-footer-identity\{display:inline-flex!important;width:max-content!important/);
+test("ImpresaX master preserves official logo without synthetic plaques",()=>{
+  assert.match(grammar,/\.ix-v2-brand\{position:relative;background:transparent!important/);
+  assert.match(grammar,/\.ix-v2-footer-identity\{display:inline-flex!important;width:max-content!important;min-height:0!important;background:transparent!important/);
   assert.match(grammar,/\.ix-v2-footer-logo\{display:block!important;max-height:54px!important/);
 });
 
