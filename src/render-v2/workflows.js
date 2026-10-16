@@ -78,6 +78,48 @@ async function latestReusableHeroAsset(sql,packId,variantKey) {
   };
 }
 
+async function reusableHeroAssetBySha(sql,packId,variantKey,sha256) {
+  const sha=String(sha256||"").trim().toLowerCase();
+  if(!/^[a-f0-9]{64}$/.test(sha)) return null;
+  const prefix="HERO_VISUAL_APPROVED_"+variantKey+"_";
+  const rows=await sql`
+    select a.artifact_type,a.r2_key,a.sha256,a.mime,a.bytes,a.created_at
+    from render_artifacts_v2 a
+    where a.render_pack_id=${packId}::uuid
+      and a.variant_revision_id is null
+      and a.artifact_type like ${prefix+"%"}
+      and a.sha256=${sha}
+      and a.mime like 'image/%'
+      and a.bytes>0
+      and exists(
+        select 1
+        from render_qa_results_v2 q
+        where q.render_pack_id=a.render_pack_id
+          and q.qa_type='HERO_ASSET_PREQA'
+          and q.status='PASS'
+          and q.artifact_hashes->>'variant_key'=${variantKey}
+          and q.artifact_hashes->>'hero_sha256'=a.sha256
+      )
+    order by a.created_at desc
+    limit 1`;
+  if(!rows.length) return null;
+  const a=rows[0];
+  return {
+    asset_id:"HERO_VISUAL",
+    role:"hero",
+    source_type:"AI_GENERATED_EDITORIAL_LOCKED_PREQA_PASS",
+    commercial_use_status:"AI_GENERATED_EDITORIAL",
+    generated:true,
+    reused:true,
+    locked:true,
+    preqa_pass:true,
+    r2_key:a.r2_key,
+    mime:a.mime,
+    sha256:a.sha256,
+    bytes:a.bytes
+  };
+}
+
 async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,variantKey,workflowInstanceId,cycle=1,revisionId=null,feedback=null}) {
   const model=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-klein-9b";
   const safeInstance=String(workflowInstanceId||"workflow").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,120);
@@ -293,7 +335,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       if(!planRows.length) throw new Error("SYSTEM_INVARIANT:CREATIVE_PLAN_NOT_FOUND");
       const plan=planRows[0];
       const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
-      const renderProfile=String(packRows[0]?.metadata?.render_profile||"").trim();
+      const packMetadata=packRows[0]?.metadata||{};
+      const renderProfile=String(packMetadata.render_profile||"").trim();
       const inputPayload=renderProfile
         ? {...input.payload,render_profile:renderProfile}
         : input.payload;
@@ -307,13 +350,21 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto};
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto,packMetadata};
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const verified=explicitHeroAsset(context.assets);
       if(verified) return verified;
       const masterProfile=String(context.inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
+      const lockedHeroPilot=params.initialFeedback?.reason==="PILOT_LAYOUT_MICROPOLISH_REUSE_HERO";
+      if(lockedHeroPilot) {
+        if(!masterProfile) throw new Error("SYSTEM_INVARIANT:PILOT_HERO_LOCK_REQUIRES_MASTER_PROFILE");
+        const requestedSha=String(context.packMetadata?.pilot_reuse_hero_sha256||"").trim().toLowerCase();
+        const reusable=await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha);
+        if(!reusable) throw new Error("SYSTEM_INVARIANT:PILOT_LOCKED_HERO_NOT_FOUND_OR_NOT_PREQA_PASS");
+        return reusable;
+      }
       if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE" && !masterProfile) {
         const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
         if(reusable) return reusable;
