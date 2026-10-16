@@ -338,3 +338,20 @@ test("exhausted V3 quality upgrades cannot block legacy migration",()=>{
   assert.match(upgrade,/p\.metadata->>'quality_upgrade_exhausted'/);
   assert.match(upgrade,/quality_upgrade_exhausted[\s\S]{0,120}false/);
 });
+
+
+test("ImpresaX master pilot uses full-bleed in-image hero overlay",()=>{
+  assert.match(grammar,/IMPRESAX_MASTER_V1/);
+  assert.match(grammar,/ixm-hero__media/);
+  assert.match(grammar,/ixm-hero__veil/);
+  assert.match(grammar,/position:absolute;inset:0;margin:0;width:100%;height:100%/);
+  assert.match(grammar,/Verified headline\/body\/CTAs intentionally overlaid inside the photographic hero field/);
+  assert.match(grammar,/hero_copy_overlay_allowed:impresaxMasterProfile/);
+  assert.match(grammar,/mobile_overlay_forbidden:!impresaxMasterProfile/);
+});
+
+test("render profile is pack scoped and injected without mutating certified input payload",()=>{
+  assert.match(workflows,/select metadata from render_v2_packs where id=\$\{params\.packId\}::uuid/);
+  assert.match(workflows,/packRows\[0\]\?\.metadata\?\.render_profile/);
+  assert.match(workflows,/\{\.\.\.input\.payload,render_profile:renderProfile\}/);
+});
