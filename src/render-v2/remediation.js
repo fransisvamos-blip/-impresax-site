@@ -1,6 +1,7 @@
 import { db, getProspect } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { safeExternalHttpUrl, ensureArray } from "./utils.js";
+import { REMEDIATION_POLICY_VERSION } from "./constants.js";
 
 const UNAVAILABLE=/^(?:|NON[_ ]?DISPONIBILE|N\/A|NA|UNKNOWN|NON[_ ]?VERIFICAT[OA]|NOT_AVAILABLE)$/i;
 
@@ -365,7 +366,8 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
   const sql=db(env);
   const prospect=await getProspect(sql,prospectId);
   const source=prospect.source_data||{};
-  const attempts=Number(source.v2_remediation_attempts||0)+1;
+  const sameRemediationPolicy=String(source.v2_remediation_policy_version||"")===REMEDIATION_POLICY_VERSION;
+  const attempts=(sameRemediationPolicy?Number(source.v2_remediation_attempts||0):0)+1;
   const docs=await collectDocs(prospect);
   const contactsFound=extractContacts(docs,prospect);
   const ai=await extractServices(env,docs,prospect).catch(()=>({services:[],trust:[]}));
@@ -427,6 +429,7 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
     contact_evidence:contactsFound.evidence,
     rejected_contact_evidence:contactsFound.rejected_evidence,
     contact_verification_rule:"FIRST_PARTY_CONTACT_SURFACE_OR_REPEATED_OFFICIAL_EVIDENCE",
+    remediation_policy_version:REMEDIATION_POLICY_VERSION,
     remediated_at:new Date().toISOString()
   };
 
@@ -443,6 +446,7 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
             : (contactsFound.value?"V2_FIRST_PARTY_VERIFIED":(source.contact_data_state||"NON_VERIFICATO")),
           verified_trust:verifiedTrust||source.verified_trust||"NON_DISPONIBILE",
           v2_remediation_attempts:attempts,
+          v2_remediation_policy_version:REMEDIATION_POLICY_VERSION,
           v2_remediation_status:canCertify?"EVIDENCE_READY":"EVIDENCE_INCOMPLETE",
           v2_remediation_evidence:evidence
         })}::jsonb
