@@ -906,7 +906,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,hash:creative.hash
       });
       const variants=await createVariants(sql,p.packId,creative.plan.directions);
-      await setPackStatus(sql,p.packId,"GENERATING",{creative_plan_hash:creative.hash});
+      await setPackStatus(sql,p.packId,"PLANNING",{creative_plan_hash:creative.hash,variant_spawn_pending:true});
       return {variants:Object.fromEntries(Object.entries(variants).map(([k,v])=>[k,v.id]))};
     });
 
@@ -933,6 +933,20 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         launched.push(key);
         slots--;
         active++;
+      }
+      if(launched.length>0) {
+        await setPackStatus(sql,p.packId,"GENERATING",{
+          variant_spawn_pending:deferred.length>0,
+          initial_variants_launched:launched,
+          initial_variants_deferred:deferred
+        });
+      } else {
+        await setPackStatus(sql,p.packId,"PLANNING",{
+          variant_spawn_pending:true,
+          initial_variants_launched:[],
+          initial_variants_deferred:deferred,
+          deferred_concurrency:true
+        });
       }
       return {ok:true,launched,deferred,concurrency_limit:limit,active_after:active};
     });
