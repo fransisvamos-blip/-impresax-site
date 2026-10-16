@@ -239,3 +239,13 @@ test("legacy migration yields to higher-priority INPUT_READY when a full set can
   assert.match(upgrade,/ipr\.rank < pr\.rank/);
   assert.match(upgrade,/\$\{slots\}::int>=3/);
 });
+
+test("prospect rendering fields mirror authoritative pack state",()=>{
+  assert.match(reconcile,/async function syncProspectRenderProjection/);
+  assert.match(reconcile,/when status='RENDER_READY' then 'CABINA_RENDER_REVIEW'/);
+  assert.match(reconcile,/when status='GENERATING' then 'RENDER_V2_GENERATING'/);
+  assert.match(reconcile,/when status='INPUT_READY' then 'RENDER_QUEUE_WAIT'/);
+  assert.match(reconcile,/V2_INPUT_EVIDENCE_EXHAUSTED/);
+  assert.match(reconcile,/summary\.prospect_projection_sync=await syncProspectRenderProjection\(sql\)/);
+  assert.doesNotMatch(reconcile,/syncProspectRenderProjection[\s\S]{0,2200}set pipeline_status=/);
+});
