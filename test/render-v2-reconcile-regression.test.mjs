@@ -424,3 +424,11 @@ test("ImpresaX pilot logo has no synthetic white box and mobile nav can breathe"
   assert.match(grammar,/flex:0 0 auto!important/);
   assert.doesNotMatch(grammar,/\.ix-v2-brand\{[^}]*background:#f7f6f2!important/);
 });
+
+test("ImpresaX pilot editorial positioning derives only from verified service evidence",()=>{
+  assert.match(ai,/materiali per l’edilizia/);
+  assert.match(ai,/const masterPositioningTitle=/);
+  assert.match(ai,/body\.match\(\/\\bper\\s\+\(\.\+\?\)\[\.\]\?\$\/i\)/);
+  assert.match(ai,/const masterPositioningBody=/);
+  assert.match(ai,/String\(serviceBodies\[0\]\|\|""\)\.trim\(\)/);
+});
