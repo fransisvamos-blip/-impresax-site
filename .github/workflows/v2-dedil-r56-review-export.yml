@@ -30,8 +30,21 @@ jobs:
           token=$(openssl rand -hex 32)
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
           mkdir -p review
-          curl -fSsL -H "Authorization: Bearer $token"             "$V2_URL/shadow/artifact/78332ae5-8ea7-407d-8217-66164099c689"             -o review/dedil-r56-desktop.jpg
-          curl -fSsL -H "Authorization: Bearer $token"             "$V2_URL/shadow/artifact/1e9aafdd-9903-4048-9fce-6aad15451517"             -o review/dedil-r56-mobile.jpg
+          fetch_artifact() {
+            local id="$1"
+            local out="$2"
+            local ok=0
+            for i in {1..20}; do
+              code=$(curl -sSL -o "$out" -w '%{http_code}' -H "Authorization: Bearer $token" "$V2_URL/shadow/artifact/$id" || true)
+              echo "artifact=$id attempt=$i code=$code"
+              if [ "$code" = "200" ]; then ok=1; break; fi
+              if [ "$code" != "401" ] && [ "$code" != "503" ]; then break; fi
+              sleep 3
+            done
+            [ "$ok" = "1" ] || exit 1
+          }
+          fetch_artifact 78332ae5-8ea7-407d-8217-66164099c689 review/dedil-r56-desktop.jpg
+          fetch_artifact 1e9aafdd-9903-4048-9fce-6aad15451517 review/dedil-r56-mobile.jpg
           file review/*
       - uses: actions/upload-artifact@v4
         with:
