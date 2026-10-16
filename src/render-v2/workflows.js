@@ -89,7 +89,9 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
     await reserveAiCall(sql,packId,env,"HERO_IMAGE:"+variantKey+":"+model+":A"+attempt,revisionId);
     const generated=await generatePremiumHeroVisual(env,{
       inputPayload,direction,variantKey,
-      feedback:generationFeedback
+      feedback:generationFeedback,
+      generationAttempt:attempt,
+      generationCycle:cycle
     });
     const imageB64=bytesToBase64(generated.bytes);
     const qa=await runHeroAssetQa(env,{
