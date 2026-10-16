@@ -277,3 +277,11 @@ test("reconciler fills and closes staged recovery waves",()=>{
   assert.match(reconcile,/staged_auto_recovery:true/);
   assert.match(reconcile,/auto_recovery_wave_last_launch_at/);
 });
+
+test("active recovery variant state follows workflow lifecycle",()=>{
+  assert.match(reconcile,/await setVariantStatus\(sql,variant\.id,\{status:"GENERATING"\}\)/);
+  assert.match(reconcile,/RECOVERY_WORKFLOW_CREATE_FAILED/);
+  assert.match(reconcile,/await setVariantStatus\(sql,variant\.id,\{status:"ESCALATION_REQUIRED"\}\)/);
+  assert.match(reconcile,/row\.variant_status!=="GENERATING"/);
+  assert.match(reconcile,/setVariantStatus\(sql,row\.variant_id,\{status:"GENERATING"\}\)/);
+});
