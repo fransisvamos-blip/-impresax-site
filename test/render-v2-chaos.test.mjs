@@ -76,9 +76,11 @@ test("chaos: local visual failure reworks only affected variant",()=>{
   assert.equal(recoveryDecision({failureDomain:"SET_DIVERSITY",sameFingerprintCount:1,hasPreview:true}).action,"REWORK_WEAKEST_VARIANT_ONLY");
 });
 
-test("chaos: system invariant and hard budget never blindly retry",()=>{
+test("chaos: hard budget is terminal but distinct from system invariant",()=>{
   const f=classifyFailure(new Error("HARD_BUDGET_EXCEEDED:AI_CALLS"),{step:"generation"});
-  assert.equal(f.failure_domain,"SYSTEM_INVARIANT");
+  assert.equal(f.failure_domain,"BUDGET");
+  assert.equal(f.failure_code,"HARD_BUDGET_EXCEEDED");
+  assert.equal(f.retryable,false);
   assert.equal(recoveryDecision({failureDomain:f.failure_domain,sameFingerprintCount:1}).retry,false);
 });
 
