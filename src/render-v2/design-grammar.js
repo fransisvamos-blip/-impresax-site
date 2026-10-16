@@ -298,9 +298,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 :root{--ix-master-cta:${masterCta};--ix-master-cta-text:${masterCtaText}}
 .ix-v2-header{position:absolute!important;inset:0 0 auto!important;z-index:80!important;background:transparent!important;color:#fff!important;border-bottom:1px solid rgba(255,255,255,.12)!important}
 .ix-v2-header-inner{min-height:72px!important;width:min(calc(100% - 80px),1500px)!important}
-.ix-v2-brand{position:relative;background:#f7f6f2!important;padding:10px 16px 12px!important;border-radius:0 0 4px 4px!important;box-shadow:0 10px 30px rgba(0,0,0,.16)!important;align-self:stretch!important;display:inline-flex!important;align-items:center!important}
+.ix-v2-brand{position:relative;background:transparent!important;padding:0!important;border-radius:0!important;box-shadow:none!important;align-self:center!important;display:inline-flex!important;align-items:center!important;filter:drop-shadow(0 2px 12px rgba(0,0,0,.28))}
 .ix-v2-logo{max-height:50px!important;max-width:220px!important;display:block!important}
-.ix-v2-brand:after{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:#f7f6f2}
+.ix-v2-brand:after{display:none!important}
 .ix-v2-nav a{color:rgba(255,255,255,.86)!important;font-size:12px!important}
 .ix-v2-header-cta{min-height:40px!important;padding:0 18px!important;border-radius:999px!important;background:var(--ix-master-cta)!important;color:var(--ix-master-cta-text)!important;border-color:var(--ix-master-cta)!important}
 .ixm-hero{position:relative;min-height:clamp(560px,60vw,760px);padding:0!important;background:#0d0e0e;color:#fff;overflow:hidden}
@@ -336,14 +336,14 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixm-bridge h2{max-width:14ch;font-size:clamp(46px,6.3vw,92px)!important}
 .ixm-bridge .ixg-actions{margin-top:0!important}
 .ix-v2-footer{background:#0d0e0e!important;color:#f7f6f2!important}
-.ix-v2-footer-identity{display:inline-flex!important;width:max-content!important;min-height:0!important;background:#f7f6f2!important;padding:10px 14px!important;border-radius:3px!important;box-shadow:0 8px 24px rgba(0,0,0,.18)!important}
+.ix-v2-footer-identity{display:inline-flex!important;width:max-content!important;min-height:0!important;background:transparent!important;padding:0!important;border-radius:0!important;box-shadow:none!important;filter:drop-shadow(0 2px 10px rgba(0,0,0,.22))}
 .ix-v2-footer-logo{display:block!important;max-height:54px!important}
 @media(max-width:700px){
  .ix-v2-header-inner{width:calc(100% - 32px)!important;min-height:92px!important;grid-template-columns:1fr auto!important;align-content:center!important;row-gap:8px!important}
- .ix-v2-nav{display:flex!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;justify-content:space-between!important;gap:0!important;overflow:visible!important;white-space:nowrap!important;padding:0 0 10px!important;border-top:1px solid rgba(255,255,255,.12)!important;padding-top:8px!important}
- .ix-v2-nav a{font-size:10px!important;letter-spacing:.08em!important;color:rgba(255,255,255,.82)!important}
+ .ix-v2-nav{display:flex!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;justify-content:flex-start!important;gap:22px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;padding:8px 0 10px!important;border-top:1px solid rgba(255,255,255,.12)!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch}
+ .ix-v2-nav a{font-size:10px!important;letter-spacing:.10em!important;color:rgba(255,255,255,.88)!important;flex:0 0 auto!important}
  .ix-v2-header-cta{min-height:36px!important;padding:0 13px!important;font-size:10px!important}
- .ix-v2-brand{padding:8px 10px 9px!important;border-radius:0 0 3px 3px!important}.ix-v2-logo{max-width:142px!important;max-height:42px!important}
+ .ix-v2-brand{padding:0!important;border-radius:0!important}.ix-v2-logo{max-width:142px!important;max-height:42px!important}
  .ixm-hero{min-height:690px}
  .ixm-hero__inner{min-height:690px;align-items:flex-end;padding:96px 0 42px}
  .ixm-hero__copy{width:100%;max-width:100%}
