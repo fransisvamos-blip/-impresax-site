@@ -337,8 +337,16 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
       const packMetadata=packRows[0]?.metadata||{};
       const renderProfile=String(packMetadata.render_profile||"").trim();
-      const inputPayload=renderProfile
-        ? {...input.payload,render_profile:renderProfile}
+      const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
+      const inputPayload=(renderProfile||logoFirstBrandProfile)
+        ? {
+            ...input.payload,
+            ...(renderProfile?{render_profile:renderProfile}:{}),
+            ...(logoFirstBrandProfile?{
+              logo_first_brand_profile:logoFirstBrandProfile,
+              brand_gate_mode:"LOGO_FIRST_V1"
+            }:{})
+          }
         : input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack,inputPayload);
