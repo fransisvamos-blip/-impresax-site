@@ -89,3 +89,9 @@ test("queue admits obsolete escalation packs for Premium V3 migration",()=>{
   assert.match(rollout,/QUALITY_CONTRACT_VERSION/);
   assert.match(rollout,/EXECUTION_ENGINE_VERSION/);
 });
+
+test("generic page imagery issues do not trigger hero repair",()=>{
+  assert.match(workflows,/const explicitHero=/);
+  assert.match(workflows,/const focalCrop=/);
+  assert.doesNotMatch(workflows,/\/hero\|imagery\|image\|crop\|focal\|generic\|stock\|synthetic\|ai\[- \]\?feel\//);
+});
