@@ -469,6 +469,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           }
           await step.do("r"+cycle+"-generation-provider-escalation",async()=>{
             await updateRevision(sql,revision.id,{status:"QA_FAILED"});
+            await setVariantStatus(sql,params.variantId,{status:"ESCALATION_REQUIRED"});
             if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
             await updateWorkflow(sql,event.instanceId,{status:"FAILED",currentStep:budget?"BUDGET_ESCALATION":"AI_PROVIDER_ESCALATION",errorCode:budget?"HARD_BUDGET_EXCEEDED":"VARIANT_GENERATION_PROVIDER_FAILED"});
             await emitParent(this.env,params.parentInstanceId,terminalType,{variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:domain});
