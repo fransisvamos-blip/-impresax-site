@@ -438,3 +438,12 @@ test("DEDIL pilot final polish improves mobile tap targets and positioning balan
   assert.match(grammar,/\.ixg-positioning__body\{position:relative;padding-top:18px!important;border-top:1px solid rgba\(17,17,17,.18\)!important\}/);
   assert.match(grammar,/\.ixg-positioning__body:after/);
 });
+
+test("pilot layout micropolish can lock exact pre-QA hero SHA",()=>{
+  assert.match(workflows,/async function reusableHeroAssetBySha/);
+  assert.match(workflows,/PILOT_LAYOUT_MICROPOLISH_REUSE_HERO/);
+  assert.match(workflows,/pilot_reuse_hero_sha256/);
+  assert.match(workflows,/PILOT_LOCKED_HERO_NOT_FOUND_OR_NOT_PREQA_PASS/);
+  assert.match(workflows,/AI_GENERATED_EDITORIAL_LOCKED_PREQA_PASS/);
+  assert.match(workflows,/q\.artifact_hashes->>'hero_sha256'=a\.sha256/);
+});
