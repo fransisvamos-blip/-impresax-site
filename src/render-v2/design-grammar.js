@@ -199,7 +199,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "<section id=\"services\" class=\"ixg ixg-services "+vclass+"\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__grid\">"+servicesA+"</div></div></section>",
     "<section id=\"trust\" class=\"ixg ixg-trust-section "+vclass+"\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-grid\">"+trust+"</div></div></section>",
     impresaxMasterProfile
-      ? "<section id=\"bridge\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("POSITIONING_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
+      ? "<section id=\"bridge\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
       : "<section id=\"bridge\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
     "<section id=\"final-cta\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
@@ -337,8 +337,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ix-v2-footer{background:#0d0e0e!important;color:#f7f6f2!important}
 @media(max-width:700px){
  .ix-v2-header-inner{width:calc(100% - 32px)!important;min-height:92px!important;grid-template-columns:1fr auto!important;align-content:center!important;row-gap:8px!important}
- .ix-v2-nav{display:flex!important;grid-column:1/-1!important;grid-row:2!important;gap:18px!important;overflow-x:auto!important;white-space:nowrap!important;padding:0 0 10px!important}
- .ix-v2-nav a{font-size:9px!important;letter-spacing:.08em!important}
+ .ix-v2-nav{display:flex!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;justify-content:space-between!important;gap:0!important;overflow:visible!important;white-space:nowrap!important;padding:0 0 10px!important;border-top:1px solid rgba(255,255,255,.12)!important;padding-top:8px!important}
+ .ix-v2-nav a{font-size:10px!important;letter-spacing:.08em!important;color:rgba(255,255,255,.82)!important}
  .ix-v2-header-cta{min-height:36px!important;padding:0 13px!important;font-size:10px!important}
  .ix-v2-brand{padding:6px 9px}.ix-v2-logo{max-width:142px!important;max-height:42px!important}
  .ixm-hero{min-height:690px}
