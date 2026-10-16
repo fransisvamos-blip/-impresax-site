@@ -8,6 +8,9 @@ export function recoveryDecision({failureDomain,sameFingerprintCount=1,hasPrevie
   if(failureDomain==="SYSTEM_INVARIANT") {
     return {action:"STOP_AND_ESCALATE",retry:false,preserve_artifacts:true};
   }
+  if(failureDomain==="BUDGET") {
+    return {action:"BUDGET_EXHAUSTED",retry:false,preserve_artifacts:true};
+  }
   if(failureDomain==="VISUAL_QUALITY") {
     return {action:"REWORK_VARIANT_ONLY",retry:false,preserve_artifacts:true};
   }
