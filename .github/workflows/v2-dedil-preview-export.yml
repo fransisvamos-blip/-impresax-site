@@ -41,10 +41,10 @@ jobs:
             done
             return 1
           }
-          fetch_artifact de5cf766-5c62-4ac4-afcd-b36eb0cc1aac desktop-1440.jpg
-          fetch_artifact d42d10c0-3ea9-4c4a-886b-65b5fecc47f8 mobile-390.jpg
+          fetch_artifact 106756d9-47fe-4333-bc5a-56635debc5f8 rejected-a3.jpg
+          fetch_artifact a9411957-3b07-4246-b10b-02ec8c110522 rejected-a3-meta.json
       - uses: actions/upload-artifact@v4
         with:
-          name: dedil-a-r43-preview
+          name: dedil-a-r43-rejected-a3
           path: /tmp/dedil-preview
           if-no-files-found: error
