@@ -173,3 +173,9 @@ test("terminal provider escalation closes variant state",()=>{
   assert.match(workflows,/setVariantStatus\(sql,params\.variantId,\{status:"ESCALATION_REQUIRED"\}\)/);
   assert.match(workflows,/AI_PROVIDER_ESCALATION/);
 });
+
+test("quality upgrade selector skips packs with no launchable variants",()=>{
+  assert.match(reconcile,/and exists \(\s*select 1\s*from render_v2_variants lv/);
+  assert.match(reconcile,/law\.status in \('QUEUED','RUNNING','PAUSED'\)/);
+  assert.match(reconcile,/coalesce\(lr\.compiler_version,''\)=\$\{COMPILER_VERSION\}/);
+});
