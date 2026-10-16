@@ -29,13 +29,22 @@ test("generic auto recovery cannot requeue exhausted packs",()=>{
     reconcile,
     /p\.status='ESCALATION_REQUIRED'[\s\S]{0,300}auto_recovery_attempt'\)::int,0\)<3/
   );
-  assert.match(reconcile,/if\(attempts>=3\) \{/);
-  assert.match(reconcile,/reason:"AUTO_RECOVERY_LIMIT",slots_used:0/);
+  const start=reconcile.indexOf("async function recoverEscalatedQueuePack");
+  const end=reconcile.indexOf("export async function startOrRecoverParent",start);
+  assert.ok(start>=0 && end>start);
+  const recovery=reconcile.slice(start,end);
+  assert.match(recovery,/if\(priorAttempts>=3\)/);
+  assert.match(recovery,/if\(!reuseWave && priorAttempts>=3\)/);
+  assert.match(recovery,/reason:"AUTO_RECOVERY_LIMIT",slots_used:0/);
 });
 
 test("queue recovery never marks a pack GENERATING when no workflow launched",()=>{
-  const guard=reconcile.indexOf("if(launched.length===0)");
-  const mark=reconcile.indexOf('await setPackStatus(sql,pack.id,"GENERATING",{auto_recovery_attempt:attempt,auto_recovery_run_key:runKey});',guard);
+  const start=reconcile.indexOf("async function recoverEscalatedQueuePack");
+  const end=reconcile.indexOf("export async function startOrRecoverParent",start);
+  assert.ok(start>=0 && end>start);
+  const recovery=reconcile.slice(start,end);
+  const guard=recovery.indexOf("if(launched.length===0)");
+  const mark=recovery.indexOf('await setPackStatus(sql,pack.id,"GENERATING",{',guard);
   assert.ok(guard>=0,"zero-launch guard missing");
   assert.ok(mark>guard,"GENERATING transition must occur after zero-launch guard");
 });
