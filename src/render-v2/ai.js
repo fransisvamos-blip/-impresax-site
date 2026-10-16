@@ -602,7 +602,19 @@ export function buildCopyManifest(content,inputPayload={}) {
     return value;
   };
 
-  const heroHeadline=uniqueOr([content?.hero_headline,serviceTitles[0],content?.footer_line],"Azienda");
+  const masterHeadlinePart=value=>{
+    const cleaned=String(value||"")
+      .replace(/^vendita\s+all['’]ingrosso\s+di\s+/i,"")
+      .replace(/^lavorazione\s+e\s+trasformazione\s+del\s+/i,"")
+      .replace(/\s+/g," ")
+      .trim()
+      .replace(/[.]+$/,"");
+    return cleaned ? cleaned.charAt(0).toUpperCase()+cleaned.slice(1) : "";
+  };
+  const masterHeroHeadline=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1"
+    ? serviceTitles.slice(0,2).map(masterHeadlinePart).filter(Boolean).join(". ")+(serviceTitles.length?".":"")
+    : "";
+  const heroHeadline=uniqueOr([masterHeroHeadline,content?.hero_headline,serviceTitles[0],content?.footer_line],"Azienda");
   const heroBody=uniqueOr([content?.hero_body,serviceBodies[0]],"Attività verificata.");
   const positioningTitle=uniqueOr([
     content?.positioning_title,
