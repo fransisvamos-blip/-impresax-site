@@ -400,3 +400,11 @@ test("ImpresaX master bridge and mobile nav remain distinct",()=>{
   assert.match(grammar,/font-size:10px!important/);
   assert.match(ai,/do not reuse \{\{copy:POSITIONING_BODY\}\} in bridge/);
 });
+
+test("ImpresaX pilot headline is derived from verified service titles",()=>{
+  assert.match(ai,/const masterHeadlinePart=/);
+  assert.match(ai,/vendita\\s\+all\['’\]ingrosso/);
+  assert.match(ai,/lavorazione\\s\+e\\s\+trasformazione/);
+  assert.match(ai,/render_profile\|\|""\)===\"IMPRESAX_MASTER_V1\"/);
+  assert.match(ai,/serviceTitles\.slice\(0,2\)/);
+});
