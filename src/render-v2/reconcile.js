@@ -1106,6 +1106,37 @@ async function syncCurrentSetQaCaches(sql) {
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
+  const pilotControlRows=await sql`
+    select id,phase,queue_enabled,pilot_pack_id,metadata
+    from render_v2_rollout_state
+    where id=1
+    limit 1`;
+  const pilotControl=pilotControlRows[0]||null;
+  const pilotMeta=pilotControl?.metadata||{};
+  const pilotLocked=pilotMeta.pilot_single_prospect===true
+    && pilotMeta.pilot_awaiting_cabina_approval===true
+    && pilotMeta.pilot_master_approved!==true;
+  if(pilotLocked) {
+    if(pilotControl?.queue_enabled===true || pilotControl?.phase!=="PILOT_SINGLE_PROSPECT") {
+      await sql`
+        update render_v2_rollout_state
+        set queue_enabled=false,
+            phase='PILOT_SINGLE_PROSPECT',
+            metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+              'global_queue_must_remain_paused',true,
+              'reconcile_pilot_lock_enforced_at',to_jsonb(now())
+            ),
+            updated_at=now()
+        where id=1`;
+    }
+    summary.reconciled.push({
+      pilot_lock:true,
+      pilot_pack_id:pilotControl?.pilot_pack_id||pilotMeta.pilot_pack_id||null,
+      global_queue:false,
+      awaiting:"APPROVED_MASTER_REFERENCE"
+    });
+    return summary;
+  }
   summary.prospect_projection_sync=await syncProspectRenderProjection(sql);
   summary.set_qa_cache_sync=await syncCurrentSetQaCaches(sql);
   summary.circuit_breaker_terminated=await enforceProspectCircuitBreakers(env,sql);
