@@ -149,3 +149,13 @@ test("verified identity SVG allows only embedded raster data",()=>{
   assert.equal(identitySvgIsSafe('<svg><script>alert(1)</script></svg>'),false);
   assert.equal(identitySvgIsSafe('<svg><image onload="x()" href="data:image/png;base64,AAAA"/></svg>'),false);
 });
+
+test("chaos: hero visual gate failure overrides incidental input words",()=>{
+  const f=classifyFailure(
+    new Error("HERO_VISUAL_BELOW_BAR: official logo and verified contacts are preserved but hero image quality is below bar"),
+    {step:"HERO_VISUAL_QUALITY",variant_key:"A",revision:2}
+  );
+  assert.equal(f.failure_domain,"VISUAL_QUALITY");
+  assert.equal(f.failure_code,"VISUAL_QUALITY_FAILURE");
+  assert.equal(f.retryable,false);
+});
