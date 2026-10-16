@@ -60,50 +60,6 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
       hero_copy_overlay_allowed:impresaxMasterProfile
     }
   };
-  const impresaxMasterCss=impresaxMasterProfile?`
-:root{--ix-master-cta:${masterCta};--ix-master-cta-text:${masterCtaText}}
-.ix-v2-header{position:absolute!important;inset:0 0 auto!important;z-index:80!important;background:transparent!important;color:#fff!important;border-bottom:1px solid rgba(255,255,255,.12)!important}
-.ix-v2-header-inner{min-height:72px!important;width:min(calc(100% - 80px),1500px)!important}
-.ix-v2-brand{background:rgba(255,255,255,.94);padding:8px 12px;border-radius:3px}
-.ix-v2-logo{max-height:50px!important;max-width:220px!important}
-.ix-v2-nav a{color:rgba(255,255,255,.86)!important;font-size:12px!important}
-.ix-v2-header-cta{min-height:40px!important;padding:0 18px!important;border-radius:999px!important;background:var(--ix-master-cta)!important;color:var(--ix-master-cta-text)!important;border-color:var(--ix-master-cta)!important}
-.ixm-hero{position:relative;min-height:clamp(560px,60vw,760px);padding:0!important;background:#0d0e0e;color:#fff;overflow:hidden}
-.ixm-hero__media{position:absolute;inset:0;margin:0;width:100%;height:100%;min-height:100%}
-.ixm-hero__image{position:absolute;inset:0;width:100%!important;height:100%!important;min-height:100%!important;object-fit:cover!important;object-position:center!important;filter:saturate(.80) contrast(1.08) brightness(.76)}
-.ixm-hero__veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,10,10,.94) 0%,rgba(9,10,10,.76) 32%,rgba(9,10,10,.30) 58%,rgba(9,10,10,.10) 78%,rgba(9,10,10,.25) 100%),linear-gradient(180deg,rgba(0,0,0,.35),transparent 32%,rgba(0,0,0,.38));z-index:1}
-.ixm-hero__inner{position:relative;z-index:2;min-height:clamp(560px,60vw,760px);display:flex;align-items:flex-end;padding:clamp(128px,14vw,190px) 0 clamp(62px,7vw,92px)}
-.ixm-hero__copy{width:min(700px,68vw)}
-.ixm-hero .ixg-kicker{color:rgba(255,255,255,.58)!important;font-size:10px!important;letter-spacing:.22em!important}
-.ixm-hero h1{margin-top:14px!important;max-width:10ch!important;color:#fff!important;font-family:Georgia,'Times New Roman',serif!important;font-weight:400!important;font-size:clamp(58px,7.3vw,108px)!important;line-height:.88!important;letter-spacing:-.055em!important}
-.ixm-hero .ixg-lede{max-width:46ch!important;margin-top:20px!important;color:rgba(255,255,255,.88)!important;font-size:clamp(17px,1.45vw,21px)!important;line-height:1.35!important}
-.ixm-hero .ixg-actions{margin-top:26px!important;gap:12px!important}
-.ixm-hero .ixg-cta{min-height:50px!important;padding:0 22px!important;border-radius:999px!important}
-.ixm-hero .ixg-cta--primary{background:var(--ix-master-cta)!important;color:var(--ix-master-cta-text)!important;border-color:var(--ix-master-cta)!important}
-.ixm-hero .ixg-cta--secondary{background:rgba(17,17,17,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.72)!important;backdrop-filter:blur(7px)}
-.ixg-shell{width:min(calc(100% - 80px),1500px)}
-.ixg h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.04em}
-.ixg-kicker{letter-spacing:.19em}
-.ixg-cta{border-radius:999px}
-.ixg-positioning,.ixg-services,.ixg-bridge,.ixg-contact{padding-top:clamp(60px,7vw,96px);padding-bottom:clamp(60px,7vw,96px)}
-.ixg-trust-section{background:#0d0e0e}
-.ix-v2-footer{background:#0d0e0e!important;color:#f7f6f2!important}
-@media(max-width:700px){
- .ix-v2-header-inner{width:calc(100% - 32px)!important;min-height:64px!important}
- .ix-v2-nav{display:none!important}.ix-v2-header-cta{min-height:36px!important;padding:0 13px!important;font-size:10px!important}
- .ix-v2-brand{padding:6px 9px}.ix-v2-logo{max-width:142px!important;max-height:42px!important}
- .ixm-hero{min-height:690px}
- .ixm-hero__inner{min-height:690px;align-items:flex-end;padding:96px 0 42px}
- .ixm-hero__copy{width:100%;max-width:100%}
- .ixm-hero h1{font-size:clamp(48px,13vw,64px)!important;line-height:.9!important;max-width:10ch!important}
- .ixm-hero .ixg-lede{font-size:16px!important;max-width:32ch!important}
- .ixm-hero__veil{background:linear-gradient(180deg,rgba(10,11,11,.30) 0%,rgba(10,11,11,.04) 30%,rgba(10,11,11,.20) 52%,rgba(10,11,11,.92) 78%,#0d0e0e 100%)}
- .ixm-hero__image{object-position:center!important}
- .ixm-hero .ixg-actions{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
- .ixm-hero .ixg-cta{width:100%!important}
- .ixg-shell{width:calc(100% - 36px)}
-}
-`:"";
   const variants={
     A:{
       name:"Structural Field",
@@ -336,6 +292,50 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 }
 `;
 
+  const impresaxMasterCss=impresaxMasterProfile?`
+:root{--ix-master-cta:${masterCta};--ix-master-cta-text:${masterCtaText}}
+.ix-v2-header{position:absolute!important;inset:0 0 auto!important;z-index:80!important;background:transparent!important;color:#fff!important;border-bottom:1px solid rgba(255,255,255,.12)!important}
+.ix-v2-header-inner{min-height:72px!important;width:min(calc(100% - 80px),1500px)!important}
+.ix-v2-brand{background:rgba(255,255,255,.94);padding:8px 12px;border-radius:3px}
+.ix-v2-logo{max-height:50px!important;max-width:220px!important}
+.ix-v2-nav a{color:rgba(255,255,255,.86)!important;font-size:12px!important}
+.ix-v2-header-cta{min-height:40px!important;padding:0 18px!important;border-radius:999px!important;background:var(--ix-master-cta)!important;color:var(--ix-master-cta-text)!important;border-color:var(--ix-master-cta)!important}
+.ixm-hero{position:relative;min-height:clamp(560px,60vw,760px);padding:0!important;background:#0d0e0e;color:#fff;overflow:hidden}
+.ixm-hero__media{position:absolute;inset:0;margin:0;width:100%;height:100%;min-height:100%}
+.ixm-hero__image{position:absolute;inset:0;width:100%!important;height:100%!important;min-height:100%!important;object-fit:cover!important;object-position:center!important;filter:saturate(.80) contrast(1.08) brightness(.76)}
+.ixm-hero__veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,10,10,.94) 0%,rgba(9,10,10,.76) 32%,rgba(9,10,10,.30) 58%,rgba(9,10,10,.10) 78%,rgba(9,10,10,.25) 100%),linear-gradient(180deg,rgba(0,0,0,.35),transparent 32%,rgba(0,0,0,.38));z-index:1}
+.ixm-hero__inner{position:relative;z-index:2;min-height:clamp(560px,60vw,760px);display:flex;align-items:flex-end;padding:clamp(128px,14vw,190px) 0 clamp(62px,7vw,92px)}
+.ixm-hero__copy{width:min(700px,68vw)}
+.ixm-hero .ixg-kicker{color:rgba(255,255,255,.58)!important;font-size:10px!important;letter-spacing:.22em!important}
+.ixm-hero h1{margin-top:14px!important;max-width:10ch!important;color:#fff!important;font-family:Georgia,'Times New Roman',serif!important;font-weight:400!important;font-size:clamp(58px,7.3vw,108px)!important;line-height:.88!important;letter-spacing:-.055em!important}
+.ixm-hero .ixg-lede{max-width:46ch!important;margin-top:20px!important;color:rgba(255,255,255,.88)!important;font-size:clamp(17px,1.45vw,21px)!important;line-height:1.35!important}
+.ixm-hero .ixg-actions{margin-top:26px!important;gap:12px!important}
+.ixm-hero .ixg-cta{min-height:50px!important;padding:0 22px!important;border-radius:999px!important}
+.ixm-hero .ixg-cta--primary{background:var(--ix-master-cta)!important;color:var(--ix-master-cta-text)!important;border-color:var(--ix-master-cta)!important}
+.ixm-hero .ixg-cta--secondary{background:rgba(17,17,17,.18)!important;color:#fff!important;border-color:rgba(255,255,255,.72)!important;backdrop-filter:blur(7px)}
+.ixg-shell{width:min(calc(100% - 80px),1500px)}
+.ixg h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.04em}
+.ixg-kicker{letter-spacing:.19em}
+.ixg-cta{border-radius:999px}
+.ixg-positioning,.ixg-services,.ixg-bridge,.ixg-contact{padding-top:clamp(60px,7vw,96px);padding-bottom:clamp(60px,7vw,96px)}
+.ixg-trust-section{background:#0d0e0e}
+.ix-v2-footer{background:#0d0e0e!important;color:#f7f6f2!important}
+@media(max-width:700px){
+ .ix-v2-header-inner{width:calc(100% - 32px)!important;min-height:64px!important}
+ .ix-v2-nav{display:none!important}.ix-v2-header-cta{min-height:36px!important;padding:0 13px!important;font-size:10px!important}
+ .ix-v2-brand{padding:6px 9px}.ix-v2-logo{max-width:142px!important;max-height:42px!important}
+ .ixm-hero{min-height:690px}
+ .ixm-hero__inner{min-height:690px;align-items:flex-end;padding:96px 0 42px}
+ .ixm-hero__copy{width:100%;max-width:100%}
+ .ixm-hero h1{font-size:clamp(48px,13vw,64px)!important;line-height:.9!important;max-width:10ch!important}
+ .ixm-hero .ixg-lede{font-size:16px!important;max-width:32ch!important}
+ .ixm-hero__veil{background:linear-gradient(180deg,rgba(10,11,11,.30) 0%,rgba(10,11,11,.04) 30%,rgba(10,11,11,.20) 52%,rgba(10,11,11,.92) 78%,#0d0e0e 100%)}
+ .ixm-hero__image{object-position:center!important}
+ .ixm-hero .ixg-actions{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+ .ixm-hero .ixg-cta{width:100%!important}
+ .ixg-shell{width:calc(100% - 36px)}
+}
+`:"";
   const variants={
     A:`
 .ixg-a .ixg-hero__device span:nth-child(1){height:16px}.ixg-a .ixg-hero__device span:nth-child(2){width:16px}
