@@ -179,3 +179,10 @@ test("quality upgrade selector skips packs with no launchable variants",()=>{
   assert.match(reconcile,/law\.status in \('QUEUED','RUNNING','PAUSED'\)/);
   assert.match(reconcile,/coalesce\(lr\.compiler_version,''\)=\$\{COMPILER_VERSION\}/);
 });
+
+test("exhausted remediation becomes explicit evidence-required state",()=>{
+  assert.match(remediation,/remediation_exhausted:exhausted/);
+  assert.match(remediation,/INPUT_EVIDENCE_REQUIRED/);
+  assert.match(remediation,/V2_INPUT_EVIDENCE_EXHAUSTED/);
+  assert.match(remediation,/SOURCE_ENRICHMENT_REQUIRED/);
+});
