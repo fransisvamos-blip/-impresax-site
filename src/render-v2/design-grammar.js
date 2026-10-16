@@ -151,10 +151,17 @@ export function sanitizeDirectionForExecution(direction,{hasEditorialAssets=fals
 
 export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=true,inputPayload=null}) {
   const verifiedBrandAccent=verifiedAccent(inputPayload);
-  const accent=verifiedBrandAccent||(variantKey==="B"?"#e6e1d7":"#8d8981");
-  const impresaxMasterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
-  const masterCta=verifiedBrandAccent||"#f7f6f2";
-  const masterCtaText=verifiedBrandAccent?"#ffffff":"#111111";
+  const logoFirstBrandProfile=inputPayload?.logo_first_brand_profile||null;
+  const logoFirstMode=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1" && !!logoFirstBrandProfile;
+  const brandColors=logoFirstBrandProfile?.colors||{};
+  const brandPrimary=String(brandColors.primary||verifiedBrandAccent||"#b31319");
+  const brandInk=String(brandColors.ink||"#202224");
+  const brandPaper=String(brandColors.paper||"#f4f4f1");
+  const brandNeutral=String(brandColors.neutral||"#d8d8d4");
+  const accent=brandPrimary||(variantKey==="B"?"#e6e1d7":"#8d8981");
+  const impresaxMasterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1" || logoFirstMode;
+  const masterCta=logoFirstMode?brandPrimary:(verifiedBrandAccent||"#f7f6f2");
+  const masterCtaText="#ffffff";
   const services=serviceMarkup(copyManifest,"ixg-service");
   const trust=trustMarkup(copyManifest,"ixg-trust");
   const serviceTitles=availableIndexed(copyManifest,"SERVICE_","_TITLE");
@@ -359,6 +366,87 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  .ixg-service{min-height:0!important;padding:34px 22px!important}
 }
 `:"";
+  const logoFirstCss=logoFirstMode?`
+:root{
+ --ix-brand-primary:${brandPrimary};
+ --ix-brand-ink:${brandInk};
+ --ix-brand-paper:${brandPaper};
+ --ix-brand-neutral:${brandNeutral};
+ --ix-accent:${brandPrimary};
+ --ix-ink:${brandInk};
+ --ix-dark:${brandInk};
+ --ix-paper:${brandPaper}
+}
+.ixg,.ix-v2-header,.ix-v2-footer{font-family:Arial,Helvetica,sans-serif!important}
+.ixg h1,.ixg h2,.ixg h3,.ixg-service__title,.ixg-trust strong,.ixm-bridge h2{
+ font-family:Arial,Helvetica,sans-serif!important;
+ font-style:normal!important
+}
+.ixm-hero h1{
+ font-family:Arial,Helvetica,sans-serif!important;
+ font-weight:800!important;
+ text-transform:uppercase!important;
+ letter-spacing:-.045em!important;
+ line-height:.88!important;
+ max-width:11ch!important
+}
+.ixg h2,.ixg-service__title,.ixg-trust strong{
+ font-weight:750!important;
+ letter-spacing:-.035em!important
+}
+.ixg-kicker,.ix-v2-nav a,.ixg-cta,.ix-v2-header-cta{
+ font-family:Arial,Helvetica,sans-serif!important;
+ text-transform:uppercase!important;
+ letter-spacing:.08em!important
+}
+.ixg-cta,.ix-v2-header-cta{
+ border-radius:2px!important
+}
+.ixm-hero .ixg-cta--primary,.ix-v2-header-cta{
+ background:var(--ix-brand-primary)!important;
+ border-color:var(--ix-brand-primary)!important;
+ color:#fff!important
+}
+.ixm-hero .ixg-cta--secondary{
+ background:rgba(16,18,19,.35)!important;
+ border-color:rgba(255,255,255,.72)!important;
+ color:#fff!important
+}
+.ixm-hero__veil{
+ background:
+  linear-gradient(90deg,rgba(12,13,14,.92) 0%,rgba(12,13,14,.72) 33%,rgba(12,13,14,.18) 66%,rgba(12,13,14,.06) 100%),
+  linear-gradient(180deg,rgba(0,0,0,.30) 0%,transparent 42%,rgba(0,0,0,.36) 100%)!important
+}
+.ixm-hero:after{
+ content:"";position:absolute;z-index:3;left:0;bottom:0;width:min(34vw,520px);height:10px;
+ background:repeating-linear-gradient(180deg,var(--ix-brand-primary) 0 2px,transparent 2px 4px)
+}
+.ix-v2-header{border-bottom-color:rgba(255,255,255,.20)!important}
+.ix-v2-brand{filter:drop-shadow(0 2px 10px rgba(0,0,0,.35))!important}
+.ix-v2-logo{max-height:54px!important}
+.ixg-positioning{background:var(--ix-brand-paper)!important}
+.ixg-positioning__body{border-top:2px solid var(--ix-brand-primary)!important}
+.ixg-section-head{position:relative;border-bottom:1px solid rgba(32,34,36,.18)!important}
+.ixg-section-head:before{
+ content:"";position:absolute;left:0;bottom:-1px;width:120px;height:4px;background:var(--ix-brand-primary)
+}
+.ixg-service{position:relative;border-color:rgba(32,34,36,.16)!important}
+.ixg-service:before{
+ content:"";position:absolute;left:0;top:0;width:64px;height:4px;background:var(--ix-brand-primary)
+}
+.ixg-trust-section{background:var(--ix-brand-ink)!important}
+.ixg-trust-grid,.ixg-trust{border-color:rgba(255,255,255,.20)!important}
+.ixm-bridge{background:var(--ix-brand-paper)!important;border-top:1px solid rgba(32,34,36,.16)!important}
+.ixm-bridge__copy{border-left:5px solid var(--ix-brand-primary);padding-left:clamp(22px,3vw,42px)}
+.ixg-contact{background:#fff!important;border-top:8px solid var(--ix-brand-primary)!important}
+.ix-v2-footer{background:var(--ix-brand-ink)!important;border-top:6px solid var(--ix-brand-primary)!important}
+@media(max-width:700px){
+ .ixm-hero h1{font-size:clamp(42px,12vw,58px)!important;line-height:.92!important;max-width:10.5ch!important}
+ .ixm-hero:after{width:52vw;height:8px}
+ .ixg-section-head:before{width:86px}
+ .ixm-bridge__copy{padding-left:18px}
+}`:"";
+
   const variants={
     A:`
 .ixg-a .ixg-hero__device span:nth-child(1){height:16px}.ixg-a .ixg-hero__device span:nth-child(2){width:16px}
@@ -416,7 +504,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+`
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+`
 @media(max-width:700px){
  .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:26px!important;align-items:start!important}
  .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
@@ -435,8 +523,11 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       hero_copy_space:impresaxMasterProfile?"Verified headline/body/CTAs intentionally overlaid inside the photographic hero field.":"Dedicated HTML copy field kept separate from the image.",
       hero_mobile_crop_strategy:impresaxMasterProfile?"Full-bleed 390px crop with bottom-anchored copy overlay and protective vertical gradient.":"Object-fit cover with subject-preserving 390px crop.",
       hero_relevance_score:9,
-      implementation_notes:(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero, transparent header, editorial display typography, pill CTAs, ImpresaX-inspired density. ":"")+"Deterministic HERO_PREMIUM fallback grammar v3 "+variantKey+": mandatory HERO_VISUAL, verified copy distribution, responsive 1440/390."
+      implementation_notes:(logoFirstMode
+        ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
+        :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
+        +"Deterministic HERO_PREMIUM fallback grammar v3 "+variantKey+": mandatory HERO_VISUAL, verified copy distribution, responsive 1440/390."
     },
-    strategy:impresaxMasterProfile?"IMPRESAX_MASTER_V1":"HERO_PREMIUM_FALLBACK_GRAMMAR_V3"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1":impresaxMasterProfile?"IMPRESAX_MASTER_V1":"HERO_PREMIUM_FALLBACK_GRAMMAR_V3"
   };
 }
