@@ -1084,7 +1084,100 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           return {status:"ESCALATION_REQUIRED",hero_visual_qa_passed:heroGate.passed};
         }
         await step.do("certify-pack",async()=>{
-          await setPackStatus(sql,p.packId,"RENDER_READY",{set_qa_cycle:setCycle,hero_visual_qa_passed:3});
+          const certified=await sql`
+            with current_revs as (
+              select
+                count(*)::int as variant_count,
+                bool_and(
+                  v.status='RENDER_READY'
+                  and r.status='RENDER_READY'
+                  and r.compiler_version=${COMPILER_VERSION}
+                ) as contract_ok,
+                max(r.id::text) filter (where v.variant_key='A') as a_revision_id,
+                max(r.id::text) filter (where v.variant_key='B') as b_revision_id,
+                max(r.id::text) filter (where v.variant_key='C') as c_revision_id
+              from render_v2_variants v
+              join render_variant_revisions r
+                on r.variant_id=v.id and r.revision=v.certified_revision
+              where v.render_pack_id=${p.packId}::uuid
+            ),
+            current_set as (
+              select q.*
+              from render_qa_results_v2 q
+              cross join current_revs c
+              where q.render_pack_id=${p.packId}::uuid
+                and q.qa_type='SET_VISUAL'
+                and q.artifact_hashes->>'A_revision_id'=c.a_revision_id
+                and q.artifact_hashes->>'B_revision_id'=c.b_revision_id
+                and q.artifact_hashes->>'C_revision_id'=c.c_revision_id
+              order by q.created_at desc
+              limit 1
+            ),
+            hero_gate as (
+              select count(distinct q.variant_revision_id)::int as passed
+              from render_qa_results_v2 q
+              cross join current_revs c
+              where q.render_pack_id=${p.packId}::uuid
+                and q.qa_type='HERO_VISUAL'
+                and q.status='PASS'
+                and q.variant_revision_id::text in (c.a_revision_id,c.b_revision_id,c.c_revision_id)
+                and coalesce((q.scores->>'hero_strength')::numeric,0)>=8
+                and coalesce((q.scores->>'hero_relevance')::numeric,0)>=8
+                and coalesce((q.scores->>'hero_image_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'hero_mobile_crop')::numeric,0)>=8
+            ),
+            variant_gate as (
+              select count(distinct q.variant_revision_id)::int as passed
+              from render_qa_results_v2 q
+              cross join current_revs c
+              where q.render_pack_id=${p.packId}::uuid
+                and q.qa_type='VARIANT_VISUAL'
+                and q.status='PASS'
+                and q.variant_revision_id::text in (c.a_revision_id,c.b_revision_id,c.c_revision_id)
+                and coalesce((q.scores->>'header_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'navigation_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'page_architecture')::numeric,0)>=8
+                and coalesce((q.scores->>'section_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'final_cta_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'footer_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'desktop_quality')::numeric,0)>=8
+                and coalesce((q.scores->>'mobile_quality')::numeric,0)>=8
+            )
+            update render_v2_packs rp
+            set status='RENDER_READY',
+                metadata=(coalesce(rp.metadata,'{}'::jsonb)-'set_qa')
+                  || jsonb_build_object(
+                    'set_qa',jsonb_build_object(
+                      'pass',true,
+                      'qa_id',(select id::text from current_set),
+                      'scores',(select scores from current_set),
+                      'issues',(select issues from current_set),
+                      'actions',(select actions from current_set),
+                      'artifact_hashes',(select artifact_hashes from current_set),
+                      'created_at',(select created_at from current_set)
+                    ),
+                    'set_qa_cycle',${setCycle}::int,
+                    'hero_visual_qa_passed',3,
+                    'variant_visual_qa_passed',3,
+                    'final_gate_atomic',true,
+                    'final_gate_verified_at',to_jsonb(now())
+                  ),
+                render_ready_at=coalesce(rp.render_ready_at,now()),
+                updated_at=now()
+            where rp.id=${p.packId}::uuid
+              and (select variant_count=3 and contract_ok=true from current_revs)
+              and (select passed from hero_gate)=3
+              and (select passed from variant_gate)=3
+              and (select status from current_set)='PASS'
+              and coalesce((select (scores->>'set_quality')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'diversity_ab')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'diversity_ac')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'diversity_bc')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'prospect_fit_a')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'prospect_fit_b')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'prospect_fit_c')::numeric from current_set),0)>=8
+            returning rp.id,rp.status,rp.metadata`;
+          if(!certified.length) throw new Error("SYSTEM_INVARIANT:ATOMIC_CURRENT_SET_GATE_FAILED");
           await sql`
             update prospects
             set render_status='RENDER_READY',
@@ -1094,8 +1187,8 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
                 updated_at=now()
             where id=${p.prospectId}::uuid
               and pipeline_status='RENDERING'`;
-          await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"RENDER_READY"});
-          return {ok:true};
+          await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"RENDER_READY",metadata:{final_gate_atomic:true}});
+          return {ok:true,atomic_gate:true};
         });
         return {status:"RENDER_READY",pack_id:p.packId,hero_visual_qa_passed:3};
       }
