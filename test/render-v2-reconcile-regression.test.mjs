@@ -375,3 +375,11 @@ test("ImpresaX master hero prompt forbids blank copy space",()=>{
   assert.match(hero,/Do NOT reserve a blank side for text/);
   assert.match(hero,/photographic detail underneath the future text area/);
 });
+
+
+test("ImpresaX raw hero QA rewards full photographic density",()=>{
+  assert.match(ai,/IMPRESAX MASTER FULL-BLEED QA/);
+  assert.match(ai,/do NOT require blank or clean negative space/);
+  assert.match(ai,/HTML copy readability is handled later by a CSS gradient overlay/);
+  assert.match(ai,/HARD FAIL blank gray\/flat copy panels/);
+});
