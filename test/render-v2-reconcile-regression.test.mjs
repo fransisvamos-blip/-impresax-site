@@ -4,6 +4,8 @@ import fs from "node:fs";
 
 const reconcile=fs.readFileSync(new URL("../src/render-v2/reconcile.js",import.meta.url),"utf8");
 const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+const hero=fs.readFileSync(new URL("../src/render-v2/hero.js",import.meta.url),"utf8");
+const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
   assert.match(
@@ -35,4 +37,24 @@ test("generated hero artifact keys are content-addressed",()=>{
   assert.match(workflows,/imageHash\.slice\(0,16\)/);
   assert.match(workflows,/const metaHash=await sha256\(metaBytes\)/);
   assert.match(workflows,/metaHash\.slice\(0,16\)/);
+});
+
+test("hero retries use attempt-specific deterministic seeds",()=>{
+  assert.match(workflows,/generationAttempt:attempt/);
+  assert.match(workflows,/generationCycle:cycle/);
+  assert.match(hero,/const deterministicSeed=Math\.abs\(/);
+  assert.match(hero,/\(attempt\*7919\)/);
+  assert.match(hero,/form\.append\("seed",String\(deterministicSeed\)\)/);
+});
+
+test("general contractors have an infrastructure-specific hero grammar",()=>{
+  assert.match(hero,/function isGeneralContractorInfrastructureContext/);
+  assert.match(hero,/civil, industrial, hospital\/institutional construction/);
+  assert.match(hero,/Absolutely no luxury residential interior/);
+});
+
+test("remediated contacts require verified provenance",()=>{
+  assert.match(inputPack,/VERIFIED_CONTACT_PROVENANCE_REQUIRED/);
+  assert.match(inputPack,/V2_FIRST_PARTY_VERIFIED/);
+  assert.match(inputPack,/contact_verification_evidence/);
 });
