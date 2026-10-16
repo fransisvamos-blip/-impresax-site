@@ -41,10 +41,10 @@ jobs:
             done
             return 1
           }
-          fetch_artifact 0be3620f-ce4e-4aca-b3e4-030540c5d7d6 desktop-1440.jpg
-          fetch_artifact 1dc10a6d-1046-4db5-819b-67d88a813dca mobile-390.jpg
+          fetch_artifact 8d6b2b68-d27d-494f-a742-5e26d7766316 desktop-1440.jpg
+          fetch_artifact 8f829ff6-85e0-4ba9-bff3-ea8c7f67e376 mobile-390.jpg
       - uses: actions/upload-artifact@v4
         with:
-          name: dedil-a-r45-preview
+          name: dedil-a-r49-preview
           path: /tmp/dedil-preview
           if-no-files-found: error
