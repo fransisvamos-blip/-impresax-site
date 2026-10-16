@@ -756,6 +756,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- NEVER repeat the same sentence verbatim across HERO_BODY, POSITIONING_BODY, SERVICES_INTRO, TRUST_INTRO, BRIDGE_BODY and CLOSING_BODY. Each section must advance the story with a distinct verified angle.",
     impresaxMasterProfile?"- IMPRESAX MASTER BRIDGE: bridge must visibly use {{copy:BRIDGE_TITLE}} and {{copy:BRIDGE_BODY}}; do not reuse {{copy:POSITIONING_BODY}} in bridge. Keep bridge visually distinct from final-cta.":"",
     impresaxMasterProfile?"- IMPRESAX MASTER MOBILE NAV: keep the compiler-owned navigation visibly readable as a deliberate second row under logo/CTA; do not hide it or visually collapse it.":"",
+    String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1"?"- LOGO-FIRST MASTER: the OFFICIAL LOGO is the visual source of truth. Use logo_first_brand_profile for palette, typography direction, geometry, contrast, shape language and signature device. Do NOT import generic ImpresaX typography or decorative language when it conflicts with the prospect logo.":"",
+    String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1"?"- LOGO-FIRST MASTER: hero remains full-bleed edge-to-edge photography with all headline/body/CTA copy overlaid in-image. Two visible CTA buttons are mandatory. Sections after hero must feel custom-built from the same logo-derived system.":"",
     "- Do not repeat a trust statement as both section intro and trust card copy. Use the intro to frame the proof; use the cards for the proof itself.",
     "- Hero anchors must look like designed buttons, not tiny inline text links: give both clear button classes, minimum touch target around 44px, visible padding/border/fill and strong hierarchy between primary and secondary actions.",
     "- Every visible text node, including section labels, eyebrows, numbers, captions, badges and microcopy, MUST be an exact {{copy:TOKEN_NAME}} token.",
@@ -835,9 +837,18 @@ const visualQaSchema={
 };
 
 export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
+  const logoFirstMaster=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1";
+  const masterGateKeys=[
+    "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
+    "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
+    "first_impression","premium_feel","wow_effect","prospect_desire","preview_sales_power",
+    "section_quality","page_architecture","final_cta_quality","footer_quality","desktop_quality","mobile_quality"
+  ];
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
-    "PASS only when every score is >=8 and there are no critical/major unresolved issues.",
+    logoFirstMaster
+      ?"LOGO-FIRST MASTER PASS only when every master gate score is >=9, every other score is >=8, and there are no critical/major unresolved issues."
+      :"PASS only when every score is >=8 and there are no critical/major unresolved issues.",
     "The deterministic shell owns the official logo, contact path and footer. A direction described as logo-centric may use the immutable logo in the shell and at most one compiler-owned hero identity placement; never demand a fake/reinterpreted logo.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If it says official_identity_visible=true and broken_images=0, DO NOT claim the official logo is missing, fake, reinterpreted or broken merely because it is visually subtle in the screenshot. Judge its visual prominence separately if needed. If clipped_contacts is empty, do not claim a verified contact is mechanically truncated.",
     "Scripts and forms are prohibited in previews. Judge only what the static preview contract can actually implement; never require accordion/tabs/dark-mode/back-to-top/forms/scroll widgets or other interactive product features.",
@@ -849,6 +860,9 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
     "HERO HARD GATE: fail if the hero image is generic, irrelevant to the verified vertical/services, visually weak, obviously synthetic/cheap, subordinate to empty geometry, missing a clear focal subject, or badly cropped on mobile.",
     "HERO HARD GATE: the image must materially improve first impression and commercial credibility, with headline/CTA remaining immediately readable.",
+    logoFirstMaster?"LOGO-FIRST BRAND GATE: the official logo must visibly drive the color system, type personality, shape language and signature device. A generic premium template with the logo pasted on top is a FAIL.":"",
+    logoFirstMaster?"LOGO-FIRST HERO GATE: hero must be edge-to-edge/full-bleed with no lateral white/split field, with styled copy and both CTA buttons over the image. Any compromise is a FAIL.":"",
+    logoFirstMaster?"DESIRABILITY GATE: judge whether a real prospect would feel immediately upgraded, impressed and motivated to buy the redesign. wow_effect, prospect_desire and preview_sales_power below 9 are blocking.":"",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
@@ -890,8 +904,14 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
 
   const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(scores?.[k]??0)));
   const hardIssues=issues.filter(x=>x.severity==="critical"||x.severity==="major");
-  const pass=r.data.pass===true && min>=8 && hardIssues.length===0;
-  return {...r.data,scores,issues,pass,model:r.model,min_score:min};
+  const masterGateFloor=logoFirstMaster
+    ? Math.min(...masterGateKeys.map(k=>Number(scores?.[k]??0)))
+    : 10;
+  const pass=r.data.pass===true
+    && min>=8
+    && masterGateFloor>=9
+    && hardIssues.length===0;
+  return {...r.data,scores,issues,pass,model:r.model,min_score:min,master_gate_floor:masterGateFloor,master_gate_required:logoFirstMaster?9:null};
 }
 
 
