@@ -1,0 +1,52 @@
+name: V2 Runtime Refresh Zinzi + 4 Erre 20261016
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-runtime-refresh-zinzi-4erre-20261016.yml'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rendering-v2-shadow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Refresh active workflows onto current runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(openssl rand -hex 32)
+          printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
+
+          relaunch () {
+            pack="$1"; variant="$2"; key="$3"; reset="$4"
+            body=$(jq -nc               --arg pack "$pack"               --arg variant "$variant"               --arg key "$key"               --argjson reset "$reset"               '{pack_id:$pack,variant_key:$variant,run_key:$key,force:false,reset_budget:$reset,event_prefix:"runtime-refresh",reason:"ENGINE_CONTRACT_UPGRADE"}')
+            ok=0
+            for i in {1..20}; do
+              code=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}'                 -H "Authorization: Bearer $token"                 -H "Content-Type: application/json"                 --data "$body"                 "$V2_URL/shadow/relaunch-variant" || true)
+              echo "pack=$pack variant=$variant attempt=$i code=$code body=$(cat /tmp/relaunch.json 2>/dev/null || true)"
+              if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
+              if [ "$code" != "401" ] && [ "$code" != "503" ]; then break; fi
+              sleep 3
+            done
+            [ "$ok" = "1" ] || exit 1
+            jq -e --arg pack "$pack" --arg variant "$variant"               '.ok == true and .pack_id == $pack and .variant_key == $variant' /tmp/relaunch.json >/dev/null
+          }
+
+          # Replace only the three currently active obsolete runtime snapshots.
+          # 4 Erre keeps prior consumption in prior_epoch_* while receiving a fresh bounded epoch.
+          relaunch "a7501f1e-a093-465f-975a-8d5509eae4f3" "A" "4erre-a-runtime-refresh-20261016" true
+          relaunch "664d922d-e630-46f4-9605-5e00c3b8bb9a" "A" "zinzi-a-runtime-refresh-20261016" false
+          relaunch "664d922d-e630-46f4-9605-5e00c3b8bb9a" "B" "zinzi-b-runtime-refresh-20261016" false
