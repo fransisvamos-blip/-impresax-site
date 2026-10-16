@@ -6,6 +6,7 @@ const reconcile=fs.readFileSync(new URL("../src/render-v2/reconcile.js",import.m
 const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
 const hero=fs.readFileSync(new URL("../src/render-v2/hero.js",import.meta.url),"utf8");
 const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.meta.url),"utf8");
+const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
   assert.match(
@@ -57,4 +58,20 @@ test("remediated contacts require verified provenance",()=>{
   assert.match(inputPack,/VERIFIED_CONTACT_PROVENANCE_REQUIRED/);
   assert.match(inputPack,/V2_FIRST_PARTY_VERIFIED/);
   assert.match(inputPack,/contact_verification_evidence/);
+});
+
+test("manual launch surfaces respect the generation circuit breaker",()=>{
+  const circuitChecks=(index.match(/GENERATION_CIRCUIT_BREAKER/g)||[]).length;
+  assert.ok(circuitChecks>=3,"start, targeted relaunch and whole-pack relaunch must all gate on circuit state");
+  assert.match(index,/const circuitState=await prospectCircuitState\(sql,pack\.prospect_id\)/);
+  assert.match(index,/const contractCircuit=await prospectCircuitState\(sql,pack\.prospect_id\)/);
+  assert.match(index,/const startCircuit=await prospectCircuitState\(sql,created\.pack\.prospect_id\)/);
+});
+
+test("targeted circuit override is consumed only after workflow creation",()=>{
+  const createAt=index.indexOf("instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params})");
+  const consumeAt=index.indexOf('consumePackCircuitOverride(sql,packId,"TARGETED_RELAUNCH:"+runKey)');
+  assert.ok(createAt>=0 && consumeAt>createAt,"override must be consumed after successful workflow creation");
+  assert.match(index,/WORKFLOW_CREATE_FAILED/);
+  assert.match(index,/CIRCUIT_OVERRIDE_CONSUME_FAILED/);
 });
