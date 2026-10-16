@@ -29,7 +29,8 @@ jobs:
           set -euo pipefail
           token=$(openssl rand -hex 32)
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
-          for instance in             rv2-acfce906-9cb8-4ade-829d-0a73bb5627b3-A-quality-rs-quality-v3-premium-home-1-tmv8b6xg8             rv2-acfce906-9cb8-4ade-829d-0a73bb5627b3-B-quality-rs-quality-v3-premium-home-2-tmvaza3jk             rv2-acfce906-9cb8-4ade-829d-0a73bb5627b3-C-quality-rs-quality-v3-premium-home-2-tmvaz9fmg
+          for instance in \
+            rv2-acfce906-9cb8-4ade-829d-0a73bb5627b3-C-quality-rs-quality-v3-premium-home-3-tmvazl4x4
           do
             ok=0
             for i in {1..20}; do
