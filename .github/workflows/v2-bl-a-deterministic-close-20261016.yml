@@ -16,7 +16,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
       PACK_ID: 959dffb2-48d0-40db-94bf-1802625fa47d
-      RUN_KEY: bl-a-v3-deterministic-close-20261016
+      RUN_KEY: bl-a-v3-close-r2-20261016
     steps:
       - uses: actions/checkout@v4
         with:
