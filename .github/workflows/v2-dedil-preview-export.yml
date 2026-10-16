@@ -1,4 +1,4 @@
-# export trigger: r49-visual-inspection-20261016
+# export trigger: r50-final-visual-inspection-20261016
 name: V2 DEDIL Preview Export
 
 on:
@@ -42,10 +42,10 @@ jobs:
             done
             return 1
           }
-          fetch_artifact 8d6b2b68-d27d-494f-a742-5e26d7766316 desktop-1440.jpg
-          fetch_artifact 8f829ff6-85e0-4ba9-bff3-ea8c7f67e376 mobile-390.jpg
+          fetch_artifact 201601b7-bfda-4053-bebd-9992624f3335 desktop-1440.jpg
+          fetch_artifact f8ea9fcd-266d-4e24-9059-6810166ef0a6 mobile-390.jpg
       - uses: actions/upload-artifact@v4
         with:
-          name: dedil-a-r49-preview
+          name: dedil-a-r50-preview
           path: /tmp/dedil-preview
           if-no-files-found: error
