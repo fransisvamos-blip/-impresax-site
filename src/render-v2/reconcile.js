@@ -767,9 +767,65 @@ export async function startOrRecoverParent(env,sql,pack) {
   return {instance_id:instanceId,status:await instance.status()};
 }
 
+async function syncCurrentSetQaCaches(sql) {
+  const rows=await sql`
+    with current_revs as (
+      select
+        p.id as pack_id,
+        max(r.id::text) filter (where v.variant_key='A') as a_revision_id,
+        max(r.id::text) filter (where v.variant_key='B') as b_revision_id,
+        max(r.id::text) filter (where v.variant_key='C') as c_revision_id
+      from render_v2_packs p
+      join render_v2_variants v on v.render_pack_id=p.id
+      join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+      where p.status='RENDER_READY'
+        and p.quality_contract_version=${QUALITY_CONTRACT_VERSION}
+        and p.execution_engine_version=${EXECUTION_ENGINE_VERSION}
+      group by p.id
+      having count(*)=3
+    ),
+    current_set as (
+      select distinct on (q.render_pack_id)
+        q.render_pack_id,q.id,q.status,q.scores,q.issues,q.actions,q.artifact_hashes,q.created_at
+      from render_qa_results_v2 q
+      join current_revs c on c.pack_id=q.render_pack_id
+      where q.qa_type='SET_VISUAL'
+        and q.artifact_hashes->>'A_revision_id'=c.a_revision_id
+        and q.artifact_hashes->>'B_revision_id'=c.b_revision_id
+        and q.artifact_hashes->>'C_revision_id'=c.c_revision_id
+      order by q.render_pack_id,q.created_at desc
+    )
+    update render_v2_packs p
+    set metadata=(coalesce(p.metadata,'{}'::jsonb)-'set_qa')
+      || jsonb_build_object(
+        'set_qa',jsonb_build_object(
+          'pass',true,
+          'qa_id',cs.id::text,
+          'scores',cs.scores,
+          'issues',cs.issues,
+          'actions',cs.actions,
+          'artifact_hashes',cs.artifact_hashes,
+          'created_at',cs.created_at
+        ),
+        'set_qa_cache_reconciled',true,
+        'set_qa_cache_reconciled_at',to_jsonb(now())
+      ),
+      updated_at=now()
+    from current_set cs
+    where p.id=cs.render_pack_id
+      and cs.status='PASS'
+      and (
+        coalesce(p.metadata->'set_qa'->>'pass','')<>'true'
+        or coalesce(p.metadata->'set_qa'->>'qa_id','')<>cs.id::text
+      )
+    returning p.id,cs.id::text as qa_id`;
+  return {updated:rows.length,packs:rows};
+}
+
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
+  summary.set_qa_cache_sync=await syncCurrentSetQaCaches(sql);
   summary.circuit_breaker_terminated=await enforceProspectCircuitBreakers(env,sql);
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
   let renderSlots=summary.concurrency.slots;
