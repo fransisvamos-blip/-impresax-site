@@ -2,6 +2,7 @@ import { db, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { prospectCircuitState } from "./circuit.js";
+import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION } from "./constants.js";
 
 export const GOLDEN_CASES=[
   {code:"CZ-063",expected:"PASS"},
@@ -460,7 +461,16 @@ async function drainQueue(env,sql,state) {
           or exists (
             select 1 from render_v2_packs rp
             where rp.prospect_id=p.id
-              and rp.status='INPUT_READY'
+              and (
+                rp.status='INPUT_READY'
+                or (
+                  rp.status='ESCALATION_REQUIRED'
+                  and (
+                    coalesce(rp.quality_contract_version,'')<>${QUALITY_CONTRACT_VERSION}
+                    or coalesce(rp.execution_engine_version,'')<>${EXECUTION_ENGINE_VERSION}
+                  )
+                )
+              )
               and rp.id=(
                 select rp2.id from render_v2_packs rp2
                 where rp2.prospect_id=p.id
