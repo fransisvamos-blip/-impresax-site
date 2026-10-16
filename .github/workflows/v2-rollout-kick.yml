@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: deferred-normalization-remediation-v2-20261016
+# rollout kick trigger: diagnose-idle-queue-20261016-1447
 
 on:
   push:
