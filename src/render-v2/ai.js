@@ -79,6 +79,20 @@ function parseJsonCandidate(value) {
   return null;
 }
 
+async function withAiDeadline(promise,ms,label) {
+  let timer=null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_,reject)=>{
+        timer=setTimeout(()=>reject(new Error("AI_PROVIDER_CALL_TIMEOUT:"+label)),ms);
+      })
+    ]);
+  } finally {
+    if(timer!==null) clearTimeout(timer);
+  }
+}
+
 function schemaRootKeys(schema) {
   return new Set(Object.keys(schema?.properties||{}));
 }
@@ -190,7 +204,8 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
-      const result=await env.AI.run(model,inference,runOptions);
+      const aiTimeoutMs=Math.max(30000,Math.min(180000,Number(env.V2_AI_CALL_TIMEOUT_MS||105000)));
+      const result=await withAiDeadline(env.AI.run(model,inference,runOptions),aiTimeoutMs,role+":"+model);
       try {
         return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
       } catch(parseError) {
@@ -221,7 +236,8 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         };
         if(/llama-3\.3-70b-instruct-fp8-fast/i.test(fixerModel)) fixerInference.max_tokens=Math.min(maxTokens,5000);
         else fixerInference.max_completion_tokens=Math.min(maxTokens,5000);
-        const fixed=await env.AI.run(fixerModel,fixerInference,runOptions);
+        const fixerTimeoutMs=Math.max(30000,Math.min(120000,Number(env.V2_AI_FIXER_TIMEOUT_MS||75000)));
+        const fixed=await withAiDeadline(env.AI.run(fixerModel,fixerInference,runOptions),fixerTimeoutMs,role+"_schema_normalizer:"+fixerModel);
         return {
           data:extractStructured(fixed,schema),
           model,
