@@ -321,7 +321,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-kicker{letter-spacing:.19em}
 .ixg-cta{border-radius:999px}
 .ixg-positioning,.ixg-services,.ixg-bridge,.ixg-contact{padding-top:clamp(60px,7vw,96px);padding-bottom:clamp(60px,7vw,96px)}
-.ixg-positioning{background:#f7f6f2!important}
+.ixg-positioning{background:#f7f6f2!important}.ixg-positioning__body{position:relative;padding-top:18px!important;border-top:1px solid rgba(17,17,17,.18)!important}.ixg-positioning__body:after{content:"";display:block;width:min(180px,42%);height:1px;background:rgba(17,17,17,.18);margin-top:28px}
 .ixg-services{background:#fff!important}
 .ixg-section-head{border-bottom:1px solid rgba(17,17,17,.18);margin-bottom:0!important}
 .ixg-services__grid{border-top:0!important}
@@ -341,7 +341,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 @media(max-width:700px){
  .ix-v2-header-inner{width:calc(100% - 32px)!important;min-height:92px!important;grid-template-columns:1fr auto!important;align-content:center!important;row-gap:8px!important}
  .ix-v2-nav{display:flex!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;justify-content:flex-start!important;gap:22px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;padding:8px 0 10px!important;border-top:1px solid rgba(255,255,255,.12)!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch}
- .ix-v2-nav a{font-size:10px!important;letter-spacing:.10em!important;color:rgba(255,255,255,.88)!important;flex:0 0 auto!important}
+ .ix-v2-nav a{font-size:10px!important;letter-spacing:.10em!important;color:rgba(255,255,255,.88)!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;min-height:36px!important;padding:0 3px!important}
  .ix-v2-header-cta{min-height:36px!important;padding:0 13px!important;font-size:10px!important}
  .ix-v2-brand{padding:0!important;border-radius:0!important}.ix-v2-logo{max-width:142px!important;max-height:42px!important}
  .ixm-hero{min-height:690px}
