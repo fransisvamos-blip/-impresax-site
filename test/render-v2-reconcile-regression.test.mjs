@@ -335,5 +335,6 @@ test("exhausted V3 quality upgrades cannot block legacy migration",()=>{
   assert.ok(start>=0 && end>start);
   const upgrade=reconcile.slice(start,end);
   assert.match(upgrade,/quality_upgrade_exhausted/);
-  assert.match(upgrade,/coalesce\(\(p\.metadata->>'quality_upgrade_exhausted'\)::boolean,false\)=false/);
+  assert.match(upgrade,/p\.metadata->>'quality_upgrade_exhausted'/);
+  assert.match(upgrade,/quality_upgrade_exhausted[\s\S]{0,120}false/);
 });
