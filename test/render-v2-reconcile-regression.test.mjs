@@ -9,6 +9,7 @@ const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8
 const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.meta.url),"utf8");
 const rollout=fs.readFileSync(new URL("../src/render-v2/rollout.js",import.meta.url),"utf8");
 const remediation=fs.readFileSync(new URL("../src/render-v2/remediation.js",import.meta.url),"utf8");
+const concurrency=fs.readFileSync(new URL("../src/render-v2/concurrency.js",import.meta.url),"utf8");
 const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 
@@ -123,4 +124,13 @@ test("remediation budget is scoped to the current policy version",()=>{
   assert.match(rollout,/v2_remediation_policy_version/);
   assert.match(rollout,/remediationPolicyTag/);
   assert.match(rollout,/remediation_policy_version:REMEDIATION_POLICY_VERSION/);
+});
+
+test("fully deferred initial packs stay PLANNING until a variant starts",()=>{
+  assert.match(workflows,/variant_spawn_pending:true/);
+  assert.match(workflows,/deferred_concurrency:true/);
+  assert.match(workflows,/setPackStatus\(sql,p\.packId,"PLANNING"/);
+  assert.match(concurrency,/p\.status in \('PLANNING','GENERATING'/);
+  assert.match(reconcile,/INITIAL_VARIANTS_DEFERRED_CONCURRENCY/);
+  assert.match(reconcile,/deferred_concurrency_released_at/);
 });
