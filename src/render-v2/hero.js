@@ -29,6 +29,19 @@ function isIndustrialMaterialsContext(inputPayload={}) {
     /edil|costruz|cement|materiali|rebar|tondo|acciaio/.test(hay);
 }
 
+function isGeneralContractorInfrastructureContext(inputPayload={}) {
+  const hay=[
+    inputPayload.vertical,
+    inputPayload.verified_services,
+    inputPayload.brand_dna?.offer,
+    inputPayload.brand_dna?.business_type,
+    inputPayload.brand_dna?.business_positioning
+  ].map(x=>String(x||"").toLowerCase()).join(" ");
+  const contractor=/general contractor|costruzion|edilizia|construction/.test(hay);
+  const institutional=/industrial|industriali|ospedal|hospital|lavori stradali|road works|infrastruttur|impianti tecnologici/.test(hay);
+  return contractor && institutional;
+}
+
 function variantComposition(variantKey,inputPayload={}) {
   if(isIndustrialMaterialsContext(inputPayload)) {
     if(variantKey==="B") {
@@ -38,6 +51,15 @@ function variantComposition(variantKey,inputPayload={}) {
       return "Process-first documentary composition with NO PEOPLE: make the visual about authentic rebar processing itself — a believable industrial rebar bending/cutting/straightening machine, round steel bars feeding through or stacked beside it, realistic wear, dust, oil traces and natural workshop light. No workers, faces, hands, posed humans or corporate interaction. No sparks unless mechanically plausible. Keep the machine/action and round rebar inside the central 60% of frame with useful depth and mobile-safe margins. All equipment surfaces must be blank and unbranded with no labels, screens, plates, stickers or readable markings.";
     }
     return "Material-first premium documentary composition with NO PEOPLE: make round rebar/steel bars the unmistakable hero. Use a strong close-to-medium perspective down organized bundles of round reinforcing bar in a believable warehouse, with authentic steel texture, slight natural variation, soft industrial daylight and real depth. No workers, hands, gloves, helmets, tools, tape measures, cranes, forklifts, control panels, packaging, tags, signs, stickers or equipment that could introduce text. No I-beams as the dominant product. Keep the main rebar geometry across the central 60% so both wide desktop and 390px mobile crops remain strong. This must look like a high-end editorial materials photograph, not a 3D render or stock setup.";
+  }
+  if(isGeneralContractorInfrastructureContext(inputPayload)) {
+    if(variantKey==="A") {
+      return "Large-scale operations composition: exterior civil/infrastructure construction only. Show authentic structural concrete, steel, roadworks, institutional or industrial construction in progress, with one distant supervisor at most and no close-up faces. The site itself is the hero. Use realistic wear, dust, temporary works and natural daylight. Absolutely no luxury residential interior, finished villa, staged tablet review, showroom-like surfaces or generic renovation scene. Keep the main structural geometry and machinery inside the central 60% for a strong 390px crop.";
+    }
+    if(variantKey==="B") {
+      return "Architecture-and-scale composition: credible exterior institutional/industrial/civil construction with strong structural geometry and depth; workers are small and secondary. No luxury residential styling, no office scene, no staged consultation.";
+    }
+    return "Infrastructure process composition: believable roadworks, structural installation or large-scale civil works in progress, emphasizing execution capability and scale. Human presence should be distant and natural, never posed.";
   }
   if(variantKey==="B") {
     return "Architecture-first composition: the environment is the hero, with real work activity secondary; cinematic wide frame, strong depth, premium editorial photography, generous natural breathing room for later HTML copy.";
@@ -59,6 +81,9 @@ function sectorDirection(inputPayload={}) {
 
   if(/materiali|ingrosso|distribuz|tondo|cemento armato|rebar|acciaio|fornitur/.test(hay) && /edil|costruz|cement|materiali|rebar|tondo/.test(hay)) {
     return "Show a believable premium B2B construction-materials and rebar-supply context: organized raw steel/rebar, clean warehouse or processing/logistics environment, technical handling or supervision, strong material texture and scale. Use ONLY blank unbranded PPE and raw materials. Avoid cardboard boxes, printed packaging, stickers, hanging tags, wall signs, warning boards, vehicle plates, branded clothing, pallets with labels, storefronts and any surface likely to contain writing. Do NOT portray the company as the builder of a luxury villa or claim a completed construction project that is not verified. Avoid generic office stock imagery.";
+  }
+  if(isGeneralContractorInfrastructureContext(inputPayload)) {
+    return "Show a believable high-capacity Italian general-contractor context tied to the verified offer: civil, industrial, hospital/institutional construction, technological installations or road/infrastructure works. Prefer EXTERIOR works in progress, structural scale, authentic site logistics, concrete/steel and real construction texture. Do not depict luxury residential interiors, finished villas, domestic renovation, glossy showroom architecture, staged tablet meetings or invented branded projects. The image must communicate execution scale and technical credibility without claiming a specific completed project.";
   }
   if(/edil|costruz|ristruttur|cantiere|immobil|architett/.test(hay)) {
     return "Show a believable high-end Italian construction / renovation context: quality building site, refined residential or commercial architecture, scaffolding or materials only where natural, clean professional workwear, credible site supervision or craftsmanship. Avoid generic corporate offices.";
@@ -121,11 +146,19 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
   ].join("\n");
 }
 
-export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback=null}) {
+export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback=null,generationAttempt=1,generationCycle=1}) {
   if(!env.AI) throw new Error("HERO_IMAGE_AI_BINDING_REQUIRED");
   const primary=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-dev";
   const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
   const prompt=buildHeroPrompt({inputPayload,direction,variantKey,feedback});
+  const attempt=Math.max(1,Number(generationAttempt)||1);
+  const cycle=Math.max(1,Number(generationCycle)||1);
+  const deterministicSeed=Math.abs(
+    (variantKey.charCodeAt(0)*1009) +
+    (cycle*3571) +
+    (attempt*7919) +
+    (feedback?1543:0)
+  );
   let lastError=null;
 
   for(const model of [primary,fallback]) {
@@ -140,7 +173,7 @@ export async function generatePremiumHeroVisual(env,{inputPayload,direction,vari
         form.append("height","1024");
         form.append("guidance","6.0");
         if(String(model).includes("flux-2-dev")) form.append("steps","25");
-        form.append("seed",String(Math.abs((variantKey.charCodeAt(0)*1009)+(feedback?7919:3571))));
+        form.append("seed",String(deterministicSeed));
         const encoded=new Response(form);
         const contentType=encoded.headers.get("content-type")||"multipart/form-data";
         const response=await env.AI.run(model,{
@@ -156,7 +189,7 @@ export async function generatePremiumHeroVisual(env,{inputPayload,direction,vari
           width:1536,
           height:1024,
           output_format:"jpeg",
-          seed:Math.abs((variantKey.charCodeAt(0)*1009)+(feedback?7919:3571))
+          seed:deterministicSeed
         });
         const imageUrl=String(response?.result?.image||response?.image||"").trim();
         if(!imageUrl) throw new Error("HERO_IMAGE_EMPTY_RESPONSE");
