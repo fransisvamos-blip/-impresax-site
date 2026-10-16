@@ -10,6 +10,7 @@ const inputPack=fs.readFileSync(new URL("../src/render-v2/input-pack.js",import.
 const rollout=fs.readFileSync(new URL("../src/render-v2/rollout.js",import.meta.url),"utf8");
 const remediation=fs.readFileSync(new URL("../src/render-v2/remediation.js",import.meta.url),"utf8");
 const concurrency=fs.readFileSync(new URL("../src/render-v2/concurrency.js",import.meta.url),"utf8");
+const grammar=fs.readFileSync(new URL("../src/render-v2/design-grammar.js",import.meta.url),"utf8");
 const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
 const failurePolicy=fs.readFileSync(new URL("../src/render-v2/failure-policy.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
@@ -217,4 +218,13 @@ test("legacy upgrades yield to higher-priority V3 escalations",()=>{
 test("hard budget exhaustion is not a system invariant",()=>{
   assert.match(failurePolicy,/failure_domain="BUDGET"; failure_code="HARD_BUDGET_EXCEEDED"; retryable=false/);
   assert.doesNotMatch(failurePolicy,/hard_budget_exceeded[\s\S]{0,120}failure_domain="SYSTEM_INVARIANT"/);
+});
+
+test("deterministic A/B grammar carries verified content through bridge",()=>{
+  assert.match(grammar,/ixg-bridge__evidence-row/);
+  assert.match(grammar,/aBridgeEvidenceRows/);
+  assert.doesNotMatch(grammar,/ixg-bridge__device[^\n]*aria-hidden/);
+  assert.match(grammar,/ixb-bridge__copy/);
+  assert.match(grammar,/copyToken\("POSITIONING_BODY"\)/);
+  assert.match(grammar,/\.ix-v2-nav a\{color:#f4f1ea;font-size:15px/);
 });
