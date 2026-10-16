@@ -161,3 +161,10 @@ test("SET QA cache self-heals from authoritative current-set rows",()=>{
   assert.match(reconcile,/set_qa_cache_reconciled/);
   assert.match(reconcile,/summary\.set_qa_cache_sync/);
 });
+
+test("zero-photo Premium V3 provider failures use deterministic failover",()=>{
+  assert.match(workflows,/const providerFailoverDomain=/);
+  assert.match(workflows,/context\.heroOnly \|\| deterministicRecovery/);
+  assert.match(workflows,/provider_failover:true/);
+  assert.match(workflows,/buildZeroPhotoPremiumSpec/);
+});
