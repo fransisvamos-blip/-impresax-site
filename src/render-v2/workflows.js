@@ -389,7 +389,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
-          if(context.heroOnly && cycle===1 && feedback?.reason==="ENGINE_CONTRACT_UPGRADE") {
+          if(context.heroOnly && cycle===1 && ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"].includes(String(feedback?.reason||""))) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
