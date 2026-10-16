@@ -282,8 +282,8 @@ test("active recovery variant state follows workflow lifecycle",()=>{
   assert.match(reconcile,/await setVariantStatus\(sql,variant\.id,\{status:"GENERATING"\}\)/);
   assert.match(reconcile,/RECOVERY_WORKFLOW_CREATE_FAILED/);
   assert.match(reconcile,/await setVariantStatus\(sql,variant\.id,\{status:"ESCALATION_REQUIRED"\}\)/);
-  assert.match(reconcile,/row\.variant_status!=="GENERATING"/);
-  assert.match(reconcile,/setVariantStatus\(sql,row\.variant_id,\{status:"GENERATING"\}\)/);
+  assert.match(reconcile,/validActiveVariantStates=new Set\(\["GENERATING","PREVIEW_READY","QA_RUNNING","REWORK"\]\)/);
+  assert.match(reconcile,/!validActiveVariantStates\.has\(String\(row\.variant_status\|\|""\)\)/);
 });
 
 test("construction hero grammar forbids empty sky dominance",()=>{
