@@ -631,11 +631,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       const heroScoreKeys=["hero_strength","hero_relevance","hero_image_quality","hero_mobile_crop"];
       const heroScores=Object.fromEntries(heroScoreKeys.map(k=>[k,Number(qa.scores?.[k]??0)]));
-      const heroIssues=(qa.issues||[]).filter(issue=>
-        /hero|imagery|image|crop|focal|generic|stock|synthetic|ai[- ]?feel/i.test(
-          [issue?.code,issue?.target,issue?.message].filter(Boolean).join(" ")
-        )
-      );
+      const heroIssues=(qa.issues||[]).filter(issue=>{
+        const codeTarget=[issue?.code,issue?.target].filter(Boolean).join(" ");
+        const message=String(issue?.message||"");
+        const explicitHero=/\bhero\b|hero[_ -]|mobile[_ -]?crop|hero[_ -]?image|hero[_ -]?visual/i.test(codeTarget+" "+message);
+        const focalCrop=/\b(?:crop|focal|subject)\b/i.test(message) && /\b(?:hero|mobile|image)\b/i.test(message);
+        return explicitHero||focalCrop;
+      });
       const heroHardIssues=heroIssues.filter(x=>x?.severity==="critical"||x?.severity==="major");
       const heroPass=heroScoreKeys.every(k=>Number(heroScores[k])>=8) && heroHardIssues.length===0;
 
