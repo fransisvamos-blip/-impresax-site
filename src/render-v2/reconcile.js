@@ -93,7 +93,8 @@ async function enforceGlobalVariantConcurrency(env,sql) {
         });
         continue;
       }
-      if(row.variant_status!=="GENERATING" && !(row.variant_status==="RENDER_READY" && row.certified_revision)) {
+      const validActiveVariantStates=new Set(["GENERATING","PREVIEW_READY","QA_RUNNING","REWORK"]);
+      if(!validActiveVariantStates.has(String(row.variant_status||"")) && !(row.variant_status==="RENDER_READY" && row.certified_revision)) {
         await setVariantStatus(sql,row.variant_id,{status:"GENERATING"});
       }
       live.push({...row,instance,platform_status:pstatus});
