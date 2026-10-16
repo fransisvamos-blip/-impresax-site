@@ -355,3 +355,10 @@ test("render profile is pack scoped and injected without mutating certified inpu
   assert.match(workflows,/packRows\[0\]\?\.metadata\?\.render_profile/);
   assert.match(workflows,/\{\.\.\.input\.payload,render_profile:renderProfile\}/);
 });
+
+
+test("health accepts intentional isolated pilot mode",()=>{
+  assert.match(health,/pilot_single_prospect/);
+  assert.match(health,/operating_mode:pilotMode\?"PILOT_SINGLE_PROSPECT"/);
+  assert.match(health,/operational_ok:\(queueReady\|\|pilotMode\)/);
+});
