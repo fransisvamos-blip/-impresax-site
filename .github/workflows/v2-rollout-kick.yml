@@ -1,5 +1,5 @@
 name: V2 Rollout Kick
-# rollout kick trigger: bl-ac-repair-content-addressed-hero-v1
+# rollout kick trigger: bl-costruzioni-a-premium-v3-repair
 
 on:
   push:
