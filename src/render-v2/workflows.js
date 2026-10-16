@@ -415,8 +415,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const budget=/HARD_BUDGET_EXCEEDED/.test(message);
         const deterministicRecovery=
           ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"].includes(String(params.initialFeedback?.reason||""));
-        const deterministicFailover=deterministicRecovery && !budget &&
+        const providerFailoverDomain=
           ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER","UNKNOWN"].includes(String(domain));
+        // Premium V3 generation must not burn all visual revisions on provider instability.
+        // For zero-photo/home layouts, the deterministic spec is executable and still passes
+        // through compiler, browser capture, HERO/VISUAL QA and SET QA before certification.
+        const deterministicFailover=!budget && providerFailoverDomain &&
+          (context.heroOnly || deterministicRecovery);
 
         if(deterministicFailover) {
           const deterministic=buildZeroPhotoPremiumSpec({
