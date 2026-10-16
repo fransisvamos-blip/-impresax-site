@@ -228,6 +228,7 @@ async function preemptLowerPriorityRecoveryForQualityUpgrade(env,sql) {
           p.status in ('GENERATING','ESCALATION_REQUIRED','REWORK','PREVIEW_PARTIAL','PREVIEW_READY','QA_RUNNING')
           and p.quality_contract_version=${QUALITY_CONTRACT_VERSION}
           and p.metadata->>'quality_upgrade_to'=${QUALITY_CONTRACT_VERSION}
+          and coalesce((p.metadata->>'quality_upgrade_exhausted')::boolean,false)=false
         )
       )
       and exists (
