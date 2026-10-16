@@ -453,16 +453,30 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
     where id=${prospect.id}::uuid`;
 
   if(!canCertify) {
+    const exhausted=attempts>=2;
     await sql`
       update render_v2_packs
       set metadata=coalesce(metadata,'{}'::jsonb)||${JSON.stringify({
         remediation_attempts:attempts,
+        remediation_policy_version:REMEDIATION_POLICY_VERSION,
         remediation_status:"EVIDENCE_INCOMPLETE",
+        remediation_exhausted:exhausted,
+        remediation_exhausted_reason:exhausted?"VERIFIED_INPUT_EVIDENCE_NOT_FOUND":null,
         remediation_checked_at:new Date().toISOString()
       })}::jsonb,
       updated_at=now()
       where id=${packId}::uuid`;
-    return {status:"INPUT_BLOCKED",attempts,can_certify:false,evidence};
+    if(exhausted) {
+      await sql`
+        update prospects
+        set render_status='INPUT_BLOCKED',
+            current_step='INPUT_EVIDENCE_REQUIRED',
+            error='V2_INPUT_EVIDENCE_EXHAUSTED',
+            next_action='SOURCE_ENRICHMENT_REQUIRED',
+            updated_at=now()
+        where id=${prospect.id}::uuid`;
+    }
+    return {status:"INPUT_BLOCKED",attempts,can_certify:false,exhausted,evidence};
   }
 
   await sql`
