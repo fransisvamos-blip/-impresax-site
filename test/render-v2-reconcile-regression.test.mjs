@@ -352,7 +352,8 @@ test("ImpresaX master pilot uses full-bleed in-image hero overlay",()=>{
 
 test("render profile is pack scoped and injected without mutating certified input payload",()=>{
   assert.match(workflows,/select metadata from render_v2_packs where id=\$\{params\.packId\}::uuid/);
-  assert.match(workflows,/packRows\[0\]\?\.metadata\?\.render_profile/);
+  assert.match(workflows,/const packMetadata=packRows\[0\]\?\.metadata\|\|\{\}/);
+  assert.match(workflows,/String\(packMetadata\.render_profile\|\|""\)\.trim\(\)/);
   assert.match(workflows,/\{\.\.\.input\.payload,render_profile:renderProfile\}/);
 });
 
