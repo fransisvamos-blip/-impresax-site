@@ -69,7 +69,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
       from current_ready cr
     ),
     rollout as (
-      select phase,queue_enabled,max_concurrency,last_tick_at
+      select phase,queue_enabled,max_concurrency,last_tick_at,metadata
       from render_v2_rollout_state where id=1
     )
     select
@@ -77,6 +77,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
       r.queue_enabled,
       r.max_concurrency,
       r.last_tick_at,
+      r.metadata,
       (select count(*)::int from render_workflows_v2
         where workflow_type='VARIANT' and status in ('QUEUED','RUNNING','PAUSED')) active_variants,
       (select count(*)::int from render_v2_packs p
@@ -156,10 +157,13 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const active=Number(x.active_variants||0);
   const maxConcurrency=Number(x.max_concurrency||3);
   const queueReady=x.phase==="QUEUE_READY" && x.queue_enabled===true;
+  const pilotMode=x.queue_enabled!==true && x.metadata?.pilot_single_prospect===true;
   const concurrencyOk=active<=maxConcurrency;
   const countersOk=Object.values(counters).every(n=>n===0);
   return {
-    operational_ok:queueReady && concurrencyOk && countersOk,
+    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk,
+    operating_mode:pilotMode?"PILOT_SINGLE_PROSPECT":queueReady?"QUEUE_READY":"NOT_READY",
+    pilot_single_prospect:pilotMode,
     phase:x.phase||null,
     queue_enabled:x.queue_enabled===true,
     active_variants:active,
