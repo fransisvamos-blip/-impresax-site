@@ -156,6 +156,13 @@ export default {
       }
       const instanceId="rpv2-"+created.pack.id;
       const sql=db(env);
+      const startCircuit=await prospectCircuitState(sql,created.pack.prospect_id);
+      if(startCircuit.open) {
+        return json({
+          ok:false,error:"GENERATION_CIRCUIT_BREAKER",status:"ESCALATION_REQUIRED",
+          pack_id:created.pack.id,api_start:true
+        },409);
+      }
       const capacity=await renderConcurrencyState(sql);
       if(capacity.slots<3) {
         return json({
@@ -429,6 +436,13 @@ export default {
       const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
       if(!packs.length) return json({ok:false,error:"RENDER_V2_PACK_NOT_FOUND"},404);
       const pack=packs[0];
+      const contractCircuit=await prospectCircuitState(sql,pack.prospect_id);
+      if(contractCircuit.open) {
+        return json({
+          ok:false,error:"GENERATION_CIRCUIT_BREAKER",status:"ESCALATION_REQUIRED",
+          pack_id:packId,whole_pack_relaunch:true
+        },409);
+      }
       if(String(pack.metadata?.contract_relaunch||"")===runKey) {
         return json({ok:true,pack_id:packId,run_key:runKey,already_applied:true,force,launched:[]},200);
       }
