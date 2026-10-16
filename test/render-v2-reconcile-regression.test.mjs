@@ -249,3 +249,22 @@ test("prospect rendering fields mirror authoritative pack state",()=>{
   assert.match(reconcile,/summary\.prospect_projection_sync=await syncProspectRenderProjection\(sql\)/);
   assert.doesNotMatch(reconcile,/syncProspectRenderProjection[\s\S]{0,2200}set pipeline_status=/);
 });
+
+test("escalated recovery stages one wave across available slots",()=>{
+  const start=reconcile.indexOf("async function recoverEscalatedQueuePack");
+  const end=reconcile.indexOf("export async function startOrRecoverParent",start);
+  assert.ok(start>=0 && end>start);
+  const recovery=reconcile.slice(start,end);
+  assert.match(recovery,/auto_recovery_partial_open/);
+  assert.match(recovery,/VARIANT_SET_STAGED/);
+  assert.match(recovery,/launchable\.slice\(0,maxLaunch\)/);
+  assert.match(recovery,/metadata->>'event_prefix'=\$\{runKey\}/);
+  assert.match(recovery,/RECOVERY_WAVE_IN_PROGRESS/);
+});
+
+test("reconciler fills and closes staged recovery waves",()=>{
+  assert.match(reconcile,/STAGED_RECOVERY_WAVE_TERMINAL/);
+  assert.match(reconcile,/partialRecoveryPacks/);
+  assert.match(reconcile,/staged_auto_recovery:true/);
+  assert.match(reconcile,/auto_recovery_wave_last_launch_at/);
+});
