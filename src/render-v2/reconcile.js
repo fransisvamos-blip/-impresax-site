@@ -1379,7 +1379,8 @@ export async function reconcileV2(env) {
             updated_at=now()
         where id=1`;
     }
-    const pilotCandidateSync=await syncLockedPilotCandidate(sql,pilotControl);
+    const cabinaRequested=pilotMeta.cabina_precomputed_requested===true;
+    const pilotCandidateSync=cabinaRequested ? null : await syncLockedPilotCandidate(sql,pilotControl);
     const pilotStaleRecovery=pilotCandidateSync ? null : await restartStaleLockedPilotVariant(env,sql,pilotControl);
     summary.reconciled.push({
       pilot_lock:true,
