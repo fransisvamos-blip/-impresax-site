@@ -244,6 +244,24 @@ export function fifteenKValueViolations(mainHtml="",css="") {
   return issues;
 }
 
+export function iconicCommissionedViolations(mainHtml="",css="") {
+  const main=String(mainHtml||"");
+  const styles=String(css||"");
+  const issues=[];
+  const hero=main.match(/<section\b[^>]*\bid=["']hero["'][^>]*>/i)?.[0]||"";
+  if(!/\bdata-commissioned-experience=["']true["']/i.test(hero)) issues.push("COMMISSIONED_EXPERIENCE_MARKER_REQUIRED");
+  if(!/\bdata-authorship=["']irreproducible["']/i.test(hero)) issues.push("IRREPRODUCIBLE_AUTHORSHIP_MARKER_REQUIRED");
+  if(!/\bdata-scroll-narrative=["']continuous["']/i.test(hero)) issues.push("SCROLL_NARRATIVE_MARKER_REQUIRED");
+  const iconic=(main.match(/\bdata-iconic-moment=["']true["']/gi)||[]).length;
+  if(iconic<4) issues.push("ICONIC_MOMENTS_REQUIRED:"+iconic+"/4");
+  const transitions=(main.match(/\bdata-authored-transition=["']true["']/gi)||[]).length;
+  if(transitions<3) issues.push("AUTHORED_TRANSITIONS_REQUIRED:"+transitions+"/3");
+  if(!/--ix-signature-angle\s*:/i.test(styles)) issues.push("SIGNATURE_SYSTEM_VARIABLE_REQUIRED");
+  if(!/--ix-signature-rule\s*:/i.test(styles)) issues.push("SIGNATURE_RULE_VARIABLE_REQUIRED");
+  if(!/\.ix-v2-header/i.test(styles) || !/\.ix-v2-footer/i.test(styles)) issues.push("COMMISSIONED_SHELL_REQUIRED");
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -291,7 +309,19 @@ export function showroomPolicySummary() {
       imagery_credibility:"REAL_OR_HIGH_CREDIBILITY_PREMIUM",
       detail_refinement:"MANIACAL",
       mobile_premium_integrity:"EQUAL_VALUE_TO_DESKTOP",
-      fifteen_k_value_perception:"BLOCKING_MIN_9_2",
+      fifteen_k_value_perception:"BLOCKING_MIN_9_7",
+      target_quality_band:"9_8_TO_9_9",
+      commissioned_experience:"BLOCKING_MIN_9_8",
+      irreproducible_brand_authorship:"BLOCKING_MIN_9_7",
+      scroll_narrative_continuity:"BLOCKING_MIN_9_7",
+      signature_system_coherence:"BLOCKING_MIN_9_7",
+      editorial_campaign_quality:"BLOCKING_MIN_9_7",
+      transition_art_direction:"BLOCKING_MIN_9_6",
+      visual_memory_factor:"BLOCKING_MIN_9_7",
+      cross_viewport_art_direction:"BLOCKING_MIN_9_7",
+      recognizable_without_logo_or_copy:"REQUIRED",
+      section_transitions:"AUTHORED_NOT_STACKED",
+      campaign_level_photography_treatment:"REQUIRED",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
     conversion:{
@@ -299,7 +329,9 @@ export function showroomPolicySummary() {
       trust:"QUALITATIVE_VISUAL_PROOF",
       final_cta:"COMMERCIAL_CLIMAX",
       sales_architecture:"STRATEGIC_PERSUASION_NOT_DECORATION",
-      perceived_value_goal:"MAKE_2500_EUR_FEEL_LIKE_A_BARGAIN_VS_10000_15000_EUR"
+      perceived_value_goal:"MAKE_2500_EUR_FEEL_LIKE_A_BARGAIN_VS_10000_15000_EUR",
+      iconic_goal:"RECOGNIZABLE_AS_THIS_PROSPECT_WITHOUT_LOGO_OR_COPY",
+      target_score:"9_8_TO_9_9_NOT_EASY_10"
     }
   });
 }
