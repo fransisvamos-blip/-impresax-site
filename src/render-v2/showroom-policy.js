@@ -101,7 +101,7 @@ export function flatStrongSectionBackgroundViolations(mainHtml="",css="") {
     const classMatch=attrs.match(/\bclass=["\']([^"\']+)["\']/i);
     const classes=(classMatch?.[1]||"").split(/\s+/).filter(Boolean);
     for(const cls of classes) {
-      const esc=cls.replace(/[.*+?^$()|[\]\\{}]/g,"\\export function showroomPolicySummary() {");
+      const esc=cls.replace(/[.*+?^$()|[\]\\{}]/g,"\\      const esc=cls.replace(/[.*+?^$()|[\]\\{}]/g,"\\export function showroomPolicySummary() {");");
       const rule=new RegExp("\\."+esc+"\\s*\\{([\\s\\S]*?)\\}","i").exec(css)?.[1]||"";
       if(!rule) continue;
       const bg=(rule.match(/(?:^|;)\s*background(?:-color)?\s*:\s*([^;]+)/i)?.[1]||"").trim();
@@ -139,7 +139,10 @@ export function showroomPolicySummary() {
       flat_full_bleed_strong_color_blocks:"FORBIDDEN",
       flat_surface_gate:"COMPILER_ENFORCED",
       section_surfaces:"ART_DIRECTED_LAYERED_BRAND_SPECIFIC",
-      logo_watermark:"PREFERRED_WHEN_COMPATIBLE_AND_SUBTLE",
+      logo_watermark:"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED",
+      minimum_brand_rich_sections:2,
+      brand_color_presence:"MEANINGFUL_CHROMATIC_FIELDS_REQUIRED",
+      neutral_only_page:"FORBIDDEN",
       brand_motifs:"REQUIRED_AS_STRUCTURAL_SUPPORT",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
