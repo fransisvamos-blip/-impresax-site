@@ -1,4 +1,4 @@
-name: V2 DEDIL R65 Review Export
+name: V2 DEDIL R71 Review Export
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Export DEDIL rev65 screenshots
+      - name: Export DEDIL rev71 screenshots
         shell: bash
         run: |
           set -euo pipefail
@@ -43,11 +43,11 @@ jobs:
             done
             [ "$ok" = "1" ] || exit 1
           }
-          fetch_artifact dd3a35d9-43ac-40d9-a2c9-1eb15dc58605 review/dedil-r65-desktop.jpg
-          fetch_artifact 6841b436-fdf6-4981-bf64-c465b007b7df review/dedil-r65-mobile.jpg
+          fetch_artifact 2ce0c8c7-7d23-4074-98d1-3e006c96aecf review/dedil-r71-desktop.jpg
+          fetch_artifact 659730a7-ec41-4a53-a070-15aa52b06126 review/dedil-r71-mobile.jpg
           file review/*
       - uses: actions/upload-artifact@v4
         with:
-          name: dedil-r65-review
+          name: dedil-r71-review
           path: review/
           if-no-files-found: error
