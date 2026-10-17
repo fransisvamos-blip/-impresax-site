@@ -1426,7 +1426,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
         +"Deterministic R89 BRAND_RICH fallback grammar v4 "+variantKey+": layered chromatic surfaces, official-logo watermark when available, mandatory HERO_VISUAL, verified copy distribution, responsive 1440/390."
     },
-    strategy:logoFirstMode?"LOGO_FIRST_MASTER_R89":impresaxMasterProfile?"IMPRESAX_MASTER_R89":"BRAND_RICH_FALLBACK_GRAMMAR_V4"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R89":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R89":"BRAND_RICH_FALLBACK_GRAMMAR_V4"
   };
 }
 

@@ -71,7 +71,7 @@ export function copyPolicyViolations(copyManifest={},usedKeys=[]) {
 function parseRootVars(css="") {
   const vars={};
   const root=String(css).match(/:root\s*\{([\s\S]*?)\}/i)?.[1]||"";
-  for(const m of root.matchAll(/(--[a-z0-9_-]+)\s*:\s*([^;]+);/gi)) vars[m[1]]=m[2].trim();
+  for(const m of root.matchAll(/(--[a-z0-9_-]+)\s*:\s*([^;]+)(?:;|$)/gi)) vars[m[1]]=m[2].trim();
   return vars;
 }
 
@@ -180,7 +180,7 @@ export function watermarkVisibilityViolations(mainHtml="",css="") {
     return out;
   }).join("\n");
   const opacitySource=identityRules||wrapperRules;
-  const values=[...opacitySource.matchAll(/\bopacity\s*:\s*(0(?:\.\d+)?|1(?:\.0+)?)\b/gi)]
+  const values=[...opacitySource.matchAll(/\bopacity\s*:\s*((?:0?\.\d+)|0|1(?:\.0+)?)\b/gi)]
     .map(m=>Number(m[1])).filter(Number.isFinite);
   if(!values.length) return ["OFFICIAL_LOGO_WATERMARK_VISIBILITY_REQUIRED:EXPLICIT_OPACITY"];
   const visible=Math.max(...values);
