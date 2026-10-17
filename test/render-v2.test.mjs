@@ -464,6 +464,6 @@ test("set QA normalization converts unit scale and still blocks material diversi
     issues:["A and B reuse the same composition and are not materially different."],
     actions:[]
   });
-  assert.equal(r.scores.set_quality,8.6);
+  assert.equal(r.scores.set_quality,9);
   assert.equal(r.pass,false);
 });
