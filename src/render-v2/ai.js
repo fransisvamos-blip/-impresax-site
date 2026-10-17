@@ -855,6 +855,44 @@ const visualQaSchema={
   required:["pass","summary","issues","actions","scores"]
 };
 
+export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirstMaster=false,masterGateKeys=[]}={}) {
+  const nextIssues=Array.isArray(issues)?[...issues]:[];
+  const nextActions=Array.isArray(actions)?[...actions]:[];
+  const already=new Set(nextIssues.map(x=>String(x?.target||x?.code||"")));
+
+  const addGateIssue=(key,score,required,code)=>{
+    if(already.has(key)) return;
+    nextIssues.push({
+      code,
+      target:key,
+      message:`${key} scored ${score} below the required ${required} visual-quality gate.`,
+      severity:"major"
+    });
+    nextActions.push(`Raise ${key} from ${score} to at least ${required} with a targeted visual refinement; do not change already-passing sections.`);
+    already.add(key);
+  };
+
+  for(const key of QA_SCORE_KEYS) {
+    const score=Number(scores?.[key]??0);
+    if(score<8) addGateIssue(key,score,8,"score_below_floor");
+  }
+  if(logoFirstMaster) {
+    for(const key of masterGateKeys) {
+      const score=Number(scores?.[key]??0);
+      if(score<9) addGateIssue(key,score,9,"master_gate_below_floor");
+    }
+  }
+
+  const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(scores?.[k]??0)));
+  const masterGateFloor=logoFirstMaster
+    ? Math.min(...masterGateKeys.map(k=>Number(scores?.[k]??0)))
+    : 10;
+  const hardIssues=nextIssues.filter(x=>x?.severity==="critical"||x?.severity==="major");
+  const pass=min>=8 && masterGateFloor>=9 && hardIssues.length===0;
+
+  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor};
+}
+
 export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
   const logoFirstMaster=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1";
   const pilotHeroLocked=inputPayload?.pilot_hero_locked===true;
@@ -938,16 +976,24 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     });
   }
 
-  const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(scores?.[k]??0)));
-  const hardIssues=issues.filter(x=>x.severity==="critical"||x.severity==="major");
-  const masterGateFloor=logoFirstMaster
-    ? Math.min(...masterGateKeys.map(k=>Number(scores?.[k]??0)))
-    : 10;
-  const pass=r.data.pass===true
-    && min>=8
-    && masterGateFloor>=9
-    && hardIssues.length===0;
-  return {...r.data,scores,issues,pass,model:r.model,min_score:min,master_gate_floor:masterGateFloor,master_gate_required:logoFirstMaster?9:null};
+  const gated=applyVisualQaScoreGates({
+    scores,
+    issues,
+    actions:r.data.actions,
+    logoFirstMaster,
+    masterGateKeys
+  });
+  return {
+    ...r.data,
+    scores,
+    issues:gated.issues,
+    actions:gated.actions,
+    pass:gated.pass,
+    model:r.model,
+    min_score:gated.min_score,
+    master_gate_floor:gated.master_gate_floor,
+    master_gate_required:logoFirstMaster?9:null
+  };
 }
 
 
