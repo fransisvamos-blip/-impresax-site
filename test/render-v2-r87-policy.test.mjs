@@ -26,6 +26,7 @@ test("R89 showroom standard is the global zero-extra-AI contract",()=>{
   assert.equal(showroomPolicySummary().visual.minimum_brand_rich_sections,2);
   assert.equal(showroomPolicySummary().visual.logo_watermark,"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED");
   assert.equal(showroomPolicySummary().visual.neutral_only_page,"FORBIDDEN");
+  assert.equal(showroomPolicySummary().visual.brand_color_presence,"MEANINGFUL_CHROMATIC_FIELDS_REQUIRED");
 });
 
 test("revenue and headcount remain source evidence but are suppressed from homepage proof",()=>{
