@@ -166,6 +166,7 @@ export function buildHeroPrompt({inputPayload,direction,variantKey,feedback=null
 }
 
 export async function generatePremiumHeroVisual(env,{inputPayload,direction,variantKey,feedback=null,generationAttempt=1,generationCycle=1}) {
+  if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true") throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("HERO_IMAGE_AI_BINDING_REQUIRED");
   const primary=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-dev";
   const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
