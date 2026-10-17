@@ -470,7 +470,7 @@ async function renderV2AssetResponse(sql, env, revisionId, mode) {
 }
 
 async function dashboard(sql) {
-  const [counts, board, events, queue, v2Summary] = await Promise.all([
+  const [counts, board, events, queue, v2Summary, pilotRows] = await Promise.all([
     sql`select * from ops_dashboard_counts`,
     sql`select * from ops_prospect_board order by rank nulls last, azienda asc limit 500`,
     sql`select id,prospect_id,event_type,entity_type,entity_id,actor,from_status,to_status,payload,created_at
@@ -505,12 +505,27 @@ async function dashboard(sql) {
         from render_v2_packs p
         where p.shadow_mode=true
           and p.status not in ('CANCELLED','SUPERSEDED')
-        order by p.prospect_id,p.created_at desc`
+        order by p.prospect_id,p.created_at desc`,
+    sql`select phase,pilot_pack_id,metadata from render_v2_rollout_state where id=1 limit 1`
   ]);
   const v2ByProspect=new Map(v2Summary.map(x=>[String(x.prospect_id),x]));
+  const pilotControl=pilotRows[0]||{};
+  const pilotMeta=pilotControl.metadata||{};
+  const pilotProspectId=String(pilotMeta.pilot_prospect_id||"");
+  const pilotReady=
+    String(pilotControl.phase||"")==="PILOT_SINGLE_PROSPECT" &&
+    Boolean(pilotMeta.pilot_candidate_revision) &&
+    ["READY_FOR_CABINA_APPROVAL","CABINA_RENDER_REVIEW"].includes(String(pilotMeta.pilot_candidate_status||""));
   const enrichedBoard=board.map(row=>{
     const v2=v2ByProspect.get(String(row.id_prospect))||{};
-    return {...row,...v2};
+    const isPilotCandidate=pilotReady && String(row.id_prospect)===pilotProspectId;
+    return {
+      ...row,
+      ...v2,
+      render_v2_pilot_candidate:isPilotCandidate,
+      render_v2_pilot_candidate_revision:isPilotCandidate ? Number(pilotMeta.pilot_candidate_revision) : null,
+      render_v2_pilot_candidate_status:isPilotCandidate ? String(pilotMeta.pilot_candidate_status||"") : null
+    };
   });
   return {
     counts: counts[0] || {},
@@ -523,7 +538,7 @@ async function dashboard(sql) {
 
 
 async function prospectDetail(sql, id) {
-  const [p, jobs, packs, variants, assets, builds, qa, events, handoffs, queue, v2Packs, v2Variants] = await Promise.all([
+  const [p, jobs, packs, variants, assets, builds, qa, events, handoffs, queue, v2Packs, v2Variants, pilotRows] = await Promise.all([
     sql`select * from prospects where id=${id}::uuid limit 1`,
     sql`select * from render_jobs where prospect_id=${id}::uuid order by created_at desc`,
     sql`select * from render_packs where prospect_id=${id}::uuid order by version desc`,
@@ -557,18 +572,47 @@ async function prospectDetail(sql, id) {
         left join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
         where p.prospect_id=${id}::uuid
         order by p.created_at desc,v.variant_key asc`,
+    sql`select phase,pilot_pack_id,metadata from render_v2_rollout_state where id=1 limit 1`
   ]);
   if (!p[0]) return null;
 
-  const normalizedV2=v2Variants.map(v=>({
-    ...v,
-    source_system:"V2",
-    name:"Versione "+v.variant_key,
-    reference_score:v.score,
-    selected:Boolean(v.certified_revision_id && String(v.selected_variant_revision_id||"")===String(v.certified_revision_id)),
-    desktop_render_url:["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) && v.status==="RENDER_READY" && v.certified_revision_id && v.desktop_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
-    mobile_render_url:["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) && v.status==="RENDER_READY" && v.certified_revision_id && v.mobile_r2_key && v.hero_qa_passed ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
-  }));
+  const pilotControl=pilotRows[0]||{};
+  const pilotMeta=pilotControl.metadata||{};
+  const pilotPackId=String(pilotControl.pilot_pack_id||pilotMeta.pilot_pack_id||"");
+  const pilotRevision=Number(pilotMeta.pilot_candidate_revision||0);
+  const pilotVariantKey=String(pilotMeta.pilot_candidate_variant||"A");
+  const pilotStatus=String(pilotMeta.pilot_candidate_status||"");
+  const pilotMode=String(pilotControl.phase||"")==="PILOT_SINGLE_PROSPECT";
+
+  const normalizedV2=v2Variants.map(v=>{
+    const normalPackReady=["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||""));
+    const pilotCandidate=
+      pilotMode &&
+      String(v.render_pack_id||"")===pilotPackId &&
+      String(v.variant_key||"")===pilotVariantKey &&
+      Number(v.revision||0)===pilotRevision &&
+      v.status==="RENDER_READY" &&
+      v.revision_status==="RENDER_READY" &&
+      Boolean(v.certified_revision_id) &&
+      Boolean(v.hero_qa_passed);
+    const previewAllowed=(normalPackReady||pilotCandidate) &&
+      v.status==="RENDER_READY" &&
+      v.revision_status==="RENDER_READY" &&
+      Boolean(v.certified_revision_id) &&
+      Boolean(v.hero_qa_passed);
+    return {
+      ...v,
+      source_system:"V2",
+      name:pilotCandidate ? "Pilot Master · Rev. "+v.revision : "Versione "+v.variant_key,
+      reference_score:v.score,
+      selected:Boolean(v.certified_revision_id && String(v.selected_variant_revision_id||"")===String(v.certified_revision_id)),
+      pilot_candidate:pilotCandidate,
+      pilot_candidate_status:pilotCandidate ? pilotStatus : null,
+      pilot_candidate_revision:pilotCandidate ? Number(v.revision) : null,
+      desktop_render_url:previewAllowed && v.desktop_r2_key ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
+      mobile_render_url:previewAllowed && v.mobile_r2_key ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
+    };
+  });
 
   return {
     prospect: p[0],
@@ -578,6 +622,13 @@ async function prospectDetail(sql, id) {
     render_assets: assets,
     render_v2_packs: v2Packs,
     render_v2_variants: normalizedV2,
+    render_v2_pilot: {
+      active:pilotMode,
+      pack_id:pilotPackId||null,
+      candidate_revision:pilotRevision||null,
+      candidate_variant:pilotVariantKey||null,
+      candidate_status:pilotStatus||null
+    },
     site_builds: builds,
     qa_runs: qa,
     events,
