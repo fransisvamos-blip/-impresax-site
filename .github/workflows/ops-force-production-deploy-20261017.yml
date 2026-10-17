@@ -43,3 +43,5 @@ jobs:
           echo "--- health ---"
           cat /tmp/health.json || true
           exit 1
+
+# redeploy: v2-aware-health
