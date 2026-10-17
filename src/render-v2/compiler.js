@@ -180,7 +180,7 @@ export function validateRenderSpec(spec, manifests) {
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
   const usedSectionAssets=usedAssetKeys.filter(key=>key!=="HERO_VISUAL");
-  const requiredSectionAssets=Math.min(MIN_SECTION_VISUALS,availableSectionAssets.length);
+  const requiredSectionAssets=availableSectionAssets.length>=MIN_SECTION_VISUALS ? MIN_SECTION_VISUALS : 0;
   if(requiredSectionAssets>0 && usedSectionAssets.length<requiredSectionAssets) {
     issues.push("SECTION_VISUAL_DENSITY_REQUIRED:"+usedSectionAssets.length+"/"+requiredSectionAssets);
   }
