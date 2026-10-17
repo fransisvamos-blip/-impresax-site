@@ -68,6 +68,61 @@ export function copyPolicyViolations(copyManifest={},usedKeys=[]) {
   return [...new Set(issues)];
 }
 
+function parseRootVars(css="") {
+  const vars={};
+  const root=String(css).match(/:root\s*\{([\s\S]*?)\}/i)?.[1]||"";
+  for(const m of root.matchAll(/(--[a-z0-9_-]+)\s*:\s*([^;]+);/gi)) vars[m[1]]=m[2].trim();
+  return vars;
+}
+
+function resolveCssColor(value="",vars={}) {
+  let v=String(value||"").trim();
+  const vm=v.match(/^var\((--[a-z0-9_-]+)\)$/i);
+  if(vm && vars[vm[1]]) v=String(vars[vm[1]]).trim();
+  const hex=v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if(!hex) return null;
+  let h=hex[1];
+  if(h.length===3) h=h.split("").map(x=>x+x).join("");
+  const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  const max=Math.max(r,g,b),min=Math.min(r,g,b);
+  const lum=(0.2126*r+0.7152*g+0.0722*b)/255;
+  const sat=max===0?0:(max-min)/max;
+  return {r,g,b,lum,sat,raw:v};
+}
+
+export function flatStrongSectionBackgroundViolations(mainHtml="",css="") {
+  const issues=[];
+  const vars=parseRootVars(css);
+  const main=String(mainHtml||"");
+  for(const m of main.matchAll(/<section\b([^>]*)\bid=["\']([^"\']+)["\']([^>]*)>/gi)) {
+    const id=m[2];
+    if(id==="hero") continue;
+    const attrs=(m[1]||"")+" "+(m[3]||"");
+    const classMatch=attrs.match(/\bclass=["\']([^"\']+)["\']/i);
+    const classes=(classMatch?.[1]||"").split(/\s+/).filter(Boolean);
+    for(const cls of classes) {
+      const esc=cls.replace(/[.*+?^$()|[\]\\{}]/g,"\\export function showroomPolicySummary() {");
+      const rule=new RegExp("\\."+esc+"\\s*\\{([\\s\\S]*?)\\}","i").exec(css)?.[1]||"";
+      if(!rule) continue;
+      const bg=(rule.match(/(?:^|;)\s*background(?:-color)?\s*:\s*([^;]+)/i)?.[1]||"").trim();
+      if(!bg || /gradient\(|url\(|transparent/i.test(bg)) continue;
+      const c=resolveCssColor(bg,vars);
+      if(c && (c.lum<0.34 || (c.sat>0.42 && c.lum<0.82))) issues.push("FLAT_STRONG_SECTION_BACKGROUND_FORBIDDEN:"+id);
+    }
+  }
+  return [...new Set(issues)];
+}
+
+export function surfaceContractViolations(mainHtml="") {
+  const issues=[];
+  const main=String(mainHtml||"");
+  for(const m of main.matchAll(/<section\b([^>]*)\bid=["\']([^"\']+)["\']([^>]*)>/gi)) {
+    const id=m[2];
+    if(id==="hero") continue;
+    if(!/\bdata-surface=["\']art-directed["\']/i.test(m[0])) issues.push("ART_DIRECTED_SURFACE_REQUIRED:"+id);
+  }
+  return issues;
+}
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -81,6 +136,10 @@ export function showroomPolicySummary() {
       section_visuals:"REAL_FIRST_PARTY_OR_LICENSED_EDITORIAL",
       iconography:"BRAND_NATIVE_TECHNICAL_OR_SECTOR_RELEVANT",
       repeated_card_walls:"FORBIDDEN",
+      flat_full_bleed_strong_color_blocks:"FORBIDDEN",
+      section_surfaces:"ART_DIRECTED_LAYERED_BRAND_SPECIFIC",
+      logo_watermark:"PREFERRED_WHEN_COMPATIBLE_AND_SUBTLE",
+      brand_motifs:"REQUIRED_AS_STRUCTURAL_SUPPORT",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
     conversion:{
