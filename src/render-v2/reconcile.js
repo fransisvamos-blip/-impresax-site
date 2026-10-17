@@ -1113,8 +1113,10 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   const showroomReset=!cabinaPrecomputed && (meta.pilot_showroom_hard_reset_requested===true || packMeta.pilot_showroom_hard_reset_requested===true);
   const lockedHeroSha=String(packMeta.cabina_precomputed_hero_sha256||packMeta.pilot_reuse_hero_sha256||meta.pilot_reuse_hero_sha256||"");
 
+  const cabinaVersion=String(packMeta.cabina_precomputed_version||"CABINA_PRECOMPUTED_V1")
+    .toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)||"cabina-precomputed-v1";
   const recoveryId=cabinaPrecomputed
-    ? "rv2-"+packId+"-A-cabina-precomputed-v1"
+    ? "rv2-"+packId+"-A-"+cabinaVersion
     : showroomReset
       ? "rv2-"+packId+"-A-showroom-wow-v4"
       : "rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
