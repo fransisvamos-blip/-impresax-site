@@ -31,7 +31,7 @@ const premiumMain=[
   '<section id="trust"><div class="section-shell"><header class="section-head"><h2>{{copy:TRUST_TITLE}}</h2><p>{{copy:TRUST_INTRO}}</p></header><div class="trust-grid"><article><p>{{copy:TRUST_1}}</p></article><article><p>{{copy:TRUST_1}}</p></article><article><p>{{copy:TRUST_1}}</p></article></div></div></section>',
   '<section id="bridge"><div class="section-shell bridge-grid"><div><p>{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2></div><div><p>{{copy:POSITIONING_BODY}}</p><a href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></div></section>',
   '<section id="final-cta"><div class="section-shell final-grid"><div><p>{{copy:LOCALITY_LINE}}</p><h2>{{copy:CLOSING_TITLE}}</h2><p>{{copy:CLOSING_BODY}}</p></div><div><a href="{{cta:PRIMARY}}">{{copy:PRIMARY_CTA_LABEL}}</a><a href="{{cta:SECONDARY}}">{{copy:SECONDARY_CTA_LABEL}}</a></div></div></section>'
-].join("");
+].map((part,i)=>i===0?part:part.replace("<section ","<section data-surface=\"art-directed\" ")).join("");
 
 const premiumCss=(
   ".ix-v2-header{background:#fff;color:#111;border-bottom:1px solid rgba(17,17,17,.12)}"+
