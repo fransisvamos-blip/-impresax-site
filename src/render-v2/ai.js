@@ -857,6 +857,7 @@ const visualQaSchema={
 
 export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
   const logoFirstMaster=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1";
+  const pilotHeroLocked=inputPayload?.pilot_hero_locked===true;
   const masterGateKeys=[
     "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
     "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
@@ -864,7 +865,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "section_quality","page_architecture","final_cta_quality","footer_quality","desktop_quality","mobile_quality",
     "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
     "commercial_desirability","client_wow_effect"
-  ];
+  ].filter(k=>!(pilotHeroLocked && k==="hero_desirability"));
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     logoFirstMaster
@@ -881,6 +882,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
     "HERO HARD GATE: fail if the hero image is generic, irrelevant to the verified vertical/services, visually weak, obviously synthetic/cheap, subordinate to empty geometry, missing a clear focal subject, or badly cropped on mobile.",
     "HERO HARD GATE: the image must materially improve first impression and commercial credibility, with headline/CTA remaining immediately readable.",
+    pilotHeroLocked?"CABINA-LOCKED HERO: this pilot intentionally preserves a previously approved/pre-QA-passed hero asset while the rest of the page is being perfected. Do NOT demand image replacement merely because another editorial style might be preferable. Still fail real defects: irrelevance, low resolution, obvious AI artifacts, unreadable crop, poor overlay integration, or hero scores below 8.":"",
     logoFirstMaster?"LOGO-FIRST BRAND GATE: the official logo must visibly drive the color system, type personality, shape language and signature device. A generic premium template with the logo pasted on top is a FAIL.":"",
     logoFirstMaster?"LOGO-FIRST HERO GATE: hero must be edge-to-edge/full-bleed with no lateral white/split field, with styled copy and both CTA buttons over the image. Any compromise is a FAIL.":"",
     logoFirstMaster?"DESIRABILITY GATE: judge whether a real prospect would feel immediately upgraded, impressed and motivated to buy the redesign. wow_effect, prospect_desire and preview_sales_power below 9 are blocking.":"",
@@ -905,6 +907,17 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
   let issues=Array.isArray(r.data.issues)?r.data.issues:[];
   const scores={...(r.data.scores||{})};
   const evidence=browserEvidence||{};
+
+  if(pilotHeroLocked &&
+     Number(scores.hero_image_quality||0)>=8 &&
+     Number(scores.hero_relevance||0)>=8 &&
+     Number(scores.hero_mobile_crop||0)>=8) {
+    const lockedHeroPreference=/\b(?:generic|stock|replace|distinctive|bespoke|art[- ]directed).*(?:hero|image)|\b(?:hero|image).*(?:generic|stock|replace|distinctive|bespoke|art[- ]directed)/i;
+    issues=issues.filter(issue=>{
+      const hay=[issue?.code,issue?.target,issue?.message].filter(Boolean).join(" ");
+      return !lockedHeroPreference.test(hay);
+    });
+  }
 
   if(evidence.official_identity_visible===true && evidence.deterministic_gate_pass===true) {
     const identityFalsePositive=/\b(?:missing|absent|not\s+rendered|not\s+displayed|replace).*\b(?:official\s+logo|logo\s+asset)|\b(?:logo_reinterpretation|missing_official_logo|immutable_logo_missing|identity)\b/i;
