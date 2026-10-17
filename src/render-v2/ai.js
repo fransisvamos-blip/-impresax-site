@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED } from "./constants.js";
+import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES } from "./constants.js";
 import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
@@ -1233,18 +1233,31 @@ export function normalizeSetQaResult(data) {
   const scaleIsUnit=finite.length>0 && Math.max(...finite)<=1.000001;
   const scores=Object.fromEntries(Object.entries(numeric).map(([k,v])=>[k,scaleIsUnit?v*10:v]));
   const vals=Object.values(scores);
-  const scorePass=vals.length===7 && vals.every(v=>Number.isFinite(v)&&v>=8);
+  const baseKeys=["set_quality","prospect_fit_a","prospect_fit_b","prospect_fit_c"];
+  const diversityKeys=["diversity_ab","diversity_ac","diversity_bc"];
+  const basePass=baseKeys.every(k=>Number.isFinite(scores[k])&&scores[k]>=8);
+  const diversityPass=diversityKeys.every(k=>Number.isFinite(scores[k])&&scores[k]>=VARIANT_DIVERGENCE_FLOOR);
   const issues=Array.isArray(data?.issues)?data.issues.map(String):[];
   const blockingPattern=/\b(?:critical|major|material(?:ly)?\s+(?:same|similar|weak|conflict)|same\s+composition|reused\s+composition|cosmetic\s+variation|template\s+family|generic\s+template|too\s+similar|not\s+materially\s+different|redundan(?:t|cy)|weaker\s+(?:variant|member)|diversity\s+(?:fail|below|insufficient)|conflicting\s+variant)\b/i;
   const blockingIssues=issues.filter(x=>blockingPattern.test(x));
-  const pass=scorePass && blockingIssues.length===0;
+  const pass=vals.length===7 && basePass && diversityPass && blockingIssues.length===0;
+  const fitEntries=[
+    ["A",Number(scores.prospect_fit_a||0)],
+    ["B",Number(scores.prospect_fit_b||0)],
+    ["C",Number(scores.prospect_fit_c||0)]
+  ];
+  fitEntries.sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]));
+  const winner=fitEntries[0]?.[0]||"A";
   return {
     ...data,
     scores,
     pass,
     weakest_variant:pass?"NONE":data?.weakest_variant,
+    winner_variant:winner,
+    creative_roles:VARIANT_CREATIVE_ROLES,
     blocking_issues:blockingIssues,
-    score_floor:vals.length?Math.min(...vals):0
+    score_floor:vals.length?Math.min(...vals):0,
+    diversity_floor:Math.min(...diversityKeys.map(k=>Number(scores[k]||0)))
   };
 }
 
@@ -1252,8 +1265,8 @@ export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}
   const evidence=Object.fromEntries(["A","B","C"].map(k=>[k,frames[k]?.browser_evidence||{}]));
   const content=[{type:"text",text:[
     "Judge A/B/C as a SET on a 0-10 score scale.",
-    "PASS when every score is at least 8 and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL.",
-    "The variants must be premium, prospect-specific and materially different. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE.",
+    "PASS when set quality and prospect fit are at least 8, every pairwise diversity score is at least "+VARIANT_DIVERGENCE_FLOOR+", and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL.",
+    "The three routes are mandatory and must be genuinely different: A="+VARIANT_CREATIVE_ROLES.A+", B="+VARIANT_CREATIVE_ROLES.B+", C="+VARIANT_CREATIVE_ROLES.C+". Do not accept cosmetic restyling of one layout. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE.",
     "All three variants must open with a genuinely premium, prospect-relevant photographic hero. Fail the set if any one route has a weak/generic/cheap hero, if the hero imagery is not relevant to the verified business, or if mobile cropping destroys the focal subject.",
     "Each route must also read as a complete premium homepage from header to footer. Fail the set if any route feels like a concept board, a landing-page fragment, a generic template, or a hero plus filler sections.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If a variant has official_identity_visible=true and deterministic_gate_pass=true, do not claim its official logo is missing, fake, reinterpreted or broken. Judge prominence separately, but never fail immutable identity on a mechanically verified logo.",
