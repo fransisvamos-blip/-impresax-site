@@ -159,7 +159,7 @@ test("RENDER_READY is atomically bound to the exact current certified QA set",()
   assert.match(workflows,/q\.artifact_hashes->>'A_revision_id'=c\.a_revision_id/);
   assert.match(workflows,/q\.artifact_hashes->>'B_revision_id'=c\.b_revision_id/);
   assert.match(workflows,/q\.artifact_hashes->>'C_revision_id'=c\.c_revision_id/);
-  assert.match(workflows,/variant_visual_qa_passed',3/);
+  assert.match(workflows,/variant_visual_qa_passed',\\$\\{MINIMUM_VARIANTS_PER_PACK\\}/);
   assert.match(workflows,/final_gate_atomic',true/);
   assert.match(workflows,/scores->>'set_quality'/);
   assert.match(workflows,/r\.compiler_version=\$\{COMPILER_VERSION\}/);
