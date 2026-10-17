@@ -10,9 +10,12 @@ function modelFor(env,role,fallback=false) {
     visualQa:"V2_MODEL_VISUAL_QA",
     setQa:"V2_MODEL_SET_QA"
   };
+  // V4 showroom generation deliberately bypasses legacy model override secrets.
+  // Those overrides were pinning the renderer to older routes and causing long provider timeouts.
+  if(role==="creative") return fallback?DEFAULT_MODELS.textFallback:DEFAULT_MODELS.creative;
+  if(role==="generator"||role==="repair") return fallback?DEFAULT_MODELS.codeFallback:DEFAULT_MODELS[role];
   if(fallback) {
     if(role==="visualQa"||role==="setQa") return env.V2_MODEL_VISION_FALLBACK||DEFAULT_MODELS.visionFallback;
-    if(role==="generator"||role==="repair") return env.V2_MODEL_CODE_FALLBACK||DEFAULT_MODELS.codeFallback;
     return env.V2_MODEL_TEXT_FALLBACK||DEFAULT_MODELS.textFallback;
   }
   return env[vars[role]]||DEFAULT_MODELS[role];
