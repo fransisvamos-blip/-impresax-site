@@ -1,3 +1,4 @@
+import { EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE } from "./constants.js";
 function envLimit(env,key,fallback) {
   const n=Number(env?.[key]);
   return Number.isFinite(n) && n>0 ? Math.floor(n) : fallback;
@@ -26,6 +27,9 @@ async function reserveCounter(sql,packId,key,limit) {
 }
 
 export async function reserveAiCall(sql,packId,env,route,revisionId=null) {
+  if(!EXTERNAL_AI_CALLS_ALLOWED) {
+    throw new Error("EXTERNAL_AI_DISABLED:"+RENDER_GENERATION_MODE);
+  }
   const limit=envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40);
   const used=await reserveCounter(sql,packId,"ai_calls",limit);
   await recordMetric(sql,{packId,revisionId,name:"ai_call_reserved",value:1,dimensions:{route,used,limit}});
