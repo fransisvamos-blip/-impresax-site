@@ -101,7 +101,7 @@ export function flatStrongSectionBackgroundViolations(mainHtml="",css="") {
     const classMatch=attrs.match(/\bclass=["\']([^"\']+)["\']/i);
     const classes=(classMatch?.[1]||"").split(/\s+/).filter(Boolean);
     for(const cls of classes) {
-      const esc=cls.replace(/[.*+?^$()|[\]\\{}]/g,"\\      const esc=cls.replace(/[.*+?^$()|[\]\\{}]/g,"\\export function showroomPolicySummary() {");");
+      const esc=cls.replace(/[^a-zA-Z0-9_-]/g,"");
       const rule=new RegExp("\\."+esc+"\\s*\\{([\\s\\S]*?)\\}","i").exec(css)?.[1]||"";
       if(!rule) continue;
       const bg=(rule.match(/(?:^|;)\s*background(?:-color)?\s*:\s*([^;]+)/i)?.[1]||"").trim();
