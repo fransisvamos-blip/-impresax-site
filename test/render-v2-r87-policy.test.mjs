@@ -17,7 +17,7 @@ import {
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
 test("R89 showroom standard is the global zero-extra-AI contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R89_SURFACE_ART_V1");
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R89_BRAND_RICH_SURFACES_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
