@@ -303,7 +303,7 @@ export function showroomPolicySummary() {
       perceived_value_target:"EUR_10000_TO_15000",
       commercial_price_reference:"EUR_2500",
       custom_made_feel:"MANDATORY",
-      signature_moments_minimum:3,
+      signature_moments_minimum:4,
       premium_art_direction:"TOP_TIER_AGENCY_STANDARD",
       brand_specificity:"DIFFICULT_TO_REUSE_FOR_ANOTHER_PROSPECT",
       imagery_credibility:"REAL_OR_HIGH_CREDIBILITY_PREMIUM",
