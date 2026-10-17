@@ -1,5 +1,5 @@
 import test from "node:test";
-import { QA_SCORE_KEYS } from "../src/render-v2/constants.js";
+import { QA_SCORE_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE } from "../src/render-v2/constants.js";
 import assert from "node:assert/strict";
 import { validateRenderSpec, compileRenderSpec } from "../src/render-v2/compiler.js";
 import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-policy.js";
@@ -438,24 +438,29 @@ test("visual QA deterministic gate passes when R106 elevated floors pass",()=>{
   assert.equal(gated.issues.length,0);
 });
 
-test("set QA normalization accepts strong set with minor notes",()=>{
+test("set QA normalization accepts three genuinely divergent routes and selects a winner",()=>{
   const r=normalizeSetQaResult({
     pass:false,
     weakest_variant:"C",
-    scores:{set_quality:8.6,diversity_ab:8.1,diversity_ac:8,diversity_bc:8.2,prospect_fit_a:9,prospect_fit_b:9,prospect_fit_c:8.5},
+    scores:{set_quality:9.1,diversity_ab:8.8,diversity_ac:8.7,diversity_bc:8.9,prospect_fit_a:9.4,prospect_fit_b:9.2,prospect_fit_c:9.1},
     issues:["Variant C address block is slightly large.","Variant B headings marginally lower scannability."],
     actions:[]
   });
+  assert.equal(TRIPLE_VARIANT_REQUIRED,true);
+  assert.equal(MINIMUM_VARIANTS_PER_PACK,3);
+  assert.equal(AUTO_SELECT_VARIANT_WINNER,true);
+  assert.equal(MASTER_AUTO_APPROVE,false);
   assert.equal(r.pass,true);
   assert.equal(r.weakest_variant,"NONE");
-  assert.equal(r.score_floor,8);
+  assert.equal(r.winner_variant,"A");
+  assert.ok(r.diversity_floor>=VARIANT_DIVERGENCE_FLOOR);
 });
 
 test("set QA normalization converts unit scale and still blocks material diversity failures",()=>{
   const r=normalizeSetQaResult({
     pass:true,
     weakest_variant:"B",
-    scores:{set_quality:.86,diversity_ab:.81,diversity_ac:.8,diversity_bc:.82,prospect_fit_a:.9,prospect_fit_b:.9,prospect_fit_c:.85},
+    scores:{set_quality:.90,diversity_ab:.88,diversity_ac:.87,diversity_bc:.89,prospect_fit_a:.9,prospect_fit_b:.9,prospect_fit_c:.88},
     issues:["A and B reuse the same composition and are not materially different."],
     actions:[]
   });
