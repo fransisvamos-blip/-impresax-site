@@ -338,13 +338,18 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const packMetadata=packRows[0]?.metadata||{};
       const renderProfile=String(packMetadata.render_profile||"").trim();
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
-      const inputPayload=(renderProfile||logoFirstBrandProfile)
+      const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
+      const inputPayload=(renderProfile||logoFirstBrandProfile||pilotHeroLocked)
         ? {
             ...input.payload,
             ...(renderProfile?{render_profile:renderProfile}:{}),
             ...(logoFirstBrandProfile?{
               logo_first_brand_profile:logoFirstBrandProfile,
               brand_gate_mode:"LOGO_FIRST_V1"
+            }:{ }),
+            ...(pilotHeroLocked?{
+              pilot_hero_locked:true,
+              pilot_hero_source_revision:Number(packMetadata.pilot_reuse_hero_source_revision||0)||null
             }:{})
           }
         : input.payload;
