@@ -1,0 +1,101 @@
+name: DEDIL section assets import
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-section-assets-import.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Download and prepare licensed real photos
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pillow
+          mkdir -p /tmp/dedil-assets ops/proofs/dedil-assets
+          curl -fL --retry 3 "https://images.pexels.com/photos/36122949/pexels-photo-36122949.jpeg?cs=srgb&dl=pexels-james-richardson-2159544295-36122949.jpg&fm=jpg" -o /tmp/dedil-assets/positioning-src.jpg
+          curl -fL --retry 3 "https://images.pexels.com/photos/12340558/pexels-photo-12340558.jpeg?cs=srgb&dl=pexels-cripsdog-12340558.jpg&fm=jpg" -o /tmp/dedil-assets/materials-src.jpg
+          curl -fL --retry 3 "https://images.pexels.com/photos/36815367/pexels-photo-36815367.jpeg?cs=srgb&dl=pexels-peter-dyllong-2158803154-36815367.jpg&fm=jpg" -o /tmp/dedil-assets/rebar-src.jpg
+          curl -fL --retry 3 "https://images.pexels.com/photos/33367148/pexels-photo-33367148.jpeg?cs=srgb&dl=pexels-cesar-o-neill-26650613-33367148.jpg&fm=jpg" -o /tmp/dedil-assets/trust-src.jpg
+          python3 - <<'PY'
+          from PIL import Image, ImageEnhance, ImageOps
+          from pathlib import Path
+          jobs=[
+            ("positioning-src.jpg","positioning.jpg",(1600,1100)),
+            ("materials-src.jpg","service-materials.jpg",(1600,1100)),
+            ("rebar-src.jpg","service-rebar.jpg",(1600,1100)),
+            ("trust-src.jpg","trust-industrial.jpg",(1600,1100)),
+          ]
+          src=Path("/tmp/dedil-assets")
+          for inp,out,size in jobs:
+              im=Image.open(src/inp).convert("RGB")
+              im=ImageOps.fit(im,size,method=Image.Resampling.LANCZOS,centering=(0.5,0.5))
+              im=ImageEnhance.Color(im).enhance(0.80)
+              im=ImageEnhance.Contrast(im).enhance(1.06)
+              im.save(src/out,"JPEG",quality=88,optimize=True,progressive=True)
+              review=im.copy()
+              review.thumbnail((760,520))
+              review.save(Path("ops/proofs/dedil-assets")/out,"JPEG",quality=74,optimize=True)
+          PY
+      - name: Upload section assets to private R2
+        run: |
+          set -euo pipefail
+          base="render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/assets"
+          npx wrangler r2 object put "impresax-render-v2-shadow/$base/positioning.jpg" --remote --file /tmp/dedil-assets/positioning.jpg --content-type image/jpeg
+          npx wrangler r2 object put "impresax-render-v2-shadow/$base/service-materials.jpg" --remote --file /tmp/dedil-assets/service-materials.jpg --content-type image/jpeg
+          npx wrangler r2 object put "impresax-render-v2-shadow/$base/service-rebar.jpg" --remote --file /tmp/dedil-assets/service-rebar.jpg --content-type image/jpeg
+          npx wrangler r2 object put "impresax-render-v2-shadow/$base/trust-industrial.jpg" --remote --file /tmp/dedil-assets/trust-industrial.jpg --content-type image/jpeg
+      - name: Build provenance manifest
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,hashlib,os
+          base="render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/assets"
+          items=[
+            ("POSITIONING_VISUAL","positioning.jpg","https://www.pexels.com/photo/warehouse-workers-inspecting-construction-materials-36122949/"),
+            ("SERVICE_MATERIALS_VISUAL","service-materials.jpg","https://www.pexels.com/photo/tiles-on-shelves-in-building-hypermarket-12340558/"),
+            ("SERVICE_REBAR_VISUAL","service-rebar.jpg","https://www.pexels.com/photo/aerial-view-of-construction-site-with-rebar-framework-36815367/"),
+            ("TRUST_VISUAL","trust-industrial.jpg","https://www.pexels.com/photo/stacked-industrial-pipes-in-warehouse-33367148/")
+          ]
+          out=[]
+          for token,name,source in items:
+              p="/tmp/dedil-assets/"+name
+              data=open(p,"rb").read()
+              out.append({
+                "token":token,
+                "artifact_type":"INPUT_ASSET_"+token,
+                "r2_key":base+"/"+name,
+                "sha256":hashlib.sha256(data).hexdigest(),
+                "bytes":len(data),
+                "mime":"image/jpeg",
+                "source_url":source,
+                "license":"PEXELS_FREE",
+                "commercial_use_status":"LICENSED_STOCK"
+              })
+          manifest={"version":"DEDIL_SECTION_ASSETS_V1","assets":out}
+          os.makedirs("ops/proofs/dedil-assets",exist_ok=True)
+          open("ops/proofs/dedil-assets/manifest.json","w").write(json.dumps(manifest,indent=2))
+          print(json.dumps(manifest,indent=2))
+          PY
+      - name: Commit proof thumbnails and manifest
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Bot"
+          git config user.email "rendering-bot@impresax.local"
+          git add ops/proofs/dedil-assets
+          git diff --cached --quiet || git commit -m "chore(render-v2): import licensed DEDIL section visuals"
+          git push origin HEAD:rendering-v2-shadow
