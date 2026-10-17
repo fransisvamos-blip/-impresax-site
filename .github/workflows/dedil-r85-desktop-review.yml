@@ -1,0 +1,40 @@
+name: DEDIL r85 desktop review
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-r85-desktop-review.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare review-sized desktop proof
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          p="ops/proofs/dedil-r85/desktop-1440.jpg"
+          out="ops/proofs/dedil-r85/desktop-review.jpg"
+          im=Image.open(p).convert("RGB")
+          w=1050
+          h=round(im.height*w/im.width)
+          im=im.resize((w,h))
+          im.save(out,"JPEG",quality=72,optimize=True)
+          print(out, im.size)
+          PY
+      - name: Commit review image
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Bot"
+          git config user.email "rendering-bot@impresax.local"
+          git add ops/proofs/dedil-r85/desktop-review.jpg
+          git diff --cached --quiet || git commit -m "chore(render-v2): add DEDIL r85 desktop review proof"
+          git push origin HEAD:rendering-v2-shadow
