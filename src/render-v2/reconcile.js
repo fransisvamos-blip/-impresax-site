@@ -1109,12 +1109,15 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   if(!packId || !env.RENDER_VARIANT_WORKFLOW) return null;
   const packRows=await sql`select metadata from render_v2_packs where id=${packId}::uuid limit 1`;
   const packMeta=packRows[0]?.metadata||{};
-  const showroomReset=meta.pilot_showroom_hard_reset_requested===true || packMeta.pilot_showroom_hard_reset_requested===true;
-  const lockedHeroSha=String(packMeta.pilot_reuse_hero_sha256||meta.pilot_reuse_hero_sha256||"");
+  const cabinaPrecomputed=meta.cabina_precomputed_requested===true || packMeta.cabina_precomputed_requested===true;
+  const showroomReset=!cabinaPrecomputed && (meta.pilot_showroom_hard_reset_requested===true || packMeta.pilot_showroom_hard_reset_requested===true);
+  const lockedHeroSha=String(packMeta.cabina_precomputed_hero_sha256||packMeta.pilot_reuse_hero_sha256||meta.pilot_reuse_hero_sha256||"");
 
-  const recoveryId=showroomReset
-    ? "rv2-"+packId+"-A-showroom-wow-v4"
-    : "rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
+  const recoveryId=cabinaPrecomputed
+    ? "rv2-"+packId+"-A-cabina-precomputed-v1"
+    : showroomReset
+      ? "rv2-"+packId+"-A-showroom-wow-v4"
+      : "rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
   const existing=await sql`
     select status from render_workflows_v2
     where workflow_instance_id=${recoveryId}
@@ -1176,7 +1179,8 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
       and w.workflow_type='VARIANT'
       and v.variant_key='A'
       and (
-        ${showroomReset}::boolean=true
+        ${cabinaPrecomputed}::boolean=true
+        or ${showroomReset}::boolean=true
         or coalesce(w.metadata->>'relaunch_reason','')='PILOT_LAYOUT_MICROPOLISH_REUSE_HERO'
       )
       and w.workflow_instance_id<>${recoveryId}
@@ -1195,7 +1199,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   if(stillActive.length) return null;
 
   const parentInstanceId=String(source.metadata?.parent_workflow_instance_id||("rpv2-"+packId));
-  const eventPrefix=showroomReset?"pilot-showroom-wow-v4":"pilot-artifact-qa-stable-v10";
+  const eventPrefix=cabinaPrecomputed?"cabina-precomputed-v1":(showroomReset?"pilot-showroom-wow-v4":"pilot-artifact-qa-stable-v10");
   const params={
     prospectId:source.prospect_id,
     packId,
@@ -1204,7 +1208,15 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     variantKey:"A",
     parentInstanceId,
     eventPrefix,
-    initialFeedback:showroomReset?{
+    initialFeedback:cabinaPrecomputed?{
+      reason:"CABINA_PRECOMPUTED_RENDER",
+      issues:["Use the ChatGPT/Cabina-authored RenderSpec already stored in pack metadata."],
+      actions:[
+        "Do not call any AI provider.",
+        "Reuse only the approved hero asset referenced by cabina_precomputed_hero_sha256.",
+        "Compile, capture desktop/mobile, run deterministic browser checks and stop at CABINA_VISUAL_REVIEW."
+      ]
+    }:showroomReset?{
       reason:"SHOWROOM_HARD_RESET",
       issues:["The prior pilot was commercially competent but not visually exceptional enough to become the ImpresaX MASTER REFERENCE."],
       actions:[
@@ -1229,25 +1241,27 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     prospectId:source.prospect_id,packId,variantId:source.variant_id,type:"VARIANT",
     instanceId:recoveryId,status:"QUEUED",
     metadata:{
-      variant_key:"A",event_prefix:eventPrefix,run_key:showroomReset?"pilot-showroom-wow-v4":"pilot-artifact-qa-stable-v10",
-      targeted_relaunch:true,force_relaunch:true,reset_budget:showroomReset,
+      variant_key:"A",event_prefix:eventPrefix,run_key:cabinaPrecomputed?"cabina-precomputed-v1":(showroomReset?"pilot-showroom-wow-v4":"pilot-artifact-qa-stable-v10"),
+      targeted_relaunch:true,force_relaunch:true,reset_budget:false,
       parent_workflow_instance_id:parentInstanceId,
-      relaunch_reason:showroomReset?"SHOWROOM_HARD_RESET":"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
+      relaunch_reason:cabinaPrecomputed?"CABINA_PRECOMPUTED_RENDER":(showroomReset?"SHOWROOM_HARD_RESET":"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"),
       circuit_breaker_override:true,
       stale_recovery_source:source.workflow_instance_id,
-      locked_hero_sha256:showroomReset?"":lockedHeroSha
+      locked_hero_sha256:lockedHeroSha
     }
   });
   await setVariantStatus(sql,source.variant_id,{status:"REWORKING"});
   await setPackStatus(sql,packId,"GENERATING",{
-    pilot_stale_recovery:!showroomReset,
+    pilot_stale_recovery:!showroomReset && !cabinaPrecomputed,
     pilot_stale_recovery_source:source.workflow_instance_id,
     pilot_stale_recovery_workflow:recoveryId,
     pilot_showroom_hard_reset_requested:false,
-    pilot_showroom_hard_reset_in_progress:showroomReset,
-    pilot_showroom_hard_reset_started_at:showroomReset?new Date().toISOString():null,
-    pilot_reuse_hero_locked:showroomReset?false:true,
-    pilot_reuse_hero_sha256:showroomReset?"":lockedHeroSha,
+    pilot_showroom_hard_reset_in_progress:false,
+    cabina_precomputed_requested:false,
+    cabina_precomputed_in_progress:cabinaPrecomputed,
+    cabina_precomputed_started_at:cabinaPrecomputed?new Date().toISOString():null,
+    pilot_reuse_hero_locked:!cabinaPrecomputed,
+    pilot_reuse_hero_sha256:lockedHeroSha,
     global_queue_must_remain_paused:true
   });
   const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:recoveryId,params});
