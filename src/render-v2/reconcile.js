@@ -1107,6 +1107,9 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   const meta=pilotControl?.metadata||{};
   const packId=String(pilotControl?.pilot_pack_id||meta.pilot_pack_id||"");
   if(!packId || !env.RENDER_VARIANT_WORKFLOW) return null;
+  const packRows=await sql`select metadata from render_v2_packs where id=${packId}::uuid limit 1`;
+  const packMeta=packRows[0]?.metadata||{};
+  const lockedHeroSha=String(packMeta.pilot_reuse_hero_sha256||meta.pilot_reuse_hero_sha256||"");
 
   const recoveryId="rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
   const existing=await sql`
@@ -1216,7 +1219,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
       relaunch_reason:"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
       circuit_breaker_override:true,
       stale_recovery_source:source.workflow_instance_id,
-      locked_hero_sha256:String(meta.pilot_reuse_hero_sha256||"")
+      locked_hero_sha256:lockedHeroSha
     }
   });
   await setVariantStatus(sql,source.variant_id,{status:"REWORKING"});
@@ -1225,7 +1228,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     pilot_stale_recovery_source:source.workflow_instance_id,
     pilot_stale_recovery_workflow:recoveryId,
     pilot_reuse_hero_locked:true,
-    pilot_reuse_hero_sha256:String(meta.pilot_reuse_hero_sha256||""),
+    pilot_reuse_hero_sha256:lockedHeroSha,
     global_queue_must_remain_paused:true
   });
   const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:recoveryId,params});
@@ -1268,7 +1271,16 @@ async function syncLockedPilotCandidate(sql,pilotControl) {
   if(!candidate) return null;
   const currentRevision=Number(meta.pilot_candidate_revision||0);
   const nextRevision=Number(candidate.revision||0);
-  if(nextRevision<=currentRevision) return null;
+  if(nextRevision<=currentRevision) {
+    return {
+      pack_id:packId,
+      variant_key:"A",
+      revision:nextRevision,
+      revision_id:candidate.revision_id,
+      score:candidate.score,
+      already_current:true
+    };
+  }
 
   await sql`
     update render_v2_rollout_state
