@@ -310,7 +310,7 @@ test("zero-photo grammar compiles all three variants",async()=>{
   };
   for(const variantKey of ["A","B","C"]) {
     const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true});
-    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1");
+    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1");
     assert.ok((built.spec.main_html.match(/data-brand-surface=/g)||[]).length>=3);
     assert.match(built.spec.main_html,/data-launch-hero="true"/);
     assert.match(built.spec.main_html,/data-hero-full-bleed="true"/);
@@ -318,6 +318,11 @@ test("zero-photo grammar compiles all three variants",async()=>{
     assert.match(built.spec.main_html,/data-value-perception="15k"/);
     assert.match(built.spec.main_html,/data-brand-specific="true"/);
     assert.match(built.spec.main_html,/data-sales-architecture="true"/);
+    assert.match(built.spec.main_html,/data-commissioned-experience="true"/);
+    assert.match(built.spec.main_html,/data-authorship="irreproducible"/);
+    assert.match(built.spec.main_html,/data-scroll-narrative="continuous"/);
+    assert.ok((built.spec.main_html.match(/data-iconic-moment="true"/g)||[]).length>=4);
+    assert.ok((built.spec.main_html.match(/data-authored-transition="true"/g)||[]).length>=3);
     assert.ok((built.spec.main_html.match(/data-copy-density="controlled"/g)||[]).length>=4);
     assert.ok((built.spec.main_html.match(/data-custom-made="true"/g)||[]).length>=3);
     assert.ok((built.spec.main_html.match(/data-signature-moment="true"/g)||[]).length>=3);
@@ -328,6 +333,8 @@ test("zero-photo grammar compiles all three variants",async()=>{
     assert.match(built.spec.custom_css,/text-wrap:balance/);
     assert.match(built.spec.custom_css,/\.ix-v2-header/);
     assert.match(built.spec.custom_css,/\.ix-v2-footer/);
+    assert.match(built.spec.custom_css,/--ix-signature-angle:/);
+    assert.match(built.spec.custom_css,/--ix-signature-rule:/);
     assert.match(built.spec.main_html,/data-brand-watermark/);
     assert.match(built.spec.custom_css,/\.ixr89-watermark \.ix-v2-identity-main/);
     assert.match(built.spec.custom_css,/opacity:\.12/);
@@ -388,31 +395,46 @@ test("visual QA deterministic gate synthesizes actionable feedback for sub-9 mas
   assert.ok(gated.actions.some(x=>String(x).includes("footer_quality")));
 });
 
-test("visual QA deterministic gate enforces fifteen-k value at 9.2",()=>{
-  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9.4]));
-  scores.fifteen_k_value_perception=9.1;
+test("visual QA deterministic gate enforces R106 fifteen-k value at 9.7",()=>{
+  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9.8]));
+  scores.fifteen_k_value_perception=9.6;
   const gated=applyVisualQaScoreGates({
     scores,issues:[],actions:[],logoFirstMaster:true,
-    masterGateKeys:["custom_made_feel","premium_art_direction","fifteen_k_value_perception"]
+    masterGateKeys:["custom_made_feel","premium_art_direction","fifteen_k_value_perception","irreproducible_brand_authorship","commissioned_experience_quality"]
   });
   assert.equal(gated.pass,false);
-  assert.equal(gated.fifteen_k_value_floor,9.1);
+  assert.equal(gated.fifteen_k_value_floor,9.6);
   assert.ok(gated.issues.some(x=>x.target==="fifteen_k_value_perception"));
 });
 
-test("visual QA deterministic gate ignores inconsistent model pass boolean when all gates pass",()=>{
-  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9]));
-  scores.fifteen_k_value_perception=9.2;
+test("visual QA deterministic gate enforces R106 commissioned experience at 9.8",()=>{
+  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9.8]));
+  scores.commissioned_experience_quality=9.7;
+  const gated=applyVisualQaScoreGates({
+    scores,issues:[],actions:[],logoFirstMaster:true,
+    masterGateKeys:["commissioned_experience_quality","irreproducible_brand_authorship","fifteen_k_value_perception"]
+  });
+  assert.equal(gated.pass,false);
+  assert.equal(gated.commissioned_experience_floor,9.7);
+  assert.ok(gated.issues.some(x=>x.target==="commissioned_experience_quality"));
+});
+
+test("visual QA deterministic gate passes when R106 elevated floors pass",()=>{
+  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9.8]));
+  scores.transition_art_direction=9.6;
   const gated=applyVisualQaScoreGates({
     scores,
     issues:[],
     actions:[],
     logoFirstMaster:true,
-    masterGateKeys:["footer_quality","section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality","commercial_desirability","client_wow_effect"]
+    masterGateKeys:["footer_quality","fifteen_k_value_perception","irreproducible_brand_authorship","commissioned_experience_quality","scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality","transition_art_direction","visual_memory_factor","cross_viewport_art_direction"]
   });
   assert.equal(gated.pass,true);
-  assert.equal(gated.min_score,9);
-  assert.equal(gated.master_gate_floor,9);
+  assert.equal(gated.min_score,9.6);
+  assert.equal(gated.master_gate_floor,9.6);
+  assert.equal(gated.fifteen_k_value_floor,9.8);
+  assert.equal(gated.irreproducible_authorship_floor,9.8);
+  assert.equal(gated.commissioned_experience_floor,9.8);
   assert.equal(gated.issues.length,0);
 });
 
