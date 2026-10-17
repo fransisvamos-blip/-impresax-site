@@ -289,10 +289,11 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   let main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
   main=main
-    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary"$2')
-    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint"$2')
-    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary"$2')
-    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*>)/i,"$1"+brandWatermark+r89Lines);
+    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic"$2')
+    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial"$2')
+    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint" data-spectacle-moment="true" data-stage-depth="material"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*>)/i,"$1"+brandWatermark+r89Lines+'<div class="ixr90-stage" aria-hidden="true"><i></i><i></i><i></i></div>');
 
   const base=`
 :root{--ix-ink:#111;--ix-paper:#f4f1ea;--ix-muted:#6b6964;--ix-line:rgba(17,17,17,.18);--ix-dark:#111;--ix-light:#fff;--ix-accent:${accent};--ix-space:clamp(24px,4.2vw,72px)}
@@ -1398,10 +1399,36 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 }
 `;
 
+  const r90LaunchCss=`
+.ixg-hero,.ixm-hero,.ixb-hero,.ixc-hero{isolation:isolate}
+.ixg-hero:after,.ixm-hero:after,.ixb-hero:after,.ixc-hero:after{position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(circle at 82% 26%,${brandGlow},transparent 25%),linear-gradient(115deg,transparent 0 58%,${brandSoft} 58% 59%,transparent 59% 100%);mix-blend-mode:screen;opacity:.48}
+.ixg-hero h1,.ixm-hero h1,.ixb-hero h1,.ixc-hero h1{font-size:clamp(64px,8.8vw,136px)!important;line-height:.84!important;letter-spacing:-.07em!important}
+.ixg-services,.ixb-services,.ixc-services{padding-top:clamp(84px,10vw,160px)!important;padding-bottom:clamp(110px,12vw,190px)!important}
+.ixg-service,.ixb-service-row,.ixc-ledger-row{box-shadow:0 34px 90px rgba(0,0,0,.08)}
+.ixg-bridge,.ixb-bridge,.ixc-bridge{min-height:clamp(520px,58vw,780px);display:flex;align-items:center}
+.ixg-bridge h2,.ixb-bridge h2,.ixc-bridge h2{font-size:clamp(54px,7.4vw,112px)!important;max-width:9ch;line-height:.86!important;letter-spacing:-.065em!important}
+.ixg-contact,.ixb-contact,.ixc-contact{min-height:clamp(620px,64vw,880px)!important;display:flex;align-items:center!important}
+.ixg-contact h2,.ixb-contact h2,.ixc-contact h2{font-size:clamp(66px,9vw,142px)!important;line-height:.82!important;letter-spacing:-.075em!important;max-width:7.8ch}
+.ixr90-stage{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.ixr90-stage i{position:absolute;display:block;right:-12%;height:clamp(70px,8vw,130px);transform:skewX(-24deg) rotate(-7deg);background:linear-gradient(90deg,transparent,${brandPrimary},rgba(255,255,255,.11),transparent);opacity:.26}
+.ixr90-stage i:nth-child(1){top:10%;width:72%}.ixr90-stage i:nth-child(2){top:45%;width:54%}.ixr90-stage i:nth-child(3){top:76%;width:36%}
+.ixr89-watermark{width:min(860px,58vw)!important;right:-5vw!important}
+.ixr89-watermark .ix-v2-identity-main{opacity:.14!important}
+@media(max-width:700px){
+ .ixg-hero h1,.ixm-hero h1,.ixb-hero h1,.ixc-hero h1{font-size:clamp(48px,13vw,72px)!important;line-height:.87!important}
+ .ixg-bridge,.ixb-bridge,.ixc-bridge{min-height:540px}
+ .ixg-bridge h2,.ixb-bridge h2,.ixc-bridge h2{font-size:clamp(44px,12vw,68px)!important}
+ .ixg-contact,.ixb-contact,.ixc-contact{min-height:650px!important}
+ .ixg-contact h2,.ixb-contact h2,.ixc-contact h2{font-size:clamp(52px,14vw,76px)!important}
+ .ixr90-stage i{opacity:.20}
+ .ixr89-watermark .ix-v2-identity-main{opacity:.12!important}
+}
+`;
+
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+`
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+`
 @media(max-width:700px){
  .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:26px!important;align-items:start!important}
  .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
@@ -1412,7 +1439,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 }
 `,
       section_ids:["hero","positioning","services","trust","bridge","final-cta"],
-      surface_policy:"IMPRESAX_RENDER_STANDARD_R89_BRAND_RICH_SURFACES_V1",
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R90_LAUNCH_GRADE_SPECTACLE_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL"],
       hero_visual_strategy:impresaxMasterProfile?"ImpresaX Master V1: full-bleed edge-to-edge HERO_VISUAL with verified copy overlaid in-image and cinematic readability gradient.":"Mandatory premium image-led hero with verified copy field and responsive crop.",
@@ -1424,9 +1451,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic R89 BRAND_RICH fallback grammar v4 "+variantKey+": layered chromatic surfaces, official-logo watermark when available, mandatory HERO_VISUAL, verified copy distribution, responsive 1440/390."
+        +"Deterministic R90 LAUNCH_GRADE fallback grammar v5 "+variantKey+": reveal-grade hero, authored set-piece sections, cinematic scale shifts, layered material depth, official-logo watermark when available, mandatory HERO_VISUAL, responsive 1440/390."
     },
-    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R89":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R89":"BRAND_RICH_FALLBACK_GRAMMAR_V4"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R90":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R90":"LAUNCH_GRADE_FALLBACK_GRAMMAR_V5"
   };
 }
 

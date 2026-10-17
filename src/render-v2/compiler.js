@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -179,7 +179,8 @@ export function validateRenderSpec(spec, manifests) {
   for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys)) issues.push(issue);
   for(const issue of surfaceContractViolations(main)) issues.push(issue);
   for(const issue of flatStrongSectionBackgroundViolations(main,css)) issues.push(issue);
-  const brandRichPolicy=String(spec?.surface_policy||"").startsWith("IMPRESAX_RENDER_STANDARD_R89_");
+  const brandRichPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:89|90)_/.test(String(spec?.surface_policy||""));
+  const launchGradePolicy=String(spec?.surface_policy||"").startsWith("IMPRESAX_RENDER_STANDARD_R90_");
   if(brandRichPolicy) {
     const brandSurfaceCount=(main.match(/\bdata-brand-surface=["'](?:primary|secondary|dark|tint)["']/gi)||[]).length;
     if(brandSurfaceCount<2) issues.push("BRAND_RICH_SURFACES_REQUIRED:"+brandSurfaceCount+"/2");
@@ -189,6 +190,9 @@ export function validateRenderSpec(spec, manifests) {
       if(watermarkCount<1 || !main.includes("{{identity:PRIMARY_LOGO}}")) issues.push("OFFICIAL_LOGO_WATERMARK_REQUIRED");
       else for(const issue of watermarkVisibilityViolations(main,css)) issues.push(issue);
     }
+  }
+  if(launchGradePolicy) {
+    for(const issue of launchGradeViolations(main,2)) issues.push(issue);
   }
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");

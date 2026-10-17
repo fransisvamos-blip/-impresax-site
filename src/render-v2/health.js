@@ -37,6 +37,14 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
                 and coalesce((q.scores->>'chromatic_rhythm')::numeric,0)>=8
                 and coalesce((q.scores->>'surface_richness')::numeric,0)>=8
                 and coalesce((q.scores->>'watermark_visibility')::numeric,0)>=8
+                and coalesce((q.scores->>'launch_grade_art_direction')::numeric,0)>=9
+                and coalesce((q.scores->>'cinematic_tension')::numeric,0)>=9
+                and coalesce((q.scores->>'spectacle_moments')::numeric,0)>=9
+                and coalesce((q.scores->>'scale_contrast')::numeric,0)>=9
+                and coalesce((q.scores->>'iconic_brand_presence')::numeric,0)>=9
+                and coalesce((q.scores->>'custom_composition')::numeric,0)>=9
+                and coalesce((q.scores->>'material_depth')::numeric,0)>=9
+                and coalesce((q.scores->>'editorial_drama')::numeric,0)>=9
             )
         )::int variant_visual_passes
       from render_v2_packs p
@@ -165,21 +173,23 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const maxConcurrency=Number(x.max_concurrency||3);
   const queueReady=x.phase==="QUEUE_READY" && x.queue_enabled===true;
   const pilotMode=x.queue_enabled!==true && x.metadata?.pilot_single_prospect===true;
-  const r89PolicyOk=!pilotMode || (
+  const r90PolicyOk=!pilotMode || (
     x.metadata?.global_queue_must_remain_paused===true
     && x.metadata?.render_generation_mode===RENDER_GENERATION_MODE
     && x.metadata?.external_ai_calls_allowed===EXTERNAL_AI_CALLS_ALLOWED
     && x.metadata?.showroom_rules_version===SHOWROOM_RULES_VERSION
     && Number(x.metadata?.global_minimum_brand_rich_sections||0)>=2
+    && Number(x.metadata?.global_minimum_spectacle_moments||0)>=2
+    && x.metadata?.launch_grade_standard===true
     && x.metadata?.neutral_only_page_forbidden===true
   );
   const concurrencyOk=active<=maxConcurrency;
   const countersOk=Object.values(counters).every(n=>n===0);
   return {
-    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r89PolicyOk,
+    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r90PolicyOk,
     operating_mode:pilotMode?"PILOT_SINGLE_PROSPECT":queueReady?"QUEUE_READY":"NOT_READY",
     pilot_single_prospect:pilotMode,
-    r89_policy_contract_ok:r89PolicyOk,
+    r90_policy_contract_ok:r90PolicyOk,
     showroom_rules_version:SHOWROOM_RULES_VERSION,
     render_generation_mode:RENDER_GENERATION_MODE,
     external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,

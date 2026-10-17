@@ -14,12 +14,13 @@ import {
   sectionVisualTokens,
   showroomPolicySummary,
   brandRichSurfaceViolations,
-  watermarkVisibilityViolations
+  watermarkVisibilityViolations,
+  launchGradeViolations
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R89 showroom standard is the global zero-extra-AI contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R89_BRAND_RICH_SURFACES_V1");
+test("R90 showroom standard is the global zero-extra-AI contract",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R90_BRAND_RICH_SURFACES_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
@@ -29,6 +30,9 @@ test("R89 showroom standard is the global zero-extra-AI contract",()=>{
   assert.equal(showroomPolicySummary().visual.logo_watermark,"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED");
   assert.equal(showroomPolicySummary().visual.neutral_only_page,"FORBIDDEN");
   assert.equal(showroomPolicySummary().visual.brand_color_presence,"MEANINGFUL_CHROMATIC_FIELDS_REQUIRED");
+  assert.equal(showroomPolicySummary().visual.north_star,"WORLD_CLASS_LAUNCH_EXPERIENCE_UNLIMITED_BUDGET");
+  assert.equal(showroomPolicySummary().visual.minimum_spectacle_moments,2);
+  assert.equal(showroomPolicySummary().visual.generic_premium_corporate,"FAIL");
 });
 
 test("revenue and headcount remain source evidence but are suppressed from homepage proof",()=>{
@@ -92,7 +96,7 @@ test("policy detects cheap internal copy and section visual inventory",()=>{
   }),["PHOTO_A","PHOTO_B","PHOTO_C"]);
 });
 
-test("workflow and compiler contain hard R89 gates",async()=>{
+test("workflow and compiler contain hard R90 gates",async()=>{
   const [workflow,compiler,metrics]=await Promise.all([
     readFile(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8"),
     readFile(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8"),
@@ -116,7 +120,7 @@ test("flat section surface policy rejects strong single-fill bands",async()=>{
 });
 
 
-test("R89 compiler contract requires brand-rich surfaces and watermark",async()=>{
+test("R90 compiler contract requires brand-rich surfaces and watermark",async()=>{
   const compiler=await readFile(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8");
   assert.match(compiler,/data-brand-surface/);
   assert.match(compiler,/data-brand-watermark/);
@@ -125,7 +129,7 @@ test("R89 compiler contract requires brand-rich surfaces and watermark",async()=
 });
 
 
-test("R89 rich-surface gate rejects labels without actual chromatic layering",()=>{
+test("R90 rich-surface gate rejects labels without actual chromatic layering",()=>{
   const main=[
     '<section id="services" data-surface="art-directed" data-brand-surface="secondary" class="services"></section>',
     '<section id="bridge" data-surface="art-directed" data-brand-surface="tint" class="bridge"></section>'
@@ -140,7 +144,7 @@ test("R89 rich-surface gate rejects labels without actual chromatic layering",()
   );
 });
 
-test("R89 watermark gate requires restrained but perceptible opacity",()=>{
+test("R90 watermark gate requires restrained but perceptible opacity",()=>{
   const main='<section id="final-cta" data-surface="art-directed" data-brand-surface="primary" class="final"><div class="mark" data-brand-watermark>{{identity:PRIMARY_LOGO}}</div></section>';
   assert.deepEqual(
     watermarkVisibilityViolations(main,'.mark .ix-v2-identity-main{opacity:.03}'),
@@ -152,7 +156,23 @@ test("R89 watermark gate requires restrained but perceptible opacity",()=>{
   );
 });
 
-test("R89 hard-disables external AI in ai.js",async()=>{
+test("R90 hard-disables external AI in ai.js",async()=>{
   const ai=await readFile(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
   assert.match(ai,/EXTERNAL_AI_CALLS_ALLOWED!==true/);
+});
+
+
+test("R90 launch-grade contract requires reveal hero and spectacle moments",()=>{
+  const weak='<section id="hero"></section><section id="services" data-surface="art-directed"></section>';
+  assert.deepEqual(launchGradeViolations(weak,2),[
+    "LAUNCH_GRADE_HERO_REQUIRED",
+    "SPECTACLE_MOMENTS_REQUIRED:0/2",
+    "STAGE_DEPTH_REQUIRED:0/2"
+  ]);
+  const strong=[
+    '<section id="hero" data-launch-hero="true" data-stage-depth="cinematic"></section>',
+    '<section id="services" data-surface="art-directed" data-spectacle-moment="true" data-stage-depth="editorial"></section>',
+    '<section id="final-cta" data-surface="art-directed" data-spectacle-moment="true" data-stage-depth="cinematic"></section>'
+  ].join("");
+  assert.deepEqual(launchGradeViolations(strong,2),[]);
 });

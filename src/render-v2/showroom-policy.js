@@ -189,6 +189,18 @@ export function watermarkVisibilityViolations(mainHtml="",css="") {
   return [];
 }
 
+export function launchGradeViolations(mainHtml="",minimumSpectacle=2) {
+  const main=String(mainHtml||"");
+  const hero=main.match(/<section\b[^>]*\bid=["']hero["'][^>]*>/i)?.[0]||"";
+  const issues=[];
+  if(!/\bdata-launch-hero=["']true["']/i.test(hero)) issues.push("LAUNCH_GRADE_HERO_REQUIRED");
+  const moments=(main.match(/\bdata-spectacle-moment=["']true["']/gi)||[]).length;
+  if(moments<minimumSpectacle) issues.push("SPECTACLE_MOMENTS_REQUIRED:"+moments+"/"+minimumSpectacle);
+  const staged=(main.match(/\bdata-stage-depth=["'](?:cinematic|material|editorial)["']/gi)||[]).length;
+  if(staged<minimumSpectacle) issues.push("STAGE_DEPTH_REQUIRED:"+staged+"/"+minimumSpectacle);
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -210,6 +222,13 @@ export function showroomPolicySummary() {
       brand_color_presence:"MEANINGFUL_CHROMATIC_FIELDS_REQUIRED",
       neutral_only_page:"FORBIDDEN",
       brand_motifs:"REQUIRED_AS_STRUCTURAL_SUPPORT",
+      north_star:"WORLD_CLASS_LAUNCH_EXPERIENCE_UNLIMITED_BUDGET",
+      launch_hero:"REQUIRED_CINEMATIC_REVEAL",
+      section_model:"SET_PIECES_NOT_STACKED_SECTIONS",
+      minimum_spectacle_moments:2,
+      scale_shifts:"REQUIRED",
+      material_depth:"REQUIRED",
+      generic_premium_corporate:"FAIL",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
     conversion:{

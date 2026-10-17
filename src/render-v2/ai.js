@@ -821,6 +821,13 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- VISUAL RHYTHM: alternate density, scale, alignment and field treatment across the scroll so the page has deliberate pacing and no template cadence.",
     "- BRAND ELEVATION: logo-derived color, geometry and signature details must recur coherently but sparingly so the page feels bespoke, not themed.",
     "- CTA SPECTACLE: final-cta should be a memorable closing composition with strong contrast, generous scale and one obvious primary action; it must feel like the commercial climax of the page.",
+    "- R90 NORTH STAR: do not design a merely premium company website. Art-direct the entire page like a world-class launch experience created by an elite brand-experience studio with effectively unlimited budget.",
+    "- LAUNCH HERO RULE: the hero must behave like a reveal scene, not a standard website hero. It needs cinematic tension, dramatic scale, controlled lighting/overlay, strong copy choreography and unmistakable brand authorship.",
+    "- SET-PIECE RULE: treat major sections as individually art-directed scenes. At least two non-hero sections must be unmistakable spectacle moments with their own composition, material treatment and scale shift.",
+    "- SCALE CONTRAST RULE: create deliberate jumps between monumental and intimate moments. Avoid same-size headings, same-width grids and same-density sections repeated down the page.",
+    "- MATERIAL DEPTH RULE: combine photography, brand geometry, tone-on-tone fields, gradients, line systems, texture-like layered effects, shadow/depth and negative space. Flat UI-card aesthetics are a FAIL.",
+    "- ICONIC BRAND PRESENCE RULE: the prospect's brand must feel physically present in the composition, as if it were an object in a launch environment, not merely a logo placed in a header.",
+    "- R90 FAIL CONDITION: if the result could be described as a tasteful premium corporate template, it fails. The page must contain memorable authored gestures that would be difficult to reuse unchanged for another company.",
     "- HIGH-END TYPOGRAPHY: use disciplined type scale, measure, tracking, weight contrast and whitespace. Avoid oversized generic display text with weak body typography.",
     "- NEVER use empty outlined squares/rectangles, blank media frames, empty cards or hollow boxes as decorative geometry: they are read as broken-image placeholders. Geometry must be visibly intentional (solid fields, rules, patterns, typographic structures, filled modules, or connected line systems).",
     "- Every CTA must look intentionally designed. Never leave browser-default blue/underlined links or isolated text links floating in empty space.",
@@ -931,7 +938,9 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "showroom_conversion_power","section_imagery_quality","real_imagery_credibility",
   "copy_sophistication","section_copy_distinctness","visual_storytelling",
   "surface_personalization","background_art_direction","brand_motif_integration","no_flat_color_blocks",
-  "brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility"
+  "brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility",
+  "launch_grade_art_direction","cinematic_tension","spectacle_moments","scale_contrast",
+  "iconic_brand_presence","custom_composition","material_depth","editorial_drama"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -972,6 +981,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"SURFACE GATE: surface_personalization, background_art_direction, brand_motif_integration, no_flat_color_blocks, brand_color_presence, chromatic_rhythm, surface_richness and watermark_visibility are blocking at 9+. Fail both extremes: generic flat color slabs AND anonymous over-neutralized pages. Require at least two meaningful brand-rich non-hero surfaces plus a clearly perceptible restrained official-logo watermark.":"",
     logoFirstMaster?"INFORMATION-STAGING GATE: fail when verified information is presented as a catalogue, database dump, repetitive card wall or equal-weight list. Facts must be selectively staged to support persuasion and visual hierarchy.":"",
     logoFirstMaster?"CLIENT REACTION GATE: judge the page as a sales preview shown to the business owner. If it would need explanation to feel premium, or would not create a strong desire to replace the current site, score showroom_conversion_power/client_wow_effect below 9.":"",
+    logoFirstMaster?"R90 LAUNCH-GRADE GATE: launch_grade_art_direction, cinematic_tension, spectacle_moments, scale_contrast, iconic_brand_presence, custom_composition, material_depth and editorial_drama are blocking at 9+. A polished corporate homepage is not enough. Require a reveal-grade hero and at least two clearly distinct non-hero spectacle/set-piece moments.":"",
+    logoFirstMaster?"UNLIMITED-BUDGET TEST: judge whether the page feels as if a top global brand-experience studio had permission to obsess over every scene. If the design is safe, modular, repetitive, timid or easily reusable as a template, score launch_grade_art_direction/custom_composition below 9.":"",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),

@@ -1,10 +1,10 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V7_BRAND_RICH_SURFACES";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_6_BRAND_RICH_SURFACES";
-export const COMPILER_VERSION = "RS_COMPILER_V1_7_BRAND_RICH_SURFACES";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V8_LAUNCH_GRADE";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_7_LAUNCH_GRADE";
+export const COMPILER_VERSION = "RS_COMPILER_V1_8_LAUNCH_GRADE";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V9_BRAND_RICH_SURFACES";
-export const REMEDIATION_POLICY_VERSION = "V5_BRAND_RICH_SURFACE_POLICY";
-export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R89_BRAND_RICH_SURFACES_V1";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V10_LAUNCH_GRADE";
+export const REMEDIATION_POLICY_VERSION = "V6_LAUNCH_GRADE_POLICY";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R90_LAUNCH_GRADE_SPECTACLE_V1";
 export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
 export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
@@ -31,7 +31,9 @@ export const QA_SCORE_KEYS = Object.freeze([
   "section_imagery_quality","real_imagery_credibility","copy_sophistication",
   "section_copy_distinctness","visual_storytelling","surface_personalization",
   "background_art_direction","brand_motif_integration","no_flat_color_blocks",
-  "brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility"
+  "brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility",
+  "launch_grade_art_direction","cinematic_tension","spectacle_moments","scale_contrast",
+  "iconic_brand_presence","custom_composition","material_depth","editorial_drama"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
