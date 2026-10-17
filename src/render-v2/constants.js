@@ -1,9 +1,13 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V4_SHOWROOM_WOW";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_3_SHOWROOM_WOW";
-export const COMPILER_VERSION = "RS_COMPILER_V1_4_PREMIUM_HOME";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V5_EDITORIAL_SHOWROOM";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_4_EDITORIAL_SHOWROOM";
+export const COMPILER_VERSION = "RS_COMPILER_V1_5_EDITORIAL_SHOWROOM";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V6_SHOWROOM_WOW";
-export const REMEDIATION_POLICY_VERSION = "V2_CONTACT_PROVENANCE_V2";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V7_EDITORIAL_SHOWROOM";
+export const REMEDIATION_POLICY_VERSION = "V3_EDITORIAL_ASSET_AND_CONTENT_POLICY";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R87_V1";
+export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
+export const EXTERNAL_AI_CALLS_ALLOWED = false;
+export const MIN_SECTION_VISUALS = 3;
 
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
 export const MAX_VISUAL_REVISIONS = 5;
@@ -23,7 +27,9 @@ export const QA_SCORE_KEYS = Object.freeze([
   "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
   "commercial_desirability","client_wow_effect",
   "luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography",
-  "brand_elevation","cta_spectacle","showroom_conversion_power"
+  "brand_elevation","cta_spectacle","showroom_conversion_power",
+  "section_imagery_quality","real_imagery_credibility","copy_sophistication",
+  "section_copy_distinctness","visual_storytelling"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
