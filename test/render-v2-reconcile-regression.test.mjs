@@ -315,7 +315,9 @@ test("execution sanitizes legacy service placeholders and duplicate trust intro"
   assert.match(ai,/verifiedServiceTitle\(body\)\|\|title/);
   assert.match(ai,/const trustNorms=new Set\(trustTexts\.map\(norm\)\)/);
   assert.match(ai,/rawTrustIntro && !trustNorms\.has\(norm\(rawTrustIntro\)\)/);
-  assert.match(ai,/"Dati verificati"/);
+  assert.doesNotMatch(ai,/"Dati verificati"/);
+  assert.match(ai,/"Perché scegliere noi"/);
+  assert.match(ai,/filterHomepageTrustPoints/);
 });
 
 test("healthz exposes authoritative operational invariants",()=>{
