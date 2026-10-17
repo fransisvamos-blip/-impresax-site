@@ -304,7 +304,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-service__body{color:var(--ix-muted);max-width:48ch}.ixg-trust-section{padding:clamp(64px,7vw,105px) 0;background:linear-gradient(135deg,var(--ix-paper) 0%,#fff 58%,rgba(179,19,25,.055) 100%);color:var(--ix-ink)}
 .ixg-trust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border-top:1px solid var(--ix-line);border-left:1px solid var(--ix-line)}
 .ixg-trust{min-height:140px;padding:28px;border-right:1px solid var(--ix-line);border-bottom:1px solid var(--ix-line);display:flex;align-items:flex-end}
-.ixg-trust strong{font-size:clamp(22px,2.1vw,34px);line-height:1.08;letter-spacing:-.025em}.ixg-trust--contact span{font-size:14px;line-height:1.45;overflow-wrap:anywhere;word-break:break-word}
+.ixg-trust strong{font-size:clamp(22px,2.1vw,34px);line-height:1.08;letter-spacing:-.025em}.ixg-trust--contact span{font-size:14px;line-height:1.45;overflow-wrap:anywhere;word-break:break-word}.ixg-trust-section .ixg-section-head--light{color:var(--ix-ink)!important}.ixg-trust-section .ixg-section-head--light .ixg-section-intro{color:var(--ix-muted)!important}
 .ixg-bridge{padding:clamp(76px,9vw,130px) 0;background:var(--ix-paper);color:var(--ix-ink)}
 .ixg-bridge__grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(260px,.75fr);gap:clamp(42px,7vw,100px);align-items:center}.ixg-bridge__copy{display:grid;gap:26px}
 .ixg-bridge__evidence{display:grid;border-top:1px solid var(--ix-line);align-self:stretch}.ixg-bridge__evidence-row{display:flex;align-items:flex-end;min-height:120px;padding:24px 0;border-bottom:1px solid var(--ix-line)}.ixg-bridge__evidence-row strong{font-size:clamp(22px,2.4vw,36px);line-height:1.06;letter-spacing:-.03em;max-width:22ch}
@@ -1390,4 +1390,3 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   };
 }
 
-.ixg-trust-section .ixg-section-head--light{color:var(--ix-ink)!important}.ixg-trust-section .ixg-section-head--light .ixg-section-intro{color:var(--ix-muted)!important}
