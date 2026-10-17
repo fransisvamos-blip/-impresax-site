@@ -1,4 +1,4 @@
-name: DEDIL r114 direct trigger
+name: DEDIL R106 triple-variant launch
 
 on:
   push:
@@ -8,24 +8,42 @@ on:
 
 jobs:
   trigger:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant_key: B
+            variant_id: 6e0dde25-6345-4ba3-87ad-a1a51ad5ee04
+            instance_id: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-B-r106-triple-v1
+            event_prefix: r106b
+            creative_role: STRUCTURED_TECHNICAL_PREMIUM
+          - variant_key: C
+            variant_id: d9862a91-25df-4a66-9d1b-49a56018000e
+            instance_id: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-C-r106-triple-v1
+            event_prefix: r106c
+            creative_role: BRAND_DRAMATIC_SALES_IMPACT
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-cabina-precomputed-v16-r114-iconic-process
+      INSTANCE_ID: ${{ matrix.instance_id }}
+      VARIANT_KEY: ${{ matrix.variant_key }}
+      VARIANT_ID: ${{ matrix.variant_id }}
+      EVENT_PREFIX: ${{ matrix.event_prefix }}
+      CREATIVE_ROLE: ${{ matrix.creative_role }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Trigger locked DEDIL R114 variant
+      - name: Trigger locked DEDIL variant
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"r114","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["R114 fifteen-k perceived-value refinement for the locked DEDIL pilot only."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Keep external AI disabled.","Preserve frozen R105 checkpoint qualities: typography, readability, professional shell and brand-safe identity.","Preserve R113 strengths and the R106 signature system; rebuild only the remaining generic process rhythm and strengthen bridge/final campaign closing without weakening readability or mobile value parity.","Do not start or mutate any other prospect."]}}'
+          PARAMS=$(printf '{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"%s","variantKey":"%s","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"%s","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["Mandatory triple-variant R106 build for DEDIL."],"actions":["Use the per-variant Cabina RenderSpec exactly.","Creative role: %s.","Remain materially different from A and the sibling route.","Keep external AI disabled.","Do not mutate any other prospect."]}}' "$VARIANT_ID" "$VARIANT_KEY" "$EVENT_PREFIX" "$CREATIVE_ROLE")
           set +e
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json > /tmp/trigger.json 2>&1
           rc=$?
@@ -34,11 +52,11 @@ jobs:
           if [ "$rc" -ne 0 ] && ! grep -q "already_exists" /tmp/trigger.json; then
             exit "$rc"
           fi
-      - name: Wait for R114 candidate
+      - name: Wait for candidate
         shell: bash
         run: |
           set -euo pipefail
-          for i in {1..90}; do
+          for i in {1..110}; do
             npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json > /tmp/status.json
             cat /tmp/status.json
             if grep -Eq '"status"[[:space:]]*:[[:space:]]*"complete"' /tmp/status.json; then
@@ -49,5 +67,4 @@ jobs:
             fi
             sleep 5
           done
-          echo "Timed out waiting for R114 candidate."
           exit 1
