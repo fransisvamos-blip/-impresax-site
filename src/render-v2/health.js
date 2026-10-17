@@ -1,4 +1,4 @@
-import { COMPILER_VERSION, QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED } from "./constants.js";
+import { COMPILER_VERSION, QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE } from "./constants.js";
 
 export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const rows=await sql`
@@ -226,6 +226,12 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     && x.metadata?.global_irreproducible_authorship_required===true
     && x.metadata?.global_scroll_narrative_required===true
     && x.metadata?.global_campaign_art_direction_required===true
+    && x.metadata?.triple_variant_required===TRIPLE_VARIANT_REQUIRED
+    && Number(x.metadata?.minimum_variants_per_pack||0)>=MINIMUM_VARIANTS_PER_PACK
+    && x.metadata?.variant_divergence_required===VARIANT_DIVERGENCE_REQUIRED
+    && Number(x.metadata?.variant_divergence_floor||0)>=VARIANT_DIVERGENCE_FLOOR
+    && x.metadata?.winner_auto_select===AUTO_SELECT_VARIANT_WINNER
+    && x.metadata?.master_auto_approve===MASTER_AUTO_APPROVE
     && x.metadata?.neutral_only_page_forbidden===true
   );
   const concurrencyOk=active<=maxConcurrency;
@@ -238,6 +244,12 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     showroom_rules_version:SHOWROOM_RULES_VERSION,
     render_generation_mode:RENDER_GENERATION_MODE,
     external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,
+    triple_variant_required:TRIPLE_VARIANT_REQUIRED,
+    minimum_variants_per_pack:MINIMUM_VARIANTS_PER_PACK,
+    variant_divergence_required:VARIANT_DIVERGENCE_REQUIRED,
+    variant_divergence_floor:VARIANT_DIVERGENCE_FLOOR,
+    winner_auto_select:AUTO_SELECT_VARIANT_WINNER,
+    master_auto_approve:MASTER_AUTO_APPROVE,
     phase:x.phase||null,
     queue_enabled:x.queue_enabled===true,
     active_variants:active,
