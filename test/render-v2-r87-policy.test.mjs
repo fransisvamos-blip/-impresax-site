@@ -98,3 +98,11 @@ test("workflow and compiler contain hard R87 gates",async()=>{
   assert.match(compiler,/SECTION_VISUAL_DISTRIBUTION_REQUIRED/);
   assert.match(metrics,/EXTERNAL_AI_DISABLED/);
 });
+
+
+test("flat section surface policy rejects strong single-fill bands",async()=>{
+  const { flatStrongSectionBackgroundViolations } = await import("../src/render-v2/showroom-policy.js");
+  const main='<section id="value" class="surface" data-surface="art-directed"></section>';
+  assert.deepEqual(flatStrongSectionBackgroundViolations(main,'.surface{background:#111315}'),["FLAT_STRONG_SECTION_BACKGROUND_FORBIDDEN:value"]);
+  assert.deepEqual(flatStrongSectionBackgroundViolations(main,'.surface{background:linear-gradient(135deg,#f4f1ea,#fff)}'),[]);
+});
