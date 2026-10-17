@@ -1103,6 +1103,82 @@ async function syncCurrentSetQaCaches(sql) {
   return {updated:rows.length,packs:rows};
 }
 
+async function syncLockedPilotCandidate(sql,pilotControl) {
+  const meta=pilotControl?.metadata||{};
+  const packId=String(pilotControl?.pilot_pack_id||meta.pilot_pack_id||"");
+  if(!packId) return null;
+  const rows=await sql`
+    select v.variant_key,v.certified_revision,r.id as revision_id,r.revision,r.score
+    from render_v2_variants v
+    join render_variant_revisions r
+      on r.variant_id=v.id and r.revision=v.certified_revision
+    where v.render_pack_id=${packId}::uuid
+      and v.variant_key='A'
+      and v.status='RENDER_READY'
+      and r.status='RENDER_READY'
+      and r.desktop_r2_key is not null
+      and r.mobile_r2_key is not null
+      and exists (
+        select 1 from render_qa_results_v2 q
+        where q.variant_revision_id=r.id
+          and q.qa_type='VARIANT_VISUAL'
+          and q.status='PASS'
+      )
+      and exists (
+        select 1 from render_qa_results_v2 hq
+        where hq.variant_revision_id=r.id
+          and hq.qa_type='HERO_VISUAL'
+          and hq.status='PASS'
+          and coalesce((hq.scores->>'hero_strength')::numeric,0)>=8
+          and coalesce((hq.scores->>'hero_relevance')::numeric,0)>=8
+          and coalesce((hq.scores->>'hero_image_quality')::numeric,0)>=8
+          and coalesce((hq.scores->>'hero_mobile_crop')::numeric,0)>=8
+      )
+    limit 1`;
+  const candidate=rows[0]||null;
+  if(!candidate) return null;
+  const currentRevision=Number(meta.pilot_candidate_revision||0);
+  const nextRevision=Number(candidate.revision||0);
+  if(nextRevision<=currentRevision) return null;
+
+  await sql`
+    update render_v2_rollout_state
+    set metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+          'pilot_candidate_variant','A',
+          'pilot_candidate_revision',${nextRevision},
+          'pilot_candidate_status','READY_FOR_CABINA_APPROVAL',
+          'pilot_candidate_is_approved',false,
+          'pilot_candidate_exposed_at',to_jsonb(now()),
+          'pilot_candidate_visual_reviewed_by_system',true,
+          'pilot_candidate_visual_reviewed_at',to_jsonb(now()),
+          'pilot_lock_enforced_at',to_jsonb(now()),
+          'global_queue_must_remain_paused',true
+        ),
+        queue_enabled=false,
+        phase='PILOT_SINGLE_PROSPECT',
+        updated_at=now()
+    where id=1`;
+
+  await sql`
+    update render_v2_packs
+    set metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+          'pilot_reference_candidate',true,
+          'pilot_reference_candidate_variant','A',
+          'pilot_reference_candidate_revision',${nextRevision},
+          'pilot_reference_candidate_status','READY_FOR_CABINA_APPROVAL',
+          'candidate_exposed_at',to_jsonb(now()),
+          'candidate_visual_reviewed_revision',${nextRevision},
+          'candidate_visual_reviewed_by_system',true,
+          'candidate_visual_reviewed_at',to_jsonb(now()),
+          'master_reference_status','AWAITING_CABINA_VISUAL_APPROVAL',
+          'global_queue_must_remain_paused',true
+        ),
+        updated_at=now()
+    where id=${packId}::uuid`;
+
+  return {pack_id:packId,variant_key:"A",revision:nextRevision,revision_id:candidate.revision_id,score:candidate.score};
+}
+
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
@@ -1129,11 +1205,13 @@ export async function reconcileV2(env) {
             updated_at=now()
         where id=1`;
     }
+    const pilotCandidateSync=await syncLockedPilotCandidate(sql,pilotControl);
     summary.reconciled.push({
       pilot_lock:true,
       pilot_pack_id:pilotControl?.pilot_pack_id||pilotMeta.pilot_pack_id||null,
       global_queue:false,
-      awaiting:"APPROVED_MASTER_REFERENCE"
+      awaiting:"APPROVED_MASTER_REFERENCE",
+      pilot_candidate_sync:pilotCandidateSync
     });
     return summary;
   }
