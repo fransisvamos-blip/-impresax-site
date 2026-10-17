@@ -336,6 +336,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const plan=planRows[0];
       const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
       const packMetadata=packRows[0]?.metadata||{};
+      const cabinaPrecomputed=params.initialFeedback?.reason==="CABINA_PRECOMPUTED_RENDER";
+      const cabinaRenderSpec=cabinaPrecomputed && packMetadata.cabina_precomputed_render_spec && typeof packMetadata.cabina_precomputed_render_spec==="object"
+        ? packMetadata.cabina_precomputed_render_spec
+        : null;
       const renderProfile=String(packMetadata.render_profile||"").trim();
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
@@ -363,12 +367,20 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto,packMetadata};
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec};
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const verified=explicitHeroAsset(context.assets);
       if(verified) return verified;
+      if(context.cabinaPrecomputed) {
+        const requestedSha=String(context.packMetadata?.cabina_precomputed_hero_sha256||"").trim().toLowerCase();
+        const reusable=requestedSha
+          ? await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha)
+          : await latestReusableHeroAsset(sql,params.packId,params.variantKey);
+        if(!reusable) throw new Error("SYSTEM_INVARIANT:CABINA_APPROVED_HERO_REQUIRED");
+        return {...reusable,cabina_precomputed:true};
+      }
       const masterProfile=String(context.inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
       const lockedHeroPilot=params.initialFeedback?.reason==="PILOT_LAYOUT_MICROPOLISH_REUSE_HERO";
       if(lockedHeroPilot) {
@@ -472,6 +484,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let generated;
       try {
         generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+          if(context.cabinaPrecomputed) {
+            if(!context.cabinaRenderSpec) throw new Error("SYSTEM_INVARIANT:CABINA_RENDER_SPEC_REQUIRED");
+            return {spec:context.cabinaRenderSpec,model:"CHATGPT_CABINA_PRECOMPUTED",cabina_precomputed:true};
+          }
           if(context.heroOnly && cycle===1 && ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
@@ -683,6 +699,45 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return {ok:true};
       });
       previewEmitted=true;
+
+      if(context.cabinaPrecomputed) {
+        await step.do("r"+cycle+"-cabina-deterministic-ready",async()=>{
+          await recordQa(sql,{
+            packId:params.packId,
+            revisionId:revision.id,
+            type:"CABINA_DETERMINISTIC",
+            status:"PASS",
+            scores:{browser_gate:10,compiler_gate:10,asset_integrity:10},
+            issues:[],
+            actions:["Await ChatGPT/Cabina visual review of desktop and mobile screenshots."],
+            artifactHashes:{desktop:captured.desktop.sha256,mobile:captured.mobile.sha256},
+            modelRouteVersion:"CHATGPT_CABINA_PRECOMPUTED",
+            promptVersion:"CABINA_PRECOMPUTED_V1",
+            idempotencyKey:"qa:CABINA_DETERMINISTIC:"+params.packId+":"+revision.id
+          });
+          await updateWorkflow(sql,event.instanceId,{
+            status:"COMPLETED",
+            currentStep:"CABINA_VISUAL_REVIEW",
+            attempt:cycle,
+            errorCode:null,
+            metadata:{
+              cabina_precomputed:true,
+              cabina_visual_review_required:true,
+              revision:revision.revision,
+              desktop_r2_key:captured.desktop.r2_key,
+              mobile_r2_key:captured.mobile.r2_key
+            }
+          });
+          return {ok:true};
+        });
+        return {
+          status:"PREVIEW_READY",
+          variant:params.variantKey,
+          revision:revision.revision,
+          revision_id:revision.id,
+          cabina_visual_review_required:true
+        };
+      }
 
       let qa;
       try {
