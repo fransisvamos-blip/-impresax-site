@@ -847,7 +847,15 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- SALES ARCHITECTURE GATE: beauty must support persuasion. The scroll must make positioning, services, differentiation, process, proof and final action feel intentionally sequenced.",
     "- DETAIL REFINEMENT GATE: inspect micro-alignment, spacing, borders, icon treatment, CTA proportions, overlays, crop discipline, header/footer finish and empty-space balance. A few cheap details are enough to fail the 15K gate.",
     "- MOBILE VALUE PARITY GATE: mobile must retain the same perceived investment as desktop. It is not acceptable for desktop to look 15K while mobile looks like a compressed template.",
-    "- FIFTEEN-K TEST: explicitly answer: would a business owner reasonably believe a serious agency charged 10K-15K for this? Score fifteen_k_value_perception below 9.2 unless the answer is clearly yes.",
+    "- FIFTEEN-K TEST: explicitly answer: would a business owner reasonably believe a serious agency charged 10K-15K for this? Under R106, fifteen_k_value_perception must reach 9.7 before candidate pass.",
+    "- R106 ICONIC COMMISSIONED NORTH STAR: design the page as a one-off commissioned brand experience, not a premium website. Target quality is 9.8-9.9. A perfect 10 remains an aspirational north star and must not be awarded casually.",
+    "- IRREPRODUCIBLE AUTHORSHIP TEST: mentally remove logo and visible copy. The remaining composition, image treatment, signature geometry, rhythm and transitions must still plausibly belong to this prospect and should be difficult to transplant to another client unchanged.",
+    "- CAMPAIGN ART-DIRECTION TEST: key photography must be composed like an editorial brand campaign through crop, layering, overlays, framing, scale and sequence, not merely placed into web containers.",
+    "- SCROLL NARRATIVE TEST: adjacent scenes must hand off visually through authored transitions, recurring signature devices, changes of scale and controlled tension/release. Avoid the feeling of eight independent stacked sections.",
+    "- SIGNATURE SYSTEM TEST: derive one coherent proprietary visual system from the prospect brand/sector and repeat it with variation across hero, middle scenes, trust and closing climax.",
+    "- VISUAL MEMORY TEST: after a brief viewing, at least two visual gestures should be memorable and describable without relying on the company name.",
+    "- MOBILE REINTERPRETATION TEST: preserve the signature system and campaign feel at 390px through recomposition, not just responsive shrinking.",
+    "- COMMISSIONED EXPERIENCE TEST: commissioned_experience_quality must score >=9.8; irreproducible_brand_authorship >=9.7; scroll_narrative_continuity, signature_system_coherence, editorial_campaign_quality, visual_memory_factor and cross_viewport_art_direction >=9.7; transition_art_direction >=9.6.",
     "- HIGH-END TYPOGRAPHY: use disciplined type scale, measure, tracking, weight contrast and whitespace. Avoid oversized generic display text with weak body typography.",
     "- NEVER use empty outlined squares/rectangles, blank media frames, empty cards or hollow boxes as decorative geometry: they are read as broken-image placeholders. Geometry must be visibly intentional (solid fields, rules, patterns, typographic structures, filled modules, or connected line systems).",
     "- Every CTA must look intentionally designed. Never leave browser-default blue/underlined links or isolated text links floating in empty space.",
@@ -930,11 +938,29 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     const score=Number(scores?.[key]??0);
     if(score<8) addGateIssue(key,score,8,"score_below_floor");
   }
+  const elevatedGateFloor={
+    fifteen_k_value_perception:9.7,
+    irreproducible_brand_authorship:9.7,
+    commissioned_experience_quality:9.8,
+    scroll_narrative_continuity:9.7,
+    signature_system_coherence:9.7,
+    editorial_campaign_quality:9.7,
+    transition_art_direction:9.6,
+    visual_memory_factor:9.7,
+    cross_viewport_art_direction:9.7
+  };
   if(logoFirstMaster) {
     for(const key of masterGateKeys) {
       const score=Number(scores?.[key]??0);
-      const required=key==="fifteen_k_value_perception"?9.2:9;
-      if(score<required) addGateIssue(key,score,required,key==="fifteen_k_value_perception"?"fifteen_k_gate_below_floor":"master_gate_below_floor");
+      const required=Number(elevatedGateFloor[key]??9);
+      const code=key==="commissioned_experience_quality"
+        ?"commissioned_experience_gate_below_floor"
+        :key==="irreproducible_brand_authorship"
+          ?"irreproducible_authorship_gate_below_floor"
+          :key==="fifteen_k_value_perception"
+            ?"fifteen_k_gate_below_floor"
+            :"master_gate_below_floor";
+      if(score<required) addGateIssue(key,score,required,code);
     }
   }
 
@@ -943,10 +969,12 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     ? Math.min(...masterGateKeys.map(k=>Number(scores?.[k]??0)))
     : 10;
   const fifteenKScore=Number(scores?.fifteen_k_value_perception??10);
+  const authorshipScore=Number(scores?.irreproducible_brand_authorship??10);
+  const commissionedScore=Number(scores?.commissioned_experience_quality??10);
   const hardIssues=nextIssues.filter(x=>x?.severity==="critical"||x?.severity==="major");
-  const pass=min>=8 && masterGateFloor>=9 && fifteenKScore>=9.2 && hardIssues.length===0;
+  const pass=min>=8 && masterGateFloor>=9 && fifteenKScore>=9.7 && authorshipScore>=9.7 && commissionedScore>=9.8 && hardIssues.length===0;
 
-  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor,fifteen_k_value_floor:fifteenKScore};
+  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor,fifteen_k_value_floor:fifteenKScore,irreproducible_authorship_floor:authorshipScore,commissioned_experience_floor:commissionedScore};
 }
 
 export const LOGO_FIRST_MASTER_GATE_KEYS=[
@@ -969,7 +997,10 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "header_composition_quality","navigation_professionalism","footer_composition_quality","footer_professionalism",
   "custom_made_feel","premium_art_direction","hero_wow_effect","brand_specificity",
   "imagery_premium_credibility","sales_structure_quality","detail_refinement",
-  "mobile_premium_integrity","fifteen_k_value_perception"
+  "mobile_premium_integrity","fifteen_k_value_perception",
+  "irreproducible_brand_authorship","commissioned_experience_quality",
+  "scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality",
+  "transition_art_direction","visual_memory_factor","cross_viewport_art_direction"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -984,7 +1015,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     logoFirstMaster
-      ?"LOGO-FIRST MASTER PASS only when every master gate score is >=9, fifteen_k_value_perception is >=9.2, every other score is >=8, and there are no critical/major unresolved issues."
+      ?"LOGO-FIRST MASTER PASS only when base master gates are >=9, fifteen_k_value_perception and irreproducible_brand_authorship are >=9.7, commissioned_experience_quality is >=9.8, the other R106 iconic gates meet their elevated floors, every other score is >=8, and there are no critical/major unresolved issues."
       :"PASS only when every score is >=8 and there are no critical/major unresolved issues.",
     "The deterministic shell owns the official logo, contact path and footer. A direction described as logo-centric may use the immutable logo in the shell and at most one compiler-owned hero identity placement; never demand a fake/reinterpreted logo.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If it says official_identity_visible=true and broken_images=0, DO NOT claim the official logo is missing, fake, reinterpreted or broken merely because it is visually subtle in the screenshot. Judge its visual prominence separately if needed. If clipped_contacts is empty, do not claim a verified contact is mechanically truncated.",
@@ -1014,7 +1045,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"UNLIMITED-BUDGET TEST: judge whether the page feels as if a top global brand-experience studio had permission to obsess over every scene. If the design is safe, modular, repetitive, timid or easily reusable as a template, score launch_grade_art_direction/custom_composition below 9.":"",
     logoFirstMaster?"R93 TYPOGRAPHY GATE: text_breathing, responsive_type_quality, hero_full_bleed, copy_density_control, desktop_readability_balance, mobile_readability_balance, font_fit_and_originality, headline_line_break_quality and spacing_rhythm are blocking at 9+. Fail crowded text, boxed hero surfaces, excessive one-word headline wrapping, weak mobile line-height, generic font treatment or compressed proof/card typography.":"",
     logoFirstMaster?"R93 SHELL GATE: header_composition_quality, navigation_professionalism, footer_composition_quality and footer_professionalism are blocking at 9+. Fail default-looking menus, weak logo/CTA balance, cramped mobile navigation, thin footers, poor contact hierarchy or flat generic footer surfaces.":"",
-    logoFirstMaster?"R94 15K VALUE GATE: custom_made_feel, premium_art_direction, hero_wow_effect, brand_specificity, imagery_premium_credibility, sales_structure_quality, detail_refinement and mobile_premium_integrity are blocking at 9+. fifteen_k_value_perception is blocking at 9.2+. A beautiful 2.5K website is still a FAIL if it does not plausibly look like a 10K-15K commissioned project.":"",
+    logoFirstMaster?"R94 15K VALUE GATE: custom_made_feel, premium_art_direction, hero_wow_effect, brand_specificity, imagery_premium_credibility, sales_structure_quality, detail_refinement and mobile_premium_integrity are blocking at 9+. Under R106, fifteen_k_value_perception is elevated to 9.7+. A beautiful 2.5K website is still a FAIL if it does not plausibly look like a 10K-15K commissioned project.":"",
+    logoFirstMaster?"R106 ICONIC COMMISSIONED GATE: irreproducible_brand_authorship >=9.7, commissioned_experience_quality >=9.8, scroll_narrative_continuity >=9.7, signature_system_coherence >=9.7, editorial_campaign_quality >=9.7, transition_art_direction >=9.6, visual_memory_factor >=9.7 and cross_viewport_art_direction >=9.7. Fail anything that still reads as a sequence of premium website sections rather than a one-off commissioned brand experience.":"",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
