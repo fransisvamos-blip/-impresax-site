@@ -1285,21 +1285,40 @@ async function syncLockedPilotCandidate(sql,pilotControl) {
       and r.status='RENDER_READY'
       and r.desktop_r2_key is not null
       and r.mobile_r2_key is not null
-      and exists (
-        select 1 from render_qa_results_v2 q
-        where q.variant_revision_id=r.id
-          and q.qa_type='VARIANT_VISUAL'
-          and q.status='PASS'
-      )
-      and exists (
-        select 1 from render_qa_results_v2 hq
-        where hq.variant_revision_id=r.id
-          and hq.qa_type='HERO_VISUAL'
-          and hq.status='PASS'
-          and coalesce((hq.scores->>'hero_strength')::numeric,0)>=8
-          and coalesce((hq.scores->>'hero_relevance')::numeric,0)>=8
-          and coalesce((hq.scores->>'hero_image_quality')::numeric,0)>=8
-          and coalesce((hq.scores->>'hero_mobile_crop')::numeric,0)>=8
+      and (
+        (
+          exists (
+            select 1 from render_qa_results_v2 q
+            where q.variant_revision_id=r.id
+              and q.qa_type='VARIANT_VISUAL'
+              and q.status='PASS'
+          )
+          and exists (
+            select 1 from render_qa_results_v2 hq
+            where hq.variant_revision_id=r.id
+              and hq.qa_type='HERO_VISUAL'
+              and hq.status='PASS'
+              and coalesce((hq.scores->>'hero_strength')::numeric,0)>=8
+              and coalesce((hq.scores->>'hero_relevance')::numeric,0)>=8
+              and coalesce((hq.scores->>'hero_image_quality')::numeric,0)>=8
+              and coalesce((hq.scores->>'hero_mobile_crop')::numeric,0)>=8
+          )
+        )
+        or
+        (
+          exists (
+            select 1 from render_qa_results_v2 q
+            where q.variant_revision_id=r.id
+              and q.qa_type='CABINA_DETERMINISTIC'
+              and q.status='PASS'
+          )
+          and exists (
+            select 1 from render_qa_results_v2 cq
+            where cq.variant_revision_id=r.id
+              and cq.qa_type='CABINA_VISUAL'
+              and cq.status='PASS'
+          )
+        )
       )
     limit 1`;
   const candidate=rows[0]||null;
