@@ -310,11 +310,19 @@ test("zero-photo grammar compiles all three variants",async()=>{
   };
   for(const variantKey of ["A","B","C"]) {
     const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true});
-    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R90_LAUNCH_GRADE_SPECTACLE_V1");
+    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R93_LAUNCH_GRADE_TYPOGRAPHY_V1");
     assert.ok((built.spec.main_html.match(/data-brand-surface=/g)||[]).length>=3);
     assert.match(built.spec.main_html,/data-launch-hero="true"/);
+    assert.match(built.spec.main_html,/data-hero-full-bleed="true"/);
+    assert.match(built.spec.main_html,/data-typography-system="responsive"/);
+    assert.ok((built.spec.main_html.match(/data-copy-density="controlled"/g)||[]).length>=4);
     assert.ok((built.spec.main_html.match(/data-spectacle-moment="true"/g)||[]).length>=2);
     assert.ok((built.spec.main_html.match(/data-stage-depth=/g)||[]).length>=3);
+    assert.match(built.spec.custom_css,/--ix-display-font:/);
+    assert.match(built.spec.custom_css,/--ix-body-font:/);
+    assert.match(built.spec.custom_css,/text-wrap:balance/);
+    assert.match(built.spec.custom_css,/\.ix-v2-header/);
+    assert.match(built.spec.custom_css,/\.ix-v2-footer/);
     assert.match(built.spec.main_html,/data-brand-watermark/);
     assert.match(built.spec.custom_css,/\.ixr89-watermark \.ix-v2-identity-main/);
     assert.match(built.spec.custom_css,/opacity:\.12/);

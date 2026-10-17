@@ -45,6 +45,19 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
                 and coalesce((q.scores->>'custom_composition')::numeric,0)>=9
                 and coalesce((q.scores->>'material_depth')::numeric,0)>=9
                 and coalesce((q.scores->>'editorial_drama')::numeric,0)>=9
+                and coalesce((q.scores->>'text_breathing')::numeric,0)>=9
+                and coalesce((q.scores->>'responsive_type_quality')::numeric,0)>=9
+                and coalesce((q.scores->>'hero_full_bleed')::numeric,0)>=9
+                and coalesce((q.scores->>'copy_density_control')::numeric,0)>=9
+                and coalesce((q.scores->>'desktop_readability_balance')::numeric,0)>=9
+                and coalesce((q.scores->>'mobile_readability_balance')::numeric,0)>=9
+                and coalesce((q.scores->>'font_fit_and_originality')::numeric,0)>=9
+                and coalesce((q.scores->>'headline_line_break_quality')::numeric,0)>=9
+                and coalesce((q.scores->>'spacing_rhythm')::numeric,0)>=9
+                and coalesce((q.scores->>'header_composition_quality')::numeric,0)>=9
+                and coalesce((q.scores->>'navigation_professionalism')::numeric,0)>=9
+                and coalesce((q.scores->>'footer_composition_quality')::numeric,0)>=9
+                and coalesce((q.scores->>'footer_professionalism')::numeric,0)>=9
             )
         )::int variant_visual_passes
       from render_v2_packs p
@@ -173,7 +186,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const maxConcurrency=Number(x.max_concurrency||3);
   const queueReady=x.phase==="QUEUE_READY" && x.queue_enabled===true;
   const pilotMode=x.queue_enabled!==true && x.metadata?.pilot_single_prospect===true;
-  const r90PolicyOk=!pilotMode || (
+  const r93PolicyOk=!pilotMode || (
     x.metadata?.global_queue_must_remain_paused===true
     && x.metadata?.render_generation_mode===RENDER_GENERATION_MODE
     && x.metadata?.external_ai_calls_allowed===EXTERNAL_AI_CALLS_ALLOWED
@@ -181,15 +194,18 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     && Number(x.metadata?.global_minimum_brand_rich_sections||0)>=2
     && Number(x.metadata?.global_minimum_spectacle_moments||0)>=2
     && x.metadata?.launch_grade_standard===true
+    && x.metadata?.global_typography_layout_standard===true
+    && x.metadata?.global_hero_full_bleed_required===true
+    && x.metadata?.global_shell_professional_required===true
     && x.metadata?.neutral_only_page_forbidden===true
   );
   const concurrencyOk=active<=maxConcurrency;
   const countersOk=Object.values(counters).every(n=>n===0);
   return {
-    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r90PolicyOk,
+    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r93PolicyOk,
     operating_mode:pilotMode?"PILOT_SINGLE_PROSPECT":queueReady?"QUEUE_READY":"NOT_READY",
     pilot_single_prospect:pilotMode,
-    r90_policy_contract_ok:r90PolicyOk,
+    r93_policy_contract_ok:r93PolicyOk,
     showroom_rules_version:SHOWROOM_RULES_VERSION,
     render_generation_mode:RENDER_GENERATION_MODE,
     external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,

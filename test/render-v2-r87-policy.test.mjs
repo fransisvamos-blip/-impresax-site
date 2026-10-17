@@ -15,12 +15,13 @@ import {
   showroomPolicySummary,
   brandRichSurfaceViolations,
   watermarkVisibilityViolations,
-  launchGradeViolations
+  launchGradeViolations,
+  typographyCompositionViolations
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R90 showroom standard is the global zero-extra-AI contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R90_LAUNCH_GRADE_SPECTACLE_V1");
+test("R93 showroom standard is the global zero-extra-AI typography contract",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R93_LAUNCH_GRADE_TYPOGRAPHY_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
@@ -33,6 +34,12 @@ test("R90 showroom standard is the global zero-extra-AI contract",()=>{
   assert.equal(showroomPolicySummary().visual.north_star,"WORLD_CLASS_LAUNCH_EXPERIENCE_UNLIMITED_BUDGET");
   assert.equal(showroomPolicySummary().visual.minimum_spectacle_moments,2);
   assert.equal(showroomPolicySummary().visual.generic_premium_corporate,"FAIL");
+  assert.equal(showroomPolicySummary().visual.hero_full_bleed,"EDGE_TO_EDGE_BACKGROUND_ZERO_LATERAL_MARGIN");
+  assert.equal(showroomPolicySummary().visual.text_breathing,"REQUIRED_NO_CROWDING");
+  assert.equal(showroomPolicySummary().visual.responsive_typography,"INDEPENDENT_DESKTOP_MOBILE_OPTIMIZATION");
+  assert.equal(showroomPolicySummary().visual.font_system,"DISTINCTIVE_BRAND_FIT_DISPLAY_AND_BODY");
+  assert.equal(showroomPolicySummary().visual.header_menu,"PROFESSIONAL_BRAND_EXPERIENCE_ENTRY");
+  assert.equal(showroomPolicySummary().visual.footer,"PROFESSIONAL_BRAND_EXPERIENCE_CLOSING");
 });
 
 test("revenue and headcount remain source evidence but are suppressed from homepage proof",()=>{
@@ -175,4 +182,28 @@ test("R90 launch-grade contract requires reveal hero and spectacle moments",()=>
     '<section id="final-cta" data-surface="art-directed" data-spectacle-moment="true" data-stage-depth="cinematic"></section>'
   ].join("");
   assert.deepEqual(launchGradeViolations(strong,2),[]);
+});
+
+
+test("R93 typography composition gate blocks boxed or generic layouts",()=>{
+  const weak='<section id="hero" data-launch-hero="true"></section><section data-copy-density="controlled"></section>';
+  const weakCss=':root{--ix-display-font:Arial;--ix-body-font:Arial}.x{font-size:20px}@media(max-width:820px){.x{font-size:16px}}';
+  const issues=typographyCompositionViolations(weak,weakCss);
+  assert.ok(issues.includes("HERO_FULL_BLEED_REQUIRED"));
+  assert.ok(issues.includes("RESPONSIVE_TYPOGRAPHY_MARKER_REQUIRED"));
+  assert.ok(issues.some(x=>x.startsWith("COPY_DENSITY_CONTROL_REQUIRED:")));
+  assert.ok(issues.includes("HEADLINE_BALANCE_REQUIRED"));
+  assert.ok(issues.includes("BODY_TEXT_PRETTY_WRAP_REQUIRED"));
+  assert.ok(issues.includes("GENERIC_DISPLAY_FONT_STACK_FORBIDDEN"));
+  assert.ok(issues.includes("PROFESSIONAL_HEADER_NAV_REQUIRED"));
+  assert.ok(issues.includes("PROFESSIONAL_FOOTER_REQUIRED"));
+
+  const strong=[
+    '<section id="hero" data-launch-hero="true" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled"></section>',
+    '<section data-copy-density="controlled"></section>',
+    '<section data-copy-density="controlled"></section>',
+    '<section data-copy-density="controlled"></section>'
+  ].join("");
+  const strongCss=':root{--ix-display-font:Bahnschrift,"Arial Narrow",sans-serif;--ix-body-font:Inter,Aptos,sans-serif}.x h1{text-wrap:balance}.x p{text-wrap:pretty}.ix-v2-header{backdrop-filter:blur(12px)}.ix-v2-nav{display:flex}.ix-v2-footer{display:block}.ix-v2-footer-grid{display:grid}@media(max-width:820px){.x h1{font-size:clamp(42px,11vw,60px);line-height:.96}}';
+  assert.deepEqual(typographyCompositionViolations(strong,strongCss),[]);
 });

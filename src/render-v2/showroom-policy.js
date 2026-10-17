@@ -201,6 +201,31 @@ export function launchGradeViolations(mainHtml="",minimumSpectacle=2) {
   return issues;
 }
 
+export function typographyCompositionViolations(mainHtml="",css="") {
+  const main=String(mainHtml||"");
+  const styles=String(css||"");
+  const issues=[];
+  const hero=main.match(/<section\b[^>]*\bid=["']hero["'][^>]*>/i)?.[0]||"";
+  if(!/\bdata-hero-full-bleed=["']true["']/i.test(hero)) issues.push("HERO_FULL_BLEED_REQUIRED");
+  if(!/\bdata-typography-system=["']responsive["']/i.test(hero)) issues.push("RESPONSIVE_TYPOGRAPHY_MARKER_REQUIRED");
+  const controlled=(main.match(/\bdata-copy-density=["']controlled["']/gi)||[]).length;
+  if(controlled<4) issues.push("COPY_DENSITY_CONTROL_REQUIRED:"+controlled+"/4");
+  if(!/--ix-display-font\s*:/i.test(styles)) issues.push("DISPLAY_FONT_SYSTEM_REQUIRED");
+  if(!/--ix-body-font\s*:/i.test(styles)) issues.push("BODY_FONT_SYSTEM_REQUIRED");
+  if(!/text-wrap\s*:\s*balance/i.test(styles)) issues.push("HEADLINE_BALANCE_REQUIRED");
+  if(!/text-wrap\s*:\s*pretty/i.test(styles)) issues.push("BODY_TEXT_PRETTY_WRAP_REQUIRED");
+  const display=(styles.match(/--ix-display-font\s*:\s*([^;]+);/i)?.[1]||"").trim();
+  if(display && /^(?:Arial|Helvetica|system-ui|sans-serif)(?:\s*,\s*(?:Arial|Helvetica|system-ui|sans-serif))*$/i.test(display)) {
+    issues.push("GENERIC_DISPLAY_FONT_STACK_FORBIDDEN");
+  }
+  const mobile=styles.match(/@media\s*\([^)]*max-width\s*:\s*(?:700|720|768|820)px[^)]*\)\s*\{[\s\S]*$/i)?.[0]||"";
+  if(!/font-size\s*:\s*clamp\(/i.test(mobile)) issues.push("MOBILE_RESPONSIVE_TYPE_SCALE_REQUIRED");
+  if(!/line-height\s*:/i.test(mobile)) issues.push("MOBILE_LINE_HEIGHT_REQUIRED");
+  if(!/\.ix-v2-header/i.test(styles) || !/\.ix-v2-nav/i.test(styles)) issues.push("PROFESSIONAL_HEADER_NAV_REQUIRED");
+  if(!/\.ix-v2-footer/i.test(styles) || !/\.ix-v2-footer-grid/i.test(styles)) issues.push("PROFESSIONAL_FOOTER_REQUIRED");
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -229,6 +254,16 @@ export function showroomPolicySummary() {
       scale_shifts:"REQUIRED",
       material_depth:"REQUIRED",
       generic_premium_corporate:"FAIL",
+      hero_full_bleed:"EDGE_TO_EDGE_BACKGROUND_ZERO_LATERAL_MARGIN",
+      text_breathing:"REQUIRED_NO_CROWDING",
+      responsive_typography:"INDEPENDENT_DESKTOP_MOBILE_OPTIMIZATION",
+      font_system:"DISTINCTIVE_BRAND_FIT_DISPLAY_AND_BODY",
+      copy_density:"CONTROLLED",
+      headline_line_breaks:"EDITORIALLY_BALANCED",
+      spacing_rhythm:"EXPLICIT_DESKTOP_AND_MOBILE",
+      header_menu:"PROFESSIONAL_BRAND_EXPERIENCE_ENTRY",
+      footer:"PROFESSIONAL_BRAND_EXPERIENCE_CLOSING",
+      navigation_hierarchy:"CLEAR_REFINED_AND_PURPOSEFUL",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
     conversion:{
