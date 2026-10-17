@@ -1,4 +1,4 @@
-name: DEDIL r112 direct trigger
+name: DEDIL r113 direct trigger
 
 on:
   push:
@@ -14,18 +14,18 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-cabina-precomputed-v14-r112-iconic-overflow-fixed
+      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-cabina-precomputed-v15-r113-last-mile
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Trigger locked DEDIL R112 variant
+      - name: Trigger locked DEDIL R113 variant
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"r112","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["R112 fifteen-k perceived-value refinement for the locked DEDIL pilot only."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Keep external AI disabled.","Preserve frozen R105 checkpoint qualities: typography, readability, professional shell and brand-safe identity.","Preserve the R106 iconic commissioned direction exactly; apply only the deterministic horizontal-overflow correction while retaining irreproducible authorship, narrative continuity, campaign art direction and mobile value parity.","Do not start or mutate any other prospect."]}}'
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"r113","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["R113 fifteen-k perceived-value refinement for the locked DEDIL pilot only."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Keep external AI disabled.","Preserve frozen R105 checkpoint qualities: typography, readability, professional shell and brand-safe identity.","Preserve R112 strengths and the R106 signature system; strengthen authored scene handoffs, bridge, final campaign frame, header and footer without weakening readability or mobile value parity.","Do not start or mutate any other prospect."]}}'
           set +e
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json > /tmp/trigger.json 2>&1
           rc=$?
@@ -34,7 +34,7 @@ jobs:
           if [ "$rc" -ne 0 ] && ! grep -q "already_exists" /tmp/trigger.json; then
             exit "$rc"
           fi
-      - name: Wait for R112 candidate
+      - name: Wait for R113 candidate
         shell: bash
         run: |
           set -euo pipefail
@@ -49,5 +49,5 @@ jobs:
             fi
             sleep 5
           done
-          echo "Timed out waiting for R112 candidate."
+          echo "Timed out waiting for R113 candidate."
           exit 1
