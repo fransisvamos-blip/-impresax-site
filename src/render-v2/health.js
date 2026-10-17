@@ -66,7 +66,15 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
                 and coalesce((q.scores->>'sales_structure_quality')::numeric,0)>=9
                 and coalesce((q.scores->>'detail_refinement')::numeric,0)>=9
                 and coalesce((q.scores->>'mobile_premium_integrity')::numeric,0)>=9
-                and coalesce((q.scores->>'fifteen_k_value_perception')::numeric,0)>=9.2
+                and coalesce((q.scores->>'fifteen_k_value_perception')::numeric,0)>=9.7
+                and coalesce((q.scores->>'irreproducible_brand_authorship')::numeric,0)>=9.7
+                and coalesce((q.scores->>'commissioned_experience_quality')::numeric,0)>=9.8
+                and coalesce((q.scores->>'scroll_narrative_continuity')::numeric,0)>=9.7
+                and coalesce((q.scores->>'signature_system_coherence')::numeric,0)>=9.7
+                and coalesce((q.scores->>'editorial_campaign_quality')::numeric,0)>=9.7
+                and coalesce((q.scores->>'transition_art_direction')::numeric,0)>=9.6
+                and coalesce((q.scores->>'visual_memory_factor')::numeric,0)>=9.7
+                and coalesce((q.scores->>'cross_viewport_art_direction')::numeric,0)>=9.7
             )
         )::int variant_visual_passes
       from render_v2_packs p
@@ -195,15 +203,18 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const maxConcurrency=Number(x.max_concurrency||3);
   const queueReady=x.phase==="QUEUE_READY" && x.queue_enabled===true;
   const pilotMode=x.queue_enabled!==true && x.metadata?.pilot_single_prospect===true;
-  const r94PolicyOk=!pilotMode || (
+  const r106PolicyOk=!pilotMode || (
     x.metadata?.global_queue_must_remain_paused===true
     && x.metadata?.render_generation_mode===RENDER_GENERATION_MODE
     && x.metadata?.external_ai_calls_allowed===EXTERNAL_AI_CALLS_ALLOWED
     && x.metadata?.showroom_rules_version===SHOWROOM_RULES_VERSION
     && Number(x.metadata?.global_minimum_brand_rich_sections||0)>=2
     && Number(x.metadata?.global_minimum_spectacle_moments||0)>=2
-    && Number(x.metadata?.global_minimum_signature_moments||0)>=3
-    && Number(x.metadata?.global_fifteen_k_value_floor||0)>=9.2
+    && Number(x.metadata?.global_minimum_signature_moments||0)>=4
+    && Number(x.metadata?.global_minimum_authored_transitions||0)>=3
+    && Number(x.metadata?.global_fifteen_k_value_floor||0)>=9.7
+    && Number(x.metadata?.global_commissioned_experience_floor||0)>=9.8
+    && Number(x.metadata?.global_irreproducible_authorship_floor||0)>=9.7
     && x.metadata?.launch_grade_standard===true
     && x.metadata?.global_typography_layout_standard===true
     && x.metadata?.global_hero_full_bleed_required===true
@@ -211,15 +222,19 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     && x.metadata?.global_fifteen_k_value_standard===true
     && x.metadata?.global_custom_made_required===true
     && x.metadata?.global_mobile_value_parity_required===true
+    && x.metadata?.global_iconic_commissioned_standard===true
+    && x.metadata?.global_irreproducible_authorship_required===true
+    && x.metadata?.global_scroll_narrative_required===true
+    && x.metadata?.global_campaign_art_direction_required===true
     && x.metadata?.neutral_only_page_forbidden===true
   );
   const concurrencyOk=active<=maxConcurrency;
   const countersOk=Object.values(counters).every(n=>n===0);
   return {
-    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r94PolicyOk,
+    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r106PolicyOk,
     operating_mode:pilotMode?"PILOT_SINGLE_PROSPECT":queueReady?"QUEUE_READY":"NOT_READY",
     pilot_single_prospect:pilotMode,
-    r94_policy_contract_ok:r94PolicyOk,
+    r106_policy_contract_ok:r106PolicyOk,
     showroom_rules_version:SHOWROOM_RULES_VERSION,
     render_generation_mode:RENDER_GENERATION_MODE,
     external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,
