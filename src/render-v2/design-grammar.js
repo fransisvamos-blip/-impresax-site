@@ -793,6 +793,59 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-trust-section .ixg-section-head:before{
  background:var(--ix-brand-primary)!important
 }
+.ixg-proof-metrics{
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:1px!important;
+ margin:0 0 38px!important;
+ background:rgba(255,255,255,.15)!important;
+ border:1px solid rgba(255,255,255,.15)!important
+}
+.ixg-proof-metric{
+ position:relative!important;
+ min-height:230px!important;
+ padding:30px 28px 28px!important;
+ background:var(--ix-brand-ink)!important;
+ display:flex!important;
+ flex-direction:column!important;
+ justify-content:space-between!important;
+ overflow:hidden!important
+}
+.ixg-proof-metric__label{
+ font-size:10px!important;
+ line-height:1.2!important;
+ font-weight:900!important;
+ text-transform:uppercase!important;
+ letter-spacing:.16em!important;
+ color:rgba(255,255,255,.58)!important;
+ position:relative!important;
+ z-index:2!important
+}
+.ixg-proof-metric strong{
+ font-size:clamp(40px,5.6vw,82px)!important;
+ line-height:.88!important;
+ letter-spacing:-.055em!important;
+ font-weight:850!important;
+ color:#fff!important;
+ position:relative!important;
+ z-index:2!important;
+ max-width:10ch!important
+}
+.ixg-proof-metric i{
+ position:absolute!important;
+ right:-30px!important;
+ bottom:-24px!important;
+ width:170px!important;
+ height:100px!important;
+ opacity:.22!important;
+ background:linear-gradient(var(--ix-brand-primary),var(--ix-brand-primary)) 0 0/100% 9px no-repeat,
+ linear-gradient(var(--ix-brand-primary),var(--ix-brand-primary)) 0 30px/76% 9px no-repeat,
+ linear-gradient(var(--ix-brand-primary),var(--ix-brand-primary)) 0 60px/52% 9px no-repeat,
+ linear-gradient(var(--ix-brand-primary),var(--ix-brand-primary)) 0 90px/28% 9px no-repeat!important
+}
+.ixg-proof-metric:nth-child(2){background:#181a1c!important}
+.ixg-proof-metric:nth-child(3){background:var(--ix-brand-primary)!important}
+
 .ixg-trust-grid{
  display:grid!important;
  grid-template-columns:1fr!important;
