@@ -1113,7 +1113,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   const lockedHeroSha=String(packMeta.pilot_reuse_hero_sha256||meta.pilot_reuse_hero_sha256||"");
 
   const recoveryId=showroomReset
-    ? "rv2-"+packId+"-A-showroom-wow-v3"
+    ? "rv2-"+packId+"-A-showroom-wow-v4"
     : "rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
   const existing=await sql`
     select status from render_workflows_v2
@@ -1195,7 +1195,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   if(stillActive.length) return null;
 
   const parentInstanceId=String(source.metadata?.parent_workflow_instance_id||("rpv2-"+packId));
-  const eventPrefix=showroomReset?"pilot-showroom-wow-v3":"pilot-artifact-qa-stable-v10";
+  const eventPrefix=showroomReset?"pilot-showroom-wow-v4":"pilot-artifact-qa-stable-v10";
   const params={
     prospectId:source.prospect_id,
     packId,
@@ -1229,7 +1229,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     prospectId:source.prospect_id,packId,variantId:source.variant_id,type:"VARIANT",
     instanceId:recoveryId,status:"QUEUED",
     metadata:{
-      variant_key:"A",event_prefix:eventPrefix,run_key:showroomReset?"pilot-showroom-wow-v3":"pilot-artifact-qa-stable-v10",
+      variant_key:"A",event_prefix:eventPrefix,run_key:showroomReset?"pilot-showroom-wow-v4":"pilot-artifact-qa-stable-v10",
       targeted_relaunch:true,force_relaunch:true,reset_budget:showroomReset,
       parent_workflow_instance_id:parentInstanceId,
       relaunch_reason:showroomReset?"SHOWROOM_HARD_RESET":"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
