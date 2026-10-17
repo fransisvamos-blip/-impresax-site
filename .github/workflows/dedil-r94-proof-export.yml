@@ -4,7 +4,7 @@ on:
   push:
     branches: [rendering-v2-shadow]
     paths:
-      - ".github/workflows/dedil-r105-proof-export.yml"
+      - ".github/workflows/dedil-r94-proof-export.yml"
 
 permissions:
   contents: write
