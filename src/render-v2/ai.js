@@ -1,4 +1,5 @@
-import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS } from "./constants.js";
+import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS } from "./constants.js";
+import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
 
@@ -570,7 +571,8 @@ export async function combineCreativePlan(contentTruth,directions) {
 
 export function buildCopyManifest(content,inputPayload={}) {
   const services=Array.isArray(content?.services)?content.services:[];
-  const trustPoints=Array.isArray(content?.trust_points)?content.trust_points:[];
+  const rawTrustPoints=Array.isArray(content?.trust_points)?content.trust_points:[];
+  const trustPoints=filterHomepageTrustPoints(rawTrustPoints);
   const serviceBodies=services.map(x=>String(x?.description||"").trim()).filter(Boolean);
   const serviceTitles=services.map((x,i)=>{
     const title=String(x?.title||"").replace(/\s+/g," ").trim();
@@ -642,24 +644,24 @@ export function buildCopyManifest(content,inputPayload={}) {
     masterPositioningTitle,
     content?.positioning_title,
     serviceTitles[1]
-  ],"Profilo operativo");
+  ],"Un partner concreto per il lavoro di ogni giorno.");
   const positioningBody=uniqueOr([
     masterPositioningBody,
     content?.positioning_body,
     serviceBodies[1],
     serviceBodies[2]
-  ],shortLocality ? "Operatività a "+shortLocality+"." : "Informazioni operative verificate.");
-  const servicesTitle=uniqueOr([content?.services_title],"Ambito operativo");
+  ],shortLocality ? "Competenza, servizio e rapporto diretto a "+shortLocality+"." : "Competenza, servizio e rapporto diretto.");
+  const servicesTitle=uniqueOr([content?.services_title],"Competenze e servizi");
   const servicesIntro=uniqueOr([
     content?.services_intro,
     serviceTitles.length>1 ? serviceTitles.join(" · ") : ""
-  ],serviceTitles.length===1 ? "Ambito verificato dell’attività." : "Servizi verificati.");
-  const trustTitle=uniqueOr([content?.trust_title],"Dati verificati");
+  ],serviceTitles.length===1 ? "Una competenza presentata con chiarezza e valore." : "Competenze complementari, raccontate con una gerarchia chiara.");
+  const trustTitle=uniqueOr([content?.trust_title],"Perché scegliere noi");
   const trustNorms=new Set(trustTexts.map(norm));
   const rawTrustIntro=String(content?.trust_intro||"").replace(/\s+/g," ").trim();
   const trustIntro=uniqueOr([
     rawTrustIntro && !trustNorms.has(norm(rawTrustIntro)) ? rawTrustIntro : ""
-  ],"Informazioni verificate.");
+  ],shortLocality ? "Affidabilità e presenza sul territorio di "+shortLocality+"." : "Affidabilità costruita su elementi concreti.");
   const bridgeTitle="Contatto diretto";
   const bridgeBody=verifiedContact || (shortLocality ? "Sede operativa: "+shortLocality : "Contatto aziendale verificato.");
   const closingTitle=uniqueOr([
@@ -701,21 +703,11 @@ export function buildCopyManifest(content,inputPayload={}) {
   trustPoints.forEach((s,i)=>{ out["TRUST_"+(i+1)]=String(s?.text||"").trim(); });
 
   if(String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1") {
-    const trustJoined=trustPoints.map(s=>String(s?.text||"").replace(/\s+/g," ").trim()).join(" | ");
-    const revenue=trustJoined.match(/fatturato\s+(20\d{2})\s+di\s+(€\s?[\d.,]+\s*(?:milioni?|miliardi?))/i);
-    const employees=trustJoined.match(/(\d+)\s+dipendenti/i);
+    const trustJoined=rawTrustPoints.map(item=>String(item?.text||"").replace(/\s+/g," ").trim()).join(" | ");
     const authorized=trustJoined.match(/Rivenditore\s+autorizzato\s+([^.|,]+)/i);
-    if(revenue?.[2]) {
-      out.TRUST_METRIC_1=revenue[2].replace(/\s+/g," ").trim();
-      out.TRUST_METRIC_LABEL_1="Fatturato "+revenue[1];
-    }
-    if(employees?.[1]) {
-      out.TRUST_METRIC_2=employees[1];
-      out.TRUST_METRIC_LABEL_2="Dipendenti";
-    }
     if(authorized?.[1]) {
-      out.TRUST_METRIC_3=authorized[1].trim();
-      out.TRUST_METRIC_LABEL_3="Rivenditore autorizzato";
+      out.TRUST_METRIC_1=authorized[1].trim();
+      out.TRUST_METRIC_LABEL_1="Rivenditore autorizzato";
     }
   }
   return out;
