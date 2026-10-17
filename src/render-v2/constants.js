@@ -1,8 +1,8 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V3_PREMIUM_HOME";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_2_PREMIUM_HOME";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V4_SHOWROOM_WOW";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_3_SHOWROOM_WOW";
 export const COMPILER_VERSION = "RS_COMPILER_V1_4_PREMIUM_HOME";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_C";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V5_PREMIUM_HOME";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V6_SHOWROOM_WOW";
 export const REMEDIATION_POLICY_VERSION = "V2_CONTACT_PROVENANCE_V2";
 
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
@@ -21,7 +21,9 @@ export const QA_SCORE_KEYS = Object.freeze([
   "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
   "premium_feel","wow_effect","prospect_desire","preview_sales_power",
   "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
-  "commercial_desirability","client_wow_effect"
+  "commercial_desirability","client_wow_effect",
+  "luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography",
+  "brand_elevation","cta_spectacle","showroom_conversion_power"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
