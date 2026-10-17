@@ -27,7 +27,14 @@ jobs:
         run: |
           set -euo pipefail
           PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"r93","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["R93 typography/layout refinement for the locked DEDIL pilot only."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Keep external AI disabled.","Preserve R92 launch-grade set-pieces while optimizing typography, full-bleed hero, professional header/menu and footer.","Do not start or mutate any other prospect."]}}'
-          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS"             --id "$INSTANCE_ID"             --config wrangler.render-v2.jsonc             --json | tee /tmp/trigger.json
+          set +e
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS"             --id "$INSTANCE_ID"             --config wrangler.render-v2.jsonc             --json > /tmp/trigger.json 2>&1
+          rc=$?
+          set -e
+          cat /tmp/trigger.json
+          if [ "$rc" -ne 0 ] && ! grep -q "already_exists" /tmp/trigger.json; then
+            exit "$rc"
+          fi
 
       - name: Wait for R93 candidate
         shell: bash
