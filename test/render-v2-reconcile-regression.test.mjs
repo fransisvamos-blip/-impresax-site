@@ -515,3 +515,14 @@ test("premium pilot requires iconography and graphic richness",()=>{
   assert.match(ai,/section_premium_quality/);
   assert.match(ai,/commercial_desirability/);
 });
+
+
+test("logo-first proof data becomes visual metrics and editorial ledgers",()=>{
+  assert.match(ai,/TRUST_METRIC_1/);
+  assert.match(ai,/TRUST_METRIC_LABEL_1/);
+  assert.match(grammar,/ixg-proof-metrics/);
+  assert.match(grammar,/ixg-proof-metric/);
+  assert.match(grammar,/grid-template-columns:160px minmax\(0,1fr\)!important/);
+  assert.match(grammar,/grid-template-columns:1fr!important;\n gap:0!important;\n border-top:1px solid rgba\(255,255,255,.18\)!important/);
+  assert.doesNotMatch(grammar,/content:"01"/);
+});
