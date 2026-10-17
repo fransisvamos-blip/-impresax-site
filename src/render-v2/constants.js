@@ -1,10 +1,10 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V10_FIFTEEN_K_VALUE";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_9_FIFTEEN_K_VALUE";
-export const COMPILER_VERSION = "RS_COMPILER_V1_10_FIFTEEN_K_VALUE";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V11_ICONIC_COMMISSIONED";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_10_ICONIC_COMMISSIONED";
+export const COMPILER_VERSION = "RS_COMPILER_V1_11_ICONIC_COMMISSIONED";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V12_FIFTEEN_K_VALUE";
-export const REMEDIATION_POLICY_VERSION = "V8_FIFTEEN_K_VALUE_POLICY";
-export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V13_ICONIC_COMMISSIONED";
+export const REMEDIATION_POLICY_VERSION = "V9_ICONIC_COMMISSIONED_POLICY";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1";
 export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
 export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
@@ -40,7 +40,10 @@ export const QA_SCORE_KEYS = Object.freeze([
   "header_composition_quality","navigation_professionalism","footer_composition_quality","footer_professionalism",
   "custom_made_feel","premium_art_direction","hero_wow_effect","brand_specificity",
   "imagery_premium_credibility","sales_structure_quality","detail_refinement",
-  "mobile_premium_integrity","fifteen_k_value_perception"
+  "mobile_premium_integrity","fifteen_k_value_perception",
+  "irreproducible_brand_authorship","commissioned_experience_quality",
+  "scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality",
+  "transition_art_direction","visual_memory_factor","cross_viewport_art_direction"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
