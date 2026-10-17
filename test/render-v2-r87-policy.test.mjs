@@ -228,7 +228,6 @@ test("R94 perceived-value contract blocks reusable low-authorship compositions",
   assert.ok(weakIssues.includes("SALES_ARCHITECTURE_MARKER_REQUIRED"));
   assert.ok(weakIssues.some(x=>x.startsWith("SIGNATURE_MOMENTS_REQUIRED:")));
   assert.ok(weakIssues.some(x=>x.startsWith("CUSTOM_MADE_MOMENTS_REQUIRED:")));
-  assert.ok(weakIssues.some(x=>x.startsWith("PREMIUM_IMAGERY_DENSITY_REQUIRED:")));
 
   const strong=[
     '<section id="hero" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true">{{asset:HERO_VISUAL}}</section>',

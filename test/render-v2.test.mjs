@@ -402,6 +402,7 @@ test("visual QA deterministic gate enforces fifteen-k value at 9.2",()=>{
 
 test("visual QA deterministic gate ignores inconsistent model pass boolean when all gates pass",()=>{
   const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9]));
+  scores.fifteen_k_value_perception=9.2;
   const gated=applyVisualQaScoreGates({
     scores,
     issues:[],

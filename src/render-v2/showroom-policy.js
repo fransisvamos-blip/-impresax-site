@@ -238,8 +238,6 @@ export function fifteenKValueViolations(mainHtml="",css="") {
   if(signatures<3) issues.push("SIGNATURE_MOMENTS_REQUIRED:"+signatures+"/3");
   const custom=(main.match(/\bdata-custom-made=["']true["']/gi)||[]).length;
   if(custom<3) issues.push("CUSTOM_MADE_MOMENTS_REQUIRED:"+custom+"/3");
-  const assets=(main.match(/\{\{asset:[A-Z0-9_]+\}\}/g)||[]).length;
-  if(assets<3) issues.push("PREMIUM_IMAGERY_DENSITY_REQUIRED:"+assets+"/3");
   if(!/box-shadow\s*:/i.test(styles) || !/(?:linear|radial|conic)-gradient\(/i.test(styles)) {
     issues.push("PREMIUM_DETAIL_DEPTH_REQUIRED");
   }
