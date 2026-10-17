@@ -1,4 +1,5 @@
-import { COMPILER_VERSION } from "./constants.js";
+import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
+import { copyPolicyViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -173,6 +174,16 @@ export function validateRenderSpec(spec, manifests) {
   const assetKeys=new Set(Object.keys(manifests?.assets||{}));
   const ctaKeys=new Set(Object.keys(manifests?.cta||{}));
   const identityKeys=new Set(Object.keys(manifests?.identity||{}));
+  const usedCopyKeys=tokenSet(main,COPY_TOKEN);
+  const usedAssetKeys=tokenSet(main,ASSET_TOKEN);
+  for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys)) issues.push(issue);
+
+  const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
+  const usedSectionAssets=usedAssetKeys.filter(key=>key!=="HERO_VISUAL");
+  const requiredSectionAssets=Math.min(MIN_SECTION_VISUALS,availableSectionAssets.length);
+  if(requiredSectionAssets>0 && usedSectionAssets.length<requiredSectionAssets) {
+    issues.push("SECTION_VISUAL_DENSITY_REQUIRED:"+usedSectionAssets.length+"/"+requiredSectionAssets);
+  }
 
   const heroStart=main.search(/<section\b[^>]*\bid\s*=\s*["']hero["'][^>]*>/i);
   if(heroStart<0) {
@@ -202,6 +213,17 @@ export function validateRenderSpec(spec, manifests) {
     const re=new RegExp('<section\\b[^>]*\\bid\\s*=\\s*["\\\']'+id+'["\\\'][^>]*>[\\s\\S]*?<\\/section>','i');
     return (main.match(re)||[])[0]||"";
   };
+  if(requiredSectionAssets>=MIN_SECTION_VISUALS) {
+    const sectionsUsingVisuals=sectionIds
+      .filter(id=>id!=="hero")
+      .filter(id=>{
+        const html=sectionHtml(id);
+        return usedSectionAssets.some(token=>html.includes("{{asset:"+token+"}}"));
+      });
+    if(new Set(sectionsUsingVisuals).size<MIN_SECTION_VISUALS) {
+      issues.push("SECTION_VISUAL_DISTRIBUTION_REQUIRED:"+new Set(sectionsUsingVisuals).size+"/"+MIN_SECTION_VISUALS);
+    }
+  }
   const positioningHtml=sectionHtml("positioning");
   if(positioningHtml && (!positioningHtml.includes("{{copy:POSITIONING_TITLE}}") || !positioningHtml.includes("{{copy:POSITIONING_BODY}}"))) {
     issues.push("POSITIONING_COPY_REQUIRED");
