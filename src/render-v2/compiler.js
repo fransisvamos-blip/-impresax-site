@@ -179,6 +179,15 @@ export function validateRenderSpec(spec, manifests) {
   for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys)) issues.push(issue);
   for(const issue of surfaceContractViolations(main)) issues.push(issue);
   for(const issue of flatStrongSectionBackgroundViolations(main,css)) issues.push(issue);
+  const brandRichPolicy=String(spec?.surface_policy||"").startsWith("IMPRESAX_RENDER_STANDARD_R89_");
+  if(brandRichPolicy) {
+    const brandSurfaceCount=(main.match(/\bdata-brand-surface=["'](?:primary|secondary|dark|tint)["']/gi)||[]).length;
+    if(brandSurfaceCount<2) issues.push("BRAND_RICH_SURFACES_REQUIRED:"+brandSurfaceCount+"/2");
+    if(identityKeys.has("PRIMARY_LOGO")) {
+      const watermarkCount=(main.match(/\bdata-brand-watermark\b/gi)||[]).length;
+      if(watermarkCount<1 || !main.includes("{{identity:PRIMARY_LOGO}}")) issues.push("OFFICIAL_LOGO_WATERMARK_REQUIRED");
+    }
+  }
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
   const usedSectionAssets=usedAssetKeys.filter(key=>key!=="HERO_VISUAL");
