@@ -1,0 +1,55 @@
+name: DEDIL r90 relaunch
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-r90-relaunch.yml"
+
+jobs:
+  relaunch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      V2_SHADOW_TOKEN: ${{ secrets.V2_SHADOW_TOKEN }}
+      BASE_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
+    steps:
+      - name: Relaunch DEDIL A only
+        id: launch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${V2_SHADOW_TOKEN:-}"
+          payload='{"pack_id":"8595c9d2-9d53-424b-a660-82102b9db5b3","variant_key":"A","run_key":"cabina-precomputed-v8-r90-launch-grade","force":true,"reset_budget":false,"event_prefix":"r90","reason":"CABINA_PRECOMPUTED_RENDER","parent_workflow_instance_id":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3"}'
+          code=$(curl -L -sS -o /tmp/launch.json -w "%{http_code}" -X POST             -H "Authorization: Bearer $V2_SHADOW_TOKEN"             -H "Content-Type: application/json"             --data "$payload"             --connect-timeout 8 --max-time 45             "$BASE_URL/shadow/relaunch-variant")
+          cat /tmp/launch.json
+          test "$code" = "202" -o "$code" = "200"
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/launch.json'))
+          assert d.get('ok') is True, d
+          wid=d.get('workflow_instance_id')
+          assert wid, d
+          open('/tmp/wid','w').write(wid)
+          print("workflow_instance_id="+wid)
+          PY
+
+      - name: Wait for candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          wid=$(cat /tmp/wid)
+          for i in {1..72}; do
+            code=$(curl -L -sS -o /tmp/status.json -w "%{http_code}"               -H "Authorization: Bearer $V2_SHADOW_TOKEN"               --connect-timeout 8 --max-time 25               "$BASE_URL/shadow/workflow/$wid" || true)
+            body=$(cat /tmp/status.json 2>/dev/null || true)
+            echo "attempt=$i code=$code body=$body"
+            if [ "$code" = "200" ] && echo "$body" | grep -Eq '"status".*"status":"complete"|"status".*"status":"completed"'; then
+              exit 0
+            fi
+            if echo "$body" | grep -Eqi '"status".*"status":"failed"|"status".*"status":"errored"'; then
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "Timed out waiting for DEDIL r90 candidate."
+          exit 1
