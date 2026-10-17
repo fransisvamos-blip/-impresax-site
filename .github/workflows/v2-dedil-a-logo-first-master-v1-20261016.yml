@@ -16,7 +16,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
       PACK_ID: 8595c9d2-9d53-424b-a660-82102b9db5b3
-      RUN_KEY: dedil-a-logo-first-wow-v6-editorial-full-home-20261017
+      RUN_KEY: dedil-a-logo-first-wow-v6-editorial-premium-20261017
     steps:
       - uses: actions/checkout@v4
         with:
