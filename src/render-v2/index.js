@@ -173,32 +173,17 @@ export default {
               updated_at=now()
           where id=1`;
       } catch {}
-      await tickRollout(env).catch(async(error)=>{
-        try {
-          await sql`
-            update render_v2_rollout_state
-            set metadata=coalesce(metadata,'{}'::jsonb)
-              || jsonb_build_object(
-                'scheduled_rollout_last_error',${String(error?.stack||error?.message||error).slice(0,5000)},
-                'scheduled_rollout_last_error_at',to_jsonb(now())
-              ),
-                updated_at=now()
-            where id=1`;
-        } catch {}
-      });
       try {
         const kickResult=await runPilotManualKick(env,sql);
-        if(kickResult?.ok===true) {
-          await sql`
-            update render_v2_rollout_state
-            set metadata=coalesce(metadata,'{}'::jsonb)
-              || jsonb_build_object(
-                'scheduled_pilot_kick_last_result',${JSON.stringify(kickResult)}::jsonb,
-                'scheduled_pilot_kick_last_at',to_jsonb(now())
-              ),
-              updated_at=now()
-            where id=1`;
-        }
+        await sql`
+          update render_v2_rollout_state
+          set metadata=coalesce(metadata,'{}'::jsonb)
+            || jsonb_build_object(
+              'scheduled_pilot_kick_last_result',${JSON.stringify(kickResult||{})}::jsonb,
+              'scheduled_pilot_kick_last_at',to_jsonb(now())
+            ),
+            updated_at=now()
+          where id=1`;
       } catch(error) {
         try {
           await sql`
@@ -212,6 +197,19 @@ export default {
             where id=1`;
         } catch {}
       }
+      await tickRollout(env).catch(async(error)=>{
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'scheduled_rollout_last_error',${String(error?.stack||error?.message||error).slice(0,5000)},
+                'scheduled_rollout_last_error_at',to_jsonb(now())
+              ),
+                updated_at=now()
+            where id=1`;
+        } catch {}
+      });
       const ref=String(env.V2_SHADOW_AUTOSTART||"").trim();
       if(!ref || !env.RENDER_PROSPECT_WORKFLOW) return;
       try {
