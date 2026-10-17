@@ -486,10 +486,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"].includes(String(params.initialFeedback?.reason||""));
         const providerFailoverDomain=
           ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER","UNKNOWN"].includes(String(domain));
-        // Premium V3 generation must not burn all visual revisions on provider instability.
+        // Premium V4 generation may use deterministic failover for recovery, but never for a SHOWROOM_HARD_RESET.
         // For zero-photo/home layouts, the deterministic spec is executable and still passes
         // through compiler, browser capture, HERO/VISUAL QA and SET QA before certification.
-        const deterministicFailover=!budget && providerFailoverDomain &&
+        const showroomHardReset=String(params.initialFeedback?.reason||"")==="SHOWROOM_HARD_RESET";
+        const deterministicFailover=!showroomHardReset && !budget && providerFailoverDomain &&
           (context.heroOnly || deterministicRecovery);
 
         if(deterministicFailover) {
