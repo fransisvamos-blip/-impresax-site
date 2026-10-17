@@ -385,10 +385,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const verified=explicitHeroAsset(context.assets);
       if(verified) return verified;
       if(context.cabinaPrecomputed) {
-        const requestedSha=String(context.packMetadata?.cabina_precomputed_hero_sha256||"").trim().toLowerCase();
-        const reusable=requestedSha
+        const perVariantHero=context.packMetadata?.cabina_precomputed_hero_sha256_by_variant||{};
+        const requestedSha=String(perVariantHero?.[params.variantKey]||context.packMetadata?.cabina_precomputed_hero_sha256||"").trim().toLowerCase();
+        let reusable=requestedSha
           ? await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha)
-          : await latestReusableHeroAsset(sql,params.packId,params.variantKey);
+          : null;
+        if(!reusable) reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
         if(!reusable) throw new Error("SYSTEM_INVARIANT:CABINA_APPROVED_HERO_REQUIRED");
         return {...reusable,cabina_precomputed:true};
       }
