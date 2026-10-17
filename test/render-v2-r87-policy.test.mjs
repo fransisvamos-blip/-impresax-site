@@ -16,13 +16,16 @@ import {
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R87 showroom standard is the global zero-extra-AI contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R88_SURFACE_ART_V1");
+test("R89 showroom standard is the global zero-extra-AI contract",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R89_SURFACE_ART_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
   assert.equal(showroomPolicySummary().visual.minimum_section_visuals,3);
   assert.equal(showroomPolicySummary().visual.section_surfaces,"ART_DIRECTED_LAYERED_BRAND_SPECIFIC");
+  assert.equal(showroomPolicySummary().visual.minimum_brand_rich_sections,2);
+  assert.equal(showroomPolicySummary().visual.logo_watermark,"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED");
+  assert.equal(showroomPolicySummary().visual.neutral_only_page,"FORBIDDEN");
 });
 
 test("revenue and headcount remain source evidence but are suppressed from homepage proof",()=>{
@@ -86,7 +89,7 @@ test("policy detects cheap internal copy and section visual inventory",()=>{
   }),["PHOTO_A","PHOTO_B","PHOTO_C"]);
 });
 
-test("workflow and compiler contain hard R87 gates",async()=>{
+test("workflow and compiler contain hard R89 gates",async()=>{
   const [workflow,compiler,metrics]=await Promise.all([
     readFile(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8"),
     readFile(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8"),
@@ -96,6 +99,8 @@ test("workflow and compiler contain hard R87 gates",async()=>{
   assert.match(workflow,/CABINA_PRECOMPUTE_REQUIRED/);
   assert.match(compiler,/SECTION_VISUAL_DENSITY_REQUIRED/);
   assert.match(compiler,/SECTION_VISUAL_DISTRIBUTION_REQUIRED/);
+  assert.match(compiler,/BRAND_RICH_SURFACES_REQUIRED/);
+  assert.match(compiler,/OFFICIAL_LOGO_WATERMARK_REQUIRED/);
   assert.match(metrics,/EXTERNAL_AI_DISABLED/);
 });
 
@@ -105,4 +110,13 @@ test("flat section surface policy rejects strong single-fill bands",async()=>{
   const main='<section id="value" class="surface" data-surface="art-directed"></section>';
   assert.deepEqual(flatStrongSectionBackgroundViolations(main,'.surface{background:#111315}'),["FLAT_STRONG_SECTION_BACKGROUND_FORBIDDEN:value"]);
   assert.deepEqual(flatStrongSectionBackgroundViolations(main,'.surface{background:linear-gradient(135deg,#f4f1ea,#fff)}'),[]);
+});
+
+
+test("R89 compiler contract requires brand-rich surfaces and watermark",async()=>{
+  const compiler=await readFile(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8");
+  assert.match(compiler,/data-brand-surface/);
+  assert.match(compiler,/data-brand-watermark/);
+  assert.match(compiler,/BRAND_RICH_SURFACES_REQUIRED/);
+  assert.match(compiler,/OFFICIAL_LOGO_WATERMARK_REQUIRED/);
 });
