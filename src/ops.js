@@ -495,11 +495,27 @@ async function dashboard(sql) {
               and r.status='RENDER_READY'
               and r.desktop_r2_key is not null
               and r.mobile_r2_key is not null
-              and exists(
-                select 1 from render_qa_results_v2 hq
-                where hq.variant_revision_id=r.id
-                  and hq.qa_type='HERO_VISUAL'
-                  and hq.status='PASS'
+              and (
+                exists(
+                  select 1 from render_qa_results_v2 hq
+                  where hq.variant_revision_id=r.id
+                    and hq.qa_type='HERO_VISUAL'
+                    and hq.status='PASS'
+                )
+                or (
+                  exists(
+                    select 1 from render_qa_results_v2 dq
+                    where dq.variant_revision_id=r.id
+                      and dq.qa_type='CABINA_DETERMINISTIC'
+                      and dq.status='PASS'
+                  )
+                  and exists(
+                    select 1 from render_qa_results_v2 cq
+                    where cq.variant_revision_id=r.id
+                      and cq.qa_type='CABINA_VISUAL'
+                      and cq.status='PASS'
+                  )
+                )
               )
           ) as render_v2_ready_count
         from render_v2_packs p
@@ -566,7 +582,29 @@ async function prospectDetail(sql, id) {
             where hq.variant_revision_id=r.id
               and hq.qa_type='HERO_VISUAL'
               and hq.status='PASS'
-          ) as hero_qa_passed
+          ) as hero_qa_passed,
+          (
+            exists(
+              select 1 from render_qa_results_v2 hq
+              where hq.variant_revision_id=r.id
+                and hq.qa_type='HERO_VISUAL'
+                and hq.status='PASS'
+            )
+            or (
+              exists(
+                select 1 from render_qa_results_v2 dq
+                where dq.variant_revision_id=r.id
+                  and dq.qa_type='CABINA_DETERMINISTIC'
+                  and dq.status='PASS'
+              )
+              and exists(
+                select 1 from render_qa_results_v2 cq
+                where cq.variant_revision_id=r.id
+                  and cq.qa_type='CABINA_VISUAL'
+                  and cq.status='PASS'
+              )
+            )
+          ) as visual_preview_passed
         from render_v2_variants v
         join render_v2_packs p on p.id=v.render_pack_id
         left join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
@@ -594,12 +632,12 @@ async function prospectDetail(sql, id) {
       v.status==="RENDER_READY" &&
       v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
-      Boolean(v.hero_qa_passed);
+      Boolean(v.visual_preview_passed);
     const previewAllowed=(normalPackReady||pilotCandidate) &&
       v.status==="RENDER_READY" &&
       v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
-      Boolean(v.hero_qa_passed);
+      Boolean(v.visual_preview_passed);
     return {
       ...v,
       source_system:"V2",
