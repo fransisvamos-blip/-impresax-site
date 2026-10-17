@@ -15,16 +15,17 @@ function renderVariantCardV2(variant, pack, prospectId) {
   const complete = Boolean(variant.desktop_render_url && variant.mobile_render_url);
   const selected = Boolean(variant.selected);
   const sourceV2 = variant.source_system === "V2";
+  const pilotCandidate = Boolean(variant.pilot_candidate);
   let html = "";
   html += '<article class="render-pack-card render-variant-card ' + (selected ? 'approved' : '') + '">';
   html += '<div class="render-pack-head"><div>';
-  html += '<span class="kicker">VERSIONE ' + esc(variant.variant_key) + '</span>';
+  html += '<span class="kicker">' + (pilotCandidate ? 'PILOT MASTER · REV. ' + esc(variant.pilot_candidate_revision || variant.revision || '') : 'VERSIONE ' + esc(variant.variant_key)) + '</span>';
   html += '<h3>' + esc(variant.name || ("Versione " + variant.variant_key)) + '</h3>';
   html += '</div><span class="' + statusClass(selected ? "APPROVED" : variant.status) + '">';
-  html += selected ? (pack.approved_reference ? 'IMPLEMENTATA' : 'SCELTA · NON ANCORA IMPLEMENTATA') : esc(tStatus(variant.status));
+  html += pilotCandidate ? 'PRONTO PER APPROVAZIONE CABINA' : (selected ? (pack.approved_reference ? 'IMPLEMENTATA' : 'SCELTA · NON ANCORA IMPLEMENTATA') : esc(tStatus(variant.status)));
   html += '</span></div>';
 
-  html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390 · ' + renderSyncStateLabel(variant) + '</div>';
+  html += '<div class="full-home-note">' + (pilotCandidate ? 'Pilot singolo master · Desktop 1440 + Mobile 390 · Revisione visiva Cabina' : 'Home completa obbligatoria · Desktop 1440 + Mobile 390') + ' · ' + renderSyncStateLabel(variant) + '</div>';
   html += '<div class="render-pair">';
 
   html += '<div><div class="render-label">Home completa desktop · 1440</div>';
@@ -52,14 +53,19 @@ function renderVariantCardV2(variant, pack, prospectId) {
 
   html += '<div class="render-pack-actions">';
   html += '<span class="id">' + (variant.reference_score != null ? 'Punteggio ' + esc(variant.reference_score) : 'Versione completa') + '</span>';
-  html += '<div class="render-decision-actions">';
-  html += '<button class="choose-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
-  if (!complete || rejected || selected || pack.approved_reference) html += ' disabled';
-  html += '>' + (selected ? 'Versione scelta' : 'Scegli questa versione') + '</button>';
-  html += '<button class="implement-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
-  if (!complete || rejected || !selected || pack.approved_reference) html += ' disabled';
-  html += '>' + (pack.approved_reference && selected ? 'Versione implementata' : 'Implementa questa versione') + '</button>';
-  html += '</div></div></article>';
+  if (pilotCandidate) {
+    html += '<div class="render-decision-actions"><span class="preview-site disabled">PILOT · REVISIONE VISIVA CABINA</span></div>';
+  } else {
+    html += '<div class="render-decision-actions">';
+    html += '<button class="choose-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
+    if (!complete || rejected || selected || pack.approved_reference) html += ' disabled';
+    html += '>' + (selected ? 'Versione scelta' : 'Scegli questa versione') + '</button>';
+    html += '<button class="implement-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
+    if (!complete || rejected || !selected || pack.approved_reference) html += ' disabled';
+    html += '>' + (pack.approved_reference && selected ? 'Versione implementata' : 'Implementa questa versione') + '</button>';
+    html += '</div>';
+  }
+  html += '</div></article>';
   return html;
 }
 
@@ -105,15 +111,20 @@ renderRenderingList = function() {
     rows.forEach(p => {
       const v2ReadyCount=Number(p.render_v2_ready_count||0);
       const v2Ready=String(p.render_v2_status||"").toUpperCase()==="RENDER_READY" && v2ReadyCount===3;
-      const visualStatus=v2Ready ? "RENDER_READY" : (p.render_status || p.pipeline_status);
-      const visualLabel=v2Ready ? "3 VERSIONI PRONTE" : tStatus(visualStatus);
+      const pilotCandidate=Boolean(p.render_v2_pilot_candidate);
+      const visualStatus=pilotCandidate ? "RENDER_READY" : (v2Ready ? "RENDER_READY" : (p.render_status || p.pipeline_status));
+      const visualLabel=pilotCandidate
+        ? "PILOT PRONTO · REV. " + esc(p.render_v2_pilot_candidate_revision || "")
+        : (v2Ready ? "3 VERSIONI PRONTE" : tStatus(visualStatus));
       html += '<article class="render-prospect-row ' + (state.renderingSelected === p.id_prospect ? 'selected' : '') + '">';
       html += '<button class="render-prospect-open" data-render-prospect="' + esc(p.id_prospect) + '">';
       html += '<span><strong>' + esc(p.azienda) + '</strong><small>' + esc(tVertical(p.vertical)) + '</small></span>';
-      html += '<span class="' + statusClass(v2Ready ? "RENDER_READY" : p.pipeline_status) + '">' + esc(visualLabel) + '</span>';
+      html += '<span class="' + statusClass((pilotCandidate || v2Ready) ? "RENDER_READY" : p.pipeline_status) + '">' + esc(visualLabel) + '</span>';
       html += '</button>';
       html += '<div class="render-prospect-actions">';
-      if (v2Ready) {
+      if (pilotCandidate) {
+        html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri pilot rev. ' + esc(p.render_v2_pilot_candidate_revision || "") + ' →</button>';
+      } else if (v2Ready) {
         html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri A / B / C →</button>';
       } else if (v2ReadyCount>0) {
         html += '<span class="preview-site disabled">' + esc(v2ReadyCount) + '/3 versioni certificate</span>';
@@ -156,6 +167,7 @@ openRenderingProspect = async function(id) {
     const latestV2Pack = v2Packs[0] || null;
     const latestV2Variants = latestV2Pack ? v2Variants.filter(v => v.render_pack_id === latestV2Pack.id) : [];
     const certifiedV2Variants = latestV2Variants.filter(v => Boolean(v.desktop_render_url && v.mobile_render_url));
+    const pilotCandidateVariants = latestV2Variants.filter(v => Boolean(v.pilot_candidate && v.desktop_render_url && v.mobile_render_url));
 
     let renderContent = "";
 
@@ -165,7 +177,12 @@ openRenderingProspect = async function(id) {
       !["RENDER_READY","SELECTED","APPROVED"].includes(v2PackStatus)
     );
 
-    if (premiumUpgrade) {
+    if (pilotCandidateVariants.length) {
+      renderContent += '<div class="render-contract-note"><strong>PILOT MASTER PRONTO · REV. ' + esc(pilotCandidateVariants[0].pilot_candidate_revision || "") + '</strong><span>Questa è la candidate singola attualmente in revisione Cabina. La queue globale resta bloccata: B/C e gli altri prospect non partono finché il pilot non viene approvato.</span></div>';
+      pilotCandidateVariants.forEach(v => {
+        renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
+      });
+    } else if (premiumUpgrade) {
       renderContent += '<div class="render-contract-note warning"><strong>UPGRADE PREMIUM HOME IN CORSO</strong><span>Stiamo ricostruendo le 3 proposte con header/menu premium, hero completa con CTA, sezioni commerciali, trust, CTA finale e footer. Le nuove versioni compariranno insieme solo dopo la certificazione completa A/B/C.</span></div>';
     } else if (latestV2Pack && certifiedV2Variants.length) {
       renderContent += '<div class="render-contract-note"><strong>PREMIUM HOME · ' + certifiedV2Variants.length + '/3 VERSIONI CERTIFICATE</strong><span>Queste sono le revisioni complete certificate. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
