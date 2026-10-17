@@ -1626,6 +1626,11 @@ export async function handleOpsRequest(request, env) {
            from prospects p
           where p.render_status='RENDER_READY'
             and not exists (
+              select 1 from render_v2_packs vp
+               where vp.prospect_id=p.id
+                 and vp.status not in ('CANCELLED','SUPERSEDED')
+            )
+            and not exists (
               select 1
                 from lateral (
                   select rp.*
@@ -1722,6 +1727,10 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("/ops/api/render-v2/select") &&
         renderUiText.includes("/ops/api/render-v2/implement") &&
         renderUiText.includes("data-render-source");
+      const renderUiPilotBridge =
+        renderUiText.includes("PILOT MASTER PRONTO") &&
+        renderUiText.includes("Apri pilot rev.") &&
+        renderUiText.includes("pilotCandidate");
       const renderV2ArtifactsBinding=Boolean(env.RENDER_ARTIFACTS && typeof env.RENDER_ARTIFACTS.get==="function");
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
@@ -1732,6 +1741,7 @@ export async function handleOpsRequest(request, env) {
         renderUiAsset.ok &&
         renderUiTwoStep &&
         renderUiV2Bridge &&
+        renderUiPilotBridge &&
         renderV2ArtifactsBinding &&
         frozenDbGuard &&
         frozenDbGuardCurrent &&
@@ -1802,8 +1812,9 @@ export async function handleOpsRequest(request, env) {
         render_selection_mode: "TWO_STEP_EXPLICIT",
         render_ui_two_step: renderUiTwoStep,
         render_v2_admin_bridge: renderUiV2Bridge,
+        render_v2_pilot_bridge: renderUiPilotBridge,
         render_v2_artifacts_binding: renderV2ArtifactsBinding,
-        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_BRIDGE_20261014",
+        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_PILOT_BRIDGE_20261017",
         legacy_render_transports: "DISABLED",
         render_ready_count: Number(rows[0]?.render_ready_count || 0),
         false_render_ready_count: falseRenderReady,
