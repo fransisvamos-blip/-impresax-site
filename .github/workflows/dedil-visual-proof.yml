@@ -1,0 +1,45 @@
+name: DEDIL Visual Proof
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-visual-proof.yml"
+  workflow_dispatch:
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Wrangler
+        run: npm install --no-audit --no-fund
+      - name: Fetch DEDIL screenshots from private R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dedil-visual-proof
+          bucket="impresax-render-v2-shadow"
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r62/desktop-1440.jpg" --file dedil-visual-proof/rev62-desktop.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r62/mobile-390.jpg" --file dedil-visual-proof/rev62-mobile.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r77/desktop-1440.jpg" --file dedil-visual-proof/rev77-desktop.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r77/mobile-390.jpg" --file dedil-visual-proof/rev77-mobile.jpg --remote
+          sha256sum dedil-visual-proof/*.jpg | tee dedil-visual-proof/SHA256SUMS.txt
+          test "$(sha256sum dedil-visual-proof/rev62-desktop.jpg | cut -d' ' -f1)" = "ab2c9bf645e15bdb69b05c48ede3b3380b568bf912dc616d6ab4b128ced9a963"
+          test "$(sha256sum dedil-visual-proof/rev62-mobile.jpg | cut -d' ' -f1)" = "e03096ecfbc6415de2201191803b09110ccfe9cda54b7740a398a1f86e95b7ee"
+          test "$(sha256sum dedil-visual-proof/rev77-desktop.jpg | cut -d' ' -f1)" = "7910398e73e6592cb281332c7dd2b09076e8bcab5d23b6088d3494fca810f56d"
+          test "$(sha256sum dedil-visual-proof/rev77-mobile.jpg | cut -d' ' -f1)" = "bac63c9bd8d6eb26ef9c314f0fbdaae1ee5d5070a1c2510e6baf6b4ded21614a"
+      - name: Upload visual proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: dedil-rev62-vs-rev77
+          path: dedil-visual-proof/
+          if-no-files-found: error
+          retention-days: 1
