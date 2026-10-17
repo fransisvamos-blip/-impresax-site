@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES } from "./constants.js";
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
@@ -1149,7 +1149,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     await step.do("spawn-initial-variants",async()=>{
       let {slots,limit,active}=await renderConcurrencyState(sql);
       const launched=[],deferred=[];
-      for(const key of ["A","B","C"]) {
+      for(const key of VARIANT_KEYS) {
         if(slots<=0) {
           deferred.push(key);
           continue;
@@ -1188,7 +1188,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     });
 
     const previewEvents={};
-    for(const key of ["A","B","C"]) {
+    for(const key of VARIANT_KEYS) {
       const state=await step.do("check-preview-state-"+key,async()=>{
         const rows=await sql`
           select v.best_preview_revision,v.status,
@@ -1211,7 +1211,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     if(allPreview) await step.do("mark-preview-ready",async()=>setPackStatus(sql,p.packId,"PREVIEW_READY"));
 
     const terminal={};
-    for(const key of ["A","B","C"]) {
+    for(const key of VARIANT_KEYS) {
       const state=await step.do("check-terminal-state-"+key,async()=>{
         const rows=await sql`
           select v.status,v.certified_revision,
@@ -1243,7 +1243,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       await step.do("set-"+setCycle+"-mark-qa",async()=>setPackStatus(sql,p.packId,"QA_RUNNING",{set_cycle:setCycle}));
       const frames=await step.do("set-"+setCycle+"-load-frames",async()=>{
         const out={};
-        for(const key of ["A","B","C"]) {
+        for(const key of VARIANT_KEYS) {
           const variantId=persisted.variants[key];
           const rev=await latestCertifiedRevision(sql,variantId);
           if(!rev) throw new Error("SYSTEM_INVARIANT:CERTIFIED_REVISION_MISSING:"+key);
@@ -1394,21 +1394,30 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
                     ),
                     'set_qa_cycle',${setCycle}::int,
                     'hero_visual_qa_passed',3,
-                    'variant_visual_qa_passed',3,
+                    'variant_visual_qa_passed',${MINIMUM_VARIANTS_PER_PACK}::int,
+                    'triple_variant_required',${TRIPLE_VARIANT_REQUIRED},
+                    'minimum_variants_per_pack',${MINIMUM_VARIANTS_PER_PACK}::int,
+                    'variant_divergence_required',${VARIANT_DIVERGENCE_REQUIRED},
+                    'variant_divergence_floor',${VARIANT_DIVERGENCE_FLOOR}::numeric,
+                    'variant_creative_roles',${JSON.stringify(VARIANT_CREATIVE_ROLES)}::jsonb,
+                    'winner_auto_select',${AUTO_SELECT_VARIANT_WINNER},
+                    'winner_variant',${setQa.winner_variant||"A"},
+                    'master_auto_approve',${MASTER_AUTO_APPROVE},
+                    'master_reference_status','AWAITING_CABINA_VISUAL_APPROVAL',
                     'final_gate_atomic',true,
                     'final_gate_verified_at',to_jsonb(now())
                   ),
                 render_ready_at=coalesce(rp.render_ready_at,now()),
                 updated_at=now()
             where rp.id=${p.packId}::uuid
-              and (select variant_count=3 and contract_ok=true from current_revs)
-              and (select passed from hero_gate)=3
-              and (select passed from variant_gate)=3
+              and (select variant_count=${MINIMUM_VARIANTS_PER_PACK} and contract_ok=true from current_revs)
+              and (select passed from hero_gate)=${MINIMUM_VARIANTS_PER_PACK}
+              and (select passed from variant_gate)=${MINIMUM_VARIANTS_PER_PACK}
               and (select status from current_set)='PASS'
               and coalesce((select (scores->>'set_quality')::numeric from current_set),0)>=8
-              and coalesce((select (scores->>'diversity_ab')::numeric from current_set),0)>=8
-              and coalesce((select (scores->>'diversity_ac')::numeric from current_set),0)>=8
-              and coalesce((select (scores->>'diversity_bc')::numeric from current_set),0)>=8
+              and coalesce((select (scores->>'diversity_ab')::numeric from current_set),0)>=${VARIANT_DIVERGENCE_FLOOR}
+              and coalesce((select (scores->>'diversity_ac')::numeric from current_set),0)>=${VARIANT_DIVERGENCE_FLOOR}
+              and coalesce((select (scores->>'diversity_bc')::numeric from current_set),0)>=${VARIANT_DIVERGENCE_FLOOR}
               and coalesce((select (scores->>'prospect_fit_a')::numeric from current_set),0)>=8
               and coalesce((select (scores->>'prospect_fit_b')::numeric from current_set),0)>=8
               and coalesce((select (scores->>'prospect_fit_c')::numeric from current_set),0)>=8
