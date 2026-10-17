@@ -1,10 +1,10 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V5_EDITORIAL_SHOWROOM";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_4_EDITORIAL_SHOWROOM";
-export const COMPILER_VERSION = "RS_COMPILER_V1_5_EDITORIAL_SHOWROOM";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V6_ART_DIRECTED_SURFACES";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_5_ART_DIRECTED_SURFACES";
+export const COMPILER_VERSION = "RS_COMPILER_V1_6_SURFACE_POLICY";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V7_EDITORIAL_SHOWROOM";
-export const REMEDIATION_POLICY_VERSION = "V3_EDITORIAL_ASSET_AND_CONTENT_POLICY";
-export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R87_V1";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V8_ART_DIRECTED_SURFACES";
+export const REMEDIATION_POLICY_VERSION = "V4_ART_DIRECTED_SURFACE_POLICY";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R88_SURFACE_ART_V1";
 export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
 export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
@@ -29,7 +29,8 @@ export const QA_SCORE_KEYS = Object.freeze([
   "luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography",
   "brand_elevation","cta_spectacle","showroom_conversion_power",
   "section_imagery_quality","real_imagery_credibility","copy_sophistication",
-  "section_copy_distinctness","visual_storytelling"
+  "section_copy_distinctness","visual_storytelling","surface_personalization",
+  "background_art_direction","brand_motif_integration","no_flat_color_blocks"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
