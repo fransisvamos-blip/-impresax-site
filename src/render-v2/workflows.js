@@ -382,14 +382,28 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
         if(reusable) return reusable;
       }
-      return createGeneratedHeroAsset(this.env,sql,{
-        packId:params.packId,
-        inputPayload:context.inputPayload,
-        direction:context.direction,
-        variantKey:params.variantKey,
-        workflowInstanceId:event.instanceId,
-        cycle:1
-      });
+      try {
+        return await createGeneratedHeroAsset(this.env,sql,{
+          packId:params.packId,
+          inputPayload:context.inputPayload,
+          direction:context.direction,
+          variantKey:params.variantKey,
+          workflowInstanceId:event.instanceId,
+          cycle:1
+        });
+      } catch(error) {
+        if(String(params.initialFeedback?.reason||"")==="SHOWROOM_HARD_RESET") {
+          const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
+          if(reusable) {
+            return {
+              ...reusable,
+              showroom_hero_fallback:true,
+              showroom_hero_fallback_reason:"NEW_HERO_PREQA_REJECTED_AFTER_3_ATTEMPTS"
+            };
+          }
+        }
+        throw error;
+      }
     });
     context.assets={...context.assets,HERO_VISUAL:heroAsset};
     context.editorialAssetTokens=[...new Set([...context.editorialAssetTokens,"HERO_VISUAL"])];
