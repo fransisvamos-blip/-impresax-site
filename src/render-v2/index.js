@@ -1,7 +1,7 @@
 export { RenderProspectWorkflow, RenderVariantWorkflow, RenderChaosProbeWorkflow, RenderInputRemediationWorkflow } from "./workflows.js";
 import { db, packSnapshot, persistWorkflow, setPackStatus } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
-import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED, MIN_SECTION_VISUALS } from "./constants.js";
 import { reconcileV2 } from "./reconcile.js";
 import { budgetSnapshot } from "./metrics.js";
 import { selectCertifiedVariant, buildReferenceManifest } from "./manifest.js";
@@ -9,6 +9,7 @@ import { tickRollout, rolloutStatus } from "./rollout.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { prospectCircuitState, packCircuitOverridePending, consumePackCircuitOverride } from "./circuit.js";
 import { operationalInvariantSnapshot } from "./health.js";
+import { showroomPolicySummary } from "./showroom-policy.js";
 
 function json(data,status=200){ return Response.json(data,{status,headers:{"cache-control":"no-store"}}); }
 
@@ -119,15 +120,21 @@ export default {
         });
       } catch {}
       const bindings={
-        ai:Boolean(env.AI),browser:Boolean(env.BROWSER),r2:Boolean(env.RENDER_ARTIFACTS),
+        ai_provider_bound:Boolean(env.AI),browser:Boolean(env.BROWSER),r2:Boolean(env.RENDER_ARTIFACTS),
         db:Boolean(env.OPS_DATABASE_URL),parent_workflow:Boolean(env.RENDER_PROSPECT_WORKFLOW),
         variant_workflow:Boolean(env.RENDER_VARIANT_WORKFLOW)
       };
-      const healthy=database_connected && hero_db_guard && Object.values(bindings).every(Boolean);
+      const requiredBindings=[bindings.browser,bindings.r2,bindings.db,bindings.parent_workflow,bindings.variant_workflow];
+      const healthy=database_connected && hero_db_guard && requiredBindings.every(Boolean);
       return json({
         ok:healthy,service:"impresax-render-v2-shadow",mode:"SHADOW",
         quality_contract:QUALITY_CONTRACT_VERSION,engine:EXECUTION_ENGINE_VERSION,
         compiler:COMPILER_VERSION,model_routes:MODEL_ROUTE_VERSION,
+        showroom_rules_version:SHOWROOM_RULES_VERSION,
+        render_generation_mode:RENDER_GENERATION_MODE,
+        external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,
+        minimum_section_visuals:MIN_SECTION_VISUALS,
+        showroom_policy:showroomPolicySummary(),
         database_connected,
         hero_contract_required:true,
         hero_db_guard,
@@ -137,7 +144,7 @@ export default {
         premium_home_score_floor:8,
         showroom_wow_contract_required:true,
         showroom_master_score_floor:9,
-        showroom_master_dimensions:["luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle","showroom_conversion_power","commercial_desirability","client_wow_effect"],
+        showroom_master_dimensions:["luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle","showroom_conversion_power","commercial_desirability","client_wow_effect","section_imagery_quality","real_imagery_credibility","copy_sophistication","section_copy_distinctness","visual_storytelling"],
         premium_home_required_sections:["hero","positioning","services","trust","bridge","final-cta"],
         premium_home_shell_required:["header","navigation","header_cta","footer_navigation"],
         operational_ok:operational_invariants?.operational_ok===true,
