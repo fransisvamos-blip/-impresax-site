@@ -1,0 +1,46 @@
+name: DEDIL r87 proof export
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-r87-proof-export.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Download r87 proofs
+        run: |
+          set -euo pipefail
+          mkdir -p ops/proofs/dedil-r87
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r87/desktop-1440.jpg" --remote --file ops/proofs/dedil-r87/desktop-1440.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r87/mobile-390.jpg" --remote --file ops/proofs/dedil-r87/mobile-390.jpg
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image
+          im=Image.open("ops/proofs/dedil-r87/desktop-1440.jpg").convert("RGB")
+          w=1050; h=round(im.height*w/im.width)
+          im=im.resize((w,h))
+          im.save("ops/proofs/dedil-r87/desktop-review.jpg","JPEG",quality=72,optimize=True)
+          PY
+      - name: Commit proofs
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Bot"
+          git config user.email "rendering-bot@impresax.local"
+          git add ops/proofs/dedil-r87
+          git diff --cached --quiet || git commit -m "chore(render-v2): export DEDIL r87 visual proof"
+          git push origin HEAD:rendering-v2-shadow
