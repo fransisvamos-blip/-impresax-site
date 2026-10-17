@@ -310,12 +310,17 @@ test("zero-photo grammar compiles all three variants",async()=>{
   };
   for(const variantKey of ["A","B","C"]) {
     const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true});
-    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R93_LAUNCH_GRADE_TYPOGRAPHY_V1");
+    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1");
     assert.ok((built.spec.main_html.match(/data-brand-surface=/g)||[]).length>=3);
     assert.match(built.spec.main_html,/data-launch-hero="true"/);
     assert.match(built.spec.main_html,/data-hero-full-bleed="true"/);
     assert.match(built.spec.main_html,/data-typography-system="responsive"/);
+    assert.match(built.spec.main_html,/data-value-perception="15k"/);
+    assert.match(built.spec.main_html,/data-brand-specific="true"/);
+    assert.match(built.spec.main_html,/data-sales-architecture="true"/);
     assert.ok((built.spec.main_html.match(/data-copy-density="controlled"/g)||[]).length>=4);
+    assert.ok((built.spec.main_html.match(/data-custom-made="true"/g)||[]).length>=3);
+    assert.ok((built.spec.main_html.match(/data-signature-moment="true"/g)||[]).length>=3);
     assert.ok((built.spec.main_html.match(/data-spectacle-moment="true"/g)||[]).length>=2);
     assert.ok((built.spec.main_html.match(/data-stage-depth=/g)||[]).length>=3);
     assert.match(built.spec.custom_css,/--ix-display-font:/);
@@ -381,6 +386,18 @@ test("visual QA deterministic gate synthesizes actionable feedback for sub-9 mas
   assert.equal(gated.master_gate_floor,8.5);
   assert.ok(gated.issues.some(x=>x.target==="footer_quality"&&x.severity==="major"));
   assert.ok(gated.actions.some(x=>String(x).includes("footer_quality")));
+});
+
+test("visual QA deterministic gate enforces fifteen-k value at 9.2",()=>{
+  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9.4]));
+  scores.fifteen_k_value_perception=9.1;
+  const gated=applyVisualQaScoreGates({
+    scores,issues:[],actions:[],logoFirstMaster:true,
+    masterGateKeys:["custom_made_feel","premium_art_direction","fifteen_k_value_perception"]
+  });
+  assert.equal(gated.pass,false);
+  assert.equal(gated.fifteen_k_value_floor,9.1);
+  assert.ok(gated.issues.some(x=>x.target==="fifteen_k_value_perception"));
 });
 
 test("visual QA deterministic gate ignores inconsistent model pass boolean when all gates pass",()=>{

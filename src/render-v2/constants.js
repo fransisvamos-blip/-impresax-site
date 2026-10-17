@@ -1,10 +1,10 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V9_TYPOGRAPHIC_COMPOSITION";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_8_TYPOGRAPHIC_COMPOSITION";
-export const COMPILER_VERSION = "RS_COMPILER_V1_9_TYPOGRAPHIC_COMPOSITION";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V10_FIFTEEN_K_VALUE";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_9_FIFTEEN_K_VALUE";
+export const COMPILER_VERSION = "RS_COMPILER_V1_10_FIFTEEN_K_VALUE";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V11_TYPOGRAPHIC_COMPOSITION";
-export const REMEDIATION_POLICY_VERSION = "V7_TYPOGRAPHIC_COMPOSITION_POLICY";
-export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R93_LAUNCH_GRADE_TYPOGRAPHY_V1";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V12_FIFTEEN_K_VALUE";
+export const REMEDIATION_POLICY_VERSION = "V8_FIFTEEN_K_VALUE_POLICY";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1";
 export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
 export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
@@ -37,7 +37,10 @@ export const QA_SCORE_KEYS = Object.freeze([
   "text_breathing","responsive_type_quality","hero_full_bleed","copy_density_control",
   "desktop_readability_balance","mobile_readability_balance","font_fit_and_originality",
   "headline_line_break_quality","spacing_rhythm",
-  "header_composition_quality","navigation_professionalism","footer_composition_quality","footer_professionalism"
+  "header_composition_quality","navigation_professionalism","footer_composition_quality","footer_professionalism",
+  "custom_made_feel","premium_art_direction","hero_wow_effect","brand_specificity",
+  "imagery_premium_credibility","sales_structure_quality","detail_refinement",
+  "mobile_premium_integrity","fifteen_k_value_perception"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({

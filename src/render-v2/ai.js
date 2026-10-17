@@ -839,6 +839,15 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- SPACING RHYTHM RULE: spacing is part of the art direction. Use explicit desktop/mobile vertical rhythm instead of equal gaps or cramped stacking.",
     "- HEADER / MENU RULE: the top navigation must look intentionally designed and professionally resolved: balanced logo scale, calm spacing, legible navigation hierarchy, confident primary CTA and strong mobile behavior. It must not look like a default website header.",
     "- FOOTER RULE: the footer is the final scene of the brand experience, not an afterthought. It needs clear identity, navigation hierarchy, contact structure, generous spacing and a premium branded surface.",
+    "- R94 VALUE-PERCEPTION NORTH STAR: the site may be sold around EUR 2,500, but the screenshots must plausibly look like a EUR 10,000-15,000 top-tier agency project. If it merely looks worth the selling price, it fails.",
+    "- CUSTOM-MADE GATE: the composition must feel difficult to reuse unchanged for another prospect. Require at least three authored signature moments tied to this brand, sector, imagery and commercial story.",
+    "- PREMIUM ART-DIRECTION GATE: judge the whole page as a commissioned brand experience, not a component library. Strong hero alone cannot compensate for ordinary middle sections.",
+    "- BRAND SPECIFICITY GATE: logo, brand color, geometry, imagery, copy hierarchy and sector cues must create unmistakable ownership by the prospect.",
+    "- IMAGERY VALUE GATE: imagery must look credible, high-resolution, relevant and intentionally art-directed. Cheap stock, obvious AI look, weak crops or low-impact photos destroy the 15K perception.",
+    "- SALES ARCHITECTURE GATE: beauty must support persuasion. The scroll must make positioning, services, differentiation, process, proof and final action feel intentionally sequenced.",
+    "- DETAIL REFINEMENT GATE: inspect micro-alignment, spacing, borders, icon treatment, CTA proportions, overlays, crop discipline, header/footer finish and empty-space balance. A few cheap details are enough to fail the 15K gate.",
+    "- MOBILE VALUE PARITY GATE: mobile must retain the same perceived investment as desktop. It is not acceptable for desktop to look 15K while mobile looks like a compressed template.",
+    "- FIFTEEN-K TEST: explicitly answer: would a business owner reasonably believe a serious agency charged 10K-15K for this? Score fifteen_k_value_perception below 9.2 unless the answer is clearly yes.",
     "- HIGH-END TYPOGRAPHY: use disciplined type scale, measure, tracking, weight contrast and whitespace. Avoid oversized generic display text with weak body typography.",
     "- NEVER use empty outlined squares/rectangles, blank media frames, empty cards or hollow boxes as decorative geometry: they are read as broken-image placeholders. Geometry must be visibly intentional (solid fields, rules, patterns, typographic structures, filled modules, or connected line systems).",
     "- Every CTA must look intentionally designed. Never leave browser-default blue/underlined links or isolated text links floating in empty space.",
@@ -924,7 +933,8 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
   if(logoFirstMaster) {
     for(const key of masterGateKeys) {
       const score=Number(scores?.[key]??0);
-      if(score<9) addGateIssue(key,score,9,"master_gate_below_floor");
+      const required=key==="fifteen_k_value_perception"?9.2:9;
+      if(score<required) addGateIssue(key,score,required,key==="fifteen_k_value_perception"?"fifteen_k_gate_below_floor":"master_gate_below_floor");
     }
   }
 
@@ -932,10 +942,11 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
   const masterGateFloor=logoFirstMaster
     ? Math.min(...masterGateKeys.map(k=>Number(scores?.[k]??0)))
     : 10;
+  const fifteenKScore=Number(scores?.fifteen_k_value_perception??10);
   const hardIssues=nextIssues.filter(x=>x?.severity==="critical"||x?.severity==="major");
-  const pass=min>=8 && masterGateFloor>=9 && hardIssues.length===0;
+  const pass=min>=8 && masterGateFloor>=9 && fifteenKScore>=9.2 && hardIssues.length===0;
 
-  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor};
+  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor,fifteen_k_value_floor:fifteenKScore};
 }
 
 export const LOGO_FIRST_MASTER_GATE_KEYS=[
@@ -955,7 +966,10 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "text_breathing","responsive_type_quality","hero_full_bleed","copy_density_control",
   "desktop_readability_balance","mobile_readability_balance","font_fit_and_originality",
   "headline_line_break_quality","spacing_rhythm",
-  "header_composition_quality","navigation_professionalism","footer_composition_quality","footer_professionalism"
+  "header_composition_quality","navigation_professionalism","footer_composition_quality","footer_professionalism",
+  "custom_made_feel","premium_art_direction","hero_wow_effect","brand_specificity",
+  "imagery_premium_credibility","sales_structure_quality","detail_refinement",
+  "mobile_premium_integrity","fifteen_k_value_perception"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -970,14 +984,14 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     logoFirstMaster
-      ?"LOGO-FIRST MASTER PASS only when every master gate score is >=9, every other score is >=8, and there are no critical/major unresolved issues."
+      ?"LOGO-FIRST MASTER PASS only when every master gate score is >=9, fifteen_k_value_perception is >=9.2, every other score is >=8, and there are no critical/major unresolved issues."
       :"PASS only when every score is >=8 and there are no critical/major unresolved issues.",
     "The deterministic shell owns the official logo, contact path and footer. A direction described as logo-centric may use the immutable logo in the shell and at most one compiler-owned hero identity placement; never demand a fake/reinterpreted logo.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If it says official_identity_visible=true and broken_images=0, DO NOT claim the official logo is missing, fake, reinterpreted or broken merely because it is visually subtle in the screenshot. Judge its visual prominence separately if needed. If clipped_contacts is empty, do not claim a verified contact is mechanically truncated.",
     "Scripts and forms are prohibited in previews. Judge only what the static preview contract can actually implement; never require accordion/tabs/dark-mode/back-to-top/forms/scroll widgets or other interactive product features.",
     "The QA action list MUST stay within visual composition, typography, spacing, responsive layout, permitted static CTA treatment, immutable identity placement and existing verified content. Never propose new pages, report links, toggles, widgets, invented copy or new assets.",
     "Hard fail generic template/SaaS feel, weak typography/composition, fake or cheap imagery, weak mobile reinterpretation, poor brand fidelity, truth risk, or lack of prospect specificity.",
-    "FULL-HOME HARD GATE: header_quality, navigation_quality, page_architecture, section_quality, final_cta_quality and footer_quality are blocking. Any score below 8 means FAIL. Under R93, header/menu/footer professionalism is additionally judged through 9+ master gates and cannot pass as merely acceptable shell chrome.",
+    "FULL-HOME HARD GATE: header_quality, navigation_quality, page_architecture, section_quality, final_cta_quality and footer_quality are blocking. Any score below 8 means FAIL. Under R94, header/menu/footer professionalism and 15K perceived-value is additionally judged through 9+ master gates and cannot pass as merely acceptable shell chrome.",
     "FULL-HOME HARD GATE: fail if the header is only logo + tiny link, if navigation looks missing/unfinished, if hero lacks readable headline/body and two designed actions, if sections feel repetitive or empty, if the final CTA is weak, or if the footer looks like a thin afterthought.",
     "Judge the whole scroll journey. A beautiful hero cannot compensate for a weak middle or weak footer.",
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
@@ -1000,6 +1014,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"UNLIMITED-BUDGET TEST: judge whether the page feels as if a top global brand-experience studio had permission to obsess over every scene. If the design is safe, modular, repetitive, timid or easily reusable as a template, score launch_grade_art_direction/custom_composition below 9.":"",
     logoFirstMaster?"R93 TYPOGRAPHY GATE: text_breathing, responsive_type_quality, hero_full_bleed, copy_density_control, desktop_readability_balance, mobile_readability_balance, font_fit_and_originality, headline_line_break_quality and spacing_rhythm are blocking at 9+. Fail crowded text, boxed hero surfaces, excessive one-word headline wrapping, weak mobile line-height, generic font treatment or compressed proof/card typography.":"",
     logoFirstMaster?"R93 SHELL GATE: header_composition_quality, navigation_professionalism, footer_composition_quality and footer_professionalism are blocking at 9+. Fail default-looking menus, weak logo/CTA balance, cramped mobile navigation, thin footers, poor contact hierarchy or flat generic footer surfaces.":"",
+    logoFirstMaster?"R94 15K VALUE GATE: custom_made_feel, premium_art_direction, hero_wow_effect, brand_specificity, imagery_premium_credibility, sales_structure_quality, detail_refinement and mobile_premium_integrity are blocking at 9+. fifteen_k_value_perception is blocking at 9.2+. A beautiful 2.5K website is still a FAIL if it does not plausibly look like a 10K-15K commissioned project.":"",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),

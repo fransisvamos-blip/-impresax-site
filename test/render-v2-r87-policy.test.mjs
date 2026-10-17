@@ -16,12 +16,13 @@ import {
   brandRichSurfaceViolations,
   watermarkVisibilityViolations,
   launchGradeViolations,
-  typographyCompositionViolations
+  typographyCompositionViolations,
+  fifteenKValueViolations
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R93 showroom standard is the global zero-extra-AI typography contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R93_LAUNCH_GRADE_TYPOGRAPHY_V1");
+test("R94 showroom standard is the global zero-extra-AI 15K value contract",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
@@ -40,6 +41,11 @@ test("R93 showroom standard is the global zero-extra-AI typography contract",()=
   assert.equal(showroomPolicySummary().visual.font_system,"DISTINCTIVE_BRAND_FIT_DISPLAY_AND_BODY");
   assert.equal(showroomPolicySummary().visual.header_menu,"PROFESSIONAL_BRAND_EXPERIENCE_ENTRY");
   assert.equal(showroomPolicySummary().visual.footer,"PROFESSIONAL_BRAND_EXPERIENCE_CLOSING");
+  assert.equal(showroomPolicySummary().visual.perceived_value_target,"EUR_10000_TO_15000");
+  assert.equal(showroomPolicySummary().visual.commercial_price_reference,"EUR_2500");
+  assert.equal(showroomPolicySummary().visual.signature_moments_minimum,3);
+  assert.equal(showroomPolicySummary().visual.fifteen_k_value_perception,"BLOCKING_MIN_9_2");
+  assert.equal(showroomPolicySummary().conversion.perceived_value_goal,"MAKE_2500_EUR_FEEL_LIKE_A_BARGAIN_VS_10000_15000_EUR");
 });
 
 test("revenue and headcount remain source evidence but are suppressed from homepage proof",()=>{
@@ -206,4 +212,28 @@ test("R93 typography composition gate blocks boxed or generic layouts",()=>{
   ].join("");
   const strongCss=':root{--ix-display-font:Bahnschrift,"Arial Narrow",sans-serif;--ix-body-font:Inter,Aptos,sans-serif}.x h1{text-wrap:balance}.x p{text-wrap:pretty}.ix-v2-header{backdrop-filter:blur(12px)}.ix-v2-nav{display:flex}.ix-v2-footer{display:block}.ix-v2-footer-grid{display:grid}@media(max-width:820px){.x h1{font-size:clamp(42px,11vw,60px);line-height:.96}}';
   assert.deepEqual(typographyCompositionViolations(strong,strongCss),[]);
+});
+
+
+test("R94 perceived-value contract blocks reusable low-authorship compositions",()=>{
+  const weak=[
+    '<section id="hero" data-launch-hero="true" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled"></section>',
+    '<section data-copy-density="controlled"></section>',
+    '<section data-copy-density="controlled"></section>',
+    '<section data-copy-density="controlled"></section>'
+  ].join("");
+  const weakIssues=fifteenKValueViolations(weak,'.x{background:linear-gradient(#fff,#eee);box-shadow:0 10px 30px rgba(0,0,0,.1)}');
+  assert.ok(weakIssues.includes("FIFTEEN_K_VALUE_MARKER_REQUIRED"));
+  assert.ok(weakIssues.includes("BRAND_SPECIFICITY_MARKER_REQUIRED"));
+  assert.ok(weakIssues.includes("SALES_ARCHITECTURE_MARKER_REQUIRED"));
+  assert.ok(weakIssues.some(x=>x.startsWith("SIGNATURE_MOMENTS_REQUIRED:")));
+  assert.ok(weakIssues.some(x=>x.startsWith("CUSTOM_MADE_MOMENTS_REQUIRED:")));
+  assert.ok(weakIssues.some(x=>x.startsWith("PREMIUM_IMAGERY_DENSITY_REQUIRED:")));
+
+  const strong=[
+    '<section id="hero" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true">{{asset:HERO_VISUAL}}</section>',
+    '<section data-custom-made="true" data-signature-moment="true">{{asset:SECTION_VISUAL_1}}</section>',
+    '<section data-custom-made="true" data-signature-moment="true">{{asset:SECTION_VISUAL_2}}</section>'
+  ].join("");
+  assert.deepEqual(fifteenKValueViolations(strong,'.x{background:linear-gradient(#fff,#eee);box-shadow:0 10px 30px rgba(0,0,0,.1)}'),[]);
 });

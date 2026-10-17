@@ -226,6 +226,26 @@ export function typographyCompositionViolations(mainHtml="",css="") {
   return issues;
 }
 
+export function fifteenKValueViolations(mainHtml="",css="") {
+  const main=String(mainHtml||"");
+  const styles=String(css||"");
+  const issues=[];
+  const hero=main.match(/<section\b[^>]*\bid=["']hero["'][^>]*>/i)?.[0]||"";
+  if(!/\bdata-value-perception=["']15k["']/i.test(hero)) issues.push("FIFTEEN_K_VALUE_MARKER_REQUIRED");
+  if(!/\bdata-brand-specific=["']true["']/i.test(hero)) issues.push("BRAND_SPECIFICITY_MARKER_REQUIRED");
+  if(!/\bdata-sales-architecture=["']true["']/i.test(hero)) issues.push("SALES_ARCHITECTURE_MARKER_REQUIRED");
+  const signatures=(main.match(/\bdata-signature-moment=["']true["']/gi)||[]).length;
+  if(signatures<3) issues.push("SIGNATURE_MOMENTS_REQUIRED:"+signatures+"/3");
+  const custom=(main.match(/\bdata-custom-made=["']true["']/gi)||[]).length;
+  if(custom<3) issues.push("CUSTOM_MADE_MOMENTS_REQUIRED:"+custom+"/3");
+  const assets=(main.match(/\{\{asset:[A-Z0-9_]+\}\}/g)||[]).length;
+  if(assets<3) issues.push("PREMIUM_IMAGERY_DENSITY_REQUIRED:"+assets+"/3");
+  if(!/box-shadow\s*:/i.test(styles) || !/(?:linear|radial|conic)-gradient\(/i.test(styles)) {
+    issues.push("PREMIUM_DETAIL_DEPTH_REQUIRED");
+  }
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -264,12 +284,24 @@ export function showroomPolicySummary() {
       header_menu:"PROFESSIONAL_BRAND_EXPERIENCE_ENTRY",
       footer:"PROFESSIONAL_BRAND_EXPERIENCE_CLOSING",
       navigation_hierarchy:"CLEAR_REFINED_AND_PURPOSEFUL",
+      perceived_value_target:"EUR_10000_TO_15000",
+      commercial_price_reference:"EUR_2500",
+      custom_made_feel:"MANDATORY",
+      signature_moments_minimum:3,
+      premium_art_direction:"TOP_TIER_AGENCY_STANDARD",
+      brand_specificity:"DIFFICULT_TO_REUSE_FOR_ANOTHER_PROSPECT",
+      imagery_credibility:"REAL_OR_HIGH_CREDIBILITY_PREMIUM",
+      detail_refinement:"MANIACAL",
+      mobile_premium_integrity:"EQUAL_VALUE_TO_DESKTOP",
+      fifteen_k_value_perception:"BLOCKING_MIN_9_2",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
     conversion:{
       services:"EDITORIAL_SHOWCASE",
       trust:"QUALITATIVE_VISUAL_PROOF",
-      final_cta:"COMMERCIAL_CLIMAX"
+      final_cta:"COMMERCIAL_CLIMAX",
+      sales_architecture:"STRATEGIC_PERSUASION_NOT_DECORATION",
+      perceived_value_goal:"MAKE_2500_EUR_FEEL_LIKE_A_BARGAIN_VS_10000_15000_EUR"
     }
   });
 }

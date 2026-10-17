@@ -289,12 +289,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   let main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
   main=main
-    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled"$2')
+    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true"$2')
     .replace(/(<section\b[^>]*\bid="positioning"[^>]*)(>)/i,'$1 data-copy-density="controlled"$2')
-    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled"$2')
+    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true"$2')
     .replace(/(<section\b[^>]*\bid="trust"[^>]*)(>)/i,'$1 data-copy-density="controlled"$2')
-    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint" data-spectacle-moment="true" data-stage-depth="material" data-copy-density="controlled"$2')
-    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic" data-copy-density="controlled"$2')
+    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint" data-spectacle-moment="true" data-stage-depth="material" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true"$2')
     .replace(/(<section\b[^>]*\bid="final-cta"[^>]*>)/i,"$1"+brandWatermark+r89Lines+'<div class="ixr90-stage" aria-hidden="true"><i></i><i></i><i></i></div>');
 
   const base=`
@@ -1468,10 +1468,21 @@ body{font-family:var(--ix-body-font)}
 }
 `;
 
+  const r94ValueCss=`
+.ixg-hero,.ixm-hero,.ixb-hero,.ixc-hero{box-shadow:inset 0 -1px 0 rgba(255,255,255,.12)}
+.ixg-hero:before,.ixm-hero:before,.ixb-hero:before,.ixc-hero:before{content:"";position:absolute;inset:auto 0 0 0;height:18%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.22));pointer-events:none;z-index:1}
+.ixg-service,.ixb-service-row,.ixc-ledger-row{border:1px solid rgba(17,17,17,.08)}
+.ixg-service:after,.ixb-service-row:after,.ixc-ledger-row:after{content:"";position:absolute;inset:auto 18px 16px 18px;height:1px;background:linear-gradient(90deg,${brandPrimary},transparent);opacity:.45}
+.ixg-bridge,.ixb-bridge,.ixc-bridge{box-shadow:inset 0 1px 0 rgba(17,17,17,.08),inset 0 -1px 0 rgba(17,17,17,.08)}
+.ixg-contact,.ixb-contact,.ixc-contact{box-shadow:inset 0 1px 0 rgba(255,255,255,.10)}
+.ix-v2-header-cta,.ixg-cta--primary{box-shadow:0 14px 34px ${brandSoft}}
+.ix-v2-footer{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+`;
+
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+`
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+`
 @media(max-width:700px){
  .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:26px!important;align-items:start!important}
  .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
@@ -1482,7 +1493,7 @@ body{font-family:var(--ix-body-font)}
 }
 `,
       section_ids:["hero","positioning","services","trust","bridge","final-cta"],
-      surface_policy:"IMPRESAX_RENDER_STANDARD_R93_LAUNCH_GRADE_TYPOGRAPHY_V1",
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL"],
       hero_visual_strategy:impresaxMasterProfile?"ImpresaX Master V1: full-bleed edge-to-edge HERO_VISUAL with verified copy overlaid in-image and cinematic readability gradient.":"Mandatory premium image-led hero with verified copy field and responsive crop.",
@@ -1494,9 +1505,9 @@ body{font-family:var(--ix-body-font)}
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic R93 LAUNCH_GRADE TYPOGRAPHY fallback grammar v6 "+variantKey+": edge-to-edge hero, authored set-pieces, independent desktop/mobile type scales, controlled copy density, distinctive brand-fit font system, professional header/menu/footer, official-logo watermark, responsive 1440/390."
+        +"Deterministic R94 FIFTEEN_K_VALUE fallback grammar v7 "+variantKey+": 10K-15K perceived-value target, unmistakably custom-made signature moments, top-tier art direction, brand specificity, premium imagery density, sales architecture, obsessive detail refinement, mobile value parity, plus all R93 typography/shell rules."
     },
-    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R93":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R93":"LAUNCH_GRADE_TYPOGRAPHY_FALLBACK_GRAMMAR_V6"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R94":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R94":"FIFTEEN_K_VALUE_FALLBACK_GRAMMAR_V7"
   };
 }
 
