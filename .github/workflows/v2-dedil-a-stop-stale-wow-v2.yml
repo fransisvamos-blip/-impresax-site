@@ -15,7 +15,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
-      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-dedil-a-logo-first-wow-v2-20261016
+      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-dedil-a-logo-first-wow-v5-premium-sections-20261
     steps:
       - uses: actions/checkout@v4
         with:
