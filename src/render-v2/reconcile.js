@@ -1108,14 +1108,47 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   const packId=String(pilotControl?.pilot_pack_id||meta.pilot_pack_id||"");
   if(!packId || !env.RENDER_VARIANT_WORKFLOW) return null;
   const rows=await sql`
-    select w.*,p.prospect_id,p.input_pack_id,v.variant_key,r.id as active_revision_id,r.status as active_revision_status
+    select w.*,p.prospect_id,p.input_pack_id,v.variant_key,
+           r.id as active_revision_id,r.status as active_revision_status
     from render_workflows_v2 w
     join render_v2_packs p on p.id=w.render_pack_id
     join render_v2_variants v on v.id=w.variant_id
     left join render_variant_revisions r
       on r.variant_id=w.variant_id
-     and r.revision=case
-       when coalesce(w.metadata->>'revision','') ~ '^[0-9]+
+     and r.revision=nullif(w.metadata->>'revision','')::int
+    where w.render_pack_id=${packId}::uuid
+      and w.workflow_type='VARIANT'
+      and w.status in ('QUEUED','RUNNING','PAUSED')
+      and v.variant_key='A'
+      and coalesce(w.metadata->>'relaunch_reason','')='PILOT_LAYOUT_MICROPOLISH_REUSE_HERO'
+      and (
+        w.last_event_at < now()-interval '7 minutes'
+        or (
+          r.status='PREVIEW_READY'
+          and w.last_event_at < now()-interval '60 seconds'
+          and not exists (
+            select 1 from render_qa_results_v2 current_qa
+            where current_qa.variant_revision_id=r.id
+              and current_qa.qa_type='VARIANT_VISUAL'
+          )
+          and exists (
+            select 1
+            from render_artifacts_v2 cd
+            join render_artifacts_v2 cm on cm.variant_revision_id=cd.variant_revision_id
+            join render_qa_results_v2 prior_qa
+              on prior_qa.render_pack_id=w.render_pack_id
+             and prior_qa.qa_type='VARIANT_VISUAL'
+             and prior_qa.variant_revision_id is distinct from r.id
+             and prior_qa.artifact_hashes->>'desktop'=cd.sha256
+             and prior_qa.artifact_hashes->>'mobile'=cm.sha256
+            where cd.variant_revision_id=r.id
+              and cd.artifact_type='DESKTOP_1440'
+              and cm.artifact_type='MOBILE_390'
+          )
+        )
+      )
+    order by w.last_event_at asc
+    limit 1`;
   const stale=rows[0]||null;
   if(!stale) return null;
 
