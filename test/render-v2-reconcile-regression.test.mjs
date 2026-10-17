@@ -499,3 +499,19 @@ test("logo-first wow rebuild uses integrated light shell and industrial premium 
   assert.match(grammar,/background:var\(--ix-brand-primary\)!important;\n color:#fff!important/);
   assert.match(grammar,/\.ix-v2-footer\{[\s\S]{0,180}background:var\(--ix-brand-paper\)!important/);
 });
+
+
+test("premium pilot requires iconography and graphic richness",()=>{
+  assert.match(grammar,/ixg-service__icon/);
+  assert.match(grammar,/ixm-graphic-band/);
+  assert.match(grammar,/ixg-trust:before/);
+  assert.match(grammar,/ixm-bridge__copy:after/);
+  assert.match(constants,/iconography_quality/);
+  assert.match(constants,/graphic_support_quality/);
+  assert.match(constants,/trust_visual_quality/);
+  assert.match(constants,/client_wow_effect/);
+  assert.match(ai,/PREMIUM SECTION GATE/);
+  assert.match(ai,/CLIENT WOW GATE/);
+  assert.match(ai,/section_premium_quality/);
+  assert.match(ai,/commercial_desirability/);
+});
