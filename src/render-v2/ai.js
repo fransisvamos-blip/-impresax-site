@@ -842,7 +842,9 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
     "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
     "first_impression","premium_feel","wow_effect","prospect_desire","preview_sales_power",
-    "section_quality","page_architecture","final_cta_quality","footer_quality","desktop_quality","mobile_quality"
+    "section_quality","page_architecture","final_cta_quality","footer_quality","desktop_quality","mobile_quality",
+    "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
+    "commercial_desirability","client_wow_effect"
   ];
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
@@ -863,6 +865,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"LOGO-FIRST BRAND GATE: the official logo must visibly drive the color system, type personality, shape language and signature device. A generic premium template with the logo pasted on top is a FAIL.":"",
     logoFirstMaster?"LOGO-FIRST HERO GATE: hero must be edge-to-edge/full-bleed with no lateral white/split field, with styled copy and both CTA buttons over the image. Any compromise is a FAIL.":"",
     logoFirstMaster?"DESIRABILITY GATE: judge whether a real prospect would feel immediately upgraded, impressed and motivated to buy the redesign. wow_effect, prospect_desire and preview_sales_power below 9 are blocking.":"",
+    logoFirstMaster?"PREMIUM SECTION GATE: the post-hero scroll must feel deliberately art-directed, not like stacked text/card templates. section_premium_quality, iconography_quality, graphic_support_quality and trust_visual_quality below 9 are blocking.":"",
+    logoFirstMaster?"CLIENT WOW GATE: graphics and iconography must strengthen the brand system and sales impact without decorative clutter or invented claims. commercial_desirability and client_wow_effect below 9 are blocking.":"",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
