@@ -16,7 +16,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       V2_URL: https://impresax-render-v2-shadow.fransisvamos.workers.dev
       PACK_ID: 8595c9d2-9d53-424b-a660-82102b9db5b3
-      RUN_KEY: dedil-a-logo-first-wow-v6-editorial-premium-20261017
+      RUN_KEY: dedil-a-logo-first-wow-v7-flagship-proof-20261017
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,7 +31,7 @@ jobs:
           set -euo pipefail
           token=$(openssl rand -hex 32)
           printf '%s' "$token" | npx wrangler secret put V2_SHADOW_TOKEN --config wrangler.render-v2.jsonc >/dev/null
-          body=$(jq -nc --arg pack "$PACK_ID" --arg key "$RUN_KEY"             '{pack_id:$pack,variant_key:"A",run_key:$key,force:true,reset_budget:true,event_prefix:"logo-first-wow-v6",reason:"ENGINE_CONTRACT_UPGRADE"}')
+          body=$(jq -nc --arg pack "$PACK_ID" --arg key "$RUN_KEY"             '{pack_id:$pack,variant_key:"A",run_key:$key,force:true,reset_budget:true,event_prefix:"logo-first-wow-v7",reason:"ENGINE_CONTRACT_UPGRADE"}')
           ok=0
           for i in {1..20}; do
             code=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}'               -H "Authorization: Bearer $token"               -H "Content-Type: application/json"               --data "$body"               "$V2_URL/shadow/relaunch-variant" || true)
