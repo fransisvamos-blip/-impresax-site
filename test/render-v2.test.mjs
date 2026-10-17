@@ -1,11 +1,12 @@
 import test from "node:test";
+import { QA_SCORE_KEYS } from "../src/render-v2/constants.js";
 import assert from "node:assert/strict";
 import { validateRenderSpec, compileRenderSpec } from "../src/render-v2/compiler.js";
 import { classifyFailure, shouldChangeStrategy } from "../src/render-v2/failure-policy.js";
 import { stableStringify, safeExternalHttpUrl } from "../src/render-v2/utils.js";
 import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
 import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "../src/render-v2/design-grammar.js";
-import { extractStructured, normalizeSetQaResult } from "../src/render-v2/ai.js";
+import { extractStructured, normalizeSetQaResult, applyVisualQaScoreGates } from "../src/render-v2/ai.js";
 
 const manifests={
   copy:{
@@ -349,6 +350,37 @@ test("extractStructured ignores envelope objects and selects schema payload",()=
   assert.deepEqual(extractStructured(wrapped,schema),{pass:false,summary:"x"});
 });
 
+
+test("visual QA deterministic gate synthesizes actionable feedback for sub-9 master scores",()=>{
+  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9]));
+  scores.footer_quality=8.5;
+  const gated=applyVisualQaScoreGates({
+    scores,
+    issues:[],
+    actions:[],
+    logoFirstMaster:true,
+    masterGateKeys:["footer_quality","section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality","commercial_desirability","client_wow_effect"]
+  });
+  assert.equal(gated.pass,false);
+  assert.equal(gated.master_gate_floor,8.5);
+  assert.ok(gated.issues.some(x=>x.target==="footer_quality"&&x.severity==="major"));
+  assert.ok(gated.actions.some(x=>String(x).includes("footer_quality")));
+});
+
+test("visual QA deterministic gate ignores inconsistent model pass boolean when all gates pass",()=>{
+  const scores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,9]));
+  const gated=applyVisualQaScoreGates({
+    scores,
+    issues:[],
+    actions:[],
+    logoFirstMaster:true,
+    masterGateKeys:["footer_quality","section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality","commercial_desirability","client_wow_effect"]
+  });
+  assert.equal(gated.pass,true);
+  assert.equal(gated.min_score,9);
+  assert.equal(gated.master_gate_floor,9);
+  assert.equal(gated.issues.length,0);
+});
 
 test("set QA normalization accepts strong set with minor notes",()=>{
   const r=normalizeSetQaResult({
