@@ -526,3 +526,13 @@ test("logo-first proof data becomes visual metrics and editorial ledgers",()=>{
   assert.match(grammar,/grid-template-columns:1fr!important;\n gap:0!important;\n border-top:1px solid rgba\(255,255,255,.18\)!important/);
   assert.doesNotMatch(grammar,/content:"01"/);
 });
+
+
+test("Cabina-locked hero is exposed to QA and not rejected for editorial preference alone",()=>{
+  assert.match(workflows,/pilotHeroLocked=packMetadata\.pilot_reuse_hero_locked===true/);
+  assert.match(workflows,/pilot_hero_locked:true/);
+  assert.match(ai,/const pilotHeroLocked=inputPayload\?\.pilot_hero_locked===true/);
+  assert.match(ai,/CABINA-LOCKED HERO/);
+  assert.match(ai,/lockedHeroPreference/);
+  assert.match(ai,/k===\"hero_desirability\"/);
+});
