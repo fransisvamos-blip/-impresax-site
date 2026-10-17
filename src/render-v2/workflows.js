@@ -359,6 +359,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         : input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack,inputPayload);
+      const cabinaCopyManifest=cabinaPrecomputed && packMetadata.cabina_precomputed_copy_manifest && typeof packMetadata.cabina_precomputed_copy_manifest==="object"
+        ? packMetadata.cabina_precomputed_copy_manifest
+        : null;
+      if(cabinaCopyManifest) Object.assign(copyManifest,cabinaCopyManifest);
       if(inputPayload.primary_cta) copyManifest.PRIMARY_CTA_LABEL=String(inputPayload.primary_cta);
       if(inputPayload.secondary_cta) copyManifest.SECONDARY_CTA_LABEL=String(inputPayload.secondary_cta);
       const ctaManifest=buildContactManifest(inputPayload);
