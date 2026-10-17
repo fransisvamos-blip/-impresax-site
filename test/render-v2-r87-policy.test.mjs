@@ -17,12 +17,13 @@ import {
   watermarkVisibilityViolations,
   launchGradeViolations,
   typographyCompositionViolations,
-  fifteenKValueViolations
+  fifteenKValueViolations,
+  iconicCommissionedViolations
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R94 showroom standard is the global zero-extra-AI 15K value contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1");
+test("R106 showroom standard is the global zero-extra-AI iconic commissioned contract",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
@@ -43,8 +44,12 @@ test("R94 showroom standard is the global zero-extra-AI 15K value contract",()=>
   assert.equal(showroomPolicySummary().visual.footer,"PROFESSIONAL_BRAND_EXPERIENCE_CLOSING");
   assert.equal(showroomPolicySummary().visual.perceived_value_target,"EUR_10000_TO_15000");
   assert.equal(showroomPolicySummary().visual.commercial_price_reference,"EUR_2500");
-  assert.equal(showroomPolicySummary().visual.signature_moments_minimum,3);
-  assert.equal(showroomPolicySummary().visual.fifteen_k_value_perception,"BLOCKING_MIN_9_2");
+  assert.ok(showroomPolicySummary().visual.signature_moments_minimum>=3);
+  assert.equal(showroomPolicySummary().visual.fifteen_k_value_perception,"BLOCKING_MIN_9_7");
+  assert.equal(showroomPolicySummary().visual.target_quality_band,"9_8_TO_9_9");
+  assert.equal(showroomPolicySummary().visual.commissioned_experience,"BLOCKING_MIN_9_8");
+  assert.equal(showroomPolicySummary().visual.irreproducible_brand_authorship,"BLOCKING_MIN_9_7");
+  assert.equal(showroomPolicySummary().conversion.target_score,"9_8_TO_9_9_NOT_EASY_10");
   assert.equal(showroomPolicySummary().conversion.perceived_value_goal,"MAKE_2500_EUR_FEEL_LIKE_A_BARGAIN_VS_10000_15000_EUR");
 });
 
@@ -235,4 +240,26 @@ test("R94 perceived-value contract blocks reusable low-authorship compositions",
     '<section data-custom-made="true" data-signature-moment="true">{{asset:SECTION_VISUAL_2}}</section>'
   ].join("");
   assert.deepEqual(fifteenKValueViolations(strong,'.x{background:linear-gradient(#fff,#eee);box-shadow:0 10px 30px rgba(0,0,0,.1)}'),[]);
+});
+
+
+test("R106 iconic commissioned gate blocks reusable section stacks",()=>{
+  const weak='<section id="hero" data-value-perception="15k"></section><section></section><section></section>';
+  const weakCss=':root{--ix-signature-angle:-7deg}.ix-v2-header{}.ix-v2-footer{}';
+  const issues=iconicCommissionedViolations(weak,weakCss);
+  assert.ok(issues.includes("COMMISSIONED_EXPERIENCE_MARKER_REQUIRED"));
+  assert.ok(issues.includes("IRREPRODUCIBLE_AUTHORSHIP_MARKER_REQUIRED"));
+  assert.ok(issues.includes("SCROLL_NARRATIVE_MARKER_REQUIRED"));
+  assert.ok(issues.some(x=>x.startsWith("ICONIC_MOMENTS_REQUIRED:")));
+  assert.ok(issues.some(x=>x.startsWith("AUTHORED_TRANSITIONS_REQUIRED:")));
+  assert.ok(issues.includes("SIGNATURE_RULE_VARIABLE_REQUIRED"));
+
+  const strong=[
+    '<section id="hero" data-commissioned-experience="true" data-authorship="irreproducible" data-scroll-narrative="continuous" data-iconic-moment="true"></section>',
+    '<section data-iconic-moment="true" data-authored-transition="true"></section>',
+    '<section data-iconic-moment="true" data-authored-transition="true"></section>',
+    '<section data-iconic-moment="true" data-authored-transition="true"></section>'
+  ].join("");
+  const strongCss=':root{--ix-signature-angle:-7deg;--ix-signature-rule:1px}.ix-v2-header{}.ix-v2-footer{}';
+  assert.deepEqual(iconicCommissionedViolations(strong,strongCss),[]);
 });
