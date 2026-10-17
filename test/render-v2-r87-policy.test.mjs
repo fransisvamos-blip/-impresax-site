@@ -17,11 +17,12 @@ import {
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
 test("R87 showroom standard is the global zero-extra-AI contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R87_V1");
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R88_SURFACE_ART_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
   assert.equal(showroomPolicySummary().visual.minimum_section_visuals,3);
+  assert.equal(showroomPolicySummary().visual.section_surfaces,"ART_DIRECTED_LAYERED_BRAND_SPECIFIC");
 });
 
 test("revenue and headcount remain source evidence but are suppressed from homepage proof",()=>{
