@@ -12,14 +12,20 @@ permissions:
 jobs:
   export:
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
       - name: Download r83 proof images
         run: |
           set -euo pipefail
           mkdir -p ops/proofs/dedil-r83
-          curl -fL --retry 3 "https://impresax-render-v2-shadow.fransisvamos.workers.dev/shadow/artifact/18b92f21-651b-45be-8f02-68fe25ec24ae" -o ops/proofs/dedil-r83/desktop-1440.jpg
-          curl -fL --retry 3 "https://impresax-render-v2-shadow.fransisvamos.workers.dev/shadow/artifact/a5548501-af7a-4b1b-8b8d-43443cc15ee4" -o ops/proofs/dedil-r83/mobile-390.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r83/desktop-1440.jpg" --remote --file ops/proofs/dedil-r83/desktop-1440.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r83/mobile-390.jpg" --remote --file ops/proofs/dedil-r83/mobile-390.jpg
           file ops/proofs/dedil-r83/*.jpg
       - name: Commit proof images
         run: |
