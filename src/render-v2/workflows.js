@@ -338,9 +338,15 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
       const packMetadata=packRows[0]?.metadata||{};
       const cabinaPrecomputed=params.initialFeedback?.reason==="CABINA_PRECOMPUTED_RENDER";
-      const cabinaRenderSpec=cabinaPrecomputed && packMetadata.cabina_precomputed_render_spec && typeof packMetadata.cabina_precomputed_render_spec==="object"
-        ? packMetadata.cabina_precomputed_render_spec
+      const variantRenderSpecs=packMetadata.cabina_precomputed_render_specs && typeof packMetadata.cabina_precomputed_render_specs==="object"
+        ? packMetadata.cabina_precomputed_render_specs
         : null;
+      const variantRenderSpec=variantRenderSpecs?.[params.variantKey];
+      const cabinaRenderSpec=cabinaPrecomputed && variantRenderSpec && typeof variantRenderSpec==="object"
+        ? variantRenderSpec
+        : (cabinaPrecomputed && packMetadata.cabina_precomputed_render_spec && typeof packMetadata.cabina_precomputed_render_spec==="object"
+          ? packMetadata.cabina_precomputed_render_spec
+          : null);
       const renderProfile=String(packMetadata.render_profile||"").trim();
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
