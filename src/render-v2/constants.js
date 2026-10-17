@@ -10,6 +10,17 @@ export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
 
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
+export const TRIPLE_VARIANT_REQUIRED = true;
+export const MINIMUM_VARIANTS_PER_PACK = 3;
+export const VARIANT_DIVERGENCE_REQUIRED = true;
+export const VARIANT_DIVERGENCE_FLOOR = 8.5;
+export const AUTO_SELECT_VARIANT_WINNER = true;
+export const MASTER_AUTO_APPROVE = false;
+export const VARIANT_CREATIVE_ROLES = Object.freeze({
+  A:"ICONIC_EDITORIAL",
+  B:"STRUCTURED_TECHNICAL_PREMIUM",
+  C:"BRAND_DRAMATIC_SALES_IMPACT"
+});
 export const MAX_VISUAL_REVISIONS = 5;
 export const SAME_FAILURE_BREAKER = 2;
 
