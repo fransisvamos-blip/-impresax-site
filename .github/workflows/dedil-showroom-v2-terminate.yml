@@ -1,4 +1,4 @@
-name: One-shot DEDIL showroom v2 terminate
+name: One-shot DEDIL showroom v3 terminate
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '20'
       - run: npm install --no-audit --no-fund
-      - name: Terminate superseded DEDIL showroom v2
+      - name: Terminate superseded DEDIL showroom v3
         run: |
           set -euo pipefail
-          npx wrangler workflows instances terminate impresax-render-v2-variant rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-showroom-wow-v2 --config wrangler.render-v2.jsonc
+          npx wrangler workflows instances terminate impresax-render-v2-variant rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-showroom-wow-v3 --config wrangler.render-v2.jsonc
