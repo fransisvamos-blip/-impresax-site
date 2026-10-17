@@ -23,4 +23,4 @@ jobs:
       - name: Terminate superseded DEDIL showroom v2
         run: |
           set -euo pipefail
-          npx wrangler workflows instances terminate impresax-render-v2-variant rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-showroom-wow-v2 --config wrangler.render-v2.jsonc --json
+          npx wrangler workflows instances terminate impresax-render-v2-variant rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-showroom-wow-v2 --config wrangler.render-v2.jsonc
