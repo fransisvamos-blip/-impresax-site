@@ -1109,9 +1109,12 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   if(!packId || !env.RENDER_VARIANT_WORKFLOW) return null;
   const packRows=await sql`select metadata from render_v2_packs where id=${packId}::uuid limit 1`;
   const packMeta=packRows[0]?.metadata||{};
+  const showroomReset=meta.pilot_showroom_hard_reset_requested===true || packMeta.pilot_showroom_hard_reset_requested===true;
   const lockedHeroSha=String(packMeta.pilot_reuse_hero_sha256||meta.pilot_reuse_hero_sha256||"");
 
-  const recoveryId="rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
+  const recoveryId=showroomReset
+    ? "rv2-"+packId+"-A-showroom-wow-v1"
+    : "rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
   const existing=await sql`
     select status from render_workflows_v2
     where workflow_instance_id=${recoveryId}
@@ -1172,7 +1175,10 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     where w.render_pack_id=${packId}::uuid
       and w.workflow_type='VARIANT'
       and v.variant_key='A'
-      and coalesce(w.metadata->>'relaunch_reason','')='PILOT_LAYOUT_MICROPOLISH_REUSE_HERO'
+      and (
+        ${showroomReset}::boolean=true
+        or coalesce(w.metadata->>'relaunch_reason','')='PILOT_LAYOUT_MICROPOLISH_REUSE_HERO'
+      )
       and w.workflow_instance_id<>${recoveryId}
     order by w.created_at desc
     limit 1`;
@@ -1189,7 +1195,7 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
   if(stillActive.length) return null;
 
   const parentInstanceId=String(source.metadata?.parent_workflow_instance_id||("rpv2-"+packId));
-  const eventPrefix="pilot-artifact-qa-stable-v10";
+  const eventPrefix=showroomReset?"pilot-showroom-wow-v1":"pilot-artifact-qa-stable-v10";
   const params={
     prospectId:source.prospect_id,
     packId,
@@ -1198,7 +1204,17 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     variantKey:"A",
     parentInstanceId,
     eventPrefix,
-    initialFeedback:{
+    initialFeedback:showroomReset?{
+      reason:"SHOWROOM_HARD_RESET",
+      issues:["The prior pilot was commercially competent but not visually exceptional enough to become the ImpresaX MASTER REFERENCE."],
+      actions:[
+        "Rebuild the full homepage as a high-end B2B digital showroom whose primary outcome is desire and conversion.",
+        "Treat verified company information as supporting editorial material, not as the layout structure.",
+        "Create stronger art direction, typography, visual rhythm, service presentation, trust/proof staging, brand elevation and a spectacular closing CTA/footer.",
+        "Do not preserve the previous RenderSpec or its section composition. Generate a genuinely new premium direction.",
+        "A new hero is allowed when it materially improves the total experience."
+      ]
+    }:{
       reason:"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
       issues:["Re-run the locked DEDIL pilot through the current deterministic artifact-QA contract."],
       actions:[
@@ -1213,22 +1229,25 @@ async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
     prospectId:source.prospect_id,packId,variantId:source.variant_id,type:"VARIANT",
     instanceId:recoveryId,status:"QUEUED",
     metadata:{
-      variant_key:"A",event_prefix:eventPrefix,run_key:"pilot-artifact-qa-stable-v10",
-      targeted_relaunch:true,force_relaunch:true,reset_budget:false,
+      variant_key:"A",event_prefix:eventPrefix,run_key:showroomReset?"pilot-showroom-wow-v1":"pilot-artifact-qa-stable-v10",
+      targeted_relaunch:true,force_relaunch:true,reset_budget:showroomReset,
       parent_workflow_instance_id:parentInstanceId,
-      relaunch_reason:"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
+      relaunch_reason:showroomReset?"SHOWROOM_HARD_RESET":"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
       circuit_breaker_override:true,
       stale_recovery_source:source.workflow_instance_id,
-      locked_hero_sha256:lockedHeroSha
+      locked_hero_sha256:showroomReset?"":lockedHeroSha
     }
   });
   await setVariantStatus(sql,source.variant_id,{status:"REWORKING"});
   await setPackStatus(sql,packId,"GENERATING",{
-    pilot_stale_recovery:true,
+    pilot_stale_recovery:!showroomReset,
     pilot_stale_recovery_source:source.workflow_instance_id,
     pilot_stale_recovery_workflow:recoveryId,
-    pilot_reuse_hero_locked:true,
-    pilot_reuse_hero_sha256:lockedHeroSha,
+    pilot_showroom_hard_reset_requested:false,
+    pilot_showroom_hard_reset_in_progress:showroomReset,
+    pilot_showroom_hard_reset_started_at:showroomReset?new Date().toISOString():null,
+    pilot_reuse_hero_locked:showroomReset?false:true,
+    pilot_reuse_hero_sha256:showroomReset?"":lockedHeroSha,
     global_queue_must_remain_paused:true
   });
   const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:recoveryId,params});
