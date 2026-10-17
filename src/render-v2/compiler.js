@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -183,9 +183,11 @@ export function validateRenderSpec(spec, manifests) {
   if(brandRichPolicy) {
     const brandSurfaceCount=(main.match(/\bdata-brand-surface=["'](?:primary|secondary|dark|tint)["']/gi)||[]).length;
     if(brandSurfaceCount<2) issues.push("BRAND_RICH_SURFACES_REQUIRED:"+brandSurfaceCount+"/2");
+    for(const issue of brandRichSurfaceViolations(main,css,2)) issues.push(issue);
     if(identityKeys.has("PRIMARY_LOGO")) {
       const watermarkCount=(main.match(/\bdata-brand-watermark\b/gi)||[]).length;
       if(watermarkCount<1 || !main.includes("{{identity:PRIMARY_LOGO}}")) issues.push("OFFICIAL_LOGO_WATERMARK_REQUIRED");
+      else for(const issue of watermarkVisibilityViolations(main,css)) issues.push(issue);
     }
   }
 

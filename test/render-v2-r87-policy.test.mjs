@@ -12,7 +12,9 @@ import {
   filterHomepageTrustPoints,
   copyPolicyViolations,
   sectionVisualTokens,
-  showroomPolicySummary
+  showroomPolicySummary,
+  brandRichSurfaceViolations,
+  watermarkVisibilityViolations
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
@@ -120,4 +122,37 @@ test("R89 compiler contract requires brand-rich surfaces and watermark",async()=
   assert.match(compiler,/data-brand-watermark/);
   assert.match(compiler,/BRAND_RICH_SURFACES_REQUIRED/);
   assert.match(compiler,/OFFICIAL_LOGO_WATERMARK_REQUIRED/);
+});
+
+
+test("R89 rich-surface gate rejects labels without actual chromatic layering",()=>{
+  const main=[
+    '<section id="services" data-surface="art-directed" data-brand-surface="secondary" class="services"></section>',
+    '<section id="bridge" data-surface="art-directed" data-brand-surface="tint" class="bridge"></section>'
+  ].join("");
+  assert.deepEqual(
+    brandRichSurfaceViolations(main,'.services{background:#fff}.bridge{background:#f4f1ea}',2),
+    ["BRAND_RICH_LAYERED_SURFACES_REQUIRED:0/2"]
+  );
+  assert.deepEqual(
+    brandRichSurfaceViolations(main,':root{--brand:#B31319}.services{background:linear-gradient(135deg,#fff,var(--brand))}.bridge{background:radial-gradient(circle,rgba(179,19,25,.18),transparent)}',2),
+    []
+  );
+});
+
+test("R89 watermark gate requires restrained but perceptible opacity",()=>{
+  const main='<section id="final-cta" data-surface="art-directed" data-brand-surface="primary" class="final"><div class="mark" data-brand-watermark>{{identity:PRIMARY_LOGO}}</div></section>';
+  assert.deepEqual(
+    watermarkVisibilityViolations(main,'.mark .ix-v2-identity-main{opacity:.03}'),
+    ["OFFICIAL_LOGO_WATERMARK_VISIBILITY_REQUIRED:TOO_FAINT:0.030"]
+  );
+  assert.deepEqual(
+    watermarkVisibilityViolations(main,'.mark .ix-v2-identity-main{opacity:.12}'),
+    []
+  );
+});
+
+test("R89 hard-disables external AI in ai.js",async()=>{
+  const ai=await readFile(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  assert.match(ai,/EXTERNAL_AI_CALLS_ALLOWED!==true/);
 });

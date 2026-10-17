@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS } from "./constants.js";
+import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED } from "./constants.js";
 import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
@@ -178,6 +178,7 @@ function collectRawText(result) {
 }
 
 async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null}) {
+  if(EXTERNAL_AI_CALLS_ALLOWED!==true) throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
   if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true") throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;

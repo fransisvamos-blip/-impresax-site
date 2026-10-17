@@ -80,10 +80,16 @@ function resolveCssColor(value="",vars={}) {
   const vm=v.match(/^var\((--[a-z0-9_-]+)\)$/i);
   if(vm && vars[vm[1]]) v=String(vars[vm[1]]).trim();
   const hex=v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-  if(!hex) return null;
-  let h=hex[1];
-  if(h.length===3) h=h.split("").map(x=>x+x).join("");
-  const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  let r,g,b;
+  if(hex) {
+    let h=hex[1];
+    if(h.length===3) h=h.split("").map(x=>x+x).join("");
+    r=parseInt(h.slice(0,2),16); g=parseInt(h.slice(2,4),16); b=parseInt(h.slice(4,6),16);
+  } else {
+    const rgb=v.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/i);
+    if(!rgb) return null;
+    r=Math.min(255,Number(rgb[1])); g=Math.min(255,Number(rgb[2])); b=Math.min(255,Number(rgb[3]));
+  }
   const max=Math.max(r,g,b),min=Math.min(r,g,b);
   const lum=(0.2126*r+0.7152*g+0.0722*b)/255;
   const sat=max===0?0:(max-min)/max;
@@ -123,6 +129,66 @@ export function surfaceContractViolations(mainHtml="") {
   }
   return issues;
 }
+function cssRulesForClass(css="",className="") {
+  const esc=String(className||"").replace(/[^a-zA-Z0-9_-]/g,"");
+  if(!esc) return [];
+  const out=[];
+  const re=new RegExp("\\."+esc+"(?=[\\s.:#>+~\\[,\\{])[^\\{]*\\{([^}]*)\\}","gi");
+  for(const m of String(css||"").matchAll(re)) out.push(m[1]||"");
+  return out;
+}
+
+function cssColorTokens(text="",vars={}) {
+  const out=[];
+  for(const m of String(text||"").matchAll(/#[0-9a-f]{3,6}\b|rgba?\([^)]*\)|var\((--[a-z0-9_-]+)\)/gi)) {
+    const resolved=resolveCssColor(m[0],vars);
+    if(resolved) out.push(resolved);
+  }
+  return out;
+}
+
+export function brandRichSurfaceViolations(mainHtml="",css="",minimum=2) {
+  const main=String(mainHtml||"");
+  const vars=parseRootVars(css);
+  let rich=0;
+  for(const m of main.matchAll(/<section\b([^>]*)\bid=["']([^"']+)["']([^>]*)>/gi)) {
+    const id=m[2];
+    if(id==="hero") continue;
+    if(!/\bdata-brand-surface=["'](?:primary|secondary|dark|tint)["']/i.test(m[0])) continue;
+    const attrs=(m[1]||"")+" "+(m[3]||"");
+    const classes=(attrs.match(/\bclass=["']([^"']+)["']/i)?.[1]||"").split(/\s+/).filter(Boolean);
+    const ruleText=classes.flatMap(cls=>cssRulesForClass(css,cls)).join("\n");
+    const layered=/(?:linear|radial|conic)-gradient\(|background-image\s*:|mask(?:-image)?\s*:|clip-path\s*:/i.test(ruleText);
+    const chromatic=cssColorTokens(ruleText,vars).some(color=>color.sat>=0.18);
+    if(layered && chromatic) rich++;
+  }
+  return rich>=minimum ? [] : ["BRAND_RICH_LAYERED_SURFACES_REQUIRED:"+rich+"/"+minimum];
+}
+
+export function watermarkVisibilityViolations(mainHtml="",css="") {
+  const main=String(mainHtml||"");
+  const mark=main.match(/<[^>]+\bdata-brand-watermark\b[^>]*>/i);
+  if(!mark) return ["OFFICIAL_LOGO_WATERMARK_REQUIRED"];
+  const classes=(mark[0].match(/\bclass=["']([^"']+)["']/i)?.[1]||"").split(/\s+/).filter(Boolean);
+  const wrapperRules=classes.flatMap(cls=>cssRulesForClass(css,cls)).join("\n");
+  const identityRules=classes.flatMap(cls=>{
+    const esc=String(cls||"").replace(/[^a-zA-Z0-9_-]/g,"");
+    if(!esc) return [];
+    const out=[];
+    const re=new RegExp("\\."+esc+"[^\\{]*\\.ix-v2-identity-main[^\\{]*\\{([^}]*)\\}","gi");
+    for(const m of String(css||"").matchAll(re)) out.push(m[1]||"");
+    return out;
+  }).join("\n");
+  const opacitySource=identityRules||wrapperRules;
+  const values=[...opacitySource.matchAll(/\bopacity\s*:\s*(0(?:\.\d+)?|1(?:\.0+)?)\b/gi)]
+    .map(m=>Number(m[1])).filter(Number.isFinite);
+  if(!values.length) return ["OFFICIAL_LOGO_WATERMARK_VISIBILITY_REQUIRED:EXPLICIT_OPACITY"];
+  const visible=Math.max(...values);
+  if(visible<0.07) return ["OFFICIAL_LOGO_WATERMARK_VISIBILITY_REQUIRED:TOO_FAINT:"+visible.toFixed(3)];
+  if(visible>0.28) return ["OFFICIAL_LOGO_WATERMARK_VISIBILITY_REQUIRED:TOO_STRONG:"+visible.toFixed(3)];
+  return [];
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,

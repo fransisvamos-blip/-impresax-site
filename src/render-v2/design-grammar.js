@@ -160,6 +160,14 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const brandPaper=String(brandColors.paper||"#f4f4f1");
   const brandNeutral=String(brandColors.neutral||"#d8d8d4");
   const accent=brandPrimary||(variantKey==="B"?"#e6e1d7":"#8d8981");
+  const hexRgba=(hex,alpha)=>{
+    const m=String(hex||"").match(/^#([0-9a-f]{6})$/i);
+    if(!m) return "rgba(179,19,25,"+alpha+")";
+    const h=m[1];
+    return "rgba("+parseInt(h.slice(0,2),16)+","+parseInt(h.slice(2,4),16)+","+parseInt(h.slice(4,6),16)+","+alpha+")";
+  };
+  const brandSoft=hexRgba(brandPrimary,.16);
+  const brandGlow=hexRgba(brandPrimary,.26);
   const impresaxMasterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1" || logoFirstMode;
   const masterCta=logoFirstMode?brandPrimary:(verifiedBrandAccent||"#f7f6f2");
   const masterCtaText="#ffffff";
@@ -211,6 +219,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   const primary="<a class=\"ixg-cta ixg-cta--primary\" href=\""+ctaToken("PRIMARY")+"\">"+copyToken("PRIMARY_CTA_LABEL")+"</a>";
   const secondary="<a class=\"ixg-cta ixg-cta--secondary\" href=\""+ctaToken("SECONDARY")+"\">"+copyToken("SECONDARY_CTA_LABEL")+"</a>";
+  const brandWatermark=hasIdentity
+    ? "<div class=\"ixr89-watermark\" data-brand-watermark aria-hidden=\"true\">{{identity:PRIMARY_LOGO}}</div>"
+    : "";
+  const r89Lines="<div class=\"ixr89-lines\" data-surface-art aria-hidden=\"true\"><i></i><i></i><i></i></div>";
 
   const impresaxHero="<section id=\"hero\" class=\"ixg ixm-hero "+vclass+"\" data-premium-hero=\"true\"><figure class=\"ixm-hero__media\"><img class=\"ixg-hero__image ixm-hero__image\" src=\"{{asset:HERO_VISUAL}}\" alt=\"\"></figure><div class=\"ixm-hero__veil\" aria-hidden=\"true\"></div><div class=\"ixg-shell ixm-hero__inner\"><div class=\"ixm-hero__copy\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h1>"+copyToken("HERO_HEADLINE")+"</h1><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div></div></section>";
   const logoFirstGraphicBand=logoFirstMode
@@ -275,7 +287,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "<section id=\"final-cta\" class=\"ixg ixc-contact ixg-c\"><div class=\"ixg-shell ixc-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
-  const main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
+  let main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
+  main=main
+    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary"$2')
+    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*>)/i,"$1"+brandWatermark+r89Lines);
 
   const base=`
 :root{--ix-ink:#111;--ix-paper:#f4f1ea;--ix-muted:#6b6964;--ix-line:rgba(17,17,17,.18);--ix-dark:#111;--ix-light:#fff;--ix-accent:${accent};--ix-space:clamp(24px,4.2vw,72px)}
@@ -1359,10 +1376,32 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 `
   };
 
+  const r89SurfaceCss=`
+.ixg-services,.ixc-services,.ixg-bridge,.ixc-bridge,.ixg-contact,.ixc-contact{position:relative;isolation:isolate;overflow:hidden}
+.ixg-services,.ixc-services{background:radial-gradient(circle at 88% 16%,${brandSoft},transparent 34%),linear-gradient(145deg,${brandPaper} 0%,#fff 54%,${brandNeutral} 100%)!important}
+.ixg-bridge,.ixc-bridge{background:radial-gradient(circle at 90% 42%,${brandGlow},transparent 33%),linear-gradient(125deg,${brandPaper} 0%,#fff 56%,${brandSoft} 100%)!important}
+.ixg-contact,.ixc-contact{background:radial-gradient(circle at 82% 18%,${brandGlow},transparent 32%),linear-gradient(122deg,${brandInk} 0%,#17191b 58%,${brandPrimary} 145%)!important;color:#fff!important}
+.ixg-services>.ixg-shell,.ixc-services>.ixg-shell,.ixg-bridge>.ixg-shell,.ixc-bridge>.ixg-shell,.ixg-contact>.ixg-shell,.ixc-contact>.ixg-shell{position:relative;z-index:2}
+.ixg-contact .ixg-kicker,.ixc-contact .ixg-kicker,.ixg-contact h2,.ixc-contact h2,.ixg-contact .ixg-section-intro,.ixc-contact .ixg-section-intro{color:#fff!important}
+.ixg-contact .ixg-section-intro,.ixc-contact .ixg-section-intro{opacity:.76}
+.ixg-contact .ixg-cta--primary,.ixc-contact .ixg-cta--primary{background:${brandPrimary}!important;color:#fff!important;border:1px solid ${brandPrimary}!important;padding:0 24px!important;min-height:52px!important}
+.ixg-contact .ixg-cta--secondary,.ixc-contact .ixg-cta--secondary{color:#fff!important;border:1px solid rgba(255,255,255,.55)!important;background:rgba(255,255,255,.04)!important;padding:0 24px!important;min-height:52px!important}
+.ixr89-lines{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;opacity:.34}
+.ixr89-lines i{position:absolute;right:-8%;width:72%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),${brandPrimary},transparent);transform:rotate(-8deg);transform-origin:right center}
+.ixr89-lines i:nth-child(1){top:20%}.ixr89-lines i:nth-child(2){top:49%;width:88%}.ixr89-lines i:nth-child(3){top:78%;width:62%}
+.ixr89-watermark{position:absolute;right:-3vw;top:50%;transform:translateY(-50%);width:min(720px,50vw);pointer-events:none;z-index:1}
+.ixr89-watermark .ix-v2-identity-main{width:100%!important;max-height:280px!important;object-fit:contain!important;opacity:.12!important;filter:brightness(0) invert(1) saturate(.7)!important;mix-blend-mode:screen}
+@media(max-width:700px){
+ .ixr89-watermark{right:-42%;width:112vw;top:46%}
+ .ixr89-watermark .ix-v2-identity-main{opacity:.10!important}
+ .ixr89-lines{opacity:.24}
+}
+`;
+
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+`
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+`
 @media(max-width:700px){
  .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:26px!important;align-items:start!important}
  .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
@@ -1372,7 +1411,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  .ixg-kicker{line-height:1.35!important}
 }
 `,
-      section_ids:["hero","positioning","services","trust","bridge","contact"],
+      section_ids:["hero","positioning","services","trust","bridge","final-cta"],
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R89_BRAND_RICH_SURFACES_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL"],
       hero_visual_strategy:impresaxMasterProfile?"ImpresaX Master V1: full-bleed edge-to-edge HERO_VISUAL with verified copy overlaid in-image and cinematic readability gradient.":"Mandatory premium image-led hero with verified copy field and responsive crop.",
@@ -1384,9 +1424,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic HERO_PREMIUM fallback grammar v3 "+variantKey+": mandatory HERO_VISUAL, verified copy distribution, responsive 1440/390."
+        +"Deterministic R89 BRAND_RICH fallback grammar v4 "+variantKey+": layered chromatic surfaces, official-logo watermark when available, mandatory HERO_VISUAL, verified copy distribution, responsive 1440/390."
     },
-    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1":impresaxMasterProfile?"IMPRESAX_MASTER_V1":"HERO_PREMIUM_FALLBACK_GRAMMAR_V3"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_R89":impresaxMasterProfile?"IMPRESAX_MASTER_R89":"BRAND_RICH_FALLBACK_GRAMMAR_V4"
   };
 }
 
