@@ -812,10 +812,10 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- SECTION IMAGERY RULE: when at least "+MIN_SECTION_VISUALS+" non-hero editorial image assets are available, use at least "+MIN_SECTION_VISUALS+" DISTINCT section images across at least three non-hero sections. Do not hoard all imagery in one gallery or repeat the same image.",
     "- REAL IMAGERY RULE: section photography must come only from the provided verified/first-party/licensed asset tokens. Never synthesize, invent or hotlink section imagery.",
     "- ICONOGRAPHY RULE: use refined sector-relevant iconography/graphic devices as structural support in multiple sections. It must feel brand-native and useful, never clip-art, emoji, empty boxes or decorative clutter.",
-    "- SURFACE ART DIRECTION RULE: large full-width sections must not rely on a single strong solid fill. Build layered neutral surfaces with subtle gradients, textures, image treatments, line systems, brand-derived geometry and depth.",
-    "- BRAND WATERMARK RULE: when an official logo is available and visually compatible, integrate it once as a subtle semi-transparent background motif inside a non-hero section. Keep it restrained and tone-on-tone.",
+    "- SURFACE ART DIRECTION RULE: large full-width sections must not rely on a single strong solid fill. Build layered brand-rich surfaces using controlled gradients, tints, split fields, textures, image treatments, line systems, brand-derived geometry and depth. Do NOT neutralize the whole page into white/beige.",
+    "- BRAND WATERMARK RULE: when an official logo is available, integrate it once as a clearly perceptible but restrained semi-transparent background motif inside a non-hero section. It must be visible enough to register as brand identity, never so faint that it disappears, and never so strong that it competes with copy.",
     "- Every non-hero section must declare data-surface=\"art-directed\" and feel custom-composed rather than a generic color band.",
-    "- Accent colors belong mainly in lines, buttons, small graphic devices, borders, iconography and restrained glows rather than uninterrupted full-width fills.",
+    "- BRAND COLOR PRESENCE RULE: use meaningful brand-color fields in at least two non-hero sections through gradients, tinted surfaces, split panels, overlays or image treatments. Accent colors may occupy real visual area; they are not limited to buttons and lines. The only forbidden pattern is a large unworked flat slab.",
     "- TRUST SHOWCASE: transform verified metrics, partners, locality and operational proof into visual evidence with strong hierarchy; never render them as a dull bullet list.",
     "- VISUAL RHYTHM: alternate density, scale, alignment and field treatment across the scroll so the page has deliberate pacing and no template cadence.",
     "- BRAND ELEVATION: logo-derived color, geometry and signature details must recur coherently but sparingly so the page feels bespoke, not themed.",
@@ -929,7 +929,8 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle",
   "showroom_conversion_power","section_imagery_quality","real_imagery_credibility",
   "copy_sophistication","section_copy_distinctness","visual_storytelling",
-  "surface_personalization","background_art_direction","brand_motif_integration","no_flat_color_blocks"
+  "surface_personalization","background_art_direction","brand_motif_integration","no_flat_color_blocks",
+  "brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -967,7 +968,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"EDITORIAL IMAGE GATE: section_imagery_quality and real_imagery_credibility are blocking at 9+. Fail repetitive, fake-looking, low-value, badly cropped or weakly integrated section photography. The page should feel image-rich but never like a gallery or stock template.":"",
     logoFirstMaster?"COPY GATE: copy_sophistication and section_copy_distinctness are blocking at 9+. Fail generic/repetitive prose, internal research language, database/profile wording, or use of revenue/headcount as headline trust proof.":"",
     logoFirstMaster?"VISUAL STORYTELLING GATE: visual_storytelling is blocking at 9+. Photography, iconography, typography and section transitions must work together as one persuasive journey, not isolated modules.":"",
-    logoFirstMaster?"SURFACE GATE: surface_personalization, background_art_direction, brand_motif_integration and no_flat_color_blocks are blocking at 9+. Fail generic full-width color bands or unart-directed surfaces. Prefer layered neutral surfaces, subtle brand watermark, restrained geometry, photography and material depth.":"",
+    logoFirstMaster?"SURFACE GATE: surface_personalization, background_art_direction, brand_motif_integration, no_flat_color_blocks, brand_color_presence, chromatic_rhythm, surface_richness and watermark_visibility are blocking at 9+. Fail both extremes: generic flat color slabs AND anonymous over-neutralized pages. Require at least two meaningful brand-rich non-hero surfaces plus a clearly perceptible restrained official-logo watermark.":"",
     logoFirstMaster?"INFORMATION-STAGING GATE: fail when verified information is presented as a catalogue, database dump, repetitive card wall or equal-weight list. Facts must be selectively staged to support persuasion and visual hierarchy.":"",
     logoFirstMaster?"CLIENT REACTION GATE: judge the page as a sales preview shown to the business owner. If it would need explanation to feel premium, or would not create a strong desire to replace the current site, score showroom_conversion_power/client_wow_effect below 9.":"",
     "VARIANT:"+variantKey,
