@@ -1,0 +1,31 @@
+name: DEDIL r83 proof export
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - '.github/workflows/dedil-r83-proof-export.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download r83 proof images
+        run: |
+          set -euo pipefail
+          mkdir -p ops/proofs/dedil-r83
+          curl -fL --retry 3 "https://impresax-render-v2-shadow.fransisvamos.workers.dev/shadow/artifact/18b92f21-651b-45be-8f02-68fe25ec24ae" -o ops/proofs/dedil-r83/desktop-1440.jpg
+          curl -fL --retry 3 "https://impresax-render-v2-shadow.fransisvamos.workers.dev/shadow/artifact/a5548501-af7a-4b1b-8b8d-43443cc15ee4" -o ops/proofs/dedil-r83/mobile-390.jpg
+          file ops/proofs/dedil-r83/*.jpg
+      - name: Commit proof images
+        run: |
+          set -euo pipefail
+          git config user.name "ImpresaX Rendering Bot"
+          git config user.email "rendering-bot@impresax.local"
+          git add ops/proofs/dedil-r83/desktop-1440.jpg ops/proofs/dedil-r83/mobile-390.jpg
+          git diff --cached --quiet || git commit -m "chore(render-v2): export DEDIL r83 visual proof"
+          git push origin HEAD:rendering-v2-shadow
