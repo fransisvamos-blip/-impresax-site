@@ -1,0 +1,49 @@
+{
+  "version": "DEDIL_SECTION_ASSETS_V1",
+  "assets": [
+    {
+      "token": "POSITIONING_VISUAL",
+      "artifact_type": "INPUT_ASSET_POSITIONING_VISUAL",
+      "r2_key": "render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/assets/positioning.jpg",
+      "sha256": "6c51ccbc51cbb01499758fc8718b02d3fd7b9ce84a11301437136def79c3c416",
+      "bytes": 290307,
+      "mime": "image/jpeg",
+      "source_url": "https://www.pexels.com/photo/warehouse-workers-inspecting-construction-materials-36122949/",
+      "license": "PEXELS_FREE",
+      "commercial_use_status": "LICENSED_STOCK"
+    },
+    {
+      "token": "SERVICE_MATERIALS_VISUAL",
+      "artifact_type": "INPUT_ASSET_SERVICE_MATERIALS_VISUAL",
+      "r2_key": "render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/assets/service-materials.jpg",
+      "sha256": "87c0a12bbe731804bd0b0e3d9f2175a341d00616589083b72aaa26a037f81966",
+      "bytes": 542258,
+      "mime": "image/jpeg",
+      "source_url": "https://www.pexels.com/photo/tiles-on-shelves-in-building-hypermarket-12340558/",
+      "license": "PEXELS_FREE",
+      "commercial_use_status": "LICENSED_STOCK"
+    },
+    {
+      "token": "SERVICE_REBAR_VISUAL",
+      "artifact_type": "INPUT_ASSET_SERVICE_REBAR_VISUAL",
+      "r2_key": "render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/assets/service-rebar.jpg",
+      "sha256": "86cbc94c06965ba3bb2f69e3ee8f487f822804068d8cc164380a048776e0efd0",
+      "bytes": 468302,
+      "mime": "image/jpeg",
+      "source_url": "https://www.pexels.com/photo/aerial-view-of-construction-site-with-rebar-framework-36815367/",
+      "license": "PEXELS_FREE",
+      "commercial_use_status": "LICENSED_STOCK"
+    },
+    {
+      "token": "TRUST_VISUAL",
+      "artifact_type": "INPUT_ASSET_TRUST_VISUAL",
+      "r2_key": "render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/assets/trust-industrial.jpg",
+      "sha256": "b949e320aa567adf8a4b508ed34bcfeaa44cf2b2ce207947e1959a10323a7e81",
+      "bytes": 238978,
+      "mime": "image/jpeg",
+      "source_url": "https://www.pexels.com/photo/stacked-industrial-pipes-in-warehouse-33367148/",
+      "license": "PEXELS_FREE",
+      "commercial_use_status": "LICENSED_STOCK"
+    }
+  ]
+}
