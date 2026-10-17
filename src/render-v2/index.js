@@ -144,7 +144,7 @@ export default {
         premium_home_score_floor:8,
         showroom_wow_contract_required:true,
         showroom_master_score_floor:9,
-        showroom_master_dimensions:["luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle","showroom_conversion_power","commercial_desirability","client_wow_effect","section_imagery_quality","real_imagery_credibility","copy_sophistication","section_copy_distinctness","visual_storytelling"],
+        showroom_master_dimensions:["luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle","showroom_conversion_power","commercial_desirability","client_wow_effect","section_imagery_quality","real_imagery_credibility","copy_sophistication","section_copy_distinctness","visual_storytelling","surface_personalization","background_art_direction","brand_motif_integration","no_flat_color_blocks"],
         premium_home_required_sections:["hero","positioning","services","trust","bridge","final-cta"],
         premium_home_shell_required:["header","navigation","header_cta","footer_navigation"],
         operational_ok:operational_invariants?.operational_ok===true,
