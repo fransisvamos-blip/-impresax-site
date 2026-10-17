@@ -196,7 +196,7 @@ test("compiler allows justify-content but blocks CSS content property",()=>{
 
 
 test("compiler safely normalizes bare verified tokens and strips invented literal text",async()=>{
-  const extra='<section id="extra"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
+  const extra='<section id="extra" data-surface="art-directed"><h2>{{HERO_HEADLINE}}</h2><p>Invented positioning</p><img src="{{asset:PRIMARY_LOGO}}" alt="Invented alt"><a href="{{cta:PRIMARY}}">{{PRIMARY_CTA_LABEL}}</a></section>';
   const result=await compileRenderSpec({
     main_html:premiumMain+extra,
     custom_css:premiumCss+".x::before{content:'decorative'}"
