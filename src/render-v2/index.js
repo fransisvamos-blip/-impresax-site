@@ -31,6 +31,120 @@ async function writeControlEvent(sql,row,action,payload={}) {
   } catch {}
 }
 
+async function runPilotManualKick(env,sql) {
+  const rows=await sql`
+    select phase,queue_enabled,metadata
+    from render_v2_rollout_state
+    where id=1
+    limit 1`;
+  const state=rows[0]||{};
+  const meta=state.metadata||{};
+  const kick=meta.pilot_manual_kick;
+  if(!kick || typeof kick!=="object") return {skipped:true,reason:"NO_PILOT_MANUAL_KICK"};
+  if(state.queue_enabled===true || meta.global_queue_must_remain_paused!==true || meta.pilot_single_prospect!==true) {
+    throw new Error("PILOT_MANUAL_KICK_SAFETY_GUARD");
+  }
+
+  const packId=String(kick.pack_id||"").trim();
+  const variantKey=String(kick.variant_key||"").trim().toUpperCase();
+  const runKey=String(kick.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
+  const reason=String(kick.reason||"CABINA_PRECOMPUTED_RENDER").trim();
+  if(!packId || !["A","B","C"].includes(variantKey) || !runKey) throw new Error("PILOT_MANUAL_KICK_INVALID");
+  if(packId!==String(meta.pilot_pack_id||"")) throw new Error("PILOT_MANUAL_KICK_PACK_MISMATCH");
+
+  const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
+  if(!packs.length) throw new Error("PILOT_MANUAL_KICK_PACK_NOT_FOUND");
+  const pack=packs[0];
+  if(String(pack.prospect_id)!==String(meta.pilot_prospect_id||"")) throw new Error("PILOT_MANUAL_KICK_PROSPECT_MISMATCH");
+
+  const variants=await sql`
+    select * from render_v2_variants
+    where render_pack_id=${packId}::uuid and variant_key=${variantKey}
+    limit 1`;
+  if(!variants.length) throw new Error("PILOT_MANUAL_KICK_VARIANT_NOT_FOUND");
+  const variant=variants[0];
+
+  const instanceId="rv2-"+packId+"-"+variantKey+"-"+runKey;
+  const existing=await sql`select * from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
+  if(existing.length) {
+    await sql`
+      update render_v2_rollout_state
+      set metadata=(coalesce(metadata,'{}'::jsonb)-'pilot_manual_kick')
+        || jsonb_build_object(
+          'pilot_manual_kick_last_result','ALREADY_APPLIED',
+          'pilot_manual_kick_last_instance',${instanceId},
+          'pilot_manual_kick_last_at',to_jsonb(now())
+        ),
+        updated_at=now()
+      where id=1`;
+    return {ok:true,already_applied:true,workflow_instance_id:instanceId};
+  }
+
+  const active=await sql`
+    select count(*)::int n
+    from render_workflows_v2
+    where status in ('QUEUED','RUNNING','PAUSED')`;
+  if(Number(active[0]?.n||0)>0) throw new Error("PILOT_MANUAL_KICK_ACTIVE_WORKFLOW_EXISTS");
+
+  const params={
+    prospectId:pack.prospect_id,
+    packId,
+    inputPackId:pack.input_pack_id,
+    variantId:variant.id,
+    variantKey,
+    parentInstanceId:String(kick.parent_workflow_instance_id||("rpv2-"+packId)),
+    eventPrefix:String(kick.event_prefix||"r90"),
+    initialFeedback:{
+      reason,
+      issues:["Cabina requested a targeted launch-grade revision for the locked pilot only."],
+      actions:[
+        "Use the Cabina precomputed RenderSpec exactly.",
+        "Keep external AI disabled.",
+        "Preserve verified content, real imagery and official identity.",
+        "Do not start or mutate any other prospect."
+      ]
+    }
+  };
+
+  await persistWorkflow(sql,{
+    prospectId:pack.prospect_id,
+    packId,
+    variantId:variant.id,
+    type:"VARIANT",
+    instanceId,
+    status:"QUEUED",
+    metadata:{
+      variant_key:variantKey,
+      event_prefix:params.eventPrefix,
+      run_key:runKey,
+      pilot_manual_kick:true,
+      cabina_precomputed:true,
+      queue_enabled:false
+    }
+  });
+
+  const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
+  await setPackStatus(sql,packId,"GENERATING",{
+    pilot_manual_kick:{
+      variant_key:variantKey,
+      run_key:runKey,
+      reason,
+      instance_id:instanceId
+    }
+  });
+  await sql`
+    update render_v2_rollout_state
+    set metadata=(coalesce(metadata,'{}'::jsonb)-'pilot_manual_kick')
+      || jsonb_build_object(
+        'pilot_manual_kick_last_result','STARTED',
+        'pilot_manual_kick_last_instance',${instanceId},
+        'pilot_manual_kick_last_at',to_jsonb(now())
+      ),
+      updated_at=now()
+    where id=1`;
+  return {ok:true,started:true,workflow_instance_id:instanceId,status:await instance.status()};
+}
+
 export default {
   async scheduled(controller,env,ctx) {
     ctx.waitUntil((async()=>{
@@ -70,6 +184,32 @@ export default {
             where id=1`;
         } catch {}
       });
+      try {
+        const kickResult=await runPilotManualKick(env,sql);
+        if(kickResult?.ok===true) {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'scheduled_pilot_kick_last_result',${JSON.stringify(kickResult)}::jsonb,
+                'scheduled_pilot_kick_last_at',to_jsonb(now())
+              ),
+              updated_at=now()
+            where id=1`;
+        }
+      } catch(error) {
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'scheduled_pilot_kick_last_error',${String(error?.stack||error?.message||error).slice(0,5000)},
+                'scheduled_pilot_kick_last_error_at',to_jsonb(now())
+              ),
+              updated_at=now()
+            where id=1`;
+        } catch {}
+      }
       const ref=String(env.V2_SHADOW_AUTOSTART||"").trim();
       if(!ref || !env.RENDER_PROSPECT_WORKFLOW) return;
       try {
@@ -144,7 +284,7 @@ export default {
         premium_home_score_floor:8,
         showroom_wow_contract_required:true,
         showroom_master_score_floor:9,
-        showroom_master_dimensions:["luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle","showroom_conversion_power","commercial_desirability","client_wow_effect","section_imagery_quality","real_imagery_credibility","copy_sophistication","section_copy_distinctness","visual_storytelling","surface_personalization","background_art_direction","brand_motif_integration","no_flat_color_blocks","brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility"],
+        showroom_master_dimensions:["luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle","showroom_conversion_power","commercial_desirability","client_wow_effect","section_imagery_quality","real_imagery_credibility","copy_sophistication","section_copy_distinctness","visual_storytelling","surface_personalization","background_art_direction","brand_motif_integration","no_flat_color_blocks","brand_color_presence","chromatic_rhythm","surface_richness","watermark_visibility","launch_grade_art_direction","cinematic_tension","spectacle_moments","scale_contrast","iconic_brand_presence","custom_composition","material_depth","editorial_drama"],
         premium_home_required_sections:["hero","positioning","services","trust","bridge","final-cta"],
         premium_home_shell_required:["header","navigation","header_cta","footer_navigation"],
         operational_ok:operational_invariants?.operational_ok===true,
