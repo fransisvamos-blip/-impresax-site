@@ -807,6 +807,11 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- Include intentional 1440px desktop composition and a real 390px mobile reinterpretation with @media rules.",
     "- Avoid repeated equal cards, generic 3-column grids, excessive rounded rectangles, gradients-for-decoration, dashboard/SaaS patterns and default-looking buttons.",
     "- SERVICE SHOWCASE: services must feel editorial and premium. Use varied scale, numbering/line systems, refined iconography or composition-led modules rather than identical commodity cards.",
+    "- GLOBAL CONTENT RULE: revenue, turnover, employee/headcount and similar registry-style corporate statistics may remain in source truth but MUST NOT be surfaced as homepage highlights, trust metrics, badges or persuasive proof.",
+    "- COPY SOPHISTICATION RULE: every major section must have a distinct persuasive job and professional B2B language. Never expose internal/meta phrases such as dati verificati, informazioni verificate, visura, database, scheda azienda or profile labels. Avoid repeating the same sentence structure or generic claims across sections.",
+    "- SECTION IMAGERY RULE: when at least "+MIN_SECTION_VISUALS+" non-hero editorial image assets are available, use at least "+MIN_SECTION_VISUALS+" DISTINCT section images across at least three non-hero sections. Do not hoard all imagery in one gallery or repeat the same image.",
+    "- REAL IMAGERY RULE: section photography must come only from the provided verified/first-party/licensed asset tokens. Never synthesize, invent or hotlink section imagery.",
+    "- ICONOGRAPHY RULE: use refined sector-relevant iconography/graphic devices as structural support in multiple sections. It must feel brand-native and useful, never clip-art, emoji, empty boxes or decorative clutter.",
     "- TRUST SHOWCASE: transform verified metrics, partners, locality and operational proof into visual evidence with strong hierarchy; never render them as a dull bullet list.",
     "- VISUAL RHYTHM: alternate density, scale, alignment and field treatment across the scroll so the page has deliberate pacing and no template cadence.",
     "- BRAND ELEVATION: logo-derived color, geometry and signature details must recur coherently but sparingly so the page feels bespoke, not themed.",
@@ -918,7 +923,8 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
   "commercial_desirability","client_wow_effect","luxury_b2b_feel","premium_visual_rhythm",
   "editorial_showcase_quality","high_end_typography","brand_elevation","cta_spectacle",
-  "showroom_conversion_power"
+  "showroom_conversion_power","section_imagery_quality","real_imagery_credibility",
+  "copy_sophistication","section_copy_distinctness","visual_storytelling"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -953,6 +959,9 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"PREMIUM SECTION GATE: the post-hero scroll must feel deliberately art-directed, not like stacked text/card templates. section_premium_quality, iconography_quality, graphic_support_quality and trust_visual_quality below 9 are blocking.":"",
     logoFirstMaster?"CLIENT WOW GATE: graphics and iconography must strengthen the brand system and sales impact without decorative clutter or invented claims. commercial_desirability and client_wow_effect below 9 are blocking.":"",
     logoFirstMaster?"SHOWROOM GATE: luxury_b2b_feel, premium_visual_rhythm, editorial_showcase_quality, high_end_typography, brand_elevation, cta_spectacle and showroom_conversion_power are all blocking at 9+. A merely competent corporate site must FAIL.":"",
+    logoFirstMaster?"EDITORIAL IMAGE GATE: section_imagery_quality and real_imagery_credibility are blocking at 9+. Fail repetitive, fake-looking, low-value, badly cropped or weakly integrated section photography. The page should feel image-rich but never like a gallery or stock template.":"",
+    logoFirstMaster?"COPY GATE: copy_sophistication and section_copy_distinctness are blocking at 9+. Fail generic/repetitive prose, internal research language, database/profile wording, or use of revenue/headcount as headline trust proof.":"",
+    logoFirstMaster?"VISUAL STORYTELLING GATE: visual_storytelling is blocking at 9+. Photography, iconography, typography and section transitions must work together as one persuasive journey, not isolated modules.":"",
     logoFirstMaster?"INFORMATION-STAGING GATE: fail when verified information is presented as a catalogue, database dump, repetitive card wall or equal-weight list. Facts must be selectively staged to support persuasion and visual hierarchy.":"",
     logoFirstMaster?"CLIENT REACTION GATE: judge the page as a sales preview shown to the business owner. If it would need explanation to feel premium, or would not create a strong desire to replace the current site, score showroom_conversion_power/client_wow_effect below 9.":"",
     "VARIANT:"+variantKey,
