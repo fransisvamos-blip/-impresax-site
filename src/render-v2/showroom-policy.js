@@ -137,6 +137,7 @@ export function showroomPolicySummary() {
       iconography:"BRAND_NATIVE_TECHNICAL_OR_SECTOR_RELEVANT",
       repeated_card_walls:"FORBIDDEN",
       flat_full_bleed_strong_color_blocks:"FORBIDDEN",
+      flat_surface_gate:"COMPILER_ENFORCED",
       section_surfaces:"ART_DIRECTED_LAYERED_BRAND_SPECIFIC",
       logo_watermark:"PREFERRED_WHEN_COMPATIBLE_AND_SUBTLE",
       brand_motifs:"REQUIRED_AS_STRUCTURAL_SUPPORT",
