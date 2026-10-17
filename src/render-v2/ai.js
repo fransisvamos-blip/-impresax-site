@@ -893,17 +893,24 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
   return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor};
 }
 
-export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
+export const LOGO_FIRST_MASTER_GATE_KEYS=[
+  "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
+  "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
+  "first_impression","premium_feel","wow_effect","prospect_desire","preview_sales_power",
+  "section_quality","page_architecture","final_cta_quality","desktop_quality","mobile_quality",
+  "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
+  "commercial_desirability","client_wow_effect"
+];
+
+export function visualQaGatePolicy(inputPayload={}) {
   const logoFirstMaster=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1";
   const pilotHeroLocked=inputPayload?.pilot_hero_locked===true;
-  const masterGateKeys=[
-    "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
-    "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
-    "first_impression","premium_feel","wow_effect","prospect_desire","preview_sales_power",
-    "section_quality","page_architecture","final_cta_quality","desktop_quality","mobile_quality",
-    "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
-    "commercial_desirability","client_wow_effect"
-  ].filter(k=>!(pilotHeroLocked && k==="hero_desirability"));
+  const masterGateKeys=LOGO_FIRST_MASTER_GATE_KEYS.filter(k=>!(pilotHeroLocked && k==="hero_desirability"));
+  return {logoFirstMaster,pilotHeroLocked,masterGateKeys};
+}
+
+export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
+  const {logoFirstMaster,pilotHeroLocked,masterGateKeys}=visualQaGatePolicy(inputPayload);
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     logoFirstMaster
