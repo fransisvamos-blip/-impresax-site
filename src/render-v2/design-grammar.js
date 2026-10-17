@@ -289,12 +289,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   let main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
   main=main
-    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true"$2')
-    .replace(/(<section\b[^>]*\bid="positioning"[^>]*)(>)/i,'$1 data-copy-density="controlled"$2')
-    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true"$2')
-    .replace(/(<section\b[^>]*\bid="trust"[^>]*)(>)/i,'$1 data-copy-density="controlled"$2')
-    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint" data-spectacle-moment="true" data-stage-depth="material" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true"$2')
-    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-commissioned-experience="true" data-authorship="irreproducible" data-scroll-narrative="continuous" data-iconic-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="positioning"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-authored-transition="true"$2')
+    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true" data-authored-transition="true"$2')
+    .replace(/(<section\b[^>]*\bid="trust"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-iconic-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint" data-spectacle-moment="true" data-stage-depth="material" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-authored-transition="true"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true"$2')
     .replace(/(<section\b[^>]*\bid="final-cta"[^>]*>)/i,"$1"+brandWatermark+r89Lines+'<div class="ixr90-stage" aria-hidden="true"><i></i><i></i><i></i></div>');
 
   const base=`
@@ -1479,10 +1479,26 @@ body{font-family:var(--ix-body-font)}
 .ix-v2-footer{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 `;
 
+  const r106IconicCss=`
+:root{--ix-signature-angle:-7deg;--ix-signature-rule:1px}
+.ixg-hero,.ixm-hero,.ixb-hero,.ixc-hero{isolation:isolate}
+.ixg-hero:after,.ixm-hero:after,.ixb-hero:after,.ixc-hero:after{content:"";position:absolute;right:-8%;top:18%;width:46%;height:42%;border:var(--ix-signature-rule) solid ${brandSoft};transform:rotate(var(--ix-signature-angle));clip-path:polygon(18% 0,100% 0,82% 100%,0 100%);pointer-events:none}
+.ixg-positioning:before,.ixb-positioning:before,.ixc-positioning:before{content:"";position:absolute;right:-8%;top:8%;width:42%;height:1px;background:linear-gradient(90deg,transparent,${brandPrimary},transparent);transform:rotate(var(--ix-signature-angle));opacity:.42}
+.ixg-services:before,.ixb-services:before,.ixc-services:before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,${brandPrimary},transparent 62%);opacity:.62}
+.ixg-trust:after,.ixb-trust:after,.ixc-trust:after{content:"";position:absolute;right:-4%;bottom:10%;width:32%;height:1px;background:linear-gradient(90deg,transparent,${brandPrimary});transform:rotate(var(--ix-signature-angle));opacity:.54}
+.ixg-bridge:before,.ixb-bridge:before,.ixc-bridge:before{content:"";position:absolute;left:-12%;top:24%;width:38%;height:52%;border:var(--ix-signature-rule) solid ${brandSoft};transform:skewX(-14deg) rotate(var(--ix-signature-angle));pointer-events:none}
+.ixg-final,.ixb-final,.ixc-final{isolation:isolate}
+.ixg-final:after,.ixb-final:after,.ixc-final:after{content:"";position:absolute;right:-10%;top:12%;width:46%;height:72%;background:linear-gradient(135deg,transparent,${brandSoft});clip-path:polygon(24% 0,100% 0,100% 100%,0 100%);pointer-events:none}
+@media(max-width:820px){
+ .ixg-hero:after,.ixm-hero:after,.ixb-hero:after,.ixc-hero:after{right:-34%;width:82%;height:34%;opacity:.55}
+ .ixg-bridge:before,.ixb-bridge:before,.ixc-bridge:before{left:-36%;width:68%;opacity:.45}
+}
+`;
+
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+`
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+`
 @media(max-width:700px){
  .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:26px!important;align-items:start!important}
  .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
@@ -1493,7 +1509,7 @@ body{font-family:var(--ix-body-font)}
 }
 `,
       section_ids:["hero","positioning","services","trust","bridge","final-cta"],
-      surface_policy:"IMPRESAX_RENDER_STANDARD_R94_FIFTEEN_K_VALUE_PERCEPTION_V1",
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL"],
       hero_visual_strategy:impresaxMasterProfile?"ImpresaX Master V1: full-bleed edge-to-edge HERO_VISUAL with verified copy overlaid in-image and cinematic readability gradient.":"Mandatory premium image-led hero with verified copy field and responsive crop.",
@@ -1505,9 +1521,9 @@ body{font-family:var(--ix-body-font)}
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic R94 FIFTEEN_K_VALUE fallback grammar v7 "+variantKey+": 10K-15K perceived-value target, unmistakably custom-made signature moments, top-tier art direction, brand specificity, premium imagery density, sales architecture, obsessive detail refinement, mobile value parity, plus all R93 typography/shell rules."
+        +"Deterministic R106 ICONIC_COMMISSIONED fallback grammar v8 "+variantKey+": target 9.8-9.9, irreproducible brand authorship, campaign-level image treatment, continuous scroll narrative, coherent signature geometry, authored transitions, visual memory factor and mobile reinterpretation, preserving all R94/R93 gates."
     },
-    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R94":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R94":"FIFTEEN_K_VALUE_FALLBACK_GRAMMAR_V7"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R106":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R106":"ICONIC_COMMISSIONED_FALLBACK_GRAMMAR_V8"
   };
 }
 
