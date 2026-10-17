@@ -4,7 +4,7 @@ on:
   push:
     branches: [rendering-v2-shadow]
     paths:
-      - '.github/workflows/dedil-r84-proof-export.yml'
+      - '.github/workflows/dedil-r83-proof-export.yml'
 
 permissions:
   contents: write
@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '20'
       - run: npm install --no-audit --no-fund
-      - name: Download r83 proof images
+      - name: Download r84 proof images
         run: |
           set -euo pipefail
           mkdir -p ops/proofs/dedil-r84
