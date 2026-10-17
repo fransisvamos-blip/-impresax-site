@@ -1103,6 +1103,98 @@ async function syncCurrentSetQaCaches(sql) {
   return {updated:rows.length,packs:rows};
 }
 
+async function restartStaleLockedPilotVariant(env,sql,pilotControl) {
+  const meta=pilotControl?.metadata||{};
+  const packId=String(pilotControl?.pilot_pack_id||meta.pilot_pack_id||"");
+  if(!packId || !env.RENDER_VARIANT_WORKFLOW) return null;
+  const rows=await sql`
+    select w.*,p.prospect_id,p.input_pack_id,v.variant_key
+    from render_workflows_v2 w
+    join render_v2_packs p on p.id=w.render_pack_id
+    join render_v2_variants v on v.id=w.variant_id
+    where w.render_pack_id=${packId}::uuid
+      and w.workflow_type='VARIANT'
+      and w.status in ('QUEUED','RUNNING','PAUSED')
+      and v.variant_key='A'
+      and coalesce(w.metadata->>'relaunch_reason','')='PILOT_LAYOUT_MICROPOLISH_REUSE_HERO'
+      and w.last_event_at < now()-interval '7 minutes'
+    order by w.last_event_at asc
+    limit 1`;
+  const stale=rows[0]||null;
+  if(!stale) return null;
+
+  const recoveryId="rv2-"+packId+"-A-pilot-artifact-qa-stable-v10";
+  const existing=await sql`select status from render_workflows_v2 where workflow_instance_id=${recoveryId} limit 1`;
+  if(existing.length) return {stale_workflow:stale.workflow_instance_id,recovery_workflow:recoveryId,status:existing[0].status,reused:true};
+
+  try {
+    const instance=await env.RENDER_VARIANT_WORKFLOW.get(stale.workflow_instance_id);
+    await instance.terminate({rollback:false});
+  } catch {}
+  await updateWorkflow(sql,stale.workflow_instance_id,{
+    status:"CANCELLED",
+    currentStep:"PILOT_STALE_RESTART",
+    metadata:{human_control:"auto_terminate_stale_pilot",pilot_stale_restart:true}
+  });
+
+  const staleRevision=Number(stale.metadata?.revision||0);
+  if(staleRevision>0) {
+    const revisionRows=await sql`
+      select id,status from render_variant_revisions
+      where variant_id=${stale.variant_id}::uuid and revision=${staleRevision}
+      limit 1`;
+    const rr=revisionRows[0]||null;
+    if(rr && ["GENERATING","PREVIEW_READY"].includes(String(rr.status||""))) {
+      await sql`
+        update render_variant_revisions
+        set status='QA_FAILED',completed_at=coalesce(completed_at,now())
+        where id=${rr.id}::uuid and status in ('GENERATING','PREVIEW_READY')`;
+    }
+  }
+
+  const parentInstanceId=String(stale.metadata?.parent_workflow_instance_id||("rpv2-"+packId));
+  const eventPrefix="pilot-artifact-qa-stable-v10";
+  const params={
+    prospectId:stale.prospect_id,
+    packId,
+    inputPackId:stale.input_pack_id,
+    variantId:stale.variant_id,
+    variantKey:"A",
+    parentInstanceId,
+    eventPrefix,
+    initialFeedback:{
+      reason:"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
+      issues:["Re-run the locked DEDIL pilot through the current deterministic artifact-QA contract."],
+      actions:[
+        "Preserve the approved hero and verified content.",
+        "Use the current premium deterministic home grammar.",
+        "Do not change screenshot-identical work solely because a stochastic reviewer score changed."
+      ]
+    }
+  };
+  await persistWorkflow(sql,{
+    prospectId:stale.prospect_id,packId,variantId:stale.variant_id,type:"VARIANT",
+    instanceId:recoveryId,status:"QUEUED",
+    metadata:{
+      variant_key:"A",event_prefix:eventPrefix,run_key:"pilot-artifact-qa-stable-v10",
+      targeted_relaunch:true,force_relaunch:true,reset_budget:false,
+      parent_workflow_instance_id:parentInstanceId,
+      relaunch_reason:"PILOT_LAYOUT_MICROPOLISH_REUSE_HERO",
+      circuit_breaker_override:true,
+      stale_recovery_source:stale.workflow_instance_id
+    }
+  });
+  await setVariantStatus(sql,stale.variant_id,{status:"REWORKING"});
+  await setPackStatus(sql,packId,"GENERATING",{
+    pilot_stale_recovery:true,
+    pilot_stale_recovery_source:stale.workflow_instance_id,
+    pilot_stale_recovery_workflow:recoveryId,
+    global_queue_must_remain_paused:true
+  });
+  const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:recoveryId,params});
+  return {stale_workflow:stale.workflow_instance_id,recovery_workflow:recoveryId,status:await instance.status(),started:true};
+}
+
 async function syncLockedPilotCandidate(sql,pilotControl) {
   const meta=pilotControl?.metadata||{};
   const packId=String(pilotControl?.pilot_pack_id||meta.pilot_pack_id||"");
@@ -1206,12 +1298,14 @@ export async function reconcileV2(env) {
         where id=1`;
     }
     const pilotCandidateSync=await syncLockedPilotCandidate(sql,pilotControl);
+    const pilotStaleRecovery=pilotCandidateSync ? null : await restartStaleLockedPilotVariant(env,sql,pilotControl);
     summary.reconciled.push({
       pilot_lock:true,
       pilot_pack_id:pilotControl?.pilot_pack_id||pilotMeta.pilot_pack_id||null,
       global_queue:false,
       awaiting:"APPROVED_MASTER_REFERENCE",
-      pilot_candidate_sync:pilotCandidateSync
+      pilot_candidate_sync:pilotCandidateSync,
+      pilot_stale_recovery:pilotStaleRecovery
     });
     return summary;
   }
