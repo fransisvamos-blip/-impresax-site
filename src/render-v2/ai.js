@@ -755,7 +755,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     trust_count:Object.keys(copyManifest||{}).filter(k=>/^TRUST_\d+$/.test(k)).length,
     copy_tokens:Object.keys(copyManifest||{})
   };
-  const safePrevious=qaFeedback?.reason==="COMPILER_CONTRACT" ? null : previousSpec;
+  const safePrevious=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET"].includes(String(qaFeedback?.reason||"")) ? null : previousSpec;
   const prompt=[
     "Implement variant "+variantKey+" as a flagship premium full-home RenderSpec for the VERIFIED prospect.",
     "This is NOT a wireframe, starter template, generic agency page, SaaS layout or basic implementation.",
@@ -849,7 +849,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     safePrevious?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(safePrevious):""
   ].filter(Boolean).join("\n");
 
-  const role=qaFeedback && qaFeedback.reason!=="ENGINE_CONTRACT_UPGRADE" ? "repair" : "generator";
+  const role=qaFeedback && !["ENGINE_CONTRACT_UPGRADE","SHOWROOM_HARD_RESET"].includes(String(qaFeedback.reason||"")) ? "repair" : "generator";
   const r=await runStructured(env,role,{
     messages:[
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
