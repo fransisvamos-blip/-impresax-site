@@ -862,7 +862,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "logo_integration_quality","color_system_from_logo","typography_brand_fit","brand_identity_coherence",
     "hero_full_bleed_quality","hero_overlay_design","hero_copy_integration","hero_cta_quality","hero_desirability",
     "first_impression","premium_feel","wow_effect","prospect_desire","preview_sales_power",
-    "section_quality","page_architecture","final_cta_quality","footer_quality","desktop_quality","mobile_quality",
+    "section_quality","page_architecture","final_cta_quality","desktop_quality","mobile_quality",
     "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
     "commercial_desirability","client_wow_effect"
   ].filter(k=>!(pilotHeroLocked && k==="hero_desirability"));
@@ -876,7 +876,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "Scripts and forms are prohibited in previews. Judge only what the static preview contract can actually implement; never require accordion/tabs/dark-mode/back-to-top/forms/scroll widgets or other interactive product features.",
     "The QA action list MUST stay within visual composition, typography, spacing, responsive layout, permitted static CTA treatment, immutable identity placement and existing verified content. Never propose new pages, report links, toggles, widgets, invented copy or new assets.",
     "Hard fail generic template/SaaS feel, weak typography/composition, fake or cheap imagery, weak mobile reinterpretation, poor brand fidelity, truth risk, or lack of prospect specificity.",
-    "FULL-HOME HARD GATE: header_quality, navigation_quality, page_architecture, section_quality, final_cta_quality and footer_quality are blocking. Any score below 8 means FAIL.",
+    "FULL-HOME HARD GATE: header_quality, navigation_quality, page_architecture, section_quality, final_cta_quality and footer_quality are blocking. Any score below 8 means FAIL. For the logo-first master, commercial/brand/hero/section wow gates require 9+, while header/navigation/footer polish may pass at 8.5+ when there are no major issues.",
     "FULL-HOME HARD GATE: fail if the header is only logo + tiny link, if navigation looks missing/unfinished, if hero lacks readable headline/body and two designed actions, if sections feel repetitive or empty, if the final CTA is weak, or if the footer looks like a thin afterthought.",
     "Judge the whole scroll journey. A beautiful hero cannot compensate for a weak middle or weak footer.",
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
