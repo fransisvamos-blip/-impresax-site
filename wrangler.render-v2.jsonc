@@ -36,6 +36,7 @@
     }
   ],
   "vars": {
+    "V2_EXTERNAL_AI_ENABLED": "false",
     "V2_MODEL_CREATIVE": "@cf/zai-org/glm-5.3-flash",
     "V2_MODEL_VARIANT_GENERATOR": "@cf/zai-org/glm-5.3-flash",
     "V2_MODEL_VARIANT_REPAIR": "@cf/zai-org/glm-5.3-flash",
