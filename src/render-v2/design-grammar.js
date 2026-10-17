@@ -1071,9 +1071,17 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  filter:none!important
 }
 .ix-v2-footer-logo{
- max-width:300px!important;
- max-height:68px!important;
+ max-width:340px!important;
+ max-height:74px!important;
  mix-blend-mode:multiply!important
+}
+.ix-v2-footer:after{
+ content:""!important;
+ display:block!important;
+ width:100%!important;
+ height:6px!important;
+ margin-top:42px!important;
+ background:linear-gradient(90deg,var(--ix-brand-primary) 0 42%,var(--ix-brand-ink) 42% 72%,rgba(32,34,36,.16) 72% 100%)!important
 }
 
 @media(max-width:700px){
@@ -1203,6 +1211,17 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
  .ixg-trust-section{
   padding:66px 0 76px!important
+ }
+ .ixg-proof-metrics{
+  grid-template-columns:1fr!important;
+  margin-bottom:28px!important
+ }
+ .ixg-proof-metric{
+  min-height:150px!important;
+  padding:24px 22px!important
+ }
+ .ixg-proof-metric strong{
+  font-size:clamp(38px,12vw,54px)!important
  }
  .ixg-trust-grid{
   grid-template-columns:1fr!important;
