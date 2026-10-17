@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION } from "./constants.js";
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
@@ -13,6 +13,7 @@ import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPh
 import { remediateBlockedPack } from "./remediation.js";
 import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
+import { sectionVisualTokens } from "./showroom-policy.js";
 
 
 async function waitForVariantSlot(step,sql,label,{maxChecks=60,delay="30 seconds"}={}) {
@@ -958,11 +959,38 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return ingestInputAssets(this.env,sql,{pack:await getV2Pack(sql,p.packId),inputPack:input});
     });
 
-    const assetTokens=Object.entries(assets)
+    const policyAssets=await step.do("load-policy-assets",async()=>inputAssetsFromDb(sql,p.packId,input.payload));
+    const assetTokens=Object.entries(policyAssets)
       .filter(([k,v])=>!v.unavailable && k!=="PRIMARY_LOGO")
       .map(([k])=>k);
+    const sectionTokens=sectionVisualTokens(policyAssets);
+    if(sectionTokens.length<MIN_SECTION_VISUALS) {
+      await step.do("section-visual-remediation-required",async()=>{
+        await setPackStatus(sql,p.packId,"INPUT_BLOCKED",{
+          input_remediation_required:true,
+          remediation_type:"SECTION_VISUALS",
+          showroom_rules_version:SHOWROOM_RULES_VERSION,
+          required_section_visuals:MIN_SECTION_VISUALS,
+          available_section_visuals:sectionTokens.length,
+          section_visual_tokens:sectionTokens,
+          error:"SECTION_VISUALS_REQUIRED"
+        });
+        await updateWorkflow(sql,event.instanceId,{
+          status:"FAILED",
+          currentStep:"INPUT_REMEDIATION",
+          errorCode:"SECTION_VISUALS_REQUIRED",
+          metadata:{
+            showroom_rules_version:SHOWROOM_RULES_VERSION,
+            required_section_visuals:MIN_SECTION_VISUALS,
+            available_section_visuals:sectionTokens.length
+          }
+        });
+        return {ok:true};
+      });
+      return {status:"INPUT_REMEDIATION",reason:"SECTION_VISUALS_REQUIRED",required:MIN_SECTION_VISUALS,available:sectionTokens.length};
+    }
     await step.do("mark-truth-and-creative-planning",async()=>{
-      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN"});
+      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN",metadata:{showroom_rules_version:SHOWROOM_RULES_VERSION,section_visual_tokens:sectionTokens}});
       return {ok:true};
     });
 
@@ -970,6 +998,30 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       step.do("load-content-truth-component",async()=>getContentTruth(sql,p.packId)),
       step.do("load-creative-directions-component",async()=>getDirectionPlan(sql,p.packId))
     ]);
+
+    if(!EXTERNAL_AI_CALLS_ALLOWED && (!storedTruth || !storedDirections)) {
+      await step.do("cabina-precompute-required",async()=>{
+        await setPackStatus(sql,p.packId,"INPUT_BLOCKED",{
+          cabina_precompute_required:true,
+          render_generation_mode:RENDER_GENERATION_MODE,
+          showroom_rules_version:SHOWROOM_RULES_VERSION,
+          external_ai_calls_allowed:false,
+          error:"CABINA_PRECOMPUTE_REQUIRED"
+        });
+        await updateWorkflow(sql,event.instanceId,{
+          status:"FAILED",
+          currentStep:"CABINA_PRECOMPUTE_REQUIRED",
+          errorCode:"EXTERNAL_AI_DISABLED",
+          metadata:{
+            render_generation_mode:RENDER_GENERATION_MODE,
+            showroom_rules_version:SHOWROOM_RULES_VERSION,
+            external_ai_calls_allowed:false
+          }
+        });
+        return {ok:true};
+      });
+      return {status:"CABINA_PRECOMPUTE_REQUIRED",render_generation_mode:RENDER_GENERATION_MODE};
+    }
 
     const truthDraftPromise=storedTruth
       ? Promise.resolve({
