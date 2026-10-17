@@ -690,6 +690,25 @@ export function buildCopyManifest(content,inputPayload={}) {
     out["SERVICE_"+(i+1)+"_BODY"]=body;
   });
   trustPoints.forEach((s,i)=>{ out["TRUST_"+(i+1)]=String(s?.text||"").trim(); });
+
+  if(String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1") {
+    const trustJoined=trustPoints.map(s=>String(s?.text||"").replace(/\s+/g," ").trim()).join(" | ");
+    const revenue=trustJoined.match(/fatturato\s+(20\d{2})\s+di\s+(€\s?[\d.,]+\s*(?:milioni?|miliardi?))/i);
+    const employees=trustJoined.match(/(\d+)\s+dipendenti/i);
+    const authorized=trustJoined.match(/Rivenditore\s+autorizzato\s+([^.|,]+)/i);
+    if(revenue?.[2]) {
+      out.TRUST_METRIC_1=revenue[2].replace(/\s+/g," ").trim();
+      out.TRUST_METRIC_LABEL_1="Fatturato "+revenue[1];
+    }
+    if(employees?.[1]) {
+      out.TRUST_METRIC_2=employees[1];
+      out.TRUST_METRIC_LABEL_2="Dipendenti";
+    }
+    if(authorized?.[1]) {
+      out.TRUST_METRIC_3=authorized[1].trim();
+      out.TRUST_METRIC_LABEL_3="Rivenditore autorizzato";
+    }
+  }
   return out;
 }
 
