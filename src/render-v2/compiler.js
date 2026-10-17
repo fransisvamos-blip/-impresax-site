@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -177,6 +177,8 @@ export function validateRenderSpec(spec, manifests) {
   const usedCopyKeys=tokenSet(main,COPY_TOKEN);
   const usedAssetKeys=tokenSet(main,ASSET_TOKEN);
   for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys)) issues.push(issue);
+  for(const issue of surfaceContractViolations(main)) issues.push(issue);
+  for(const issue of flatStrongSectionBackgroundViolations(main,css)) issues.push(issue);
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
   const usedSectionAssets=usedAssetKeys.filter(key=>key!=="HERO_VISUAL");
