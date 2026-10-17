@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
 import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION } from "./constants.js";
-import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa } from "./ai.js";
+import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant } from "./browser.js";
@@ -672,6 +672,41 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let qa;
       try {
         qa=await step.do("r"+cycle+"-visual-qa",{timeout:"8 minutes"},async()=>{
+          const cachedRows=await sql`
+            select q.scores,q.issues,q.actions,q.created_at,q.variant_revision_id
+            from render_qa_results_v2 q
+            where q.render_pack_id=${params.packId}::uuid
+              and q.qa_type='VARIANT_VISUAL'
+              and q.model_route_version=${MODEL_ROUTE_VERSION}
+              and q.prompt_version=${PROMPT_VERSION}
+              and q.artifact_hashes->>'desktop'=${captured.desktop.sha256}
+              and q.artifact_hashes->>'mobile'=${captured.mobile.sha256}
+            order by q.created_at asc
+            limit 1`;
+          if(cachedRows.length) {
+            const cached=cachedRows[0];
+            const policy=visualQaGatePolicy(context.inputPayload);
+            const gated=applyVisualQaScoreGates({
+              scores:cached.scores||{},
+              issues:cached.issues||[],
+              actions:cached.actions||[],
+              logoFirstMaster:policy.logoFirstMaster,
+              masterGateKeys:policy.masterGateKeys
+            });
+            return {
+              pass:gated.pass,
+              summary:"Artifact-identical QA reused from the canonical first review and revalidated against the current deterministic score gates.",
+              scores:cached.scores||{},
+              issues:gated.issues,
+              actions:gated.actions,
+              model:"ARTIFACT_QA_CACHE",
+              min_score:gated.min_score,
+              master_gate_floor:gated.master_gate_floor,
+              master_gate_required:policy.logoFirstMaster?9:null,
+              cache_hit:true,
+              cache_source_revision_id:cached.variant_revision_id
+            };
+          }
           const desktopBytes=await readArtifactBytes(this.env,captured.qaDesktop.r2_key);
           const mobileBytes=await readArtifactBytes(this.env,captured.qaMobile.r2_key);
           return runVisualQa(this.env,{
