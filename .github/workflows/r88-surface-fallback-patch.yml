@@ -1,0 +1,51 @@
+name: R88 surface fallback patch
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/r88-surface-fallback-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch legacy strong surfaces
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("src/render-v2/design-grammar.js")
+          s=p.read_text()
+          pairs=[
+            (
+              ".ixb-trust{background:var(--ix-accent);color:#111;padding:0}",
+              ".ixb-trust{background:linear-gradient(135deg,#f4f1ea 0%,#fff 58%,rgba(141,137,129,.10) 100%);color:#111;padding:0}"
+            ),
+            (
+              ".ixb-positioning{background:#111;color:#f4f1ea;padding:clamp(76px,9vw,140px) 0}",
+              ".ixb-positioning{background:linear-gradient(135deg,#f4f1ea 0%,#fff 60%,rgba(17,17,17,.035) 100%);color:#111;padding:clamp(76px,9vw,140px) 0}"
+            ),
+            (
+              ".ixb-contact{background:var(--ix-accent);color:#111;padding:28px 0}",
+              ".ixb-contact{background:linear-gradient(135deg,#fff 0%,#f4f1ea 72%,rgba(141,137,129,.12) 100%);color:#111;padding:28px 0}"
+            )
+          ]
+          for old,new in pairs:
+              if old not in s:
+                  print("already patched or missing:",old[:48])
+              else:
+                  s=s.replace(old,new)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "ImpresaX Rendering Bot"
+          git config user.email "rendering-bot@impresax.local"
+          git add src/render-v2/design-grammar.js
+          git diff --cached --quiet || git commit -m "fix(render-v2): remove legacy flat strong fallback surfaces"
+          git push origin HEAD:rendering-v2-shadow
