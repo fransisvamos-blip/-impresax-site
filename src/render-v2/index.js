@@ -124,14 +124,6 @@ async function runPilotManualKick(env,sql) {
   });
 
   const instance=await env.RENDER_VARIANT_WORKFLOW.create({id:instanceId,params});
-  await setPackStatus(sql,packId,"GENERATING",{
-    pilot_manual_kick:{
-      variant_key:variantKey,
-      run_key:runKey,
-      reason,
-      instance_id:instanceId
-    }
-  });
   await sql`
     update render_v2_rollout_state
     set metadata=(coalesce(metadata,'{}'::jsonb)-'pilot_manual_kick')
@@ -142,6 +134,16 @@ async function runPilotManualKick(env,sql) {
       ),
       updated_at=now()
     where id=1`;
+  try {
+    await setPackStatus(sql,packId,"GENERATING",{
+      pilot_manual_kick:{
+        variant_key:variantKey,
+        run_key:runKey,
+        reason,
+        instance_id:instanceId
+      }
+    });
+  } catch {}
   return {ok:true,started:true,workflow_instance_id:instanceId,status:await instance.status()};
 }
 
