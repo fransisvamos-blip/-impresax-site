@@ -176,7 +176,7 @@ export default {
                   ),
                   '{scheduled_reconcile_last_ok}',to_jsonb(${reconcileError===null}::boolean),true
                 ),
-                '{scheduled_reconcile_last_error}',coalesce(to_jsonb(${reconcileError}::text),'null'::jsonb),true
+                '{scheduled_reconcile_last_error}',to_jsonb(${reconcileError||""}::text),true
               ),
               updated_at=now()
           where id=1`;
@@ -363,7 +363,7 @@ export default {
                 ),
                 '{operational_tick_last_ok}',to_jsonb(${reconcileError===null}::boolean),true
               ),
-              '{operational_tick_last_error}',coalesce(to_jsonb(${reconcileError}::text),'null'::jsonb),true
+              '{operational_tick_last_error}',to_jsonb(${reconcileError||""}::text),true
             ),
             updated_at=now()
         where id=1`;
