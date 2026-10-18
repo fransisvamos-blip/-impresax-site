@@ -30,6 +30,18 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
                 and coalesce((q.scores->>'footer_quality')::numeric,0)>=8
                 and coalesce((q.scores->>'desktop_quality')::numeric,0)>=8
                 and coalesce((q.scores->>'mobile_quality')::numeric,0)>=8
+            )
+        )::int variant_visual_passes,
+        count(*) filter (
+          where v.status='RENDER_READY'
+            and v.certified_revision is not null
+            and v.variant_key=coalesce(p.metadata->>'winner_variant','A')
+            and exists (
+              select 1
+              from render_qa_results_v2 q
+              where q.variant_revision_id=rr.id
+                and q.qa_type='CABINA_VISUAL'
+                and q.status='PASS'
                 and coalesce((q.scores->>'no_flat_color_blocks')::numeric,0)>=8
                 and coalesce((q.scores->>'background_art_direction')::numeric,0)>=8
                 and coalesce((q.scores->>'brand_motif_integration')::numeric,0)>=8
@@ -76,7 +88,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
                 and coalesce((q.scores->>'visual_memory_factor')::numeric,0)>=9.7
                 and coalesce((q.scores->>'cross_viewport_art_direction')::numeric,0)>=9.7
             )
-        )::int variant_visual_passes
+        )::int master_candidate_visual_passes
       from render_v2_packs p
       join render_v2_variants v on v.render_pack_id=p.id
       left join render_variant_revisions rr
@@ -151,6 +163,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
       (select count(*)::int from ready_gate g
        where g.premium_ready<>3
           or g.variant_visual_passes<>3
+          or g.master_candidate_visual_passes<>1
           or g.hero_passes<>3
           or g.current_set_status is distinct from 'PASS') invalid_v3_ready,
       (select count(*)::int from render_v2_packs p
