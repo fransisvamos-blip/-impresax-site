@@ -889,7 +889,20 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
         params:{
           prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id,
           variantId:variant.id,variantKey:variant.variant_key,parentInstanceId:"rpv2-"+pack.id,eventPrefix:runKey,
-          initialFeedback:{
+          initialFeedback:pack.metadata?.structural_divergence_rework_required===true ? {
+            reason:"STRUCTURAL_DIVERGENCE_REWORK",
+            issues:[
+              "The prior variant belongs to the same underlying page skeleton as another certified route.",
+              "Cosmetic CSS/color/image differences are not sufficient."
+            ],
+            actions:[
+              "Preserve verified content and official identity only.",
+              "Rebuild this variant with a materially different DOM/component hierarchy.",
+              "Change the order/placement of at least two major content modules versus the other routes.",
+              "Use a distinct hero architecture, CTA journey, section choreography and mobile flow.",
+              "Do not reuse the prior main_html skeleton or merely append a variant CSS skin."
+            ]
+          } : {
             reason:"QUEUE_AUTO_RECOVERY",
             issues:["Typed failure recovery on the current V2 execution contract."],
             actions:["Preserve verified content and identity.","Retry only the uncertified variant.","Use the executable deterministic grammar when in ZERO_PHOTO_PREMIUM mode."]
