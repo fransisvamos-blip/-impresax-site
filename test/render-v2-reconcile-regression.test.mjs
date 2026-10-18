@@ -581,8 +581,7 @@ test("structural hot-swap terminates stale active workflows before concurrency a
 });
 
 
-test("variant C mobile bridge overrides global spectacle min-height", async () => {
-  const grammar = await readFile(new URL("../src/render-v2/design-grammar.js", import.meta.url), "utf8");
+test("variant C mobile bridge overrides global spectacle min-height", () => {
   assert.match(grammar, /Variant C bridge compactness guard/);
   assert.match(grammar, /\.ixc-bridge\{min-height:0!important;display:block!important\}/);
   assert.match(grammar, /\.ixc-bridge\{min-height:0!important;padding:44px 0!important\}/);
