@@ -167,7 +167,7 @@ export default {
               || jsonb_build_object(
                 'scheduled_reconcile_last_at',to_jsonb(now()),
                 'scheduled_reconcile_last_ok',${reconcileError===null},
-                'scheduled_reconcile_last_error',${reconcileError},
+                'scheduled_reconcile_last_error',${reconcileError}::text,
                 'scheduled_reconcile_last_result',${JSON.stringify(reconcileResult||{})}::jsonb
               ),
               updated_at=now()
@@ -317,7 +317,7 @@ export default {
             || jsonb_build_object(
               'operational_tick_last_at',to_jsonb(now()),
               'operational_tick_last_ok',${reconcileError===null},
-              'operational_tick_last_error',${reconcileError},
+              'operational_tick_last_error',${reconcileError}::text,
               'operational_tick_last_reconcile',${JSON.stringify(reconcileResult||{})}::jsonb,
               'operational_tick_last_rollout',${JSON.stringify(rolloutResult||{})}::jsonb
             ),
