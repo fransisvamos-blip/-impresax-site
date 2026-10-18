@@ -438,6 +438,33 @@ async function renderAssetResponse(sql, variantId, mode) {
   });
 }
 
+async function renderV2AssetResponse(sql, env, revisionId, mode) {
+  if (!env.RENDER_ARTIFACTS || typeof env.RENDER_ARTIFACTS.get !== "function") {
+    return new Response("Render storage unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  }
+  const rows=await sql`select r.id,r.status,r.desktop_r2_key,r.mobile_r2_key,
+      a.mime
+    from render_variant_revisions r
+    left join render_artifacts_v2 a
+      on a.variant_revision_id=r.id
+     and a.r2_key=case when ${mode}='desktop' then r.desktop_r2_key else r.mobile_r2_key end
+    where r.id=${revisionId}::uuid
+      and r.status='RENDER_READY'
+    limit 1`;
+  const row=rows[0];
+  if (!row) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  const key=mode==="desktop" ? row.desktop_r2_key : row.mobile_r2_key;
+  if (!key) return new Response("Not ready",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  const object=await env.RENDER_ARTIFACTS.get(key);
+  if (!object) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  const headers=new Headers();
+  headers.set("Content-Type",object.httpMetadata?.contentType || row.mime || "image/jpeg");
+  headers.set("Cache-Control","private, max-age=300");
+  headers.set("X-Robots-Tag","noindex, nofollow, noarchive");
+  headers.set("X-Content-Type-Options","nosniff");
+  return new Response(object.body,{status:200,headers});
+}
+
 async function dashboard(sql) {
   const [counts, board, events, queue] = await Promise.all([
     sql`select * from ops_dashboard_counts`,
@@ -461,7 +488,7 @@ async function dashboard(sql) {
 
 
 async function prospectDetail(sql, id) {
-  const [p, jobs, packs, variants, assets, builds, qa, events, handoffs, queue] = await Promise.all([
+  const [p, jobs, packs, variants, v2packs, v2variants, assets, builds, qa, events, handoffs, queue] = await Promise.all([
     sql`select * from prospects where id=${id}::uuid limit 1`,
     sql`select * from render_jobs where prospect_id=${id}::uuid order by created_at desc`,
     sql`select * from render_packs where prospect_id=${id}::uuid order by version desc`,
@@ -469,6 +496,59 @@ async function prospectDetail(sql, id) {
         join render_packs rp on rp.id=rv.render_pack_id
         where rp.prospect_id=${id}::uuid
         order by rp.version desc, rv.variant_key asc`,
+    sql`select
+          rp.id,rp.prospect_id,rp.status,rp.render_ready_at,rp.selected_variant_revision_id,
+          rp.approved_reference,rp.shadow_mode,rp.created_at,rp.updated_at,
+          rp.metadata->>'winner_variant' as winner_variant,
+          rp.metadata->>'winner_reason' as winner_reason,
+          rp.metadata->>'set_qa_status' as set_qa_status,
+          rp.metadata->>'set_qa_score' as set_qa_score,
+          rp.metadata->>'diversity_ab' as diversity_ab,
+          rp.metadata->>'diversity_ac' as diversity_ac,
+          rp.metadata->>'diversity_bc' as diversity_bc,
+          rp.metadata->>'best_overall_variant' as best_overall_variant,
+          rp.metadata->>'best_premium_variant' as best_premium_variant,
+          rp.metadata->>'best_technical_variant' as best_technical_variant,
+          rp.metadata->>'best_conversion_variant' as best_conversion_variant,
+          rp.metadata->>'master_reference_status' as master_reference_status,
+          rp.metadata->>'triple_variant_build_status' as triple_variant_build_status
+        from render_v2_packs rp
+        where rp.prospect_id=${id}::uuid
+        order by rp.created_at desc`,
+    sql`select
+          v.id,v.render_pack_id,v.variant_key,v.status,v.current_revision,v.certified_revision,
+          v.direction_fingerprint,
+          r.id as revision_id,r.revision,r.status as revision_status,r.score as reference_score,
+          r.desktop_r2_key,r.mobile_r2_key,
+          r.render_spec->>'implementation_notes' as implementation_notes,
+          r.render_spec->>'launch_grade_profile' as launch_grade_profile,
+          rp.approved_reference,rp.selected_variant_revision_id,
+          (rp.selected_variant_revision_id=r.id) as selected,
+          (rp.metadata->>'winner_variant'=v.variant_key) as winner_suggested,
+          coalesce(
+            rp.metadata->>(case v.variant_key
+              when 'A' then 'variant_A_direction'
+              when 'B' then 'variant_B_direction'
+              when 'C' then 'variant_C_direction'
+            end),
+            case v.variant_key
+              when 'A' then 'ICONIC_EDITORIAL'
+              when 'B' then 'STRUCTURED_TECHNICAL_PREMIUM'
+              when 'C' then 'BRAND_DRAMATIC_SALES_IMPACT'
+            end
+          ) as creative_direction,
+          rp.metadata->>'best_overall_variant' as best_overall_variant,
+          rp.metadata->>'best_premium_variant' as best_premium_variant,
+          rp.metadata->>'best_technical_variant' as best_technical_variant,
+          rp.metadata->>'best_conversion_variant' as best_conversion_variant
+        from render_v2_variants v
+        join render_v2_packs rp on rp.id=v.render_pack_id
+        join render_variant_revisions r
+          on r.variant_id=v.id and r.revision=v.certified_revision
+        where rp.prospect_id=${id}::uuid
+          and v.variant_key in ('A','B','C')
+          and v.certified_revision is not null
+        order by rp.created_at desc,v.variant_key asc`,
     sql`select ra.* from render_assets ra join render_packs rp on rp.id=ra.render_pack_id
         where rp.prospect_id=${id}::uuid order by ra.created_at desc`,
     sql`select * from site_builds where prospect_id=${id}::uuid order by created_at desc`,
@@ -478,11 +558,21 @@ async function prospectDetail(sql, id) {
     sql`select * from orchestrator_queue where prospect_id=${id}::uuid order by id desc limit 100`,
   ]);
   if (!p[0]) return null;
+
+  const v2Variants=v2variants.map(row=>({
+    ...row,
+    name:`Variant ${row.variant_key} — ${row.creative_direction}`,
+    desktop_render_url:`/ops/api/render-v2-assets/${row.revision_id}/desktop`,
+    mobile_render_url:`/ops/api/render-v2-assets/${row.revision_id}/mobile`,
+  }));
+
   return {
     prospect: p[0],
     render_jobs: jobs,
     render_packs: packs,
     render_variants: variants,
+    render_v2_packs: v2packs,
+    render_v2_variants: v2Variants,
     render_assets: assets,
     site_builds: builds,
     qa_runs: qa,
@@ -703,6 +793,11 @@ async function api(request, env, pathname) {
     return json({ ok:false, error:error.code || error.message }, 503);
   }
 
+  const renderV2AssetMatch=pathname.match(/^\/ops\/api\/render-v2-assets\/([0-9a-f-]{36})\/(desktop|mobile)$/i);
+  if (request.method === "GET" && renderV2AssetMatch) {
+    return renderV2AssetResponse(sql,env,renderV2AssetMatch[1],renderV2AssetMatch[2].toLowerCase());
+  }
+
   const renderAssetMatch=pathname.match(/^\/ops\/api\/render-assets\/([0-9a-f-]{36})\/(desktop|mobile)$/i);
   if (request.method === "GET" && renderAssetMatch) {
     const variantId=renderAssetMatch[1];
@@ -787,6 +882,82 @@ async function api(request, env, pathname) {
   if (request.method === "GET" && match) {
     const detail = await prospectDetail(sql, match[1]);
     return detail ? json({ ok:true, ...detail }) : json({ ok:false, error:"NOT_FOUND" },404);
+  }
+
+  if (request.method === "POST" && pathname === "/ops/api/render-v2/select") {
+    let payload;
+    try { payload = await request.json(); }
+    catch { return json({ok:false,error:"INVALID_JSON"},400); }
+
+    const prospectId=String(payload?.prospect_id||"").trim();
+    const renderPackId=String(payload?.render_pack_id||"").trim();
+    const revisionId=String(payload?.revision_id||"").trim();
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(!uuid.test(prospectId)||!uuid.test(renderPackId)||!uuid.test(revisionId)) {
+      return json({ok:false,error:"INVALID_ID"},400);
+    }
+
+    const rows=await sql`select
+        rp.id as render_pack_id,rp.status as pack_status,rp.approved_reference,
+        v.variant_key,v.status as variant_status,v.certified_revision,
+        r.id as revision_id,r.revision,r.status as revision_status
+      from render_v2_packs rp
+      join render_v2_variants v on v.render_pack_id=rp.id
+      join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+      where rp.id=${renderPackId}::uuid
+        and rp.prospect_id=${prospectId}::uuid
+        and r.id=${revisionId}::uuid
+      limit 1`;
+    const candidate=rows[0];
+    if(!candidate) return json({ok:false,error:"CERTIFIED_VARIANT_NOT_FOUND"},404);
+    if(candidate.approved_reference) return json({ok:false,error:"MASTER_ALREADY_APPROVED"},409);
+    if(String(candidate.pack_status)!=="RENDER_READY" ||
+       String(candidate.variant_status)!=="RENDER_READY" ||
+       String(candidate.revision_status)!=="RENDER_READY") {
+      return json({ok:false,error:"CERTIFIED_VARIANT_NOT_RENDER_READY"},409);
+    }
+
+    const contract=await sql`select count(*)::int as complete
+      from render_v2_variants v
+      join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+      where v.render_pack_id=${renderPackId}::uuid
+        and v.variant_key in ('A','B','C')
+        and v.status='RENDER_READY'
+        and r.status='RENDER_READY'
+        and r.desktop_r2_key is not null
+        and r.mobile_r2_key is not null`;
+    if(Number(contract[0]?.complete||0)!==3) {
+      return json({ok:false,error:"THREE_CERTIFIED_VARIANTS_REQUIRED"},409);
+    }
+
+    await sql`update render_v2_packs
+      set selected_variant_revision_id=${revisionId}::uuid,
+          metadata=coalesce(metadata,'{}'::jsonb) || jsonb_build_object(
+            'cabina_selected_variant',${candidate.variant_key},
+            'cabina_selected_revision',${candidate.revision},
+            'cabina_selected_at',to_jsonb(now()),
+            'master_reference_status','AWAITING_CABINA_VISUAL_APPROVAL'
+          ),
+          updated_at=now()
+      where id=${renderPackId}::uuid`;
+
+    await sql`insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,payload)
+      values(
+        ${prospectId}::uuid,'RENDER_V2_VARIANT_SELECTED','render_variant_revision',${revisionId}::text,'gestionale',
+        ${JSON.stringify({source:"gestionale",action:"select_v2_candidate_only",master_approved:false})}::jsonb
+          || jsonb_build_object('render_pack_id',${renderPackId},'variant_key',${candidate.variant_key},'revision',${candidate.revision})
+      )`;
+
+    return json({
+      ok:true,
+      prospect_id:prospectId,
+      render_pack_id:renderPackId,
+      revision_id:revisionId,
+      variant_key:candidate.variant_key,
+      revision:candidate.revision,
+      approved_reference:false,
+      master_status:"HUMAN_APPROVAL_REQUIRED"
+    });
   }
 
   if (request.method === "POST" && pathname === "/ops/api/render/select") {
