@@ -638,10 +638,29 @@ async function prospectDetail(sql, id) {
       v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
       Boolean(v.visual_preview_passed);
+    const packMeta=v.pack_metadata||{};
+    const directionKey=v.variant_key==="A" ? "variant_A_direction" : (v.variant_key==="B" ? "variant_B_direction" : "variant_C_direction");
+    const creativeDirection=String(packMeta[directionKey] || (
+      v.variant_key==="A" ? "ICONIC_EDITORIAL" :
+      v.variant_key==="B" ? "STRUCTURED_TECHNICAL_PREMIUM" :
+      "BRAND_DRAMATIC_SALES_IMPACT"
+    ));
     return {
       ...v,
       source_system:"V2",
-      name:pilotCandidate ? "Pilot Master · Rev. "+v.revision : "Versione "+v.variant_key,
+      name:"Variant "+v.variant_key+" · "+creativeDirection,
+      creative_direction:creativeDirection,
+      winner_suggested:String(packMeta.winner_variant||"")===String(v.variant_key||""),
+      winner_reason:packMeta.winner_reason||null,
+      best_overall:String(packMeta.best_overall_variant||"")===String(v.variant_key||""),
+      best_premium:String(packMeta.best_premium_variant||"")===String(v.variant_key||""),
+      best_technical:String(packMeta.best_technical_variant||"")===String(v.variant_key||""),
+      best_conversion:String(packMeta.best_conversion_variant||"")===String(v.variant_key||""),
+      set_qa_score:packMeta.set_qa_score||null,
+      set_qa_status:packMeta.set_qa_status||null,
+      diversity_ab:packMeta.diversity_ab||null,
+      diversity_ac:packMeta.diversity_ac||null,
+      diversity_bc:packMeta.diversity_bc||null,
       reference_score:v.score,
       selected:Boolean(v.certified_revision_id && String(v.selected_variant_revision_id||"")===String(v.certified_revision_id)),
       pilot_candidate:pilotCandidate,
@@ -1769,6 +1788,12 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("PILOT MASTER PRONTO") &&
         renderUiText.includes("Apri pilot rev.") &&
         renderUiText.includes("pilotCandidate");
+      const renderUiTripleVariantContract =
+        renderUiText.includes("WINNER SUGGERITO") &&
+        renderUiText.includes("ICONIC_EDITORIAL") &&
+        renderUiText.includes("STRUCTURED_TECHNICAL_PREMIUM") &&
+        renderUiText.includes("BRAND_DRAMATIC_SALES_IMPACT") &&
+        renderUiText.includes("MASTER: approvazione umana obbligatoria");
       const renderV2ArtifactsBinding=Boolean(env.RENDER_ARTIFACTS && typeof env.RENDER_ARTIFACTS.get==="function");
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
@@ -1780,6 +1805,7 @@ export async function handleOpsRequest(request, env) {
         renderUiTwoStep &&
         renderUiV2Bridge &&
         renderUiPilotBridge &&
+        renderUiTripleVariantContract &&
         renderV2ArtifactsBinding &&
         frozenDbGuard &&
         frozenDbGuardCurrent &&
@@ -1851,8 +1877,9 @@ export async function handleOpsRequest(request, env) {
         render_ui_two_step: renderUiTwoStep,
         render_v2_admin_bridge: renderUiV2Bridge,
         render_v2_pilot_bridge: renderUiPilotBridge,
+        render_v2_triple_variant_contract: renderUiTripleVariantContract,
         render_v2_artifacts_binding: renderV2ArtifactsBinding,
-        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_PILOT_BRIDGE_20261017",
+        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_TRIPLE_VARIANT_20261018",
         legacy_render_transports: "DISABLED",
         render_ready_count: Number(rows[0]?.render_ready_count || 0),
         false_render_ready_count: falseRenderReady,
