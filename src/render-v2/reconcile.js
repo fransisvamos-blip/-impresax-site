@@ -260,6 +260,7 @@ async function preemptLowerPriorityRecoveryForQualityUpgrade(env,sql) {
     from render_v2_packs p
     join prospects pr on pr.id=p.prospect_id
     where p.shadow_mode=true
+      and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
       and p.approved_reference=false
       and p.selected_variant_revision_id is null
       and (
@@ -749,6 +750,9 @@ async function startPackFinalizer(env,sql,pack,attempt) {
 }
 
 async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
+  if(pack?.metadata?.cabina_visual_review_hold===true) {
+    return {pack_id:pack.id,started:false,reason:"CABINA_VISUAL_REVIEW_HOLD",slots_used:0};
+  }
   const slots=Math.max(0,Number(availableSlots||0));
   if(slots<=0) return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:1,available_slots:0,slots_used:0};
 
@@ -1490,6 +1494,7 @@ export async function reconcileV2(env) {
     select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.created_at,p.updated_at
     from render_v2_packs p
     where p.shadow_mode=true
+      and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
       and p.status='GENERATING'
       and p.metadata ? 'auto_recovery_wave_last_launch_at'
       and coalesce((p.metadata->>'auto_recovery_partial_open')::boolean,false)=false
@@ -1527,6 +1532,7 @@ export async function reconcileV2(env) {
       from render_v2_packs p
       join prospects pr on pr.id=p.prospect_id
       where p.shadow_mode=true
+        and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
         and p.status='GENERATING'
         and coalesce((p.metadata->>'auto_recovery_partial_open')::boolean,false)=true
         and pr.retry_count<pr.max_retries
@@ -1764,6 +1770,7 @@ export async function reconcileV2(env) {
       select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.updated_at
       from render_v2_packs p
       where p.shadow_mode=true
+        and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
         and p.status='GENERATING'
         and (
           coalesce((p.metadata->>'auto_recovery_attempt')::int,0)>=3
@@ -1817,6 +1824,7 @@ export async function reconcileV2(env) {
       from render_v2_packs p
       join prospects pr on pr.id=p.prospect_id
       where p.shadow_mode=true
+        and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
         and p.status='ESCALATION_REQUIRED'
         and coalesce((p.metadata->>'auto_recovery_attempt')::int,0)<3
         and (
