@@ -590,3 +590,11 @@ test("variant C bridge is a real media grid on desktop and mobile", () => {
   assert.match(grammar, /\.ixc-bridge \.ixg-section-visual--two\{grid-column:2!important;grid-row:2!important/);
   assert.match(grammar, /const cBridgeBody=Object\.prototype\.hasOwnProperty\.call\(copyManifest,"BRIDGE_BODY"\)/);
 });
+
+
+test("Cabina visual-review hold blocks every automatic recovery path", () => {
+  assert.match(reconcile, /pack\?\.metadata\?\.cabina_visual_review_hold===true/);
+  assert.match(reconcile, /reason:"CABINA_VISUAL_REVIEW_HOLD"/);
+  const guards=(reconcile.match(/cabina_visual_review_hold/g)||[]).length;
+  assert.ok(guards>=6, "expected Cabina hold guard across recovery selectors");
+});
