@@ -96,6 +96,7 @@ async function packGate(sql,packId) {
     from render_v2_packs p where p.id=${packId}::uuid limit 1`;
   const g=rows[0]||null;
   if(!g) return null;
+  const cabinaVisualReviewHold=g.metadata?.cabina_visual_review_hold===true;
   const threeDistinct=n(g.variant_count)===3;
   const allVariantsReady=n(g.variants_ready)===3;
   const setQaPass=n(g.set_qa_passes)>=1;
@@ -109,10 +110,11 @@ async function packGate(sql,packId) {
       set_qa_pass:setQaPass,
       preview_before_deep_qa:previewBeforeQa,
       bounded_epoch:boundedEpoch,
+      cabina_visual_review_hold_clear:!cabinaVisualReviewHold,
       epoch_revisions:n(g.epoch_revisions),
       epoch_failures:n(g.epoch_failures)
     },
-    pass:g.status==="RENDER_READY" && threeDistinct && allVariantsReady && setQaPass && previewBeforeQa && boundedEpoch
+    pass:g.status==="RENDER_READY" && !cabinaVisualReviewHold && threeDistinct && allVariantsReady && setQaPass && previewBeforeQa && boundedEpoch
   };
 }
 
@@ -265,6 +267,7 @@ async function recoverGoldenVariants(env,sql,pack,availableSlots) {
 }
 
 async function maybeStartFinalizer(env,sql,pack,gate) {
+  if(pack?.metadata?.cabina_visual_review_hold===true || gate?.metadata?.cabina_visual_review_hold===true) return null;
   if(!gate || n(gate.variants_ready)!==3 || n(gate.set_qa_passes)>0) return null;
   const rows=await sql`
     select count(*)::int total,
@@ -444,6 +447,7 @@ async function drainQueue(env,sql,state) {
     select p.id,p.prospect_id,p.input_pack_id,p.priority,p.updated_at
     from render_v2_packs p
     where p.shadow_mode=true
+      and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
       and p.status not in ('RENDER_READY','SELECTED','IMPLEMENTED','CANCELLED','SUPERSEDED','APPROVED')
       and p.quality_contract_version=${QUALITY_CONTRACT_VERSION}
       and p.execution_engine_version=${EXECUTION_ENGINE_VERSION}
