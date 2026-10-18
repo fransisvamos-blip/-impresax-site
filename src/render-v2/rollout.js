@@ -66,6 +66,15 @@ async function packGate(sql,packId) {
            join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
            where v.render_pack_id=p.id and v.variant_key='C'
          )
+         and exists(
+           select 1 from render_qa_results_v2 sq
+           where sq.render_pack_id=p.id
+             and sq.qa_type='STRUCTURAL_DIVERGENCE'
+             and sq.status='PASS'
+             and sq.artifact_hashes->>'A_revision_id'=q.artifact_hashes->>'A_revision_id'
+             and sq.artifact_hashes->>'B_revision_id'=q.artifact_hashes->>'B_revision_id'
+             and sq.artifact_hashes->>'C_revision_id'=q.artifact_hashes->>'C_revision_id'
+         )
       ) set_qa_passes,
       (select count(*)::int from render_qa_results_v2 q
        join render_variant_revisions r on r.id=q.variant_revision_id
