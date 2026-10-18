@@ -16,56 +16,84 @@ function renderVariantCardV2(variant, pack, prospectId) {
   const selected = Boolean(variant.selected);
   const sourceV2 = variant.source_system === "V2";
   const pilotCandidate = Boolean(variant.pilot_candidate);
+  const direction = sourceV2 ? String(variant.creative_direction || (
+    variant.variant_key==="A" ? "ICONIC_EDITORIAL" :
+    variant.variant_key==="B" ? "STRUCTURED_TECHNICAL_PREMIUM" :
+    "BRAND_DRAMATIC_SALES_IMPACT"
+  )) : "";
+  const rankings=[];
+  if(variant.best_overall) rankings.push("BEST OVERALL");
+  if(variant.best_premium) rankings.push("BEST PREMIUM / EDITORIAL");
+  if(variant.best_technical) rankings.push("BEST TECHNICAL / B2B");
+  if(variant.best_conversion) rankings.push("BEST CONVERSION / SALES");
+
   let html = "";
-  html += '<article class="render-pack-card render-variant-card ' + (selected ? 'approved' : '') + '">';
+  html += '<article class="render-pack-card render-variant-card ' + (variant.winner_suggested ? 'winner-suggested ' : '') + (selected ? 'approved' : '') + '">';
   html += '<div class="render-pack-head"><div>';
-  html += '<span class="kicker">' + (pilotCandidate ? 'PILOT MASTER · REV. ' + esc(variant.pilot_candidate_revision || variant.revision || '') : 'VERSIONE ' + esc(variant.variant_key)) + '</span>';
-  html += '<h3>' + esc(variant.name || ("Versione " + variant.variant_key)) + '</h3>';
+  html += '<span class="kicker">' + (sourceV2 ? 'VARIANT ' + esc(variant.variant_key) + ' · REV. ' + esc(variant.revision || variant.certified_revision || '') : (pilotCandidate ? 'PILOT MASTER · REV. ' + esc(variant.pilot_candidate_revision || variant.revision || '') : 'VERSIONE ' + esc(variant.variant_key))) + '</span>';
+  html += '<h3>' + esc(sourceV2 ? direction : (variant.name || ("Versione " + variant.variant_key))) + '</h3>';
+  if(sourceV2){
+    html += '<div class="render-v2-badges">';
+    if(variant.winner_suggested) html += '<span class="winner-badge">WINNER SUGGERITO</span>';
+    if(selected) html += '<span class="candidate-badge">CANDIDATA SCELTA · NON MASTER</span>';
+    html += '</div>';
+  }
   html += '</div><span class="' + statusClass(selected ? "APPROVED" : variant.status) + '">';
-  html += pilotCandidate ? 'PRONTO PER APPROVAZIONE CABINA' : (selected ? (pack.approved_reference ? 'IMPLEMENTATA' : 'SCELTA · NON ANCORA IMPLEMENTATA') : esc(tStatus(variant.status)));
+  html += selected ? (pack.approved_reference ? 'IMPLEMENTATA' : 'SCELTA · NON MASTER') : esc(tStatus(variant.status));
   html += '</span></div>';
 
-  html += '<div class="full-home-note">' + (pilotCandidate ? 'Pilot singolo master · Desktop 1440 + Mobile 390 · Revisione visiva Cabina' : 'Home completa obbligatoria · Desktop 1440 + Mobile 390') + ' · ' + renderSyncStateLabel(variant) + '</div>';
-  html += '<div class="render-pair">';
+  if(sourceV2){
+    html += '<div class="render-v2-summary">';
+    html += '<span><strong>SCORE</strong> ' + esc(variant.reference_score != null ? variant.reference_score : "—") + '</span>';
+    html += '<span><strong>DIREZIONE</strong> ' + esc(direction) + '</span>';
+    html += '<span><strong>DESKTOP</strong> 1440</span><span><strong>MOBILE</strong> 390</span>';
+    html += '</div>';
+    if(rankings.length) html += '<div class="render-v2-ranking">' + rankings.map(x=>'<span>'+esc(x)+'</span>').join("") + '</div>';
+  } else {
+    html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390 · ' + renderSyncStateLabel(variant) + '</div>';
+  }
 
-  html += '<div><div class="render-label">Home completa desktop · 1440</div>';
+  html += '<div class="render-pair">';
+  html += '<div><div class="render-label">Desktop · 1440</div>';
   if (variant.desktop_render_url) {
     html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">';
-    html += '<img src="' + esc(variant.desktop_render_url) + '" alt="Versione ' + esc(variant.variant_key) + ' desktop completa"></a>';
+    html += '<img src="' + esc(variant.desktop_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' desktop 1440"></a>';
   } else {
-    html += '<div class="missing-render">Render desktop in sincronizzazione dal Rendering Studio</div>';
+    html += '<div class="missing-render">Render desktop certificato non disponibile</div>';
   }
   html += '</div>';
 
-  html += '<div><div class="render-label">Home completa mobile · 390</div>';
+  html += '<div><div class="render-label">Mobile · 390</div>';
   if (variant.mobile_render_url) {
     html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">';
-    html += '<img src="' + esc(variant.mobile_render_url) + '" alt="Versione ' + esc(variant.variant_key) + ' mobile completa"></a>';
+    html += '<img src="' + esc(variant.mobile_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' mobile 390"></a>';
   } else {
-    html += '<div class="missing-render">Render mobile in sincronizzazione dal Rendering Studio</div>';
+    html += '<div class="missing-render">Render mobile certificato non disponibile</div>';
   }
   html += '</div></div>';
 
   html += '<div class="variant-preview-actions">';
-  if (variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Anteprima desktop ↗</a>';
-  if (variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Anteprima mobile ↗</a>';
+  if (variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Apri desktop 1440 ↗</a>';
+  if (variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Apri mobile 390 ↗</a>';
   html += '</div>';
 
   html += '<div class="render-pack-actions">';
-  html += '<span class="id">' + (variant.reference_score != null ? 'Punteggio ' + esc(variant.reference_score) : 'Versione completa') + '</span>';
-  if (pilotCandidate) {
+  html += '<span class="id">' + (sourceV2 ? 'REV. ' + esc(variant.revision || variant.certified_revision || '') + ' · SCORE ' + esc(variant.reference_score != null ? variant.reference_score : "—") : (variant.reference_score != null ? 'Punteggio ' + esc(variant.reference_score) : 'Versione completa')) + '</span>';
+  if (pilotCandidate && !sourceV2) {
     html += '<div class="render-decision-actions"><span class="preview-site disabled">PILOT · REVISIONE VISIVA CABINA</span></div>';
   } else {
     html += '<div class="render-decision-actions">';
     html += '<button class="choose-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
     if (!complete || rejected || selected || pack.approved_reference) html += ' disabled';
-    html += '>' + (selected ? 'Versione scelta' : 'Scegli questa versione') + '</button>';
+    html += '>' + (selected ? 'Candidata scelta' : 'Scegli questa variante') + '</button>';
     html += '<button class="implement-render" data-render-source="' + (sourceV2 ? 'V2' : 'V1') + '" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-variant-id="' + esc(variant.id) + '"';
     if (!complete || rejected || !selected || pack.approved_reference) html += ' disabled';
-    html += '>' + (pack.approved_reference && selected ? 'Versione implementata' : 'Implementa questa versione') + '</button>';
+    html += '>' + (pack.approved_reference && selected ? 'Versione implementata' : 'Approva e invia alla Site Factory') + '</button>';
     html += '</div>';
   }
-  html += '</div></article>';
+  html += '</div>';
+  if(sourceV2) html += '<div class="master-human-only">MASTER: approvazione umana obbligatoria · il winner suggerito non viene approvato automaticamente.</div>';
+  html += '</article>';
   return html;
 }
 
@@ -183,7 +211,15 @@ openRenderingProspect = async function(id) {
     );
 
     if (latestV2Pack && completeV2Set) {
-      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE · A / B / C</strong><span>Tutte e tre sono certificate e selezionabili. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+      const meta=latestV2Pack.metadata || {};
+      renderContent += '<div class="render-contract-note v2-contract"><strong>3 VARIANTI CREATIVE CERTIFICATE · A / B / C</strong><span>Winner suggerito = raccomandazione. MASTER resta human-only e richiede una seconda azione esplicita.</span></div>';
+      renderContent += '<div class="render-v2-pack-meta">';
+      renderContent += '<span>SET QA <strong>' + esc(meta.set_qa_score || certifiedV2Variants[0]?.set_qa_score || "—") + ' · ' + esc(meta.set_qa_status || certifiedV2Variants[0]?.set_qa_status || "—") + '</strong></span>';
+      renderContent += '<span>DIVERSITY A/B <strong>' + esc(meta.diversity_ab || certifiedV2Variants[0]?.diversity_ab || "—") + '</strong></span>';
+      renderContent += '<span>A/C <strong>' + esc(meta.diversity_ac || certifiedV2Variants[0]?.diversity_ac || "—") + '</strong></span>';
+      renderContent += '<span>B/C <strong>' + esc(meta.diversity_bc || certifiedV2Variants[0]?.diversity_bc || "—") + '</strong></span>';
+      renderContent += '<span>WINNER SUGGERITO <strong>' + esc(meta.winner_variant || "—") + '</strong></span>';
+      renderContent += '</div>';
       certifiedV2Variants.forEach(v => {
         // Once the full A/B/C set exists, the old single-pilot flag must never hide or disable Variant A.
         renderContent += renderVariantCardV2({...v,pilot_candidate:false,pilot_candidate_status:null,pilot_candidate_revision:null}, latestV2Pack, p.id);
@@ -217,7 +253,7 @@ openRenderingProspect = async function(id) {
 
     let head = '<div class="detail-head render-detail-head"><div>';
     head += '<span class="kicker">PROGETTAZIONE VISIVA</span><h3>' + esc(p.business_name) + '</h3>';
-    head += '<p class="reference-note">Scegli una versione completa. La scelta NON avvia la costruzione: la Site Factory parte solo premendo “Implementa questa versione”.</p></div>';
+    head += '<p class="reference-note">Confronta A/B/C su desktop e mobile. Il winner è solo una raccomandazione: scegliere una candidata NON crea il MASTER; l’approvazione resta una seconda azione umana esplicita.</p></div>';
     if (p.live_url) {
       head += '<a class="preview-site prominent" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
     } else {
