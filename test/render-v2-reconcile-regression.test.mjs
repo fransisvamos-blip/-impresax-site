@@ -570,3 +570,12 @@ test("zero-AI structural rework stops at Cabina visual review before provider QA
   assert.match(block,/CABINA_VISUAL_REVIEW/);
   assert.match(block,/return \{/);
 });
+
+test("structural hot-swap terminates stale active workflows before concurrency accounting",()=>{
+  assert.match(reconcile,/async function cancelSupersededStructuralRework/);
+  assert.match(reconcile,/ENGINE_HOT_SWAP/);
+  assert.match(reconcile,/structural_rework_cancel_before/);
+  const hotSwap=reconcile.indexOf("summary.engine_hot_swap_cancelled=await cancelSupersededStructuralRework");
+  const concurrency=reconcile.indexOf("summary.concurrency=await enforceGlobalVariantConcurrency");
+  assert.ok(hotSwap>=0 && concurrency>hotSwap);
+});
