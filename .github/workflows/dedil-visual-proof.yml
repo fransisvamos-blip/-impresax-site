@@ -1,4 +1,4 @@
-name: DEDIL C585 Visual Proof
+name: DEDIL C588 Visual Proof
 
 on:
   push:
@@ -27,15 +27,15 @@ jobs:
           set -euo pipefail
           mkdir -p dedil-visual-proof
           bucket="impresax-render-v2-shadow"
-          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r585/desktop-1440.jpg" --file dedil-visual-proof/c585-desktop.jpg --remote
-          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r585/mobile-390.jpg" --file dedil-visual-proof/c585-mobile.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r588/desktop-1440.jpg" --file dedil-visual-proof/c588-desktop.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r588/mobile-390.jpg" --file dedil-visual-proof/c588-mobile.jpg --remote
           sha256sum dedil-visual-proof/*.jpg | tee dedil-visual-proof/SHA256SUMS.txt
-          test "$(sha256sum dedil-visual-proof/c585-desktop.jpg | cut -d' ' -f1)" = "c552f4001647306993d98b70d77cb20e8b6db309555e0be8ebfe90af4c5e753e"
-          test "$(sha256sum dedil-visual-proof/c585-mobile.jpg | cut -d' ' -f1)" = "04caa558fc4ca5a8864809cfa7b6c988b62b318979c9a45218a2786166a699cb"
+          test "$(sha256sum dedil-visual-proof/c588-desktop.jpg | cut -d' ' -f1)" = "f4cc52c484e4eff1bf3050fd7409c8f89831286da449df4b90492c28fd0fe6f0"
+          test "$(sha256sum dedil-visual-proof/c588-mobile.jpg | cut -d' ' -f1)" = "4c196b02cf0ae5a39987a56d3de916a38ba33a60ffb2bb0f3bfb19219a68d605"
       - name: Upload visual proof
         uses: actions/upload-artifact@v4
         with:
-          name: dedil-c585-proof
+          name: dedil-c588-proof
           path: dedil-visual-proof/
           if-no-files-found: error
           retention-days: 1
