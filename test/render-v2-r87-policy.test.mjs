@@ -263,3 +263,33 @@ test("R106 iconic commissioned gate blocks reusable section stacks",()=>{
   const strongCss=':root{--ix-signature-angle:-7deg;--ix-signature-rule:1px}.ix-v2-header{}.ix-v2-footer{}';
   assert.deepEqual(iconicCommissionedViolations(strong,strongCss),[]);
 });
+
+
+test("copy manifest omits a service body already promoted to positioning copy",()=>{
+  const repeated="Progettazione, coordinamento e gestione operativa del cantiere per interventi edilizi complessi.";
+  const manifest=buildCopyManifest({
+    hero_headline:"Costruzioni su misura",
+    hero_body:"Realizziamo opere con controllo tecnico e presenza sul cantiere.",
+    positioning_title:"Metodo e responsabilità",
+    positioning_body:"",
+    services_title:"Competenze",
+    services_intro:"Un presidio completo lungo le fasi del progetto.",
+    trust_title:"Affidabilità",
+    trust_intro:"Esperienza e presidio operativo.",
+    closing_title:"Parliamo del progetto",
+    closing_body:"Confrontiamoci sulle esigenze del cantiere.",
+    locality_line:"Catanzaro",
+    services:[
+      {title:"Costruzioni",description:"Esecuzione di opere edili per committenti privati e imprese."},
+      {title:"Gestione cantiere",description:repeated}
+    ],
+    trust_points:[]
+  },{city:"Catanzaro"});
+  assert.equal(manifest.POSITIONING_BODY,repeated);
+  assert.equal(manifest.SERVICE_2_BODY,undefined);
+  const visible=Object.entries(manifest)
+    .filter(([,value])=>String(value||"").length>=45)
+    .map(([key,value])=>[key,String(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim()]);
+  const values=visible.map(([,value])=>value);
+  assert.equal(new Set(values).size,values.length);
+});
