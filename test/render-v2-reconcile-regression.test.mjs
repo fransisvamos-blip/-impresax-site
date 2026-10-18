@@ -617,3 +617,12 @@ test("health heartbeat falls back to rollout last_tick_at and heartbeat writes a
   assert.match(index, /scheduled_reconcile_last_error}',to_jsonb\(\$\{reconcileError\|\|""\}::text\),true/);
   assert.match(index, /operational_tick_last_error}',to_jsonb\(\$\{reconcileError\|\|""\}::text\),true/);
 });
+
+
+test("health separates all-variant visual readiness from winner-only R106 Master gate", () => {
+  assert.match(health, /q\.qa_type='VARIANT_VISUAL'[\s\S]*?mobile_quality/);
+  assert.match(health, /v\.variant_key=coalesce\(p\.metadata->>'winner_variant','A'\)/);
+  assert.match(health, /q\.qa_type='CABINA_VISUAL'/);
+  assert.match(health, /commissioned_experience_quality'[\s\S]*?>=9\.8/);
+  assert.match(health, /master_candidate_visual_passes<>1/);
+});
