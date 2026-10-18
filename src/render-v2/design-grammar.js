@@ -1512,7 +1512,19 @@ body{font-family:var(--ix-body-font)}
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+`
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+(variantKey==="C" ? `
+/* Variant C bridge compactness guard — prevents global R90 spectacle height from creating dead space. */
+.ixc-bridge{min-height:0!important;display:block!important}
+.ixc-bridge__inner{align-items:center!important}
+.ixc-bridge .ixg-section-visual--two{max-height:420px!important;min-height:220px!important}
+@media(max-width:700px){
+ .ixc-bridge{min-height:0!important;padding:44px 0!important}
+ .ixc-bridge__inner{grid-template-columns:4px minmax(0,1fr)!important;gap:18px!important;align-items:center!important}
+ .ixc-bridge__rule{min-height:118px!important}
+ .ixc-bridge__copy h2{font-size:clamp(34px,10vw,48px)!important;line-height:.94!important}
+ .ixc-bridge .ixg-section-visual--two{width:100%!important;margin:22px 0 0!important;min-height:180px!important;max-height:260px!important}
+}
+` : "")+`
 @media(max-width:700px){
  .ixg-hero__grid{grid-template-columns:minmax(0,1fr)!important;gap:26px!important;align-items:start!important}
  .ixg-hero__copy{min-width:0!important;width:100%!important;order:1!important}
