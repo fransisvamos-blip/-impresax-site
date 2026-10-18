@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES } from "./constants.js";
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
@@ -15,6 +15,113 @@ import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { sectionVisualTokens } from "./showroom-policy.js";
 
+
+function structuralSequence(html) {
+  const out=[];
+  const re=/<\/?(header|nav|main|section|article|aside|footer|figure|form|div)\b([^>]*)>/gi;
+  let m;
+  while((m=re.exec(String(html||""))) && out.length<420) {
+    const closing=m[0][1]==="/";
+    if(closing) continue;
+    const cls=String(m[2]||"").match(/\bclass\s*=\s*["']([^"']+)["']/i)?.[1]||"";
+    const classes=cls.split(/\s+/).filter(Boolean).slice(0,4).sort().join(".");
+    out.push(String(m[1]).toLowerCase()+(classes?":"+classes:""));
+  }
+  return out;
+}
+
+function heroStructuralSequence(html) {
+  const text=String(html||"");
+  const match=text.match(/<section\b[^>]*(?:id=["']hero["']|class=["'][^"']*hero[^"']*["'])[^>]*>[\s\S]*?<\/section>/i);
+  return structuralSequence(match?.[0]||text.slice(0,Math.min(text.length,9000)));
+}
+
+function sectionOrder(spec) {
+  if(Array.isArray(spec?.section_ids) && spec.section_ids.length) return spec.section_ids.map(String);
+  const out=[];
+  const re=/<section\b[^>]*\bid=["']([^"']+)["'][^>]*>/gi;
+  let m; while((m=re.exec(String(spec?.main_html||""))) && out.length<40) out.push(String(m[1]));
+  return out;
+}
+
+function lcsSimilarity(a,b) {
+  const x=(a||[]).slice(0,420), y=(b||[]).slice(0,420);
+  if(!x.length || !y.length) return 1;
+  const dp=new Array(y.length+1).fill(0);
+  for(let i=1;i<=x.length;i++) {
+    let prev=0;
+    for(let j=1;j<=y.length;j++) {
+      const tmp=dp[j];
+      dp[j]=x[i-1]===y[j-1] ? prev+1 : Math.max(dp[j],dp[j-1]);
+      prev=tmp;
+    }
+  }
+  return dp[y.length]/Math.max(x.length,y.length);
+}
+
+function positionalSimilarity(a,b) {
+  const n=Math.max(a.length,b.length);
+  if(!n) return 1;
+  let same=0;
+  for(let i=0;i<n;i++) if(a[i]===b[i] && a[i]!=null) same++;
+  return same/n;
+}
+
+function analyzeStructuralDivergence(specs) {
+  const pairs=[["A","B"],["A","C"],["B","C"]];
+  const pairResults={};
+  const burden={A:0,B:0,C:0};
+  let pass=true;
+  const issues=[];
+  for(const [a,b] of pairs) {
+    const sa=specs[a]||{}, sb=specs[b]||{};
+    const dom=lcsSimilarity(structuralSequence(sa.main_html),structuralSequence(sb.main_html));
+    const hero=lcsSimilarity(heroStructuralSequence(sa.main_html),heroStructuralSequence(sb.main_html));
+    const oa=sectionOrder(sa), ob=sectionOrder(sb);
+    const section=positionalSimilarity(oa,ob);
+    const sameOrder=oa.length===ob.length && oa.every((x,i)=>x===ob[i]);
+    const pairPass=
+      dom<=STRUCTURAL_DOM_SIMILARITY_CEILING &&
+      hero<=STRUCTURAL_HERO_SIMILARITY_CEILING &&
+      section<=STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING &&
+      (!STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED || !sameOrder);
+    const weighted=dom*0.5+hero*0.3+section*0.2;
+    const divergence=Math.max(0,Math.min(10,(1-weighted)*10));
+    pairResults[a+b]={
+      pass:pairPass,
+      dom_similarity:Number(dom.toFixed(3)),
+      hero_similarity:Number(hero.toFixed(3)),
+      section_position_similarity:Number(section.toFixed(3)),
+      same_section_order:sameOrder,
+      structural_divergence_score:Number(divergence.toFixed(2)),
+      section_order_a:oa,
+      section_order_b:ob
+    };
+    burden[a]+=weighted; burden[b]+=weighted;
+    if(!pairPass) {
+      pass=false;
+      issues.push(`${a}/${b} structural collision: DOM ${dom.toFixed(2)}, hero ${hero.toFixed(2)}, section-position ${section.toFixed(2)}, same-order=${sameOrder}`);
+    }
+  }
+  const weakest=Object.entries(burden).sort((x,y)=>y[1]-x[1]||x[0].localeCompare(y[0]))[0]?.[0]||"B";
+  return {
+    pass,
+    required:STRUCTURAL_DIVERGENCE_REQUIRED,
+    weakest_variant:pass?"NONE":weakest,
+    pairs:pairResults,
+    scores:{
+      structural_divergence_ab:pairResults.AB.structural_divergence_score,
+      structural_divergence_ac:pairResults.AC.structural_divergence_score,
+      structural_divergence_bc:pairResults.BC.structural_divergence_score
+    },
+    issues,
+    actions:pass?[]:[
+      "Rebuild the weakest variant with a different DOM/component hierarchy, not a CSS skin.",
+      "Change section ordering/content staging by at least two major modules versus both other routes.",
+      "Use a materially different hero architecture and CTA journey."
+    ]
+  };
+}
 
 async function waitForVariantSlot(step,sql,label,{maxChecks=60,delay="30 seconds"}={}) {
   for(let i=1;i<=maxChecks;i++) {
@@ -1277,20 +1384,49 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
                 && (diag.diagnostics?.mobile?.official_logo_present??false)
             };
           }
-          out[key]={desktop:bytesToBase64(d),mobile:bytesToBase64(m),revision_id:rev.id,browser_evidence:browserEvidence};
+          out[key]={desktop:bytesToBase64(d),mobile:bytesToBase64(m),revision_id:rev.id,browser_evidence:browserEvidence,render_spec:rev.render_spec||{}};
         }
         return out;
       });
-      const setQa=await step.do("set-"+setCycle+"-qa",{timeout:"10 minutes"},async()=>{
+      const structuralQa=await step.do("set-"+setCycle+"-structural-divergence",async()=>{
+        return analyzeStructuralDivergence({
+          A:frames.A.render_spec,
+          B:frames.B.render_spec,
+          C:frames.C.render_spec
+        });
+      });
+      await step.do("set-"+setCycle+"-persist-structural-divergence",async()=>{
+        await recordQa(sql,{
+          packId:p.packId,type:"STRUCTURAL_DIVERGENCE",status:structuralQa.pass?"PASS":"FAIL",
+          scores:structuralQa.scores,issues:structuralQa.issues,actions:structuralQa.actions,
+          artifactHashes:{
+            A_revision_id:frames.A.revision_id,
+            B_revision_id:frames.B.revision_id,
+            C_revision_id:frames.C.revision_id
+          },
+          modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+          idempotencyKey:"qa:STRUCTURAL_DIVERGENCE:"+p.packId+":"+frames.A.revision_id+":"+frames.B.revision_id+":"+frames.C.revision_id+":"+event.instanceId+":cycle"+setCycle
+        });
+        return {ok:true};
+      });
+      const visualSetQa=await step.do("set-"+setCycle+"-qa",{timeout:"10 minutes"},async()=>{
         return runSetQa(this.env,{
           inputPayload:input.payload,frames,
           beforeModelAttempt:({model})=>reserveAiCall(sql,p.packId,this.env,"SET_VISUAL_QA:"+model)
         });
       });
+      const setQa={
+        ...visualSetQa,
+        pass:visualSetQa.pass===true && structuralQa.pass===true,
+        weakest_variant:structuralQa.pass ? visualSetQa.weakest_variant : structuralQa.weakest_variant,
+        issues:[...(visualSetQa.issues||[]),...(structuralQa.issues||[])],
+        actions:[...(visualSetQa.actions||[]),...(structuralQa.actions||[])],
+        structural_divergence:structuralQa
+      };
       await step.do("set-"+setCycle+"-persist-qa",async()=>{
         await recordQa(sql,{
           packId:p.packId,type:"SET_VISUAL",status:setQa.pass?"PASS":"FAIL",
-          scores:setQa.scores,issues:setQa.issues,actions:setQa.actions,
+          scores:{...setQa.scores,...structuralQa.scores},issues:setQa.issues,actions:setQa.actions,
           artifactHashes:{
             A_revision_id:frames.A.revision_id,
             B_revision_id:frames.B.revision_id,
@@ -1357,7 +1493,19 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
               order by q.created_at desc
               limit 1
             ),
-            hero_gate as (
+            structural_gate as (
+              select q.*
+              from render_qa_results_v2 q
+              cross join current_revs c
+              where q.render_pack_id=${p.packId}::uuid
+                and q.qa_type='STRUCTURAL_DIVERGENCE'
+                and q.artifact_hashes->>'A_revision_id'=c.a_revision_id
+                and q.artifact_hashes->>'B_revision_id'=c.b_revision_id
+                and q.artifact_hashes->>'C_revision_id'=c.c_revision_id
+              order by q.created_at desc
+              limit 1
+            ),
+                        hero_gate as (
               select count(distinct q.variant_revision_id)::int as passed
               from render_qa_results_v2 q
               cross join current_revs c
@@ -1407,6 +1555,12 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
                     'minimum_variants_per_pack',${MINIMUM_VARIANTS_PER_PACK}::int,
                     'variant_divergence_required',${VARIANT_DIVERGENCE_REQUIRED},
                     'variant_divergence_floor',${VARIANT_DIVERGENCE_FLOOR}::numeric,
+                    'structural_divergence_required',${STRUCTURAL_DIVERGENCE_REQUIRED},
+                    'structural_dom_similarity_ceiling',${STRUCTURAL_DOM_SIMILARITY_CEILING}::numeric,
+                    'structural_hero_similarity_ceiling',${STRUCTURAL_HERO_SIMILARITY_CEILING}::numeric,
+                    'structural_section_position_similarity_ceiling',${STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING}::numeric,
+                    'structural_distinct_section_order_required',${STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED},
+                    'structural_divergence',(select jsonb_build_object('status',status,'scores',scores,'issues',issues,'actions',actions) from structural_gate),
                     'variant_creative_roles',${JSON.stringify(VARIANT_CREATIVE_ROLES)}::jsonb,
                     'winner_auto_select',${AUTO_SELECT_VARIANT_WINNER},
                     'winner_variant',${setQa.winner_variant||"A"},
@@ -1422,6 +1576,10 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
               and (select passed from hero_gate)=${MINIMUM_VARIANTS_PER_PACK}
               and (select passed from variant_gate)=${MINIMUM_VARIANTS_PER_PACK}
               and (select status from current_set)='PASS'
+              and (select status from structural_gate)='PASS'
+              and coalesce((select (scores->>'structural_divergence_ab')::numeric from structural_gate),0)>0
+              and coalesce((select (scores->>'structural_divergence_ac')::numeric from structural_gate),0)>0
+              and coalesce((select (scores->>'structural_divergence_bc')::numeric from structural_gate),0)>0
               and coalesce((select (scores->>'set_quality')::numeric from current_set),0)>=8
               and coalesce((select (scores->>'diversity_ab')::numeric from current_set),0)>=${VARIANT_DIVERGENCE_FLOOR}
               and coalesce((select (scores->>'diversity_ac')::numeric from current_set),0)>=${VARIANT_DIVERGENCE_FLOOR}
