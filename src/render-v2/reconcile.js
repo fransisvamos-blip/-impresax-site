@@ -393,7 +393,9 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
   if(slots<=0) return {started:false,reason:"CONCURRENCY_CAP",slots_used:0};
 
   const rows=await sql`
-    select p.*,pr.rank,pr.business_name,pr.retry_count,pr.max_retries,pr.error as prospect_error,pr.current_step as prospect_current_step
+    select p.id,p.prospect_id,p.input_pack_id,p.status,p.quality_contract_version,p.execution_engine_version,
+           p.metadata,p.created_at,p.updated_at,
+           pr.rank,pr.business_name,pr.retry_count,pr.max_retries,pr.error as prospect_error,pr.current_step as prospect_current_step
     from render_v2_packs p
     join prospects pr on pr.id=p.prospect_id
     where p.shadow_mode=true
@@ -499,7 +501,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
   let qualityCircuitOverride=false;
 
   const variants=await sql`
-    select v.*,
+    select v.id,v.variant_key,v.status,v.certified_revision,
            r.id certified_revision_id,
            r.compiler_version certified_compiler_version,
            exists(
@@ -761,7 +763,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   let circuitOverride=structuralRecovery;
 
   const variants=await sql`
-    select v.*,
+    select v.id,v.variant_key,v.status,v.certified_revision,
       (select w.status from render_workflows_v2 w where w.variant_id=v.id and w.workflow_type='VARIANT'
        order by w.created_at desc limit 1) latest_workflow_status
     from render_v2_variants v
@@ -1485,7 +1487,7 @@ export async function reconcileV2(env) {
   let renderSlots=summary.concurrency.slots;
 
   const completedRecoveryWaves=await sql`
-    select p.*
+    select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.created_at,p.updated_at
     from render_v2_packs p
     where p.shadow_mode=true
       and p.status='GENERATING'
@@ -1521,7 +1523,7 @@ export async function reconcileV2(env) {
 
   if(renderSlots>0) {
     const partialRecoveryPacks=await sql`
-      select p.*
+      select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.created_at,p.updated_at
       from render_v2_packs p
       join prospects pr on pr.id=p.prospect_id
       where p.shadow_mode=true
@@ -1811,7 +1813,7 @@ export async function reconcileV2(env) {
     }
 
     const escalated=await sql`
-      select p.*
+      select p.id,p.prospect_id,p.input_pack_id,p.metadata,p.created_at,p.updated_at
       from render_v2_packs p
       join prospects pr on pr.id=p.prospect_id
       where p.shadow_mode=true
