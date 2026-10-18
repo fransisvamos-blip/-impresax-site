@@ -1,0 +1,50 @@
+name: B.L. V11 Triple Visual Proof
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/bl-v11-proof.yml"
+  workflow_dispatch:
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Wrangler
+        run: npm install --no-audit --no-fund
+      - name: Fetch B.L. screenshots from private R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bl-v11-proof
+          bucket="impresax-render-v2-shadow"
+          base="$bucket/render-v2/CZ-031/959dffb2-48d0-40db-94bf-1802625fa47d"
+          npx wrangler r2 object get "$base/A/r60/desktop-1440.jpg" --file bl-v11-proof/A60-desktop.jpg --remote
+          npx wrangler r2 object get "$base/A/r60/mobile-390.jpg" --file bl-v11-proof/A60-mobile.jpg --remote
+          npx wrangler r2 object get "$base/B/r33/desktop-1440.jpg" --file bl-v11-proof/B33-desktop.jpg --remote
+          npx wrangler r2 object get "$base/B/r33/mobile-390.jpg" --file bl-v11-proof/B33-mobile.jpg --remote
+          npx wrangler r2 object get "$base/C/r39/desktop-1440.jpg" --file bl-v11-proof/C39-desktop.jpg --remote
+          npx wrangler r2 object get "$base/C/r39/mobile-390.jpg" --file bl-v11-proof/C39-mobile.jpg --remote
+          test "$(sha256sum bl-v11-proof/A60-desktop.jpg | cut -d' ' -f1)" = "b475b7b17b09b2c297c39d53df1fdcf0e8e85e0944b8edbcb10e85cffac16ac5"
+          test "$(sha256sum bl-v11-proof/A60-mobile.jpg | cut -d' ' -f1)" = "33336c5421dfa9ceb05f327744b94fcc8df20bcd4eec5ef5ff426ad8f7f36fb2"
+          test "$(sha256sum bl-v11-proof/B33-desktop.jpg | cut -d' ' -f1)" = "315d59b96eb3dd402332a8b602d2a7eaeae639f24af30630844d1038855dbf4d"
+          test "$(sha256sum bl-v11-proof/B33-mobile.jpg | cut -d' ' -f1)" = "93e7c819b6d273750512a6e24e0508d70c389289ba56632e8f47a9ed960ac46a"
+          test "$(sha256sum bl-v11-proof/C39-desktop.jpg | cut -d' ' -f1)" = "2e5fa093501982e543970b49cbbdb3dff723f9669b68e1c2190fa117b58570d1"
+          test "$(sha256sum bl-v11-proof/C39-mobile.jpg | cut -d' ' -f1)" = "2fa77116f76319e63eb8272806063fe6df4c14fdaa6422a9ed23c22f404de02a"
+          sha256sum bl-v11-proof/*.jpg | tee bl-v11-proof/SHA256SUMS.txt
+      - name: Upload visual proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: bl-a60-b33-c39-proof
+          path: bl-v11-proof/
+          if-no-files-found: error
+          retention-days: 1
