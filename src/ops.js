@@ -1796,7 +1796,7 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("MASTER: approvazione umana obbligatoria");
       const renderV2ArtifactsBinding=Boolean(env.RENDER_ARTIFACTS && typeof env.RENDER_ARTIFACTS.get==="function");
 
-      const pilotStateRows=await sql`select phase,coalesce(pilot_pack_id,metadata->>'pilot_pack_id') as pilot_pack_id
+      const pilotStateRows=await sql`select phase,coalesce(pilot_pack_id::text,metadata->>'pilot_pack_id') as pilot_pack_id
         from render_v2_rollout_state where id=1 limit 1`;
       const pilotState=pilotStateRows[0]||{};
       const activePilotPackId=String(pilotState.pilot_pack_id||"");
