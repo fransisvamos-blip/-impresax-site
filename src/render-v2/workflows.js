@@ -1430,6 +1430,21 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return {status:"ESCALATION_REQUIRED",terminal};
     }
 
+    const cabinaHoldBeforeSetQa=await step.do("cabina-finalization-hold-check",async()=>{
+      const rows=await sql`
+        select coalesce((metadata->>'cabina_visual_review_hold')::boolean,false) as hold
+        from render_v2_packs where id=${p.packId}::uuid limit 1`;
+      return rows[0]?.hold===true;
+    });
+    if(cabinaHoldBeforeSetQa) {
+      await step.do("cabina-finalization-hold",async()=>{
+        await setPackStatus(sql,p.packId,"PREVIEW_READY",{cabina_visual_review_hold:true,master_auto_approve:false});
+        await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"CABINA_VISUAL_REVIEW_HOLD",errorCode:null});
+        return {ok:true};
+      });
+      return {status:"CABINA_VISUAL_REVIEW_HOLD"};
+    }
+
     for(let setCycle=1;setCycle<=3;setCycle++) {
       await step.do("set-"+setCycle+"-mark-qa",async()=>setPackStatus(sql,p.packId,"QA_RUNNING",{set_cycle:setCycle}));
       const frames=await step.do("set-"+setCycle+"-load-frames",async()=>{
@@ -1514,6 +1529,20 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
         return {ok:true};
       });
       if(setQa.pass) {
+        const cabinaHoldBeforeCertify=await step.do("set-"+setCycle+"-cabina-hold-before-certify",async()=>{
+          const rows=await sql`
+            select coalesce((metadata->>'cabina_visual_review_hold')::boolean,false) as hold
+            from render_v2_packs where id=${p.packId}::uuid limit 1`;
+          return rows[0]?.hold===true;
+        });
+        if(cabinaHoldBeforeCertify) {
+          await step.do("set-"+setCycle+"-cabina-certification-hold",async()=>{
+            await setPackStatus(sql,p.packId,"PREVIEW_READY",{cabina_visual_review_hold:true,master_auto_approve:false});
+            await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"CABINA_VISUAL_REVIEW_HOLD",errorCode:null});
+            return {ok:true};
+          });
+          return {status:"CABINA_VISUAL_REVIEW_HOLD"};
+        }
         const heroGate=await step.do("set-"+setCycle+"-hero-gate",async()=>{
           const rows=await sql`
             select count(distinct q.variant_revision_id)::int as passed
