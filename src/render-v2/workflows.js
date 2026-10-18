@@ -608,7 +608,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             if(!context.cabinaRenderSpec) throw new Error("SYSTEM_INVARIANT:CABINA_RENDER_SPEC_REQUIRED");
             return {spec:context.cabinaRenderSpec,model:"CHATGPT_CABINA_PRECOMPUTED",cabina_precomputed:true};
           }
-          if(context.heroOnly && cycle===1 && ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))) {
+          const structuralDeterministic=String(feedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK";
+          if(cycle===1 && (structuralDeterministic || (context.heroOnly && ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
@@ -633,7 +634,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const domain=fail?.failure?.failure_domain||"AI_PROVIDER";
         const budget=/HARD_BUDGET_EXCEEDED/.test(message);
         const deterministicRecovery=
-          ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY"].includes(String(params.initialFeedback?.reason||""));
+          ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","STRUCTURAL_DIVERGENCE_REWORK"].includes(String(params.initialFeedback?.reason||""));
         const providerFailoverDomain=
           ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER","UNKNOWN"].includes(String(domain));
         // Premium V4 generation may use deterministic failover for recovery, but never for a SHOWROOM_HARD_RESET.
