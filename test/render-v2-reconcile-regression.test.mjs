@@ -598,3 +598,14 @@ test("Cabina visual-review hold blocks every automatic recovery path", () => {
   const guards=(reconcile.match(/cabina_visual_review_hold/g)||[]).length;
   assert.ok(guards>=6, "expected Cabina hold guard across recovery selectors");
 });
+
+
+test("Cabina visual-review hold also blocks finalizer and pack certification", () => {
+  assert.match(rollout, /cabinaVisualReviewHold=g\.metadata\?\.cabina_visual_review_hold===true/);
+  assert.match(rollout, /cabina_visual_review_hold_clear:!cabinaVisualReviewHold/);
+  assert.match(rollout, /maybeStartFinalizer[\s\S]*cabina_visual_review_hold===true/);
+  assert.match(rollout, /coalesce\(\(p\.metadata->>'cabina_visual_review_hold'\)::boolean,false\)=false/);
+  assert.match(workflows, /cabina-finalization-hold-check/);
+  assert.match(workflows, /CABINA_VISUAL_REVIEW_HOLD/);
+  assert.match(workflows, /cabina-hold-before-certify/);
+});
