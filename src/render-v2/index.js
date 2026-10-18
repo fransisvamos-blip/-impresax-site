@@ -158,6 +158,13 @@ export default {
       } catch(error) {
         reconcileError=String(error?.stack||error?.message||error).slice(0,5000);
       }
+      const reconcileHeartbeat={
+        started_count:Array.isArray(reconcileResult?.started)?reconcileResult.started.length:0,
+        reconciled_count:Array.isArray(reconcileResult?.reconciled)?reconcileResult.reconciled.length:0,
+        error_count:Array.isArray(reconcileResult?.errors)?reconcileResult.errors.length:0,
+        slots_before:Number(reconcileResult?.concurrency?.slots??0),
+        slots_after:Number(reconcileResult?.concurrency_after?.slots??0)
+      };
       try {
         await sql`
           update render_v2_rollout_state
@@ -168,7 +175,7 @@ export default {
                 'scheduled_reconcile_last_at',to_jsonb(now()),
                 'scheduled_reconcile_last_ok',${reconcileError===null},
                 'scheduled_reconcile_last_error',${reconcileError}::text,
-                'scheduled_reconcile_last_result',${JSON.stringify(reconcileResult||{})}::jsonb
+                'scheduled_reconcile_last_result',${JSON.stringify(reconcileHeartbeat)}::jsonb
               ),
               updated_at=now()
           where id=1`;
@@ -308,6 +315,18 @@ export default {
         reconcileError=String(error?.stack||error?.message||error).slice(0,5000);
       }
       const rolloutResult=await tickRollout(env);
+      const reconcileHeartbeat={
+        started_count:Array.isArray(reconcileResult?.started)?reconcileResult.started.length:0,
+        reconciled_count:Array.isArray(reconcileResult?.reconciled)?reconcileResult.reconciled.length:0,
+        error_count:Array.isArray(reconcileResult?.errors)?reconcileResult.errors.length:0,
+        slots_before:Number(reconcileResult?.concurrency?.slots??0),
+        slots_after:Number(reconcileResult?.concurrency_after?.slots??0)
+      };
+      const rolloutHeartbeat={
+        phase:String(rolloutResult?.phase||""),
+        queue_enabled:rolloutResult?.queue_enabled===true,
+        started_count:Array.isArray(rolloutResult?.started)?rolloutResult.started.length:0
+      };
       await sql`
         update render_v2_rollout_state
         set metadata=(coalesce(metadata,'{}'::jsonb)
@@ -318,8 +337,8 @@ export default {
               'operational_tick_last_at',to_jsonb(now()),
               'operational_tick_last_ok',${reconcileError===null},
               'operational_tick_last_error',${reconcileError}::text,
-              'operational_tick_last_reconcile',${JSON.stringify(reconcileResult||{})}::jsonb,
-              'operational_tick_last_rollout',${JSON.stringify(rolloutResult||{})}::jsonb
+              'operational_tick_last_reconcile',${JSON.stringify(reconcileHeartbeat)}::jsonb,
+              'operational_tick_last_rollout',${JSON.stringify(rolloutHeartbeat)}::jsonb
             ),
             updated_at=now()
         where id=1`;
