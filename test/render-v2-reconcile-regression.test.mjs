@@ -558,3 +558,15 @@ test("operational rollout tick reconciles before queue rollout",()=>{
   assert.ok(reconcileAt>=0 && rolloutAt>reconcileAt);
   assert.match(block,/operational_tick_last_at/);
 });
+
+test("zero-AI structural rework stops at Cabina visual review before provider QA",()=>{
+  const marker=workflows.indexOf("const structuralZeroAiReview=");
+  const qaCall=workflows.indexOf("runVisualQa(this.env",marker);
+  assert.ok(marker>=0);
+  assert.ok(qaCall>marker);
+  const block=workflows.slice(marker,qaCall);
+  assert.match(block,/EXTERNAL_AI_CALLS_ALLOWED!==true/);
+  assert.match(block,/CABINA_DETERMINISTIC/);
+  assert.match(block,/CABINA_VISUAL_REVIEW/);
+  assert.match(block,/return \{/);
+});
