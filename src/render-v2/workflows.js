@@ -843,6 +843,59 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       });
       previewEmitted=true;
 
+      const structuralZeroAiReview=
+        context.packMetadata?.structural_divergence_rework_required===true
+        && EXTERNAL_AI_CALLS_ALLOWED!==true;
+      if(structuralZeroAiReview) {
+        await step.do("r"+cycle+"-structural-zero-ai-deterministic-ready",async()=>{
+          await recordQa(sql,{
+            packId:params.packId,
+            revisionId:revision.id,
+            type:"CABINA_DETERMINISTIC",
+            status:"PASS",
+            scores:{
+              browser_gate:10,
+              compiler_gate:10,
+              asset_integrity:10,
+              structural_rework:10
+            },
+            issues:[],
+            actions:["Cabina visual review required before certification; external AI intentionally disabled."],
+            artifactHashes:{
+              desktop:captured.desktop.sha256,
+              mobile:captured.mobile.sha256,
+              deterministic_strategy:String(generated?.model||"DETERMINISTIC_STRUCTURAL")
+            },
+            modelRouteVersion:"CHATGPT_CABINA_ZERO_EXTRA_AI",
+            promptVersion:"STRUCTURAL_REWORK_ZERO_AI_V1",
+            idempotencyKey:"qa:CABINA_DETERMINISTIC_STRUCTURAL:"+params.packId+":"+revision.id
+          });
+          await updateWorkflow(sql,event.instanceId,{
+            status:"COMPLETED",
+            currentStep:"CABINA_VISUAL_REVIEW",
+            attempt:cycle,
+            errorCode:null,
+            metadata:{
+              structural_divergence_rework:true,
+              zero_external_ai:true,
+              cabina_visual_review_required:true,
+              revision:revision.revision,
+              desktop_r2_key:captured.desktop.r2_key,
+              mobile_r2_key:captured.mobile.r2_key
+            }
+          });
+          return {ok:true};
+        });
+        return {
+          status:"PREVIEW_READY",
+          variant:params.variantKey,
+          revision:revision.revision,
+          revision_id:revision.id,
+          structural_zero_ai:true,
+          cabina_visual_review_required:true
+        };
+      }
+
       if(context.cabinaPrecomputed) {
         await step.do("r"+cycle+"-cabina-deterministic-ready",async()=>{
           await recordQa(sql,{
