@@ -168,18 +168,44 @@ export default {
       try {
         await sql`
           update render_v2_rollout_state
-          set metadata=(coalesce(metadata,'{}'::jsonb)
-                -'scheduled_reconcile_last_error'
-                -'scheduled_reconcile_last_result')
-              || jsonb_build_object(
-                'scheduled_reconcile_last_at',to_jsonb(now()),
-                'scheduled_reconcile_last_ok',${reconcileError===null},
-                'scheduled_reconcile_last_error',${reconcileError}::text,
-                'scheduled_reconcile_last_result',${JSON.stringify(reconcileHeartbeat)}::jsonb
+          set metadata=jsonb_set(
+                jsonb_set(
+                  jsonb_set(
+                    coalesce(metadata,'{}'::jsonb),
+                    '{scheduled_reconcile_last_at}',to_jsonb(now()),true
+                  ),
+                  '{scheduled_reconcile_last_ok}',to_jsonb(${reconcileError===null}::boolean),true
+                ),
+                '{scheduled_reconcile_last_error}',coalesce(to_jsonb(${reconcileError}::text),'null'::jsonb),true
               ),
               updated_at=now()
           where id=1`;
-      } catch {}
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=jsonb_set(
+                  coalesce(metadata,'{}'::jsonb),
+                  '{scheduled_reconcile_last_result}',
+                  ${JSON.stringify(reconcileHeartbeat)}::jsonb,
+                  true
+                ),
+                updated_at=now()
+            where id=1`;
+        } catch {}
+      } catch(error) {
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=jsonb_set(
+                  coalesce(metadata,'{}'::jsonb),
+                  '{scheduled_reconcile_heartbeat_write_error}',
+                  to_jsonb(${String(error?.message||error).slice(0,1000)}::text),
+                  true
+                ),
+                updated_at=now()
+            where id=1`;
+        } catch {}
+      }
       try {
         const kickResult=await runPilotManualKick(env,sql);
         await sql`
@@ -329,19 +355,31 @@ export default {
       };
       await sql`
         update render_v2_rollout_state
-        set metadata=(coalesce(metadata,'{}'::jsonb)
-              -'operational_tick_last_error'
-              -'operational_tick_last_reconcile'
-              -'operational_tick_last_rollout')
-            || jsonb_build_object(
-              'operational_tick_last_at',to_jsonb(now()),
-              'operational_tick_last_ok',${reconcileError===null},
-              'operational_tick_last_error',${reconcileError}::text,
-              'operational_tick_last_reconcile',${JSON.stringify(reconcileHeartbeat)}::jsonb,
-              'operational_tick_last_rollout',${JSON.stringify(rolloutHeartbeat)}::jsonb
+        set metadata=jsonb_set(
+              jsonb_set(
+                jsonb_set(
+                  coalesce(metadata,'{}'::jsonb),
+                  '{operational_tick_last_at}',to_jsonb(now()),true
+                ),
+                '{operational_tick_last_ok}',to_jsonb(${reconcileError===null}::boolean),true
+              ),
+              '{operational_tick_last_error}',coalesce(to_jsonb(${reconcileError}::text),'null'::jsonb),true
             ),
             updated_at=now()
         where id=1`;
+      try {
+        await sql`
+          update render_v2_rollout_state
+          set metadata=jsonb_set(
+                jsonb_set(
+                  coalesce(metadata,'{}'::jsonb),
+                  '{operational_tick_last_reconcile}',${JSON.stringify(reconcileHeartbeat)}::jsonb,true
+                ),
+                '{operational_tick_last_rollout}',${JSON.stringify(rolloutHeartbeat)}::jsonb,true
+              ),
+              updated_at=now()
+          where id=1`;
+      } catch {}
       if(reconcileError) {
         return json({ok:false,error:"RECONCILE_FAILED",reconcile_error:reconcileError,rollout:rolloutResult},503);
       }
