@@ -473,7 +473,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         : input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack,inputPayload);
-      const cabinaCopyManifest=cabinaPrecomputed && packMetadata.cabina_precomputed_copy_manifest && typeof packMetadata.cabina_precomputed_copy_manifest==="object"
+      const structuralRework=packMetadata.structural_divergence_rework_required===true
+        || params.initialFeedback?.reason==="STRUCTURAL_DIVERGENCE_REWORK";
+      const cabinaCopyManifest=(cabinaPrecomputed || structuralRework)
+        && packMetadata.cabina_precomputed_copy_manifest
+        && typeof packMetadata.cabina_precomputed_copy_manifest==="object"
         ? packMetadata.cabina_precomputed_copy_manifest
         : null;
       if(cabinaCopyManifest) Object.assign(copyManifest,cabinaCopyManifest);
@@ -630,7 +634,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
               hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
-              inputPayload:context.inputPayload
+              inputPayload:context.inputPayload,
+              sectionAssetTokens:context.editorialAssetTokens.filter(token=>token!=="HERO_VISUAL")
             });
             return {spec:deterministic.spec,model:deterministic.strategy,deterministic:true};
           }
@@ -665,7 +670,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             variantKey:params.variantKey,
             copyManifest:context.copyManifest,
             hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
-            inputPayload:context.inputPayload
+            inputPayload:context.inputPayload,
+            sectionAssetTokens:context.editorialAssetTokens.filter(token=>token!=="HERO_VISUAL")
           });
           generated={
             spec:deterministic.spec,
