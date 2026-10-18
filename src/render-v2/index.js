@@ -299,7 +299,34 @@ export default {
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/rollout/tick") {
-      return json({ok:true,result:await tickRollout(env)});
+      const sql=db(env);
+      let reconcileResult=null;
+      let reconcileError=null;
+      try {
+        reconcileResult=await reconcileV2(env);
+      } catch(error) {
+        reconcileError=String(error?.stack||error?.message||error).slice(0,5000);
+      }
+      const rolloutResult=await tickRollout(env);
+      await sql`
+        update render_v2_rollout_state
+        set metadata=(coalesce(metadata,'{}'::jsonb)
+              -'operational_tick_last_error'
+              -'operational_tick_last_reconcile'
+              -'operational_tick_last_rollout')
+            || jsonb_build_object(
+              'operational_tick_last_at',to_jsonb(now()),
+              'operational_tick_last_ok',${reconcileError===null},
+              'operational_tick_last_error',${reconcileError},
+              'operational_tick_last_reconcile',${JSON.stringify(reconcileResult||{})}::jsonb,
+              'operational_tick_last_rollout',${JSON.stringify(rolloutResult||{})}::jsonb
+            ),
+            updated_at=now()
+        where id=1`;
+      if(reconcileError) {
+        return json({ok:false,error:"RECONCILE_FAILED",reconcile_error:reconcileError,rollout:rolloutResult},503);
+      }
+      return json({ok:true,reconcile:reconcileResult,rollout:rolloutResult});
     }
 
     if(request.method==="POST" && url.pathname==="/shadow/start") {
