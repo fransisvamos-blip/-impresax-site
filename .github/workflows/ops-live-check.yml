@@ -81,7 +81,8 @@ jobs:
               && grep -q '"render_ui_two_step":true' /tmp/health.json \
               && grep -q '"render_v2_admin_bridge":true' /tmp/health.json \
               && grep -q '"render_v2_artifacts_binding":true' /tmp/health.json \
-              && grep -q '"render_v2_admin_bridge_version":"V2_CONTROL_ROOM_BRIDGE_20261014"' /tmp/health.json \
+              && grep -q '"render_v2_triple_variant_contract":true' /tmp/health.json \
+              && grep -q '"render_v2_admin_bridge_version":"V2_CONTROL_ROOM_TRIPLE_VARIANT_20261018"' /tmp/health.json \
               && grep -q '"legacy_render_transports":"DISABLED"' /tmp/health.json \
               && grep -q '"false_render_ready_count":0' /tmp/health.json \
               && grep -q '"legacy_render_queue_active":0' /tmp/health.json \
@@ -127,6 +128,8 @@ jobs:
           test "$code" = "200"
           grep -q '"render_v2_admin_bridge":true' /tmp/v2-bridge-health.json
           grep -q '"render_v2_artifacts_binding":true' /tmp/v2-bridge-health.json
+          grep -q '"render_v2_triple_variant_contract":true' /tmp/v2-bridge-health.json
+          grep -q '"render_v2_admin_bridge_version":"V2_CONTROL_ROOM_TRIPLE_VARIANT_20261018"' /tmp/v2-bridge-health.json
           grep -q '"render_selection_mode":"TWO_STEP_EXPLICIT"' /tmp/v2-bridge-health.json
 
 # CLOUDFLARE_NATIVE_RENDER_VERIFY_V1
