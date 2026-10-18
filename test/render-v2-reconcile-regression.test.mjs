@@ -609,3 +609,11 @@ test("Cabina visual-review hold also blocks finalizer and pack certification", (
   assert.match(workflows, /CABINA_VISUAL_REVIEW_HOLD/);
   assert.match(workflows, /cabina-hold-before-certify/);
 });
+
+
+test("health heartbeat falls back to rollout last_tick_at and heartbeat writes avoid null binds", () => {
+  assert.match(health, /coalesce\(r\.last_tick_at,'epoch'::timestamptz\)/);
+  assert.match(health, /last_reconcile_at:x\.metadata\?\.operational_tick_last_at\|\|x\.metadata\?\.scheduled_reconcile_last_at\|\|x\.last_tick_at\|\|null/);
+  assert.match(index, /scheduled_reconcile_last_error}',to_jsonb\(\$\{reconcileError\|\|""\}::text\),true/);
+  assert.match(index, /operational_tick_last_error}',to_jsonb\(\$\{reconcileError\|\|""\}::text\),true/);
+});
