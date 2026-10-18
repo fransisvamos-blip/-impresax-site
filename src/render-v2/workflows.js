@@ -491,6 +491,19 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const verified=explicitHeroAsset(context.assets);
       if(verified) return verified;
+      const structuralRework=
+        context.packMetadata?.structural_divergence_rework_required===true
+        || String(params.initialFeedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK";
+      if(structuralRework) {
+        const perVariantHero=context.packMetadata?.cabina_precomputed_hero_sha256_by_variant||{};
+        const requestedSha=String(perVariantHero?.[params.variantKey]||"").trim().toLowerCase();
+        let reusable=requestedSha
+          ? await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha)
+          : null;
+        if(!reusable) reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
+        if(!reusable) throw new Error("SYSTEM_INVARIANT:STRUCTURAL_REWORK_REUSABLE_HERO_REQUIRED");
+        return {...reusable,structural_rework_reuse:true};
+      }
       if(context.cabinaPrecomputed) {
         const perVariantHero=context.packMetadata?.cabina_precomputed_hero_sha256_by_variant||{};
         const requestedSha=String(perVariantHero?.[params.variantKey]||context.packMetadata?.cabina_precomputed_hero_sha256||"").trim().toLowerCase();
@@ -566,7 +579,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return r;
       });
 
-      if(cycle>1 && feedback?.reason==="HERO_VISUAL_REPAIR") {
+      if(cycle>1 && feedback?.reason==="HERO_VISUAL_REPAIR" && context.packMetadata?.structural_divergence_rework_required!==true) {
         const refreshedHero=await step.do("r"+cycle+"-refresh-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
           return createGeneratedHeroAsset(this.env,sql,{
             packId:params.packId,
