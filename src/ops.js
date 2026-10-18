@@ -1795,6 +1795,35 @@ export async function handleOpsRequest(request, env) {
         renderUiText.includes("BRAND_DRAMATIC_SALES_IMPACT") &&
         renderUiText.includes("MASTER: approvazione umana obbligatoria");
       const renderV2ArtifactsBinding=Boolean(env.RENDER_ARTIFACTS && typeof env.RENDER_ARTIFACTS.get==="function");
+
+      const pilotStateRows=await sql`select phase,coalesce(pilot_pack_id,metadata->>'pilot_pack_id') as pilot_pack_id
+        from render_v2_rollout_state where id=1 limit 1`;
+      const pilotState=pilotStateRows[0]||{};
+      const activePilotPackId=String(pilotState.pilot_pack_id||"");
+      let pilotCertifiedVariants=0;
+      let pilotCertifiedAssetObjects=0;
+      if(String(pilotState.phase||"")==="PILOT_SINGLE_PROSPECT" && activePilotPackId) {
+        const certifiedRows=await sql`select v.variant_key,r.id as revision_id,r.desktop_r2_key,r.mobile_r2_key
+          from render_v2_variants v
+          join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+          where v.render_pack_id=${activePilotPackId}::uuid
+            and v.variant_key in ('A','B','C')
+            and v.status='RENDER_READY'
+            and r.status='RENDER_READY'
+            and r.desktop_r2_key is not null
+            and r.mobile_r2_key is not null
+          order by v.variant_key`;
+        pilotCertifiedVariants=certifiedRows.length;
+        if(renderV2ArtifactsBinding) {
+          const keys=certifiedRows.flatMap(x=>[x.desktop_r2_key,x.mobile_r2_key]).filter(Boolean);
+          const heads=await Promise.all(keys.map(key=>env.RENDER_ARTIFACTS.head(key).catch(()=>null)));
+          pilotCertifiedAssetObjects=heads.filter(Boolean).length;
+        }
+      }
+      const pilotTripleVariantReady=
+        String(pilotState.phase||"")!=="PILOT_SINGLE_PROSPECT" ||
+        (pilotCertifiedVariants===3 && pilotCertifiedAssetObjects===6);
+
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
       const frozenDbGuard=Boolean(rows[0]?.frozen_db_guard);
@@ -1807,6 +1836,7 @@ export async function handleOpsRequest(request, env) {
         renderUiPilotBridge &&
         renderUiTripleVariantContract &&
         renderV2ArtifactsBinding &&
+        pilotTripleVariantReady &&
         frozenDbGuard &&
         frozenDbGuardCurrent &&
         falseRenderReady===0 &&
@@ -1879,6 +1909,9 @@ export async function handleOpsRequest(request, env) {
         render_v2_pilot_bridge: renderUiPilotBridge,
         render_v2_triple_variant_contract: renderUiTripleVariantContract,
         render_v2_artifacts_binding: renderV2ArtifactsBinding,
+        render_v2_pilot_certified_variants: pilotCertifiedVariants,
+        render_v2_pilot_certified_asset_objects: pilotCertifiedAssetObjects,
+        render_v2_pilot_triple_variant_ready: pilotTripleVariantReady,
         render_v2_admin_bridge_version: "V2_CONTROL_ROOM_TRIPLE_VARIANT_20261018",
         legacy_render_transports: "DISABLED",
         render_ready_count: Number(rows[0]?.render_ready_count || 0),
