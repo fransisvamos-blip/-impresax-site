@@ -581,9 +581,12 @@ test("structural hot-swap terminates stale active workflows before concurrency a
 });
 
 
-test("variant C mobile bridge overrides global spectacle min-height", () => {
-  assert.match(grammar, /Variant C bridge compactness guard/);
-  assert.match(grammar, /\.ixc-bridge\{min-height:0!important;display:block!important\}/);
-  assert.match(grammar, /\.ixc-bridge\{min-height:0!important;padding:44px 0!important\}/);
-  assert.match(grammar, /\.ixc-bridge__rule\{min-height:118px!important\}/);
+test("variant C bridge is a real media grid on desktop and mobile", () => {
+  assert.match(grammar, /Variant C bridge grid guard/);
+  assert.match(grammar, /grid-template-columns:10px minmax\(0,\.72fr\) minmax\(320px,1fr\)!important/);
+  assert.match(grammar, /\.ixc-bridge__copy\{grid-column:2!important;grid-row:1!important\}/);
+  assert.match(grammar, /\.ixc-bridge \.ixg-section-visual--two\{grid-column:3!important;grid-row:1!important/);
+  assert.match(grammar, /grid-row:1 \/ span 2!important/);
+  assert.match(grammar, /\.ixc-bridge \.ixg-section-visual--two\{grid-column:2!important;grid-row:2!important/);
+  assert.match(grammar, /const cBridgeBody=Object\.prototype\.hasOwnProperty\.call\(copyManifest,"BRIDGE_BODY"\)/);
 });
