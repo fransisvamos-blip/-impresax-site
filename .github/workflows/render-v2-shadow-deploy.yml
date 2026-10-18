@@ -9,6 +9,10 @@ on:
       - 'src/render-v2/**'
   workflow_dispatch:
 
+concurrency:
+  group: rendering-v2-shadow-deploy
+  cancel-in-progress: true
+
 jobs:
   deploy-shadow:
     runs-on: ubuntu-latest
