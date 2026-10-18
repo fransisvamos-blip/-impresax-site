@@ -1,4 +1,5 @@
 name: DEDIL V3 Reconcile
+# kick: structural-rework-final-20261018-0340
 
 on:
   push:
