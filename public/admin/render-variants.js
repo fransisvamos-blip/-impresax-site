@@ -112,20 +112,21 @@ renderRenderingList = function() {
       const v2ReadyCount=Number(p.render_v2_ready_count||0);
       const v2Ready=String(p.render_v2_status||"").toUpperCase()==="RENDER_READY" && v2ReadyCount===3;
       const pilotCandidate=Boolean(p.render_v2_pilot_candidate);
-      const visualStatus=pilotCandidate ? "RENDER_READY" : (v2Ready ? "RENDER_READY" : (p.render_status || p.pipeline_status));
-      const visualLabel=pilotCandidate
-        ? "PILOT PRONTO · REV. " + esc(p.render_v2_pilot_candidate_revision || "")
-        : (v2Ready ? "3 VERSIONI PRONTE" : tStatus(visualStatus));
+      // A complete certified A/B/C set always wins over the legacy single-pilot presentation.
+      const visualStatus=v2Ready ? "RENDER_READY" : (pilotCandidate ? "RENDER_READY" : (p.render_status || p.pipeline_status));
+      const visualLabel=v2Ready
+        ? "3 VERSIONI PRONTE"
+        : (pilotCandidate ? "PILOT PRONTO · REV. " + esc(p.render_v2_pilot_candidate_revision || "") : tStatus(visualStatus));
       html += '<article class="render-prospect-row ' + (state.renderingSelected === p.id_prospect ? 'selected' : '') + '">';
       html += '<button class="render-prospect-open" data-render-prospect="' + esc(p.id_prospect) + '">';
       html += '<span><strong>' + esc(p.azienda) + '</strong><small>' + esc(tVertical(p.vertical)) + '</small></span>';
       html += '<span class="' + statusClass((pilotCandidate || v2Ready) ? "RENDER_READY" : p.pipeline_status) + '">' + esc(visualLabel) + '</span>';
       html += '</button>';
       html += '<div class="render-prospect-actions">';
-      if (pilotCandidate) {
-        html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri pilot rev. ' + esc(p.render_v2_pilot_candidate_revision || "") + ' →</button>';
-      } else if (v2Ready) {
+      if (v2Ready) {
         html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri A / B / C →</button>';
+      } else if (pilotCandidate) {
+        html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri pilot rev. ' + esc(p.render_v2_pilot_candidate_revision || "") + ' →</button>';
       } else if (v2ReadyCount>0) {
         html += '<span class="preview-site disabled">' + esc(v2ReadyCount) + '/3 versioni certificate</span>';
       } else if (String(p.render_v2_status||"").toUpperCase()==="GENERATING") {
@@ -166,7 +167,11 @@ openRenderingProspect = async function(id) {
     const v2Variants = (d.render_v2_variants || []).filter(v => v2PackIds.has(v.render_pack_id));
     const latestV2Pack = v2Packs[0] || null;
     const latestV2Variants = latestV2Pack ? v2Variants.filter(v => v.render_pack_id === latestV2Pack.id) : [];
-    const certifiedV2Variants = latestV2Variants.filter(v => Boolean(v.desktop_render_url && v.mobile_render_url));
+    const certifiedV2Variants = latestV2Variants
+      .filter(v => Boolean(v.desktop_render_url && v.mobile_render_url))
+      .sort((a,b) => String(a.variant_key||"").localeCompare(String(b.variant_key||"")));
+    const completeV2Set = certifiedV2Variants.length === 3 &&
+      ["A","B","C"].every(key => certifiedV2Variants.some(v => String(v.variant_key||"") === key));
     const pilotCandidateVariants = latestV2Variants.filter(v => Boolean(v.pilot_candidate && v.desktop_render_url && v.mobile_render_url));
 
     let renderContent = "";
@@ -177,8 +182,14 @@ openRenderingProspect = async function(id) {
       !["RENDER_READY","SELECTED","APPROVED"].includes(v2PackStatus)
     );
 
-    if (pilotCandidateVariants.length) {
-      renderContent += '<div class="render-contract-note"><strong>PILOT MASTER PRONTO · REV. ' + esc(pilotCandidateVariants[0].pilot_candidate_revision || "") + '</strong><span>Questa è la candidate singola attualmente in revisione Cabina. La queue globale resta bloccata: B/C e gli altri prospect non partono finché il pilot non viene approvato.</span></div>';
+    if (latestV2Pack && completeV2Set) {
+      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE · A / B / C</strong><span>Tutte e tre sono certificate e selezionabili. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+      certifiedV2Variants.forEach(v => {
+        // Once the full A/B/C set exists, the old single-pilot flag must never hide or disable Variant A.
+        renderContent += renderVariantCardV2({...v,pilot_candidate:false,pilot_candidate_status:null,pilot_candidate_revision:null}, latestV2Pack, p.id);
+      });
+    } else if (pilotCandidateVariants.length) {
+      renderContent += '<div class="render-contract-note"><strong>PILOT MASTER PRONTO · REV. ' + esc(pilotCandidateVariants[0].pilot_candidate_revision || "") + '</strong><span>Questa è la candidate singola attualmente in revisione Cabina. La queue globale resta bloccata finché il set completo non è certificato.</span></div>';
       pilotCandidateVariants.forEach(v => {
         renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
       });
