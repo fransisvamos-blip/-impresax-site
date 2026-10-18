@@ -702,7 +702,14 @@ export function buildCopyManifest(content,inputPayload={}) {
       (/^servizi?o\s*\d+$/i.test(rawTitle) || /^service\s*\d+$/i.test(rawTitle))
         ? (verifiedServiceTitle(body)||rawTitle)
         : rawTitle;
-    out["SERVICE_"+(i+1)+"_BODY"]=body;
+    // A verified service description may already have been promoted to HERO_BODY or
+    // POSITIONING_BODY. Do not expose the same long-form copy under a second token:
+    // the showroom compiler intentionally blocks duplicate section copy.
+    const bodyKey=norm(body);
+    if(body && !used.has(bodyKey)) {
+      out["SERVICE_"+(i+1)+"_BODY"]=body;
+      used.add(bodyKey);
+    }
   });
   trustPoints.forEach((s,i)=>{ out["TRUST_"+(i+1)]=String(s?.text||"").trim(); });
 
