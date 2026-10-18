@@ -29,6 +29,12 @@
     ]
   },
   "keep_vars": true,
+  "r2_buckets": [
+    {
+      "binding": "RENDER_ARTIFACTS",
+      "bucket_name": "impresax-render-v2-shadow"
+    }
+  ],
   "send_email": [
     {
       "name": "EMAIL",
