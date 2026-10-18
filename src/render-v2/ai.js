@@ -524,6 +524,9 @@ export async function createCreativeDirections(env,inputPayload,assetTokens,{bef
     "Available asset tokens are the ONLY images/identity assets variants may use: "+JSON.stringify(assetTokens),
     "If only the identity asset is available, design in ZERO_PHOTO_PREMIUM mode using typography, composition, geometry and materiality instead of invented photography.",
     "A/B/C must differ in hero logic, grid, typography behavior, material language, signature device, section rhythm, CTA integration and mobile reinterpretation.",
+    "STRUCTURAL DIVERGENCE IS BLOCKING: A/B/C must NOT share the same page skeleton. Use materially different section ordering, component architecture, hero composition, CTA architecture, content staging and mobile flow.",
+    "Do not produce one DOM/template with different colors, CSS skins, imagery swaps or decorative overlays. Each route must be independently art-directed as if commissioned by a different senior design team.",
+    "At least two major content modules must move to different positions between every pair A/B/C; hero internal structure and commercial closing structure must also be materially different.",
     "Every route must feel like a complete premium company homepage: integrated header/navigation, copy-rich hero with two visible actions, editorial positioning, service architecture, trust/proof, commercial transition, final CTA and premium footer.",
     "SHOWROOM-FIRST RULE: verified business information is raw material for the story, NOT a layout blueprint. Select, compress and stage it so the page feels like a high-end commercial showcase rather than a database, company profile or service catalogue.",
     "The prospect should feel elevated: stronger, more authoritative, more desirable and more valuable than its current digital presence.",
@@ -1271,6 +1274,8 @@ export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}
     "Each route must also read as a complete premium homepage from header to footer. Fail the set if any route feels like a concept board, a landing-page fragment, a generic template, or a hero plus filler sections.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If a variant has official_identity_visible=true and deterministic_gate_pass=true, do not claim its official logo is missing, fake, reinterpreted or broken. Judge prominence separately, but never fail immutable identity on a mechanically verified logo.",
     "Do not lower diversity merely because the same immutable official logo appears across A/B/C; identity consistency is required. Judge diversity from composition, section order, typography, material system, signature device and CTA pattern.",
+    "BLOCKING STRUCTURAL RULE: fail any pair that uses the same underlying page skeleton, substantially identical DOM/component hierarchy, substantially identical hero architecture, substantially identical section ordering, or the same CTA journey with cosmetic restyling.",
+    "Three visually polished skins of one template are a hard FAIL even if color, imagery, typography or decorative effects differ.",
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
     "BROWSER EVIDENCE:"+JSON.stringify(evidence)
   ].join("\n")}];
