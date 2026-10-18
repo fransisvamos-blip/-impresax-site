@@ -34,6 +34,55 @@ function workflowEpochTag(value) {
   return raw ? "h"+(h>>>0).toString(36) : "base";
 }
 
+async function cancelSupersededStructuralRework(env,sql) {
+  const rows=await sql`
+    select w.workflow_instance_id,w.render_pack_id,w.variant_id,w.created_at,
+           p.prospect_id,p.metadata->>'structural_rework_cancel_before' cancel_before
+    from render_workflows_v2 w
+    join render_v2_packs p on p.id=w.render_pack_id
+    where w.workflow_type='VARIANT'
+      and w.status in ('QUEUED','RUNNING','PAUSED')
+      and coalesce((p.metadata->>'structural_divergence_rework_required')::boolean,false)=true
+      and p.metadata ? 'structural_rework_cancel_before'
+      and w.created_at < (p.metadata->>'structural_rework_cancel_before')::timestamptz
+  `;
+  const cancelled=[];
+  const touched=new Map();
+  for(const row of rows) {
+    try {
+      const instance=await env.RENDER_VARIANT_WORKFLOW.get(row.workflow_instance_id);
+      await instance.terminate({rollback:false});
+    } catch {}
+    await updateWorkflow(sql,row.workflow_instance_id,{
+      status:"CANCELLED",
+      currentStep:"ENGINE_HOT_SWAP",
+      errorCode:null,
+      metadata:{
+        structural_rework_hot_swap:true,
+        structural_rework_hot_swap_at:new Date().toISOString()
+      }
+    });
+    if(row.variant_id) await setVariantStatus(sql,row.variant_id,{status:"QA_FAILED"});
+    touched.set(String(row.render_pack_id),String(row.prospect_id));
+    cancelled.push(row.workflow_instance_id);
+  }
+  for(const [packId,prospectId] of touched.entries()) {
+    await setPackStatus(sql,packId,"ESCALATION_REQUIRED",{
+      auto_recovery_attempt:0,
+      auto_recovery_partial_open:false,
+      recovery_wave_needs_next_attempt:false,
+      structural_rework_hot_swap_completed_at:new Date().toISOString(),
+      structural_rework_hot_swap_cancelled_count:cancelled.filter(Boolean).length
+    });
+    await sql`
+      update prospects
+      set retry_count=0,error=null,current_step='STRUCTURAL_DIVERGENCE_REWORK',
+          next_action='AUTO_REWORK_B_C',render_status='RENDER_REWORK',updated_at=now()
+      where id=${prospectId}::uuid`;
+  }
+  return cancelled;
+}
+
 async function enforceProspectCircuitBreakers(env,sql) {
   const rows=await sql`
     select w.workflow_instance_id,w.render_pack_id,w.variant_id,w.metadata,
@@ -1430,6 +1479,7 @@ export async function reconcileV2(env) {
   }
   summary.prospect_projection_sync=await syncProspectRenderProjection(sql);
   summary.set_qa_cache_sync=await syncCurrentSetQaCaches(sql);
+  summary.engine_hot_swap_cancelled=await cancelSupersededStructuralRework(env,sql);
   summary.circuit_breaker_terminated=await enforceProspectCircuitBreakers(env,sql);
   summary.concurrency=await enforceGlobalVariantConcurrency(env,sql);
   let renderSlots=summary.concurrency.slots;
