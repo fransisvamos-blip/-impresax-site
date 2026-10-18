@@ -541,3 +541,20 @@ test("Cabina-locked hero is exposed to QA and not rejected for editorial prefere
   assert.match(ai,/lockedHeroPreference/);
   assert.match(ai,/k===\"hero_desirability\"/);
 });
+
+test("structural rework reuses certified hero and never requests a fresh AI hero",()=>{
+  assert.match(workflows,/STRUCTURAL_REWORK_REUSABLE_HERO_REQUIRED/);
+  assert.match(workflows,/structural_rework_reuse:true/);
+  assert.match(workflows,/cabina_precomputed_hero_sha256_by_variant/);
+  assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR" && context\.packMetadata\?\.structural_divergence_rework_required!==true/);
+});
+
+test("operational rollout tick reconciles before queue rollout",()=>{
+  const route=index.indexOf('url.pathname==="/shadow/rollout/tick"');
+  assert.ok(route>=0);
+  const block=index.slice(route,route+2600);
+  const reconcileAt=block.indexOf("reconcileV2(env)");
+  const rolloutAt=block.indexOf("tickRollout(env)");
+  assert.ok(reconcileAt>=0 && rolloutAt>reconcileAt);
+  assert.match(block,/operational_tick_last_at/);
+});
