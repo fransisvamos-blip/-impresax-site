@@ -93,6 +93,93 @@ function renderLegacyPackCardV2(pack) {
   return html;
 }
 
+function renderV2Ranking(variant, pack) {
+  const tags=[];
+  if(pack.best_overall_variant===variant.variant_key) tags.push("BEST OVERALL");
+  if(pack.best_premium_variant===variant.variant_key) tags.push("BEST PREMIUM / EDITORIAL");
+  if(pack.best_technical_variant===variant.variant_key) tags.push("BEST TECHNICAL / B2B");
+  if(pack.best_conversion_variant===variant.variant_key) tags.push("BEST CONVERSION / SALES");
+  return tags;
+}
+
+function renderCertifiedVariantCard(variant, pack, prospectId) {
+  const complete=Boolean(variant.desktop_render_url && variant.mobile_render_url);
+  const selected=Boolean(variant.selected);
+  const winner=Boolean(variant.winner_suggested);
+  const rankings=renderV2Ranking(variant,pack);
+  let html="";
+  html += '<article class="render-pack-card render-variant-card render-v2-certified ' + (winner ? 'winner-suggested ' : '') + (selected ? 'approved' : '') + '">';
+  html += '<div class="render-pack-head"><div>';
+  html += '<span class="kicker">VARIANT ' + esc(variant.variant_key) + '</span>';
+  html += '<h3>' + esc(variant.creative_direction || variant.name || ("Variant "+variant.variant_key)) + '</h3>';
+  html += '<div class="render-v2-badges">';
+  if(winner) html += '<span class="winner-badge">WINNER SUGGERITO</span>';
+  if(selected) html += '<span class="candidate-badge">CANDIDATA SCELTA · NON MASTER</span>';
+  html += '</div></div>';
+  html += '<span class="' + statusClass(variant.revision_status || variant.status) + '">' + esc(tStatus(variant.revision_status || variant.status)) + '</span></div>';
+
+  html += '<div class="render-v2-summary">';
+  html += '<span><strong>REV.</strong> ' + esc(variant.revision) + '</span>';
+  html += '<span><strong>SCORE</strong> ' + esc(variant.reference_score ?? "—") + '</span>';
+  html += '<span><strong>DIREZIONE</strong> ' + esc(variant.creative_direction || "—") + '</span>';
+  html += '</div>';
+
+  if(rankings.length) {
+    html += '<div class="render-v2-ranking">' + rankings.map(x=>'<span>'+esc(x)+'</span>').join("") + '</div>';
+  }
+
+  html += '<div class="render-pair">';
+  html += '<div><div class="render-label">Desktop · 1440</div>';
+  html += complete
+    ? '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener"><img src="' + esc(variant.desktop_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' desktop 1440"></a>'
+    : '<div class="missing-render">Desktop certificato non disponibile</div>';
+  html += '</div>';
+  html += '<div><div class="render-label">Mobile · 390</div>';
+  html += complete
+    ? '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener"><img src="' + esc(variant.mobile_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' mobile 390"></a>'
+    : '<div class="missing-render">Mobile certificato non disponibile</div>';
+  html += '</div></div>';
+
+  html += '<div class="variant-preview-actions">';
+  if(variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Apri desktop 1440 ↗</a>';
+  if(variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Apri mobile 390 ↗</a>';
+  html += '</div>';
+
+  if(variant.implementation_notes) {
+    html += '<div class="render-v2-direction-note"><strong>ART DIRECTION</strong><p>' + esc(variant.implementation_notes) + '</p></div>';
+  }
+
+  html += '<div class="render-pack-actions">';
+  html += '<span class="id">Revision ID ' + esc(variant.revision_id) + '</span>';
+  html += '<button class="choose-v2-render" data-prospect-id="' + esc(prospectId) + '" data-pack-id="' + esc(pack.id) + '" data-revision-id="' + esc(variant.revision_id) + '"';
+  if(!complete || selected || pack.approved_reference) html += ' disabled';
+  html += '>' + (selected ? 'Candidata scelta' : 'Scegli questa variante') + '</button>';
+  html += '</div>';
+  html += '<div class="master-human-only">MASTER: approvazione umana obbligatoria · la selezione non approva e non avvia la Site Factory.</div>';
+  html += '</article>';
+  return html;
+}
+
+async function chooseV2Render(prospectId,packId,revisionId,button){
+  if(!confirm("Selezionare questa variante come candidata? Non diventerà MASTER e non partirà la Site Factory.")) return;
+  button.disabled=true;
+  button.textContent="Salvataggio scelta…";
+  try{
+    await api("/ops/api/render-v2/select",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prospect_id:prospectId,render_pack_id:packId,revision_id:revisionId})
+    });
+    await load();
+    await openRenderingProspect(prospectId);
+  }catch(e){
+    alert("Selezione della variante non riuscita.");
+    console.error(e);
+    button.disabled=false;
+    button.textContent="Scegli questa variante";
+  }
+}
+
 renderRenderingList = function() {
   const allowed = ["READY_FOR_RENDERING","RENDERING","RENDER_REWORK","APPROVED_REFERENCE","READY_FOR_BUILD","BUILDING","BUILD_REWORK","QA_RUNNING","QA_FAILED","ESCALATION_REQUIRED","DEMO_READY"];
   const rows = state.prospects.filter(p => allowed.includes(p.pipeline_status));
@@ -129,6 +216,15 @@ openRenderingProspect = async function(id) {
   try {
     const d = await api("/ops/api/prospects/" + encodeURIComponent(id));
     const p = d.prospect;
+    const v2Packs=(d.render_v2_packs || []).filter(pack=>{
+      const status=String(pack.status||"").toUpperCase();
+      return !status.includes("REJECT") && !status.includes("ARCHIVED") && !status.includes("CANCEL");
+    });
+    const v2Pack=v2Packs.find(pack=>String(pack.status||"").toUpperCase()==="RENDER_READY") || v2Packs[0] || null;
+    const v2Variants=(d.render_v2_variants || [])
+      .filter(v=>v2Pack && v.render_pack_id===v2Pack.id)
+      .sort((a,b)=>String(a.variant_key).localeCompare(String(b.variant_key)));
+
     const allVariants = d.render_variants || [];
     const allPacks = d.render_packs || [];
     const packs = allPacks.filter(pack => {
@@ -139,22 +235,39 @@ openRenderingProspect = async function(id) {
     const variants = allVariants.filter(v => activePackIds.has(v.render_pack_id));
     let renderContent = "";
 
-    if (variants.length) {
-      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Prima scegli la versione. Solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+    if(v2Pack && v2Variants.length){
+      const expected=["A","B","C"];
+      const keys=v2Variants.map(v=>v.variant_key);
+      const completeContract=expected.every(k=>keys.includes(k));
+      renderContent += '<div class="render-contract-note v2-contract"><strong>3 VARIANTI CREATIVE CERTIFICATE</strong>';
+      renderContent += '<span>Source of truth: revisioni certificate V2. Winner = raccomandazione, MASTER = human-only.</span></div>';
+      renderContent += '<div class="render-v2-pack-meta">';
+      renderContent += '<span>SET QA <strong>' + esc(v2Pack.set_qa_score || "—") + ' · ' + esc(v2Pack.set_qa_status || "—") + '</strong></span>';
+      renderContent += '<span>DIVERSITY A/B <strong>' + esc(v2Pack.diversity_ab || "—") + '</strong></span>';
+      renderContent += '<span>A/C <strong>' + esc(v2Pack.diversity_ac || "—") + '</strong></span>';
+      renderContent += '<span>B/C <strong>' + esc(v2Pack.diversity_bc || "—") + '</strong></span>';
+      renderContent += '<span>WINNER SUGGERITO <strong>' + esc(v2Pack.winner_variant || "—") + '</strong></span>';
+      renderContent += '</div>';
+      if(!completeContract){
+        renderContent += '<div class="legacy-warning">CONTRATTO INCOMPLETO: devono essere visibili A, B e C. Nessuna MASTER approval consentita.</div>';
+      }
+      v2Variants.forEach(v=>{ renderContent += renderCertifiedVariantCard(v,v2Pack,p.id); });
+    } else if (variants.length) {
+      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Formato legacy: prima scegli la versione, poi confermi separatamente l’implementazione.</span></div>';
       variants.forEach(v => {
         const pack = packs.find(x => x.id === v.render_pack_id);
         if (pack) renderContent += renderVariantCardV2(v, pack, p.id);
       });
     } else if (packs.length) {
-      renderContent += '<div class="render-contract-note warning"><strong>FORMATO VECCHIO</strong><span>Queste proposte sono precedenti alla nuova regola. Le tre immagini parziali non sono più considerate versioni. Il prossimo rendering dovrà produrre 3 home complete desktop + mobile.</span></div>';
+      renderContent += '<div class="render-contract-note warning"><strong>FORMATO VECCHIO</strong><span>Queste proposte precedono la source of truth Rendering V2.</span></div>';
       packs.forEach(pack => { renderContent += renderLegacyPackCardV2(pack); });
     } else {
-      renderContent = '<div class="empty">Nuovi render in lavorazione. I render rifiutati o archiviati non vengono più mostrati.</div>';
+      renderContent = '<div class="empty">Nessun render certificato disponibile.</div>';
     }
 
     let head = '<div class="detail-head render-detail-head"><div>';
     head += '<span class="kicker">PROGETTAZIONE VISIVA</span><h3>' + esc(p.business_name) + '</h3>';
-    head += '<p class="reference-note">Scegli una versione completa. La scelta NON avvia la costruzione: la Site Factory parte solo premendo “Implementa questa versione”.</p></div>';
+    head += '<p class="reference-note">Confronta A/B/C su desktop e mobile. Il winner è solo suggerito: nessuna variante diventa MASTER senza approvazione umana.</p></div>';
     if (p.live_url) {
       head += '<a class="preview-site prominent" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
     } else {
@@ -164,17 +277,14 @@ openRenderingProspect = async function(id) {
 
     $("#rendering-detail").innerHTML = head + '<div class="render-pack-stack">' + renderContent + '</div>';
 
+    document.querySelectorAll(".choose-v2-render").forEach(b => b.addEventListener("click", () => chooseV2Render(
+      b.dataset.prospectId,b.dataset.packId,b.dataset.revisionId,b
+    )));
     document.querySelectorAll(".choose-render").forEach(b => b.addEventListener("click", () => chooseRender(
-      b.dataset.prospectId,
-      b.dataset.packId,
-      b.dataset.variantId,
-      b
+      b.dataset.prospectId,b.dataset.packId,b.dataset.variantId,b
     )));
     document.querySelectorAll(".implement-render").forEach(b => b.addEventListener("click", () => implementRender(
-      b.dataset.prospectId,
-      b.dataset.packId,
-      b.dataset.variantId,
-      b
+      b.dataset.prospectId,b.dataset.packId,b.dataset.variantId,b
     )));
   } catch (e) {
     $("#rendering-detail").innerHTML = '<div class="empty error">Impossibile caricare le proposte visive.</div>';
