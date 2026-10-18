@@ -48,7 +48,8 @@ async function enforceProspectCircuitBreakers(env,sql) {
         or pr.error='GENERATION_CIRCUIT_BREAKER'
         or pr.current_step='GENERATION_HOLD'
       )
-      and coalesce((w.metadata->>'circuit_breaker_override')::boolean,false)=false`;
+      and coalesce((w.metadata->>'circuit_breaker_override')::boolean,false)=false
+      and coalesce((p.metadata->>'structural_divergence_rework_required')::boolean,false)=false`;
   const terminated=[];
   for(const row of rows) {
     try {
@@ -701,13 +702,14 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   if(slots<=0) return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:1,available_slots:0,slots_used:0};
 
   const circuitState=await prospectCircuitState(sql,pack.prospect_id);
-  const recoveryOverridePending=circuitState.open
+  const structuralRecovery=pack.metadata?.structural_divergence_rework_required===true;
+  const recoveryOverridePending=(circuitState.open && !structuralRecovery)
     ? await packCircuitOverridePending(sql,pack.id)
-    : false;
-  if(circuitState.open && !recoveryOverridePending) {
+    : structuralRecovery;
+  if(circuitState.open && !structuralRecovery && !recoveryOverridePending) {
     return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
   }
-  let circuitOverride=false;
+  let circuitOverride=structuralRecovery;
 
   const variants=await sql`
     select v.*,
@@ -739,7 +741,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     const attempt=priorAttempts+1;
     const recoveryEpoch=workflowEpochTag(pack.updated_at||pack.metadata?.stale_generating_reconciled_at||pack.created_at);
     const runKey="auto-r"+attempt+"-"+recoveryEpoch;
-    if(circuitState.open) {
+    if(circuitState.open && !structuralRecovery) {
       circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
       if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
     }
@@ -869,9 +871,9 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   }
 
   const launched=[];
-  const maxLaunch=circuitState.open?1:slots;
+  const maxLaunch=structuralRecovery?slots:(circuitState.open?1:slots);
   for(const variant of launchable.slice(0,maxLaunch)) {
-    if(circuitState.open) {
+    if(circuitState.open && !structuralRecovery) {
       circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
       if(!circuitOverride) break;
     }
@@ -880,7 +882,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,packId:pack.id,variantId:variant.id,type:"VARIANT",
       instanceId,status:"QUEUED",
-      metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt,circuit_breaker_override:circuitOverride}
+      metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt,circuit_breaker_override:(structuralRecovery||circuitOverride),structural_divergence_rework:structuralRecovery}
     });
     let instance;
     try {
