@@ -456,9 +456,11 @@ test("pilot layout micropolish can lock exact pre-QA hero SHA",()=>{
   assert.match(workflows,/q\.artifact_hashes->>'hero_sha256'=a\.sha256/);
 });
 
-test("locked pilot hero also uses deterministic Premium V3 layout",()=>{
+test("locked pilot hero and structural rework use deterministic premium layout",()=>{
   assert.match(workflows,/PILOT_LAYOUT_MICROPOLISH_REUSE_HERO/);
-  assert.match(workflows,/context\.heroOnly && cycle===1/);
+  assert.match(workflows,/STRUCTURAL_DIVERGENCE_REWORK/);
+  assert.match(workflows,/const structuralDeterministic=/);
+  assert.match(workflows,/context\.heroOnly/);
   assert.match(workflows,/buildZeroPhotoPremiumSpec/);
 });
 
