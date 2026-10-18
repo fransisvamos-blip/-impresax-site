@@ -396,3 +396,34 @@
   font-weight:800;
 }
 .variant-preview-actions a:hover{border-color:#59635c;background:#18221b}
+
+
+/* Rendering V2 — certified triple-variant comparison */
+.render-variant-card.winner-suggested{box-shadow:inset 0 0 0 1px rgba(124,221,149,.38)}
+.render-v2-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.winner-badge,.candidate-badge{
+  display:inline-flex;align-items:center;min-height:24px;padding:4px 7px;
+  border:1px solid var(--line);font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase
+}
+.winner-badge{color:var(--good);background:#132018;border-color:#2d5b39}
+.candidate-badge{color:#f2ce7f;background:#211b0f;border-color:#604a21}
+.render-v2-summary,.render-v2-pack-meta{
+  display:flex;flex-wrap:wrap;gap:8px;padding:11px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)
+}
+.render-v2-summary span,.render-v2-pack-meta span{
+  display:inline-flex;gap:5px;align-items:center;padding:6px 8px;background:#0f1210;border:1px solid var(--line);font-size:9px
+}
+.render-v2-summary strong,.render-v2-pack-meta strong{color:#fff}
+.render-v2-ranking{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 0}
+.render-v2-ranking span{
+  padding:5px 7px;border:1px solid #314637;background:#152018;color:var(--good);
+  font-size:8px;font-weight:800;letter-spacing:.05em
+}
+.master-human-only{
+  margin:0 12px 12px;padding:9px 10px;border:1px solid #4a3e22;background:#1a170f;color:#dfc67b;
+  font-size:8px;font-weight:800;letter-spacing:.04em;text-transform:uppercase
+}
+.v2-contract{border-color:#2d5b39}
+@media(max-width:620px){
+  .render-v2-summary,.render-v2-pack-meta{display:grid;grid-template-columns:1fr}
+}
