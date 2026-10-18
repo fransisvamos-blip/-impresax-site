@@ -211,6 +211,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
              and w.status in ('QUEUED','RUNNING','PAUSED')
          )) eligible_recovery_stalled,
       case when greatest(
+        coalesce(r.last_tick_at,'epoch'::timestamptz),
         coalesce((r.metadata->>'scheduled_reconcile_last_at')::timestamptz,'epoch'::timestamptz),
         coalesce((r.metadata->>'operational_tick_last_at')::timestamptz,'epoch'::timestamptz)
       ) < now()-interval '3 minutes' then 1 else 0 end as reconcile_heartbeat_stale
@@ -286,7 +287,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     active_variants:active,
     max_concurrency:maxConcurrency,
     last_tick_at:x.last_tick_at||null,
-    last_reconcile_at:x.metadata?.operational_tick_last_at||x.metadata?.scheduled_reconcile_last_at||null,
+    last_reconcile_at:x.metadata?.operational_tick_last_at||x.metadata?.scheduled_reconcile_last_at||x.last_tick_at||null,
     concurrency_ok:concurrencyOk,
     counters
   };
