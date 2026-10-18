@@ -32,7 +32,7 @@ function pilotMasterLocked(state) {
 }
 
 async function rolloutRow(sql) {
-  const rows=await sql`select * from render_v2_rollout_state where id=1 limit 1`;
+  const rows=await sql`select id,phase,queue_enabled,max_concurrency,pilot_pack_id,golden_passed_at,chaos_started_at,chaos_passed_at,last_tick_at,metadata,updated_at from render_v2_rollout_state where id=1 limit 1`;
   if(rows.length) return rows[0];
   const inserted=await sql`
     insert into render_v2_rollout_state(id,phase,queue_enabled,max_concurrency)
@@ -137,7 +137,8 @@ async function zeroCreativeSpend(sql,packId) {
 
 async function latestParent(sql,packId) {
   const rows=await sql`
-    select * from render_workflows_v2
+    select workflow_instance_id,status
+    from render_workflows_v2
     where render_pack_id=${packId}::uuid and workflow_type='PROSPECT'
     order by created_at desc limit 1`;
   return rows[0]||null;
@@ -199,7 +200,7 @@ async function recoverGoldenVariants(env,sql,pack,availableSlots) {
   const circuit=await prospectCircuitState(sql,pack.prospect_id);
   if(circuit.open) return {started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
   const variants=await sql`
-    select v.*,
+    select v.id,v.variant_key,v.status,v.certified_revision,
       (select w.status from render_workflows_v2 w
        where w.variant_id=v.id and w.workflow_type='VARIANT'
        order by w.created_at desc limit 1) latest_workflow_status
@@ -440,7 +441,7 @@ async function drainQueue(env,sql,state) {
 
   const finalizersStarted=[];
   const finalizerCandidates=await sql`
-    select p.*
+    select p.id,p.prospect_id,p.input_pack_id,p.priority,p.updated_at
     from render_v2_packs p
     where p.shadow_mode=true
       and p.status not in ('RENDER_READY','SELECTED','IMPLEMENTED','CANCELLED','SUPERSEDED','APPROVED')
