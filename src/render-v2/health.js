@@ -184,7 +184,36 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
          and (
            pr.render_status is distinct from 'RENDER_READY'
            or pr.current_step is distinct from 'CABINA_RENDER_REVIEW'
-         )) ready_projection_stale
+         )) ready_projection_stale,
+      (select count(*)::int
+       from render_v2_packs p
+       join prospects pr on pr.id=p.prospect_id
+       where p.shadow_mode=true
+         and p.status='ESCALATION_REQUIRED'
+         and coalesce((p.metadata->>'auto_recovery_attempt')::int,0)<3
+         and exists (
+           select 1 from render_v2_variants v
+           where v.render_pack_id=p.id
+             and not (v.status='RENDER_READY' and v.certified_revision is not null)
+         )
+         and (
+           (
+             pr.retry_count<pr.max_retries
+             and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
+             and coalesce(pr.current_step,'')<>'GENERATION_HOLD'
+           )
+           or coalesce((p.metadata->>'generation_circuit_breaker_override_pending')::boolean,false)=true
+           or coalesce((p.metadata->>'structural_divergence_rework_required')::boolean,false)=true
+         )
+         and not exists (
+           select 1 from render_workflows_v2 w
+           where w.render_pack_id=p.id
+             and w.status in ('QUEUED','RUNNING','PAUSED')
+         )) eligible_recovery_stalled,
+      case when greatest(
+        coalesce((r.metadata->>'scheduled_reconcile_last_at')::timestamptz,'epoch'::timestamptz),
+        coalesce((r.metadata->>'operational_tick_last_at')::timestamptz,'epoch'::timestamptz)
+      ) < now()-interval '3 minutes' then 1 else 0 end as reconcile_heartbeat_stale
     from rollout r`;
 
   const x=rows[0]||{};
@@ -197,7 +226,9 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     budget_overflow_active:Number(x.budget_overflow_active||0),
     partial_wave_incoherent:Number(x.partial_wave_incoherent||0),
     exhausted_input_projection_stale:Number(x.exhausted_input_projection_stale||0),
-    ready_projection_stale:Number(x.ready_projection_stale||0)
+    ready_projection_stale:Number(x.ready_projection_stale||0),
+    eligible_recovery_stalled:Number(x.eligible_recovery_stalled||0),
+    reconcile_heartbeat_stale:Number(x.reconcile_heartbeat_stale||0)
   };
   const active=Number(x.active_variants||0);
   const maxConcurrency=Number(x.max_concurrency||3);
@@ -255,6 +286,7 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     active_variants:active,
     max_concurrency:maxConcurrency,
     last_tick_at:x.last_tick_at||null,
+    last_reconcile_at:x.metadata?.operational_tick_last_at||x.metadata?.scheduled_reconcile_last_at||null,
     concurrency_ok:concurrencyOk,
     counters
   };
