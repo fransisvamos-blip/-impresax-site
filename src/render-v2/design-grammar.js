@@ -290,12 +290,14 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     .join("");
   const cPositionToken="POSITIONING_TITLE";
   const cBridgeTitle="LOCALITY_LINE";
-  const cBridgeBody=null;
+  const cBridgeBody=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_BODY")
+    ? "<p>"+copyToken("BRIDGE_BODY")+"</p>"
+    : "";
 
   const mainC=[
     "<section id=\"hero\" class=\"ixg ixc-hero ixg-c "+(impresaxMasterProfile?"ixc-hero--master":"")+"\"><figure class=\"ixc-hero__media\"><img class=\"ixg-hero__image\" src=\"{{asset:HERO_VISUAL}}\" alt=\"\"></figure><div class=\"ixg-shell ixc-hero__inner\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h1>"+copyToken("HERO_HEADLINE")+"</h1><div class=\"ixc-hero__lower\"><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div><div class=\"ixc-rail\" aria-hidden=\"true\"></div></div></section>",
     "<section id=\"services\" class=\"ixg ixc-services ixg-c\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header>"+cServiceRows+sectionVisual1+"</div></section>",
-    "<section id=\"bridge\" class=\"ixg ixc-bridge ixg-c\"><div class=\"ixg-shell ixc-bridge__inner\"><div class=\"ixc-bridge__rule\" aria-hidden=\"true\"></div><div class=\"ixc-bridge__copy\"><h2>"+copyToken(cBridgeTitle)+"</h2></div>"+sectionVisual2+"</div></section>",
+    "<section id=\"bridge\" class=\"ixg ixc-bridge ixg-c\"><div class=\"ixg-shell ixc-bridge__inner\"><div class=\"ixc-bridge__rule\" aria-hidden=\"true\"></div><div class=\"ixc-bridge__copy\"><h2>"+copyToken(cBridgeTitle)+"</h2>"+cBridgeBody+"</div>"+sectionVisual2+"</div></section>",
     "<section id=\"positioning\" class=\"ixg ixc-positioning ixg-c\"><div class=\"ixg-shell ixc-positioning__grid\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken(cPositionToken)+"</h2><p class=\"ixg-section-intro\">"+copyToken("POSITIONING_BODY")+"</p></div></section>",
     "<section id=\"trust\" class=\"ixg ixc-trust ixg-c\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixc-trust__inner\">"+cTrustRows+"</div>"+sectionVisual3+"</div></section>",
     "<section id=\"final-cta\" class=\"ixg ixc-contact ixg-c\"><div class=\"ixg-shell ixc-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
@@ -1378,7 +1380,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixc-services{background:#faf9f6;color:#111;padding:0}.ixc-ledger-row{display:grid;grid-template-columns:1fr;gap:18px;padding:clamp(38px,5vw,64px) 0;border-bottom:1px solid rgba(17,17,17,.24);align-items:start}.ixc-ledger-row:first-child{border-top:1px solid rgba(17,17,17,.24)}
 .ixc-ledger-row h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(32px,4.2vw,62px);line-height:.96;letter-spacing:-.04em}.ixc-ledger-value p{font-size:clamp(18px,1.65vw,24px);line-height:1.55;max-width:52ch;color:#4e4a44}
 .ixc-trust{background:#fff;color:#111;padding:clamp(54px,7vw,92px) 0}.ixc-trust__inner{display:grid;grid-template-columns:1fr}.ixc-trust-row{display:block;padding:26px 0;border-bottom:1px solid rgba(17,17,17,.2)}.ixc-trust-row:first-child{border-top:1px solid rgba(17,17,17,.2)}.ixc-trust-row strong{display:block;font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(26px,3.4vw,48px);line-height:1.04;letter-spacing:-.035em;max-width:24ch}
-.ixc-bridge{background:#fff;color:#111;padding:clamp(80px,10vw,150px) 0}.ixc-bridge__inner{display:grid;grid-template-columns:12px minmax(0,1fr);gap:clamp(34px,6vw,84px);align-items:stretch}.ixc-bridge__rule{background:var(--ix-accent);min-height:260px}.ixc-bridge__copy{display:grid;gap:30px;max-width:950px}.ixc-bridge__copy h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(52px,7.4vw,108px);line-height:.9;letter-spacing:-.055em}.ixc-bridge__copy p{max-width:52ch;color:#4e4a44}
+.ixc-bridge{background:#fff;color:#111;padding:clamp(68px,8vw,118px) 0}.ixc-bridge__inner{display:grid;grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr);gap:clamp(24px,4.5vw,68px);align-items:center}.ixc-bridge__rule{grid-column:1;grid-row:1;background:var(--ix-accent);min-height:280px}.ixc-bridge__copy{grid-column:2;grid-row:1;display:grid;gap:22px;max-width:650px}.ixc-bridge__copy h2{font-family:Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(48px,6.4vw,92px);line-height:.9;letter-spacing:-.055em}.ixc-bridge__copy p{max-width:40ch;color:#4e4a44}.ixc-bridge .ixg-section-visual--two{grid-column:3;grid-row:1;width:100%;margin:0;min-height:280px;max-height:420px}
 .ixc-contact{background:#f7f6f2;color:#111;padding:28px 0;border-top:1px solid rgba(17,17,17,.2)}.ixc-contact__inner{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .ixc-hero .ixg-cta,.ixc-contact .ixg-cta{background:transparent!important;color:inherit!important;border:0!important;border-bottom:1px solid currentColor!important;padding:0 0 7px!important;min-height:0!important;border-radius:0!important;width:auto!important;justify-content:flex-start!important}
 .ixc-hero .ixg-actions,.ixc-contact .ixg-actions{gap:18px 28px}
@@ -1387,7 +1389,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
  .ixc-rail{height:1px;margin-top:34px}.ixc-positioning{padding:58px 0}.ixc-positioning__grid{grid-template-columns:1fr;gap:22px}.ixc-positioning h2{font-size:clamp(34px,10vw,50px)}
  .ixc-ledger-row{grid-template-columns:1fr;gap:18px;padding:38px 0}.ixc-ledger-row h3{font-size:clamp(34px,10vw,50px)}.ixc-ledger-value p{font-size:17px}
  .ixc-trust{padding:44px 0}.ixc-trust-row{display:block;padding:20px 0}.ixc-trust-row strong{font-size:clamp(24px,7.2vw,34px);line-height:1.08;max-width:none;overflow-wrap:normal;word-break:normal}
- .ixc-bridge{padding:64px 0}.ixc-bridge__inner{grid-template-columns:7px 1fr;gap:24px}.ixc-bridge__rule{min-height:220px}.ixc-bridge__copy h2{font-size:clamp(46px,13vw,66px)}
+ .ixc-bridge{padding:44px 0}.ixc-bridge__inner{grid-template-columns:4px minmax(0,1fr);column-gap:16px;row-gap:20px}.ixc-bridge__rule{grid-column:1;grid-row:1 / span 2;min-height:0;align-self:stretch}.ixc-bridge__copy{grid-column:2;grid-row:1;gap:12px}.ixc-bridge__copy h2{font-size:clamp(34px,10vw,48px);line-height:.94}.ixc-bridge__copy p{font-size:15px!important;line-height:1.55!important}.ixc-bridge .ixg-section-visual--two{grid-column:2;grid-row:2;width:100%;margin:0;min-height:180px;max-height:240px}
  .ixc-contact{padding:24px 0}.ixc-contact__inner{display:flex;align-items:flex-start;flex-direction:column;gap:14px}.ixc-contact .ixg-actions{margin-top:0}
 }
 `
@@ -1513,16 +1515,18 @@ body{font-family:var(--ix-body-font)}
     spec:{
       main_html:main,
       custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+(variantKey==="C" ? `
-/* Variant C bridge compactness guard — prevents global R90 spectacle height from creating dead space. */
+/* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
 .ixc-bridge{min-height:0!important;display:block!important}
-.ixc-bridge__inner{align-items:center!important}
-.ixc-bridge .ixg-section-visual--two{max-height:420px!important;min-height:220px!important}
+.ixc-bridge__inner{grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr)!important;align-items:center!important}
+.ixc-bridge__rule{grid-column:1!important;grid-row:1!important;min-height:280px!important}
+.ixc-bridge__copy{grid-column:2!important;grid-row:1!important}
+.ixc-bridge .ixg-section-visual--two{grid-column:3!important;grid-row:1!important;width:100%!important;margin:0!important;min-height:280px!important;max-height:420px!important}
 @media(max-width:700px){
  .ixc-bridge{min-height:0!important;padding:44px 0!important}
- .ixc-bridge__inner{grid-template-columns:4px minmax(0,1fr)!important;gap:18px!important;align-items:center!important}
- .ixc-bridge__rule{min-height:118px!important}
- .ixc-bridge__copy h2{font-size:clamp(34px,10vw,48px)!important;line-height:.94!important}
- .ixc-bridge .ixg-section-visual--two{width:100%!important;margin:22px 0 0!important;min-height:180px!important;max-height:260px!important}
+ .ixc-bridge__inner{grid-template-columns:4px minmax(0,1fr)!important;column-gap:16px!important;row-gap:20px!important;align-items:stretch!important}
+ .ixc-bridge__rule{grid-column:1!important;grid-row:1 / span 2!important;min-height:0!important;align-self:stretch!important}
+ .ixc-bridge__copy{grid-column:2!important;grid-row:1!important}
+ .ixc-bridge .ixg-section-visual--two{grid-column:2!important;grid-row:2!important;width:100%!important;margin:0!important;min-height:180px!important;max-height:240px!important}
 }
 ` : "")+`
 @media(max-width:700px){
