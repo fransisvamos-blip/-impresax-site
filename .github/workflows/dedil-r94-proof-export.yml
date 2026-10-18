@@ -25,19 +25,19 @@ jobs:
       - name: Download B and C proofs
         run: |
           set -euo pipefail
-          mkdir -p ops/proofs/dedil-b-r56 ops/proofs/dedil-c-r564
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r56/desktop-1440.jpg" --remote --file ops/proofs/dedil-b-r56/desktop-1440.jpg
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r56/mobile-390.jpg" --remote --file ops/proofs/dedil-b-r56/mobile-390.jpg
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r564/desktop-1440.jpg" --remote --file ops/proofs/dedil-c-r564/desktop-1440.jpg
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r564/mobile-390.jpg" --remote --file ops/proofs/dedil-c-r564/mobile-390.jpg
+          mkdir -p ops/proofs/dedil-b-r57 ops/proofs/dedil-c-r565
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r57/desktop-1440.jpg" --remote --file ops/proofs/dedil-b-r57/desktop-1440.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r57/mobile-390.jpg" --remote --file ops/proofs/dedil-b-r57/mobile-390.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r565/desktop-1440.jpg" --remote --file ops/proofs/dedil-c-r565/desktop-1440.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r565/mobile-390.jpg" --remote --file ops/proofs/dedil-c-r565/mobile-390.jpg
           python3 -m pip install --quiet pillow
           python3 - <<'PY'
           from PIL import Image
           jobs=[
-            ("ops/proofs/dedil-b-r56/desktop-1440.jpg","ops/proofs/dedil-b-r56/desktop-review.jpg",1050,80),
-            ("ops/proofs/dedil-b-r56/mobile-390.jpg","ops/proofs/dedil-b-r56/mobile-review.jpg",390,82),
-            ("ops/proofs/dedil-c-r564/desktop-1440.jpg","ops/proofs/dedil-c-r564/desktop-review.jpg",1050,80),
-            ("ops/proofs/dedil-c-r564/mobile-390.jpg","ops/proofs/dedil-c-r564/mobile-review.jpg",390,82),
+            ("ops/proofs/dedil-b-r57/desktop-1440.jpg","ops/proofs/dedil-b-r57/desktop-review.jpg",1050,80),
+            ("ops/proofs/dedil-b-r57/mobile-390.jpg","ops/proofs/dedil-b-r57/mobile-review.jpg",390,82),
+            ("ops/proofs/dedil-c-r565/desktop-1440.jpg","ops/proofs/dedil-c-r565/desktop-review.jpg",1050,80),
+            ("ops/proofs/dedil-c-r565/mobile-390.jpg","ops/proofs/dedil-c-r565/mobile-review.jpg",390,82),
           ]
           for src,dst,w,q in jobs:
               im=Image.open(src).convert("RGB")
@@ -49,6 +49,6 @@ jobs:
           set -euo pipefail
           git config user.name "ImpresaX Rendering Bot"
           git config user.email "rendering-bot@impresax.local"
-          git add ops/proofs/dedil-b-r56 ops/proofs/dedil-c-r564
-          git diff --cached --quiet || git commit -m "chore(render-v2): export DEDIL B/C R106 visual proofs"
+          git add ops/proofs/dedil-b-r57 ops/proofs/dedil-c-r565
+          git diff --cached --quiet || git commit -m "chore(render-v2): export DEDIL B/C R106 rework visual proofs"
           git push origin HEAD:rendering-v2-shadow
