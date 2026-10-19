@@ -188,7 +188,7 @@ function firstPartyImageCandidates(docs,prospect) {
   return out
     .sort((a,b)=>b.score-a.score)
     .slice(0,12)
-    .map(({score,...x})=>x);
+    .map(({score,...x},index)=>({...x,role:index===0?"hero":"editorial"}));
 }
 
 function logoCandidate(doc,businessName) {
