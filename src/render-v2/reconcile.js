@@ -644,14 +644,16 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
       parentRevisionId:variant.certified_revision_id,
       initialFeedback:{
         reason:"ENGINE_CONTRACT_UPGRADE",
-        issues:["Previous certified output predates the premium full-home contract."],
+        issues:["Previous certified output predates the R107 premium overlay-hero ultra-visual contract."],
         actions:[
-          "Preserve verified content, official identity and the approved visual direction.",
-          "Rebuild the page as a complete premium homepage from header to footer.",
-          "Hero must include headline, body and two designed actions.",
-          "Use a premium integrated menu/header, substantial positioning, services and trust sections, strong commercial bridge, final CTA and premium footer.",
-          "Reuse the already-approved HERO_VISUAL when it still passes the hero contract.",
-          "Pass all deterministic premium-home DOM gates and all V3 visual QA scores at 8 or higher."
+          "Preserve verified content, official identity, previous certified revisions and the distinct A/B/C creative direction.",
+          "Rebuild the entire page under R107 with materially higher visual refinement, image treatment and typography quality.",
+          "Hero headline, supporting copy and both designed actions MUST be genuinely overlaid on HERO_VISUAL on desktop and mobile; split heroes are forbidden.",
+          "Reuse the verified HERO_VISUAL only when it remains credible and sufficiently high-resolution; browser QA must reject low-resolution sources.",
+          "Render at 2x device density and premium JPEG quality with high-resolution perceived detail throughout the page.",
+          "Format headlines, body copy, line lengths, line breaks, spacing and responsive typography as a super-premium commissioned experience.",
+          "Preserve structural diversity between A, B and C and keep MASTER_AUTO_APPROVE=false.",
+          "Pass R107 compiler, geometric hero-overlay browser gate, visual QA and set-diversity QA."
         ]
       }
     };
@@ -660,7 +662,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     if(pack.status!=="GENERATING" && launched.length===0) {
       await setPackStatus(sql,pack.id,"GENERATING",{
         quality_upgrade_to:QUALITY_CONTRACT_VERSION,
-        quality_upgrade_mode:"STAGED_GLOBAL_CONCURRENCY"
+        quality_upgrade_mode:"R107_STAGED_GLOBAL_CONCURRENCY"
       });
     }
     launched.push({
