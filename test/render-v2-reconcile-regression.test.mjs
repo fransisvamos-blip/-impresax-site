@@ -645,9 +645,14 @@ test("R107 capture is 2x high-resolution and geometrically verifies hero overlay
   assert.match(browser,/HERO_CTA_NOT_OVER_IMAGE/);
 });
 
-test("R107 contract upgrade bypasses external AI generation and rebuilds deterministically",()=>{
+test("R107 contract upgrade is fully deterministic and reuses certified hero for every profile",()=>{
+  assert.match(workflows,/if\(params\.initialFeedback\?\.reason==="ENGINE_CONTRACT_UPGRADE"\)/);
+  assert.match(workflows,/R107_RETROFIT_CERTIFIED_HERO_REQUIRED/);
+  assert.match(workflows,/r107_contract_upgrade_reuse:true/);
+  assert.doesNotMatch(workflows,/ENGINE_CONTRACT_UPGRADE" && !masterProfile/);
   assert.match(workflows,/const contractUpgradeDeterministic=/);
-  assert.match(workflows,/cycle===1 && \(structuralDeterministic \|\| contractUpgradeDeterministic/);
+  assert.match(workflows,/if\(contractUpgradeDeterministic \|\| \(cycle===1/);
+  assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,240}ENGINE_CONTRACT_UPGRADE/);
   assert.match(reconcile,/R107 premium overlay-hero ultra-visual contract/);
   assert.match(reconcile,/2x device density and premium JPEG quality/);
 });
