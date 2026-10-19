@@ -54,7 +54,44 @@ async function renderPage(browser,html,width,height) {
     await page.setViewport({width,height,deviceScaleFactor:RENDER_DEVICE_SCALE_FACTOR});
     await page.setContent(html,{waitUntil:"domcontentloaded",timeout:30000});
     await page.evaluate(async()=>{ if(document.fonts?.ready) await document.fonts.ready; });
-    const diagnostics=await page.evaluate(()=>{
+    const runtimeImageTreatment=await page.evaluate(async()=>{
+      const treated=[];
+      const skipped=[];
+      for(const img of [...document.images]) {
+        try {
+          if(img.decode) await img.decode();
+          if(!img.complete || !img.naturalWidth || !img.naturalHeight) continue;
+          const src=String(img.currentSrc||img.src||"");
+          if(!src.startsWith("data:image/") || /^data:image\/svg\+xml/i.test(src)) {
+            skipped.push({reason:"NON_RASTER_OR_NON_DATA",src:src.slice(0,48)});
+            continue;
+          }
+          const rect=img.getBoundingClientRect();
+          if(rect.width<24 || rect.height<24) continue;
+          const sourceWidth=img.naturalWidth;
+          const sourceHeight=img.naturalHeight;
+          const desiredWidth=Math.min(4096,Math.max(sourceWidth,Math.ceil(rect.width*RENDER_DEVICE_SCALE_FACTOR)));
+          const scale=Math.min(4,desiredWidth/sourceWidth);
+          if(scale<=1.01) continue;
+          const width=Math.max(sourceWidth,Math.round(sourceWidth*scale));
+          const height=Math.max(sourceHeight,Math.round(sourceHeight*scale));
+          const canvas=document.createElement("canvas");
+          canvas.width=width;
+          canvas.height=height;
+          const ctx=canvas.getContext("2d",{alpha:false});
+          ctx.imageSmoothingEnabled=true;
+          ctx.imageSmoothingQuality="high";
+          ctx.drawImage(img,0,0,width,height);
+          img.src=canvas.toDataURL("image/jpeg",0.96);
+          if(img.decode) await img.decode();
+          treated.push({source_width:sourceWidth,source_height:sourceHeight,width,height,scale:Number(scale.toFixed(3))});
+        } catch(error) {
+          skipped.push({reason:String(error?.message||error).slice(0,120)});
+        }
+      }
+      return {treated_count:treated.length,treated,skipped_count:skipped.length};
+    });
+    const diagnostics=await page.evaluate((runtimeImageTreatment)=>{
       const root=document.documentElement;
       const images=[...document.images];
       const logo=document.querySelector("[data-official-logo]");
@@ -118,9 +155,11 @@ async function renderPage(browser,html,width,height) {
         final_cta_action_count:finalCta?[...finalCta.querySelectorAll("a")].length:0,
         clipped_contacts:verifiedContacts
           .filter(el=>el.scrollWidth>el.clientWidth+2 || el.scrollHeight>el.clientHeight+2)
-          .map(el=>(el.textContent||"").trim()).filter(Boolean).slice(0,8)
+          .map(el=>(el.textContent||"").trim()).filter(Boolean).slice(0,8),
+        runtime_high_res_treated_images:Number(runtimeImageTreatment?.treated_count||0),
+        runtime_high_res_treatment:runtimeImageTreatment||{}
       };
-    });
+    },runtimeImageTreatment);
     const bytes=await page.screenshot({type:"jpeg",quality:RENDER_JPEG_QUALITY,fullPage:true});
     const qaBytes=await page.screenshot({type:"jpeg",quality:QA_JPEG_QUALITY,fullPage:true});
     return {bytes:new Uint8Array(bytes),qaBytes:new Uint8Array(qaBytes),diagnostics};
