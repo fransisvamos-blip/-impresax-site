@@ -19,7 +19,14 @@ const INTERNAL_OR_CHEAP_COPY=[
   /\bnumeri da visura\b/i,
   /\bvisura\b/i,
   /\bdatabase\b/i,
-  /\bscheda azienda\b/i
+  /\bscheda azienda\b/i,
+  /\busare solo\b/i,
+  /\bsegnali di fiducia\b/i,
+  /\besplicitamente verificat[oaie]*\b/i,
+  /\bfonti verificate\b/i,
+  /\bnon assumere\b/i,
+  /\bnon inventare\b/i,
+  /\bsource references?\b/i
 ];
 
 export function isLowValueHomepageFact(value="") {
