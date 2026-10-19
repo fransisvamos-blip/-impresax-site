@@ -662,7 +662,12 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     if(pack.status!=="GENERATING" && launched.length===0) {
       await setPackStatus(sql,pack.id,"GENERATING",{
         quality_upgrade_to:QUALITY_CONTRACT_VERSION,
-        quality_upgrade_mode:"R107_STAGED_GLOBAL_CONCURRENCY"
+        quality_upgrade_mode:"R107_STAGED_GLOBAL_CONCURRENCY",
+        r107_retrofit_required:true,
+        r107_retrofit_requested:true,
+        retrofit_required:true,
+        retrofit_status:"RUNNING",
+        retrofit_reason:"R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL"
       });
     }
     launched.push({
@@ -760,10 +765,16 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
 
   const circuitState=await prospectCircuitState(sql,pack.prospect_id);
   const structuralRecovery=pack.metadata?.structural_divergence_rework_required===true;
-  const recoveryOverridePending=(circuitState.open && !structuralRecovery)
+  const r107Recovery=
+    pack.metadata?.r107_retrofit_required===true
+    || pack.metadata?.r107_retrofit_requested===true
+    || String(pack.metadata?.master_reference_status||"")==="R107_RETROFIT_RUNNING"
+    || String(pack.metadata?.quality_upgrade_to||"")===QUALITY_CONTRACT_VERSION;
+  const deterministicRecovery=structuralRecovery || r107Recovery;
+  const recoveryOverridePending=(circuitState.open && !deterministicRecovery)
     ? await packCircuitOverridePending(sql,pack.id)
-    : structuralRecovery;
-  if(circuitState.open && !structuralRecovery && !recoveryOverridePending) {
+    : deterministicRecovery;
+  if(circuitState.open && !deterministicRecovery && !recoveryOverridePending) {
     return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
   }
   let circuitOverride=structuralRecovery;
@@ -798,7 +809,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     const attempt=priorAttempts+1;
     const recoveryEpoch=workflowEpochTag(pack.updated_at||pack.metadata?.stale_generating_reconciled_at||pack.created_at);
     const runKey="auto-r"+attempt+"-"+recoveryEpoch;
-    if(circuitState.open && !structuralRecovery) {
+    if(circuitState.open && !deterministicRecovery) {
       circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
       if(!circuitOverride) return {pack_id:pack.id,started:false,reason:"PROSPECT_CIRCUIT_BREAKER",slots_used:0};
     }
@@ -928,9 +939,9 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   }
 
   const launched=[];
-  const maxLaunch=structuralRecovery?slots:(circuitState.open?1:slots);
+  const maxLaunch=deterministicRecovery?slots:(circuitState.open?1:slots);
   for(const variant of launchable.slice(0,maxLaunch)) {
-    if(circuitState.open && !structuralRecovery) {
+    if(circuitState.open && !deterministicRecovery) {
       circuitOverride=await consumePackCircuitOverride(sql,pack.id,"QUEUE_AUTO_RECOVERY_OVERRIDE");
       if(!circuitOverride) break;
     }
@@ -939,7 +950,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     await persistWorkflow(sql,{
       prospectId:pack.prospect_id,packId:pack.id,variantId:variant.id,type:"VARIANT",
       instanceId,status:"QUEUED",
-      metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt,circuit_breaker_override:(structuralRecovery||circuitOverride),structural_divergence_rework:structuralRecovery}
+      metadata:{variant_key:variant.variant_key,event_prefix:runKey,auto_recovery:true,auto_recovery_attempt:attempt,circuit_breaker_override:(deterministicRecovery||circuitOverride),structural_divergence_rework:structuralRecovery,r107_retrofit:r107Recovery}
     });
     let instance;
     try {
@@ -960,6 +971,16 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
               "Change the order/placement of at least two major content modules versus the other routes.",
               "Use a distinct hero architecture, CTA journey, section choreography and mobile flow.",
               "Do not reuse the prior main_html skeleton or merely append a variant CSS skin."
+            ]
+          } : r107Recovery ? {
+            reason:"ENGINE_CONTRACT_UPGRADE",
+            issues:["Continue the R107 premium overlay-hero ultra-visual retrofit without external AI."],
+            actions:[
+              "Reuse verified assets and the certified hero.",
+              "Use the deterministic R107 grammar.",
+              "Keep hero headline, supporting copy and CTAs overlaid on the image.",
+              "Render at high density and preserve super-premium typography.",
+              "Do not call external AI and do not create cosmetic retry loops."
             ]
           } : {
             reason:"QUEUE_AUTO_RECOVERY",
