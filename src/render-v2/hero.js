@@ -124,12 +124,24 @@ function sectorDirection(inputPayload={}) {
 }
 
 export function explicitHeroAsset(assets={}) {
-  const candidates=Object.entries(assets).filter(([token,meta])=>
+  let candidates=Object.entries(assets).filter(([token,meta])=>
     token!=="PRIMARY_LOGO" &&
     !meta?.unavailable &&
     meta?.r2_key &&
     /^(hero|featured|cover)$/i.test(String(meta?.role||""))
   );
+  if(!candidates.length) {
+    candidates=Object.entries(assets)
+      .filter(([token,meta])=>
+        token!=="PRIMARY_LOGO" &&
+        token!=="HERO_VISUAL" &&
+        !meta?.unavailable &&
+        meta?.r2_key &&
+        String(meta?.mime||"").startsWith("image/") &&
+        String(meta?.role||"").toLowerCase()!=="identity"
+      )
+      .sort((a,b)=>Number(b[1]?.bytes||0)-Number(a[1]?.bytes||0));
+  }
   if(!candidates.length) return null;
   const [sourceToken,meta]=candidates[0];
   return {
