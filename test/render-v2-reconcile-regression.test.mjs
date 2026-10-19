@@ -704,3 +704,10 @@ test("R107 Cabina preview auto-holds pack before external visual QA",()=>{
   assert.match(block,/cabina_visual_review_hold:true/);
   assert.match(block,/CABINA_VISUAL_REVIEW/);
 });
+
+
+test("R107 premium guards prevent phantom metric panels and low-contrast footer identity",()=>{
+  assert.match(grammar,/grid-template-columns:repeat\(auto-fit,minmax\(260px,1fr\)\)!important/);
+  assert.match(grammar,/\.ix-v2-footer-identity\{[\s\S]*background:#f7f6f2!important/);
+  assert.match(grammar,/\.ix-v2-footer-logo\{[\s\S]*mix-blend-mode:multiply!important/);
+});
