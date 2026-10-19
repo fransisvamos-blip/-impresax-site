@@ -475,6 +475,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const copyManifest=buildCopyManifest(plan.content_truth_pack,inputPayload);
       const structuralRework=packMetadata.structural_divergence_rework_required===true
         || params.initialFeedback?.reason==="STRUCTURAL_DIVERGENCE_REWORK";
+      const r107Retrofit=
+        packMetadata.r107_retrofit_required===true
+        || packMetadata.r107_retrofit_requested===true
+        || String(packMetadata.master_reference_status||"")==="R107_RETROFIT_RUNNING"
+        || String(packMetadata.quality_upgrade_to||"")===QUALITY_CONTRACT_VERSION
+        || params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE";
       const cabinaCopyManifest=(cabinaPrecomputed || structuralRework)
         && packMetadata.cabina_precomputed_copy_manifest
         && typeof packMetadata.cabina_precomputed_copy_manifest==="object"
@@ -489,7 +495,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec};
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit};
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
@@ -498,15 +504,20 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const structuralRework=
         context.packMetadata?.structural_divergence_rework_required===true
         || String(params.initialFeedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK";
-      if(structuralRework) {
+      const r107Retrofit=
+        context.r107Retrofit===true
+        || String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
+      if(structuralRework || r107Retrofit) {
         const perVariantHero=context.packMetadata?.cabina_precomputed_hero_sha256_by_variant||{};
         const requestedSha=String(perVariantHero?.[params.variantKey]||"").trim().toLowerCase();
         let reusable=requestedSha
           ? await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha)
           : null;
         if(!reusable) reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
-        if(!reusable) throw new Error("SYSTEM_INVARIANT:STRUCTURAL_REWORK_REUSABLE_HERO_REQUIRED");
-        return {...reusable,structural_rework_reuse:true};
+        if(!reusable) throw new Error(structuralRework
+          ? "SYSTEM_INVARIANT:STRUCTURAL_REWORK_REUSABLE_HERO_REQUIRED"
+          : "SYSTEM_INVARIANT:R107_RETROFIT_REUSABLE_HERO_REQUIRED");
+        return {...reusable,structural_rework_reuse:structuralRework,r107_retrofit_reuse:r107Retrofit};
       }
       if(context.cabinaPrecomputed) {
         const perVariantHero=context.packMetadata?.cabina_precomputed_hero_sha256_by_variant||{};
@@ -527,11 +538,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         if(!reusable) throw new Error("SYSTEM_INVARIANT:PILOT_LOCKED_HERO_NOT_FOUND_OR_NOT_PREQA_PASS");
         return reusable;
       }
-      if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE") {
-        const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
-        if(!reusable) throw new Error("SYSTEM_INVARIANT:R107_RETROFIT_CERTIFIED_HERO_REQUIRED");
-        return {...reusable,r107_contract_upgrade_reuse:true};
-      }
+
       try {
         return await createGeneratedHeroAsset(this.env,sql,{
           packId:params.packId,
@@ -584,7 +591,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return r;
       });
 
-      if(cycle>1 && feedback?.reason==="HERO_VISUAL_REPAIR" && context.packMetadata?.structural_divergence_rework_required!==true && String(params.initialFeedback?.reason||"")!=="ENGINE_CONTRACT_UPGRADE") {
+      if(cycle>1
+        && feedback?.reason==="HERO_VISUAL_REPAIR"
+        && context.packMetadata?.structural_divergence_rework_required!==true
+        && context.r107Retrofit!==true
+        && String(params.initialFeedback?.reason||"")!=="ENGINE_CONTRACT_UPGRADE") {
         const refreshedHero=await step.do("r"+cycle+"-refresh-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
           return createGeneratedHeroAsset(this.env,sql,{
             packId:params.packId,
@@ -631,7 +642,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             || String(params.initialFeedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK"
             || String(feedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK";
           const contractUpgradeDeterministic=
-            String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
+            context.r107Retrofit===true
+            || String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
             || String(feedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
           if(contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||"")))))) {
             const deterministic=buildZeroPhotoPremiumSpec({
@@ -659,7 +671,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const domain=fail?.failure?.failure_domain||"AI_PROVIDER";
         const budget=/HARD_BUDGET_EXCEEDED/.test(message);
         const deterministicRecovery=
-          ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","STRUCTURAL_DIVERGENCE_REWORK"].includes(String(params.initialFeedback?.reason||""));
+          context.r107Retrofit===true
+          || ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","STRUCTURAL_DIVERGENCE_REWORK"].includes(String(params.initialFeedback?.reason||""));
         const providerFailoverDomain=
           ["AI_OUTPUT_SCHEMA","INFRA","AI_PROVIDER","UNKNOWN"].includes(String(domain));
         // Premium V4 generation may use deterministic failover for recovery, but never for a SHOWROOM_HARD_RESET.
