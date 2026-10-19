@@ -408,6 +408,13 @@
 }
 .winner-badge{color:var(--good);background:#132018;border-color:#2d5b39}
 .candidate-badge{color:#f2ce7f;background:#211b0f;border-color:#604a21}
+.r107-badge{
+  display:inline-flex;align-items:center;min-height:24px;padding:4px 7px;
+  border:1px solid var(--line);font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase
+}
+.r107-ok{color:#8ee5a5;background:#112018;border-color:#2d6840}
+.r107-retrofit{color:#f4cf79;background:#251d0d;border-color:#72551f}
+.r107-old{color:#e99292;background:#261313;border-color:#6d2c2c}
 .render-v2-summary,.render-v2-pack-meta{
   display:flex;flex-wrap:wrap;gap:8px;padding:11px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)
 }
