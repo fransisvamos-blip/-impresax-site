@@ -51,7 +51,9 @@ async function deterministicR107Truth(inputPayload={}) {
   const heroBody=[businessName,String(inputPayload.city||"").trim()].filter(Boolean).join(" · ")
     || locality
     || String(inputPayload.verified_contacts||"").trim();
-  const servicesIntro=serviceTitles.join(" · ");
+  const servicesIntro=serviceTitles.length>1
+    ? serviceTitles.join(" · ")
+    : String(inputPayload.city||businessName||"").trim();
   const content_truth={
     hero_headline:businessName||serviceTitles[0]||"",
     hero_body:heroBody,
