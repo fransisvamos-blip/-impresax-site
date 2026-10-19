@@ -121,7 +121,9 @@ test("workflow and compiler contain hard R90 gates",async()=>{
     readFile(new URL("../src/render-v2/metrics.js",import.meta.url),"utf8")
   ]);
   assert.match(workflow,/SECTION_VISUALS_REQUIRED/);
-  assert.match(workflow,/CABINA_PRECOMPUTE_REQUIRED/);
+  assert.match(workflow,/deterministicR107Truth/);
+  assert.match(workflow,/deterministicR107Directions/);
+  assert.doesNotMatch(workflow,/if\(!EXTERNAL_AI_CALLS_ALLOWED && \(!storedTruth \|\| !storedDirections\)\)/);
   assert.match(compiler,/SECTION_VISUAL_DENSITY_REQUIRED/);
   assert.match(compiler,/SECTION_VISUAL_DISTRIBUTION_REQUIRED/);
   assert.match(compiler,/BRAND_RICH_SURFACES_REQUIRED/);
