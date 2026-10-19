@@ -28,23 +28,23 @@ jobs:
           mkdir -p edil-service-r107-proof
           bucket="impresax-render-v2-shadow"
           base="$bucket/render-v2/CZ-077/fc876aaf-c8b5-4820-88c4-999997d1f029"
-          npx wrangler r2 object get "$base/A/r1/desktop-1440.jpg" --file edil-service-r107-proof/A1-desktop.jpg --remote
-          npx wrangler r2 object get "$base/A/r1/mobile-390.jpg" --file edil-service-r107-proof/A1-mobile.jpg --remote
-          npx wrangler r2 object get "$base/B/r1/desktop-1440.jpg" --file edil-service-r107-proof/B1-desktop.jpg --remote
-          npx wrangler r2 object get "$base/B/r1/mobile-390.jpg" --file edil-service-r107-proof/B1-mobile.jpg --remote
-          npx wrangler r2 object get "$base/C/r1/desktop-1440.jpg" --file edil-service-r107-proof/C1-desktop.jpg --remote
-          npx wrangler r2 object get "$base/C/r1/mobile-390.jpg" --file edil-service-r107-proof/C1-mobile.jpg --remote
-          test "$(sha256sum edil-service-r107-proof/A1-desktop.jpg | cut -d' ' -f1)" = "fc8bb4422eda7f762ad2c510d763a6edd22d7473bf3165c92006e727935e817e"
-          test "$(sha256sum edil-service-r107-proof/A1-mobile.jpg | cut -d' ' -f1)" = "d9286c746bdcadef4031593f242586bc78bf267b2fd194c02d8835b6e23dc75a"
-          test "$(sha256sum edil-service-r107-proof/B1-desktop.jpg | cut -d' ' -f1)" = "3146c63d35d71c2df6b9e353899b8ae209a1b4ab160c515f7abd39a834a40c6c"
-          test "$(sha256sum edil-service-r107-proof/B1-mobile.jpg | cut -d' ' -f1)" = "1cbed9d9e37b3cba5997c0735aa817535d7723ebd35e28dc7fa1064c88395834"
-          test "$(sha256sum edil-service-r107-proof/C1-desktop.jpg | cut -d' ' -f1)" = "6ebdd55e5c439187afd60a3fab763c40abbcfcca91db70c79f4cad119307a27c"
-          test "$(sha256sum edil-service-r107-proof/C1-mobile.jpg | cut -d' ' -f1)" = "c8c58c5f7c3fe65abbab775ddb33f8447840ab6beec7532f9f439bba304cd5c1"
+          npx wrangler r2 object get "$base/A/r2/desktop-1440.jpg" --file edil-service-r107-proof/A2-desktop.jpg --remote
+          npx wrangler r2 object get "$base/A/r2/mobile-390.jpg" --file edil-service-r107-proof/A2-mobile.jpg --remote
+          npx wrangler r2 object get "$base/B/r2/desktop-1440.jpg" --file edil-service-r107-proof/B2-desktop.jpg --remote
+          npx wrangler r2 object get "$base/B/r2/mobile-390.jpg" --file edil-service-r107-proof/B2-mobile.jpg --remote
+          npx wrangler r2 object get "$base/C/r2/desktop-1440.jpg" --file edil-service-r107-proof/C2-desktop.jpg --remote
+          npx wrangler r2 object get "$base/C/r2/mobile-390.jpg" --file edil-service-r107-proof/C2-mobile.jpg --remote
+          test "$(sha256sum edil-service-r107-proof/A2-desktop.jpg | cut -d' ' -f1)" = "82b130289d1f54dc1c74f0aaad63a6ec0e69431b234c0f00d0c59167d99df1d7"
+          test "$(sha256sum edil-service-r107-proof/A2-mobile.jpg | cut -d' ' -f1)" = "0c0986c706c72fcbac3bf8aae133409a143b62db4b8b35ca7dffd46e8a3c3c3e"
+          test "$(sha256sum edil-service-r107-proof/B2-desktop.jpg | cut -d' ' -f1)" = "e265c08c7c35073e40f9af0f8a008d0eec12ef5069fba0e044750622df2e759e"
+          test "$(sha256sum edil-service-r107-proof/B2-mobile.jpg | cut -d' ' -f1)" = "f423e2021e6199dc578008da21a10c4d44479a430cfc8f0bed02e9591c2b330e"
+          test "$(sha256sum edil-service-r107-proof/C2-desktop.jpg | cut -d' ' -f1)" = "bb33dba1b6e41ddd4c7217c21ea0dbca9f4a6a58b0264201486bee8a9fadc8f5"
+          test "$(sha256sum edil-service-r107-proof/C2-mobile.jpg | cut -d' ' -f1)" = "3586e750f3eaabffdd5037763dad2ad331fa17ef4b845b34adf8704fd64623a8"
           sha256sum edil-service-r107-proof/*.jpg > edil-service-r107-proof/SHA256SUMS.txt
       - name: Upload visual proof
         uses: actions/upload-artifact@v4
         with:
-          name: edil-service-r107-a1-b1-c1-proof
+          name: edil-service-r107-a2-b2-c2-proof
           path: edil-service-r107-proof/
           if-no-files-found: error
           retention-days: 1
