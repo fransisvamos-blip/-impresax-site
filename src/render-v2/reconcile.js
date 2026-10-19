@@ -402,6 +402,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     where p.shadow_mode=true
       and p.approved_reference=false
       and p.selected_variant_revision_id is null
+      and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
       and (
         (
           p.status='RENDER_READY'
