@@ -730,6 +730,12 @@ test("R107 zero-photo packs use deterministic vector artwork instead of AI or fa
   assert.match(workflows, /mime:"image\/svg\+xml"/);
   assert.match(workflows, /graphicFirstR107/);
   assert.match(workflows, /sectionTokens\.length<MIN_SECTION_VISUALS && !graphicFirstR107/);
-  assert.match(workflows, /context\.zeroPhoto && EXTERNAL_AI_CALLS_ALLOWED===false/);
+  assert.match(workflows, /if\(EXTERNAL_AI_CALLS_ALLOWED===false\)/);
   assert.match(workflows, /source\.mime==="image\/svg\+xml"\?"svg"/);
+});
+
+
+test("best remediated first-party image becomes the hero candidate", () => {
+  assert.match(remediation, /role:index===0\?"hero":"editorial"/);
+  assert.match(workflows, /if\(!reusable && r107Retrofit\)/);
 });
