@@ -1,6 +1,6 @@
 {
-  "version": "RENDER_V2_GOLDEN_SET_1-r2",
-  "frozen_at": "2026-10-13",
+  "version": "RENDER_V2_GOLDEN_SET_1-r3",
+  "frozen_at": "2026-10-19",
   "cases": [
     {
       "code": "CZ-063",
@@ -53,9 +53,10 @@
         "no_site",
         "no_official_logo_confirmed",
         "text_identity",
-        "construction"
+        "construction",
+        "third_party_contact_provenance_block"
       ],
-      "expected_input": "PASS"
+      "expected_input": "INPUT_BLOCKED"
     },
     {
       "code": "CZ-183",
