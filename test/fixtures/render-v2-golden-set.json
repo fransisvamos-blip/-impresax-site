@@ -1,5 +1,5 @@
 {
-  "version": "RENDER_V2_GOLDEN_SET_1-r3",
+  "version": "RENDER_V2_GOLDEN_SET_1-r4",
   "frozen_at": "2026-10-19",
   "cases": [
     {
@@ -20,9 +20,10 @@
         "official_identity",
         "existing_site",
         "construction",
-        "brand_fidelity"
+        "brand_fidelity",
+        "missing_verified_contacts"
       ],
-      "expected_input": "PASS"
+      "expected_input": "INPUT_BLOCKED"
     },
     {
       "code": "CZ-209",
