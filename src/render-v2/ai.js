@@ -646,15 +646,14 @@ export function buildCopyManifest(content,inputPayload={}) {
     : "";
   const positioningTitle=uniqueOr([
     masterPositioningTitle,
-    content?.positioning_title,
-    serviceTitles[1]
-  ],"Un partner concreto per il lavoro di ogni giorno.");
+    content?.positioning_title
+  ],"Profilo aziendale");
   const positioningBody=uniqueOr([
     masterPositioningBody,
     content?.positioning_body,
     serviceBodies[1],
     serviceBodies[2]
-  ],shortLocality ? "Competenza, servizio e rapporto diretto a "+shortLocality+"." : "Competenza, servizio e rapporto diretto.");
+  ],shortLocality ? "Attività e servizi verificati a "+shortLocality+"." : "Attività e servizi verificati.");
   const servicesTitle=uniqueOr([content?.services_title],"Competenze e servizi");
   const servicesIntro=uniqueOr([
     content?.services_intro,
@@ -695,23 +694,34 @@ export function buildCopyManifest(content,inputPayload={}) {
     FOOTER_LINE:String(content?.footer_line||rawLocality||"").trim(),
     CONTACT_LINE:verifiedContact
   };
-  services.forEach((s,i)=>{
+  let serviceOutIndex=0;
+  services.forEach(s=>{
     const rawTitle=String(s?.title||"").replace(/\s+/g," ").trim();
     const body=String(s?.description||"").replace(/\s+/g," ").trim();
-    out["SERVICE_"+(i+1)+"_TITLE"]=
+    const title=
       (/^servizi?o\s*\d+$/i.test(rawTitle) || /^service\s*\d+$/i.test(rawTitle))
         ? (verifiedServiceTitle(body)||rawTitle)
         : rawTitle;
-    // A verified service description may already have been promoted to HERO_BODY or
-    // POSITIONING_BODY. Do not expose the same long-form copy under a second token:
-    // the showroom compiler intentionally blocks duplicate section copy.
+    const titleKey=norm(title);
+    if(!title || used.has(titleKey)) return;
+    serviceOutIndex++;
+    out["SERVICE_"+serviceOutIndex+"_TITLE"]=title;
+    used.add(titleKey);
     const bodyKey=norm(body);
     if(body && !used.has(bodyKey)) {
-      out["SERVICE_"+(i+1)+"_BODY"]=body;
+      out["SERVICE_"+serviceOutIndex+"_BODY"]=body;
       used.add(bodyKey);
     }
   });
-  trustPoints.forEach((s,i)=>{ out["TRUST_"+(i+1)]=String(s?.text||"").trim(); });
+  let trustOutIndex=0;
+  trustPoints.forEach(s=>{
+    const value=String(s?.text||"").replace(/\s+/g," ").trim();
+    const key=norm(value);
+    if(!value || used.has(key)) return;
+    trustOutIndex++;
+    out["TRUST_"+trustOutIndex]=value;
+    used.add(key);
+  });
 
   if(String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1") {
     const trustJoined=rawTrustPoints.map(item=>String(item?.text||"").replace(/\s+/g," ").trim()).join(" | ");

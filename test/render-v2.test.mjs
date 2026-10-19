@@ -492,3 +492,28 @@ test("R107 deterministic grammar rotates curated section imagery across A/B/C",(
   assert.notDeepEqual(sets.B,sets.C);
 });
 
+
+
+test("R107 semantic section plan maps visual roles to each structural route",()=>{
+  const copy={
+    HERO_HEADLINE:"Azienda",HERO_BODY:"Testo verificato",
+    POSITIONING_TITLE:"Profilo aziendale",POSITIONING_BODY:"Attività e servizi verificati.",
+    SERVICES_TITLE:"Servizi",SERVICES_INTRO:"Servizi verificati",
+    TRUST_TITLE:"Qualifiche",TRUST_INTRO:"Elementi verificati",
+    CLOSING_TITLE:"Parliamone",CLOSING_BODY:"Contatti",
+    LOCALITY_LINE:"Catanzaro",PRIMARY_CTA_LABEL:"Contatti",SECONDARY_CTA_LABEL:"Approfondisci",
+    SERVICE_1_TITLE:"Servizio",TRUST_1:"Certificazione"
+  };
+  const sectionAssetTokens=["POS","SVC","TRUST","BRIDGE"];
+  const plan={positioning:"POS",services:"SVC",trust:"TRUST",bridge:"BRIDGE",strategy:"R107_SEMANTIC_SECTION_MAPPING_V2"};
+  const expected={
+    A:["HERO_VISUAL","POS","SVC","TRUST"],
+    B:["HERO_VISUAL","TRUST","SVC","POS"],
+    C:["HERO_VISUAL","SVC","BRIDGE","TRUST"]
+  };
+  for(const variantKey of ["A","B","C"]) {
+    const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true,sectionAssetTokens,sectionAssetPlan:plan});
+    assert.deepEqual(built.spec.used_asset_tokens,expected[variantKey]);
+    assert.equal(built.spec.section_visual_strategy,"R107_SEMANTIC_SECTION_MAPPING_V2");
+  }
+});

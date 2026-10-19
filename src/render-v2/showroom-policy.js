@@ -83,23 +83,84 @@ function sectionVisualScore(token,meta={},inputPayload={},index=0) {
   return score-(index*0.0001);
 }
 
-export function sectionVisualTokens(assets={},inputPayload=null) {
+function sectionVisualEntries(assets={},inputPayload=null) {
   return Object.entries(assets||{})
     .map(([token,meta],index)=>({token,meta,index}))
     .filter(({token,meta})=>{
       if(token==="PRIMARY_LOGO" || token==="HERO_VISUAL") return false;
       if(meta?.unavailable) return false;
       if(String(meta?.role||"").toLowerCase()==="identity") return false;
-      // A first-party hero may become HERO_VISUAL; do not recycle it as a middle-page visual.
       if(String(meta?.role||"").toLowerCase()==="hero") return false;
       if(meta?.mime && !String(meta.mime).startsWith("image/")) return false;
       return true;
     })
+    .map(entry=>({...entry,base_score:sectionVisualScore(entry.token,entry.meta,inputPayload,entry.index)}));
+}
+
+export function sectionVisualTokens(assets={},inputPayload=null) {
+  return sectionVisualEntries(assets,inputPayload)
     .sort((a,b)=>{
-      const delta=sectionVisualScore(b.token,b.meta,inputPayload,b.index)-sectionVisualScore(a.token,a.meta,inputPayload,a.index);
+      const delta=b.base_score-a.base_score;
       return Math.abs(delta)>0.00001?delta:a.index-b.index;
     })
     .map(({token})=>token);
+}
+
+function semanticSectionScore(entry,section) {
+  const source=normalizedVisualSignal(entry?.meta?.source_url||entry?.meta?.asset_url||"");
+  let score=Number(entry?.base_score||0);
+  const broad=/\b(?:ediliz|impiant|costruz|cantiere|nolegg|serviz|azienda|sede|operativ|industr|officin)\w*/g;
+  const narrow=/\b(?:amianto|anten|telecom|carpenter|metal|meccanic|assicur|pratic|finanzi|garanzi|soccorso|demoliz|scav)\w*/g;
+  const trust=/\b(?:qualit|sicurezz|formazion|certific|accredit|conform|normativ|autorizzat)\w*/g;
+  const broadHits=new Set(source.match(broad)||[]).size;
+  const narrowHits=new Set(source.match(narrow)||[]).size;
+  const trustHits=new Set(source.match(trust)||[]).size;
+  if(section==="services") {
+    score+=Math.min(narrowHits,3)*28;
+    score+=Math.min(broadHits,2)*8;
+    score-=Math.min(trustHits,2)*10;
+  } else if(section==="trust") {
+    score+=Math.min(trustHits,3)*42;
+    score-=Math.min(narrowHits,3)*14;
+  } else {
+    score+=Math.min(broadHits,3)*24;
+    score-=Math.min(narrowHits,3)*12;
+    score-=Math.min(trustHits,2)*10;
+  }
+  return score;
+}
+
+export function sectionVisualPlan(assets={},inputPayload=null,variantKey="A") {
+  const entries=sectionVisualEntries(assets,inputPayload);
+  const key=["A","B","C"].includes(String(variantKey))?String(variantKey):"A";
+  const roles=key==="B"
+    ? ["trust","services","positioning"]
+    : key==="C"
+      ? ["services","bridge","trust"]
+      : ["positioning","services","trust"];
+  const serviceOffset=key==="B"?1:key==="C"?2:0;
+  const used=new Set();
+  const plan={};
+  for(const role of roles) {
+    const ranked=entries
+      .filter(entry=>!used.has(entry.token))
+      .map(entry=>({...entry,semantic_score:semanticSectionScore(entry,role)}))
+      .sort((a,b)=>{
+        const delta=b.semantic_score-a.semantic_score;
+        return Math.abs(delta)>0.00001?delta:a.index-b.index;
+      });
+    if(!ranked.length){plan[role]=null;continue;}
+    const best=ranked[0].semantic_score;
+    const window=role==="services"?22:14;
+    const near=ranked.filter(entry=>entry.semantic_score>=best-window);
+    const offset=role==="services"?serviceOffset:0;
+    const picked=near[offset%near.length]||ranked[0];
+    plan[role]=picked.token;
+    used.add(picked.token);
+  }
+  plan.used=[...used];
+  plan.strategy="R107_SEMANTIC_SECTION_MAPPING_V2";
+  return plan;
 }
 
 export function requiredSectionVisualCount(assets={}) {

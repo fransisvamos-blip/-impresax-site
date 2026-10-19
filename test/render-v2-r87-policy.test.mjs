@@ -12,6 +12,7 @@ import {
   filterHomepageTrustPoints,
   copyPolicyViolations,
   sectionVisualTokens,
+  sectionVisualPlan,
   showroomPolicySummary,
   brandRichSurfaceViolations,
   watermarkVisibilityViolations,
@@ -123,6 +124,22 @@ test("policy detects cheap internal copy and section visual inventory",()=>{
   assert.ok(!curated.includes("HERO_SOURCE"),"hero-role visual must not be recycled as a section image");
   assert.deepEqual(curated.slice(0,3).sort(),["AMIANTO","ANTENNE","CARPENTERIA"].sort());
   assert.ok(curated.indexOf("STOCKISH")>curated.indexOf("AMIANTO"),"generic celebratory imagery must lose to relevant first-party service photography");
+
+  const semanticAssets={
+    HERO_SOURCE:{role:"hero",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Noleggi-e-Servizi.webp"},
+    STOCKISH:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Certificati-Congratulation.webp"},
+    BROAD:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Edilizia-ed-Impianti.webp"},
+    SAFETY:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Sicurezza-Formazione-e-Qualita.webp"},
+    AMIANTO:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Bonifica-Amianto.webp"},
+    ANTENNE:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Antenne-e-Telecomunicazioni.webp"},
+    CARPENTERIA:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Carpenteria-Metallica.webp"}
+  };
+  const semantic=sectionVisualPlan(semanticAssets,{verified_services:"Carpenteria Metallica; Bonifica Amianto; Telecomunicazioni; Edilizia ed Impianti"},"B");
+  assert.equal(semantic.positioning,"BROAD");
+  assert.equal(semantic.trust,"SAFETY");
+  assert.notEqual(semantic.services,"STOCKISH");
+  assert.equal(new Set(semantic.used).size,semantic.used.length);
+  assert.equal(semantic.strategy,"R107_SEMANTIC_SECTION_MAPPING_V2");
 });
 
 test("workflow and compiler contain hard R90 gates",async()=>{
@@ -305,4 +322,23 @@ test("copy manifest omits a service body already promoted to positioning copy",(
     .map(([key,value])=>[key,String(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim()]);
   const values=visible.map(([,value])=>value);
   assert.equal(new Set(values).size,values.length);
+});
+
+
+test("copy manifest compacts repeated historical services and cross-section trust duplicates",()=>{
+  const serviceA="DISBRIGO PRATICHE Partnersip con AUTOCENTRO Srl – Agenzia pratiche auto per l’assistenza all’automobilista, con servizio di SPORTELLO TELEMATICO";
+  const serviceB="GARANZIA FINO A 24 MESI Soccorso stradale con Conformgest Spa – Acquisto sicuro approvato ADICONSUM";
+  const manifest=buildCopyManifest({
+    hero_headline:"Autosala S.R.L.",hero_body:"Autosala S.R.L. · Catanzaro",
+    positioning_title:"",positioning_body:"",services_title:"Competenze e servizi",services_intro:"Servizi verificati",
+    trust_title:"Esperienza e affidabilità",trust_intro:"",closing_title:"Parliamone",closing_body:"",
+    locality_line:"Catanzaro",
+    services:[{title:serviceA,description:""},{title:serviceB,description:""},{title:serviceB,description:""}],
+    trust_points:[{text:serviceA}]
+  },{city:"Catanzaro",verified_contacts:"info@example.it"});
+  assert.equal(manifest.POSITIONING_TITLE,"Profilo aziendale");
+  const serviceValues=Object.entries(manifest).filter(([k])=>/^SERVICE_\d+_TITLE$/.test(k)).map(([,v])=>v);
+  assert.deepEqual(serviceValues,[serviceA,serviceB]);
+  assert.equal(Object.values(manifest).filter(v=>v===serviceA).length,1);
+  assert.equal(manifest.TRUST_1,undefined);
 });
