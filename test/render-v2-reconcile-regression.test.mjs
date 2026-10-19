@@ -15,6 +15,8 @@ const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.m
 const failurePolicy=fs.readFileSync(new URL("../src/render-v2/failure-policy.js",import.meta.url),"utf8");
 const health=fs.readFileSync(new URL("../src/render-v2/health.js",import.meta.url),"utf8");
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
+const browser=fs.readFileSync(new URL("../src/render-v2/browser.js",import.meta.url),"utf8");
+const compiler=fs.readFileSync(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
   assert.match(
@@ -345,14 +347,16 @@ test("exhausted V3 quality upgrades cannot block legacy migration",()=>{
 });
 
 
-test("ImpresaX master pilot uses full-bleed in-image hero overlay",()=>{
-  assert.match(grammar,/IMPRESAX_MASTER_V1/);
+test("R107 makes full-bleed in-image hero overlay global",()=>{
+  assert.match(grammar,/IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1/);
   assert.match(grammar,/ixm-hero__media/);
-  assert.match(grammar,/ixm-hero__veil/);
-  assert.match(grammar,/position:absolute;inset:0;margin:0;width:100%;height:100%/);
-  assert.match(grammar,/Verified headline\/body\/CTAs intentionally overlaid inside the photographic hero field/);
-  assert.match(grammar,/hero_copy_overlay_allowed:impresaxMasterProfile/);
-  assert.match(grammar,/mobile_overlay_forbidden:!impresaxMasterProfile/);
+  assert.match(grammar,/ixb-hero__media/);
+  assert.match(grammar,/ixc-hero__media/);
+  assert.match(grammar,/hero_copy_overlay_allowed:true/);
+  assert.match(grammar,/hero_text_over_image_required:true/);
+  assert.match(grammar,/mobile_overlay_forbidden:false/);
+  assert.match(grammar,/data-hero-text-over-image="required"/);
+  assert.match(grammar,/R107 — premium overlay hero \+ ultra-visual refinement/);
 });
 
 test("render profile is pack scoped and injected without mutating certified input payload",()=>{
@@ -625,4 +629,31 @@ test("health separates all-variant visual readiness from winner-only R106 Master
   assert.match(health, /q\.qa_type='CABINA_VISUAL'/);
   assert.match(health, /commissioned_experience_quality'[\s\S]*?>=9\.8/);
   assert.match(health, /master_candidate_visual_passes<>1/);
+});
+
+
+test("R107 capture is 2x high-resolution and geometrically verifies hero overlay",()=>{
+  assert.match(constants,/RENDER_DEVICE_SCALE_FACTOR = 2/);
+  assert.match(constants,/RENDER_JPEG_QUALITY = 96/);
+  assert.match(browser,/deviceScaleFactor:RENDER_DEVICE_SCALE_FACTOR/);
+  assert.match(browser,/quality:RENDER_JPEG_QUALITY/);
+  assert.match(browser,/hero_text_over_image:Boolean\(overlaps\(h1Rect,imageRect\)\)/);
+  assert.match(browser,/hero_copy_over_image:Boolean\(overlaps\(ledeRect,imageRect\)\)/);
+  assert.match(browser,/hero_cta_over_image:Boolean\(overlaps\(actionsRect,imageRect\)\)/);
+  assert.match(browser,/HERO_H1_NOT_OVER_IMAGE/);
+  assert.match(browser,/HERO_COPY_NOT_OVER_IMAGE/);
+  assert.match(browser,/HERO_CTA_NOT_OVER_IMAGE/);
+});
+
+test("R107 contract upgrade bypasses external AI generation and rebuilds deterministically",()=>{
+  assert.match(workflows,/const contractUpgradeDeterministic=/);
+  assert.match(workflows,/cycle===1 && \(structuralDeterministic \|\| contractUpgradeDeterministic/);
+  assert.match(reconcile,/R107 premium overlay-hero ultra-visual contract/);
+  assert.match(reconcile,/2x device density and premium JPEG quality/);
+});
+
+test("R107 compiler inherits previous quality gates and adds ultra-visual gate",()=>{
+  assert.match(compiler,/R\(\?:89\|90\|93\|94\|106\|107\)_/);
+  assert.match(compiler,/r107UltraVisualPolicy/);
+  assert.match(compiler,/r107UltraVisualViolations/);
 });
