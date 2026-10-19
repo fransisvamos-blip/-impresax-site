@@ -575,7 +575,7 @@ async function prospectDetail(sql, id) {
           v.best_qa_revision,v.certified_revision,v.direction_fingerprint,v.created_at,v.updated_at,
           p.status as pack_status,p.quality_contract_version,p.execution_engine_version,p.metadata as pack_metadata,
           p.selected_variant_revision_id,p.approved_reference,p.shadow_mode,p.created_at as pack_created_at,
-          r.id as certified_revision_id,r.revision,r.status as revision_status,r.render_spec,r.source_hash,
+          r.id as certified_revision_id,r.revision,r.status as revision_status,r.compiler_version,r.render_spec,r.source_hash,
           r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score,
           exists(
             select 1 from render_qa_results_v2 hq
@@ -650,6 +650,9 @@ async function prospectDetail(sql, id) {
       source_system:"V2",
       name:"Variant "+v.variant_key+" · "+creativeDirection,
       creative_direction:creativeDirection,
+      surface_policy:v.render_spec?.surface_policy||null,
+      retrofit_required:packMeta.retrofit_required||packMeta.r107_retrofit_required||null,
+      retrofit_status:packMeta.retrofit_status||null,
       winner_suggested:String(packMeta.winner_variant||"")===String(v.variant_key||""),
       winner_reason:packMeta.winner_reason||null,
       best_overall:String(packMeta.best_overall_variant||"")===String(v.variant_key||""),
