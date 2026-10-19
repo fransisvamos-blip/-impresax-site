@@ -377,11 +377,11 @@ test("health accepts intentional isolated pilot mode",()=>{
 
 
 test("R107 Master retrofit may reuse only a certified reusable hero",()=>{
-  assert.match(workflows,/const masterProfile=String\(context\.inputPayload\?\.render_profile\|\|""\)==="IMPRESAX_MASTER_V1"/);
-  assert.match(workflows,/if\(params\.initialFeedback\?\.reason==="ENGINE_CONTRACT_UPGRADE"\)/);
+  assert.match(workflows,/const r107Retrofit=/);
+  assert.match(workflows,/if\(structuralRework \|\| r107Retrofit\)/);
   assert.match(workflows,/latestReusableHeroAsset\(sql,params\.packId,params\.variantKey\)/);
-  assert.match(workflows,/R107_RETROFIT_CERTIFIED_HERO_REQUIRED/);
-  assert.match(workflows,/r107_contract_upgrade_reuse:true/);
+  assert.match(workflows,/R107_RETROFIT_REUSABLE_HERO_REQUIRED/);
+  assert.match(workflows,/r107_retrofit_reuse:r107Retrofit/);
 });
 
 test("ImpresaX master hero prompt forbids blank copy space",()=>{
@@ -551,9 +551,9 @@ test("Cabina-locked hero is exposed to QA and not rejected for editorial prefere
 
 test("structural rework reuses certified hero and never requests a fresh AI hero",()=>{
   assert.match(workflows,/STRUCTURAL_REWORK_REUSABLE_HERO_REQUIRED/);
-  assert.match(workflows,/structural_rework_reuse:true/);
+  assert.match(workflows,/structural_rework_reuse:structuralRework/);
   assert.match(workflows,/cabina_precomputed_hero_sha256_by_variant/);
-  assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR" && context\.packMetadata\?\.structural_divergence_rework_required!==true/);
+  assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,260}context\.packMetadata\?\.structural_divergence_rework_required!==true[\s\S]{0,180}context\.r107Retrofit!==true/);
 });
 
 test("operational rollout tick reconciles before queue rollout",()=>{
@@ -649,13 +649,14 @@ test("R107 capture is 2x high-resolution and geometrically verifies hero overlay
 });
 
 test("R107 contract upgrade is fully deterministic and reuses certified hero for every profile",()=>{
-  assert.match(workflows,/if\(params\.initialFeedback\?\.reason==="ENGINE_CONTRACT_UPGRADE"\)/);
-  assert.match(workflows,/R107_RETROFIT_CERTIFIED_HERO_REQUIRED/);
-  assert.match(workflows,/r107_contract_upgrade_reuse:true/);
+  assert.match(workflows,/const r107Retrofit=/);
+  assert.match(workflows,/R107_RETROFIT_REUSABLE_HERO_REQUIRED/);
+  assert.match(workflows,/r107_retrofit_reuse:r107Retrofit/);
   assert.doesNotMatch(workflows,/ENGINE_CONTRACT_UPGRADE" && !masterProfile/);
   assert.match(workflows,/const contractUpgradeDeterministic=/);
+  assert.match(workflows,/context\.r107Retrofit===true/);
   assert.match(workflows,/if\(contractUpgradeDeterministic \|\| \(cycle===1/);
-  assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,240}ENGINE_CONTRACT_UPGRADE/);
+  assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,320}context\.r107Retrofit!==true/);
   assert.match(reconcile,/R107 premium overlay-hero ultra-visual contract/);
   assert.match(reconcile,/2x device density and premium JPEG quality/);
 });
