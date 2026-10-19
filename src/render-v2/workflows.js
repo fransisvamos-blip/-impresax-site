@@ -861,7 +861,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       previewEmitted=true;
 
       const structuralZeroAiReview=
-        context.packMetadata?.structural_divergence_rework_required===true
+        (
+          context.packMetadata?.structural_divergence_rework_required===true
+          || context.r107Retrofit===true
+        )
         && EXTERNAL_AI_CALLS_ALLOWED!==true;
       if(structuralZeroAiReview) {
         await step.do("r"+cycle+"-structural-zero-ai-deterministic-ready",async()=>{
