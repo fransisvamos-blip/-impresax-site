@@ -293,7 +293,8 @@ export function showroomPolicySummary() {
     },
     visual:{
       minimum_section_visuals:MIN_SECTION_VISUALS,
-      section_visuals:"REAL_FIRST_PARTY_OR_LICENSED_EDITORIAL",
+      section_visuals:"REAL_FIRST_PARTY_OR_LICENSED_EDITORIAL_WHEN_AVAILABLE",
+      sparse_visual_fallback:"R107_GRAPHIC_ASSISTED_PREMIUM_NO_FAKE_PHOTOS",
       iconography:"BRAND_NATIVE_TECHNICAL_OR_SECTOR_RELEVANT",
       repeated_card_walls:"FORBIDDEN",
       flat_full_bleed_strong_color_blocks:"FORBIDDEN",
