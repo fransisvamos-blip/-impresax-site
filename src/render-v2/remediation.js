@@ -97,6 +97,76 @@ function discoverServiceLinks(doc) {
     .map(x=>x.href);
 }
 
+function firstPartyImageCandidates(docs,prospect) {
+  let officialOrigin=null;
+  try { officialOrigin=new URL(prospect?.website_url||prospect?.source_data?.current_site||"").origin; } catch {}
+  if(!officialOrigin) return [];
+  const out=[];
+  const seen=new Set();
+  for(const doc of docs||[]) {
+    let docOrigin=null;
+    try { docOrigin=new URL(doc.url).origin; } catch {}
+    if(docOrigin!==officialOrigin || !doc.raw) continue;
+    for(const m of doc.raw.matchAll(/<img\b[^>]*>/gi)) {
+      const tag=m[0];
+      const candidates=[
+        attr(tag,"data-src"),
+        attr(tag,"data-lazy-src"),
+        attr(tag,"data-original"),
+        attr(tag,"src")
+      ].filter(Boolean);
+      const srcset=attr(tag,"srcset")||attr(tag,"data-srcset");
+      if(srcset) {
+        const largest=srcset.split(",")
+          .map(x=>x.trim().split(/\s+/))
+          .filter(x=>x[0])
+          .sort((a,b)=>{
+            const na=parseFloat(a[1])||0, nb=parseFloat(b[1])||0;
+            return nb-na;
+          })[0]?.[0];
+        if(largest) candidates.unshift(largest);
+      }
+      const rawUrl=candidates[0];
+      const url=absUrl(rawUrl,doc.url);
+      if(!url || seen.has(url)) continue;
+      let u; try { u=new URL(url); } catch { continue; }
+      if(u.origin!==officialOrigin) continue;
+      const signal=[
+        rawUrl,attr(tag,"alt"),attr(tag,"class"),attr(tag,"id"),
+        u.pathname
+      ].join(" ").toLowerCase();
+      if(/logo|favicon|icon|sprite|avatar|emoji|badge|payment|cookie|tracking|pixel|placeholder|loader|spinner|captcha|social|facebook|instagram|whatsapp/.test(signal)) continue;
+      if(/\.svg(?:$|\?)/i.test(u.pathname+u.search) || /\.gif(?:$|\?)/i.test(u.pathname+u.search)) continue;
+      const width=parseInt(attr(tag,"width")||"0",10)||0;
+      const height=parseInt(attr(tag,"height")||"0",10)||0;
+      if((width>0&&width<480)||(height>0&&height<280)) continue;
+      const area=(width||900)*(height||600);
+      let score=0;
+      if(width>=1000) score+=3; else if(width>=700) score+=2;
+      if(height>=500) score+=2; else if(height>=350) score+=1;
+      if(/hero|banner|gallery|project|portfolio|work|realizz|serviz|azienda|team|studio|showroom|cantiere|prodot/.test(signal)) score+=3;
+      if(/thumb|small|mini|150x|300x|200x/.test(signal)) score-=4;
+      if(area>=600000) score+=2;
+      seen.add(url);
+      out.push({
+        url,
+        role:"editorial",
+        commercial_use_status:"FIRST_PARTY_REFERENCE",
+        source_url:doc.url,
+        source_type:"AUTOMATED_FIRST_PARTY_IMAGE_DISCOVERY",
+        evidence_rule:"SAME_ORIGIN_OFFICIAL_SITE_IMAGE",
+        width_hint:width||null,
+        height_hint:height||null,
+        score
+      });
+    }
+  }
+  return out
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,8)
+    .map(({score,...x})=>x);
+}
+
 function logoCandidate(doc,businessName) {
   if(!doc?.raw) return null;
   const nameTokens=String(businessName||"").toLowerCase().replace(/[^a-z0-9à-ÿ]+/g," ").split(/\s+/).filter(x=>x.length>=4).slice(0,3);
@@ -370,6 +440,7 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
   const attempts=(sameRemediationPolicy?Number(source.v2_remediation_attempts||0):0)+1;
   const docs=await collectDocs(prospect);
   const contactsFound=extractContacts(docs,prospect);
+  const firstPartyImages=firstPartyImageCandidates(docs,prospect);
   const ai=await extractServices(env,docs,prospect).catch(()=>({services:[],trust:[]}));
   const deterministicOffers=extractOfferHeadings(docs);
 
@@ -428,6 +499,7 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
     trust_evidence:ai.trust,
     contact_evidence:contactsFound.evidence,
     rejected_contact_evidence:contactsFound.rejected_evidence,
+    first_party_image_evidence:firstPartyImages,
     contact_verification_rule:"FIRST_PARTY_CONTACT_SURFACE_OR_REPEATED_OFFICIAL_EVIDENCE",
     remediation_policy_version:REMEDIATION_POLICY_VERSION,
     remediated_at:new Date().toISOString()
@@ -445,6 +517,13 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
             ? (source.contact_data_state||"VERIFICATO")
             : (contactsFound.value?"V2_FIRST_PARTY_VERIFIED":(source.contact_data_state||"NON_VERIFICATO")),
           verified_trust:verifiedTrust||source.verified_trust||"NON_DISPONIBILE",
+          first_party_images:[
+            ...ensureArray(source.first_party_images),
+            ...firstPartyImages
+          ].filter((item,index,arr)=>{
+            const url=typeof item==="string"?item:item?.url;
+            return url && arr.findIndex(x=>(typeof x==="string"?x:x?.url)===url)===index;
+          }).slice(0,12),
           v2_remediation_attempts:attempts,
           v2_remediation_policy_version:REMEDIATION_POLICY_VERSION,
           v2_remediation_status:canCertify?"EVIDENCE_READY":"EVIDENCE_INCOMPLETE",
