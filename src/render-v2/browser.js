@@ -54,7 +54,7 @@ async function renderPage(browser,html,width,height) {
     await page.setViewport({width,height,deviceScaleFactor:RENDER_DEVICE_SCALE_FACTOR});
     await page.setContent(html,{waitUntil:"domcontentloaded",timeout:30000});
     await page.evaluate(async()=>{ if(document.fonts?.ready) await document.fonts.ready; });
-    const runtimeImageTreatment=await page.evaluate(async()=>{
+    const runtimeImageTreatment=await page.evaluate(async(renderScale)=>{
       const treated=[];
       const skipped=[];
       for(const img of [...document.images]) {
@@ -89,8 +89,8 @@ async function renderPage(browser,html,width,height) {
           skipped.push({reason:String(error?.message||error).slice(0,120)});
         }
       }
-      return {treated_count:treated.length,treated,skipped_count:skipped.length};
-    });
+      return {treated_count:treated.length,treated,skipped_count:skipped.length,skipped};
+    },RENDER_DEVICE_SCALE_FACTOR);
     const diagnostics=await page.evaluate((runtimeImageTreatment)=>{
       const root=document.documentElement;
       const images=[...document.images];
