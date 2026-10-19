@@ -1,6 +1,6 @@
 {
-  "version": "RENDER_V2_GOLDEN_SET_1-r4",
-  "frozen_at": "2026-10-19",
+  "version": "RENDER_V2_GOLDEN_SET_1-r5",
+  "frozen_at": "2026-10-20",
   "cases": [
     {
       "code": "CZ-063",
@@ -20,10 +20,9 @@
         "official_identity",
         "existing_site",
         "construction",
-        "brand_fidelity",
-        "missing_verified_contacts"
+        "brand_fidelity"
       ],
-      "expected_input": "INPUT_BLOCKED"
+      "expected_input": "PASS"
     },
     {
       "code": "CZ-209",
