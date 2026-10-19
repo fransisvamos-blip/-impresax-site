@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES, REMEDIATION_POLICY_VERSION } from "./constants.js";
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
@@ -24,15 +24,29 @@ function verifiedList(value="") {
 }
 
 async function deterministicR107Truth(inputPayload={}) {
-  const verifiedServices=verifiedList(inputPayload.verified_services||inputPayload?.brand_dna?.offer||"");
-  const verifiedTrust=verifiedList(inputPayload.verified_trust||inputPayload?.brand_dna?.trust_signals||"")
+  const businessName=String(inputPayload.business_name||"").replace(/\s+/g," ").trim();
+  const genericService=/^(?:attività(?:\s+di\s+.+)?|panoramica\s+generale|home|chi\s+siamo|azienda|servizi|contatti|portfolio|gallery|galleria)$/i;
+  const internalCopy=/\b(?:usare\s+solo|segnali\s+di\s+fiducia|esplicitamente\s+verificat|fonti\s+verificate|non\s+assumere|non\s+inventare|source\s+references?)\b/i;
+  const rawServices=verifiedList(inputPayload.verified_services||inputPayload?.brand_dna?.offer||"");
+  const certificationTrust=[];
+  const cleanedServices=[];
+  for(const value of rawServices) {
+    const item=String(value||"").replace(/\s+/g," ").trim();
+    if(!item || genericService.test(item) || internalCopy.test(item)) continue;
+    if(/\bcertificazion[ei]\b/i.test(item)) {
+      certificationTrust.push(item);
+      continue;
+    }
+    if(!cleanedServices.some(x=>x.toLowerCase()===item.toLowerCase())) cleanedServices.push(item);
+  }
+  const explicitTrust=verifiedList(inputPayload.verified_trust||"")
+    .filter(x=>!internalCopy.test(x))
     .filter(x=>!/\b(?:fatturato|ricavi|revenue|turnover|dipendenti|employees|headcount|addetti)\b/i.test(x));
-  const services=(verifiedServices.length?verifiedServices:[String(inputPayload?.brand_dna?.offer||"").trim()])
-    .filter(Boolean)
+  const verifiedTrust=[...new Set([...explicitTrust,...certificationTrust])];
+  const services=cleanedServices
     .slice(0,6)
     .map(title=>({title,description:""}));
   const locality=[inputPayload.city,inputPayload.address].filter(Boolean).join(" · ");
-  const businessName=String(inputPayload.business_name||"").trim();
   const serviceTitles=services.map(x=>x.title).filter(Boolean);
   const heroBody=[businessName,String(inputPayload.city||"").trim()].filter(Boolean).join(" · ")
     || locality
@@ -1372,9 +1386,51 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       .filter(([k,v])=>!v.unavailable && k!=="PRIMARY_LOGO")
       .map(([k])=>k);
     const sectionTokens=sectionVisualTokens(policyAssets);
+    const r107Active=String(SHOWROOM_RULES_VERSION||"").includes("R107");
+    const discoveryState=await step.do("load-first-party-discovery-state",async()=>{
+      const rows=await sql`
+        select website_url,source_data
+        from prospects where id=${p.prospectId}::uuid limit 1`;
+      const row=rows[0]||{};
+      return {
+        website_url:String(row.website_url||row.source_data?.current_site||"").trim(),
+        policy:String(row.source_data?.v2_remediation_policy_version||""),
+        attempts:Number(row.source_data?.v2_remediation_attempts||0)
+      };
+    });
+    const firstPartyDiscoveryRequired=
+      r107Active
+      && sectionTokens.length<MIN_SECTION_VISUALS
+      && Boolean(discoveryState.website_url)
+      && (
+        discoveryState.policy!==REMEDIATION_POLICY_VERSION
+        || discoveryState.attempts<1
+      );
+    if(firstPartyDiscoveryRequired) {
+      await step.do("first-party-visual-discovery-required",async()=>{
+        await setPackStatus(sql,p.packId,"INPUT_BLOCKED",{
+          input_remediation_required:true,
+          remediation_type:"SECTION_VISUALS",
+          remediation_reason:"FIRST_PARTY_DISCOVERY_REQUIRED",
+          remediation_policy_version:REMEDIATION_POLICY_VERSION,
+          showroom_rules_version:SHOWROOM_RULES_VERSION,
+          required_section_visuals:MIN_SECTION_VISUALS,
+          available_section_visuals:sectionTokens.length,
+          error:"FIRST_PARTY_DISCOVERY_REQUIRED"
+        });
+        await updateWorkflow(sql,event.instanceId,{
+          status:"FAILED",
+          currentStep:"INPUT_REMEDIATION",
+          errorCode:"FIRST_PARTY_DISCOVERY_REQUIRED",
+          metadata:{remediation_policy_version:REMEDIATION_POLICY_VERSION,available_section_visuals:sectionTokens.length}
+        });
+        return {ok:true};
+      });
+      return {status:"INPUT_REMEDIATION",reason:"FIRST_PARTY_DISCOVERY_REQUIRED"};
+    }
     const graphicFirstR107=
       sectionTokens.length<MIN_SECTION_VISUALS
-      && String(SHOWROOM_RULES_VERSION||"").includes("R107");
+      && r107Active;
     if(sectionTokens.length<MIN_SECTION_VISUALS && !graphicFirstR107) {
       await step.do("section-visual-remediation-required",async()=>{
         await setPackStatus(sql,p.packId,"INPUT_BLOCKED",{
