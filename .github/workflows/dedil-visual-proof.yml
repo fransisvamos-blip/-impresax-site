@@ -1,4 +1,4 @@
-name: DEDIL R107 Diagnostics Proof
+name: DEDIL R107 Current Proof
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 jobs:
   proof:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
@@ -21,20 +21,23 @@ jobs:
           node-version: "22"
       - name: Install Wrangler
         run: npm install --no-audit --no-fund
-      - name: Fetch DEDIL R107 diagnostics from private R2
+      - name: Fetch current DEDIL R107 renders
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p dedil-r107-diagnostics
+          mkdir -p dedil-r107-current
           bucket="impresax-render-v2-shadow"
-          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r90/browser-diagnostics.json" --file dedil-r107-diagnostics/b90.json --remote
-          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r601/browser-diagnostics.json" --file dedil-r107-diagnostics/c601.json --remote
-          cat dedil-r107-diagnostics/b90.json
-          cat dedil-r107-diagnostics/c601.json
-      - name: Upload R107 diagnostics proof
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r132/desktop-1440.jpg" --file dedil-r107-current/a132-desktop.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r132/mobile-390.jpg" --file dedil-r107-current/a132-mobile.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r94/desktop-1440.jpg" --file dedil-r107-current/b94-desktop.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r94/mobile-390.jpg" --file dedil-r107-current/b94-mobile.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r605/desktop-1440.jpg" --file dedil-r107-current/c605-desktop.jpg --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r605/mobile-390.jpg" --file dedil-r107-current/c605-mobile.jpg --remote
+          sha256sum dedil-r107-current/*.jpg > dedil-r107-current/SHA256SUMS.txt
+      - name: Upload proof
         uses: actions/upload-artifact@v4
         with:
-          name: dedil-r107-diagnostics
-          path: dedil-r107-diagnostics/
+          name: dedil-r107-current-proof
+          path: dedil-r107-current/
           if-no-files-found: error
           retention-days: 1
