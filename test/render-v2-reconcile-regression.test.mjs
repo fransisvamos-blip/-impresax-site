@@ -739,3 +739,15 @@ test("best remediated first-party image becomes the hero candidate", () => {
   assert.match(remediation, /role:index===0\?"hero":"editorial"/);
   assert.match(workflows, /if\(!reusable && r107Retrofit\)/);
 });
+
+
+test("R107 certified inputs plan truth and A/B/C directions deterministically without Cabina precompute", () => {
+  assert.match(workflows, /async function deterministicR107Truth\(inputPayload=\{\}\)/);
+  assert.match(workflows, /async function deterministicR107Directions\(inputPayload=\{\},assetTokens=\[\]\)/);
+  assert.match(workflows, /R107_DETERMINISTIC_TRUTH/);
+  assert.match(workflows, /R107_DETERMINISTIC_DIRECTION_PLANNER/);
+  assert.match(workflows, /const deterministicPlanning=!EXTERNAL_AI_CALLS_ALLOWED/);
+  assert.match(workflows, /content-truth-deterministic/);
+  assert.match(workflows, /creative-directions-deterministic/);
+  assert.doesNotMatch(workflows, /if\(!EXTERNAL_AI_CALLS_ALLOWED && \(!storedTruth \|\| !storedDirections\)\)/);
+});
