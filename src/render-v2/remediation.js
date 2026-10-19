@@ -103,67 +103,91 @@ function firstPartyImageCandidates(docs,prospect) {
   if(!officialOrigin) return [];
   const out=[];
   const seen=new Set();
+
+  const accept=(rawUrl,doc,{signal="",width=0,height=0,sourceKind="IMG"}={})=>{
+    const url=absUrl(rawUrl,doc.url);
+    if(!url || seen.has(url)) return;
+    let u; try { u=new URL(url); } catch { return; }
+    const pageSignal=String(signal||"").toLowerCase();
+    const pathSignal=(u.pathname+u.search).toLowerCase();
+    const combined=pageSignal+" "+pathSignal;
+    if(/logo|favicon|icon|sprite|avatar|emoji|badge|payment|cookie|tracking|pixel|placeholder|loader|spinner|captcha|social|facebook|instagram|whatsapp/.test(combined)) return;
+    if(/\.svg(?:$|\?)/i.test(pathSignal) || /\.gif(?:$|\?)/i.test(pathSignal)) return;
+    if((width>0&&width<480)||(height>0&&height<280)) return;
+    // The media URL may live on a CDN, but it is accepted only when explicitly
+    // referenced by the verified official page currently being parsed.
+    let score=0;
+    if(u.origin===officialOrigin) score+=3;
+    if(sourceKind==="OG") score+=4;
+    if(sourceKind==="BACKGROUND") score+=2;
+    if(sourceKind==="SRCSET") score+=2;
+    if(width>=1200) score+=3; else if(width>=700) score+=2;
+    if(height>=600) score+=2; else if(height>=350) score+=1;
+    if(/hero|banner|gallery|project|portfolio|work|realizz|serviz|azienda|team|studio|showroom|cantiere|prodot/.test(combined)) score+=3;
+    if(/thumb|small|mini|150x|300x|200x/.test(combined)) score-=4;
+    if(score<1) return;
+    seen.add(url);
+    out.push({
+      url,
+      role:"editorial",
+      commercial_use_status:"FIRST_PARTY_REFERENCE",
+      source_url:doc.url,
+      source_type:"AUTOMATED_FIRST_PARTY_IMAGE_DISCOVERY",
+      evidence_rule:u.origin===officialOrigin
+        ? "SAME_ORIGIN_OFFICIAL_SITE_IMAGE"
+        : "OFFICIAL_PAGE_EXPLICIT_MEDIA_REFERENCE",
+      width_hint:width||null,
+      height_hint:height||null,
+      discovery_kind:sourceKind,
+      score
+    });
+  };
+
   for(const doc of docs||[]) {
     let docOrigin=null;
     try { docOrigin=new URL(doc.url).origin; } catch {}
     if(docOrigin!==officialOrigin || !doc.raw) continue;
+
+    // OpenGraph/Twitter hero images.
+    for(const m of doc.raw.matchAll(/<meta\b[^>]*(?:property|name)\s*=\s*["'](?:og:image(?::secure_url)?|twitter:image)["'][^>]*>/gi)) {
+      const tag=m[0];
+      accept(attr(tag,"content"),doc,{signal:tag,sourceKind:"OG"});
+    }
+
+    // Standard and lazy-loaded images + largest srcset candidate.
     for(const m of doc.raw.matchAll(/<img\b[^>]*>/gi)) {
       const tag=m[0];
-      const candidates=[
-        attr(tag,"data-src"),
-        attr(tag,"data-lazy-src"),
-        attr(tag,"data-original"),
-        attr(tag,"src")
-      ].filter(Boolean);
-      const srcset=attr(tag,"srcset")||attr(tag,"data-srcset");
-      if(srcset) {
-        const largest=srcset.split(",")
-          .map(x=>x.trim().split(/\s+/))
-          .filter(x=>x[0])
-          .sort((a,b)=>{
-            const na=parseFloat(a[1])||0, nb=parseFloat(b[1])||0;
-            return nb-na;
-          })[0]?.[0];
-        if(largest) candidates.unshift(largest);
-      }
-      const rawUrl=candidates[0];
-      const url=absUrl(rawUrl,doc.url);
-      if(!url || seen.has(url)) continue;
-      let u; try { u=new URL(url); } catch { continue; }
-      if(u.origin!==officialOrigin) continue;
-      const signal=[
-        rawUrl,attr(tag,"alt"),attr(tag,"class"),attr(tag,"id"),
-        u.pathname
-      ].join(" ").toLowerCase();
-      if(/logo|favicon|icon|sprite|avatar|emoji|badge|payment|cookie|tracking|pixel|placeholder|loader|spinner|captcha|social|facebook|instagram|whatsapp/.test(signal)) continue;
-      if(/\.svg(?:$|\?)/i.test(u.pathname+u.search) || /\.gif(?:$|\?)/i.test(u.pathname+u.search)) continue;
       const width=parseInt(attr(tag,"width")||"0",10)||0;
       const height=parseInt(attr(tag,"height")||"0",10)||0;
-      if((width>0&&width<480)||(height>0&&height<280)) continue;
-      const area=(width||900)*(height||600);
-      let score=0;
-      if(width>=1000) score+=3; else if(width>=700) score+=2;
-      if(height>=500) score+=2; else if(height>=350) score+=1;
-      if(/hero|banner|gallery|project|portfolio|work|realizz|serviz|azienda|team|studio|showroom|cantiere|prodot/.test(signal)) score+=3;
-      if(/thumb|small|mini|150x|300x|200x/.test(signal)) score-=4;
-      if(area>=600000) score+=2;
-      seen.add(url);
-      out.push({
-        url,
-        role:"editorial",
-        commercial_use_status:"FIRST_PARTY_REFERENCE",
-        source_url:doc.url,
-        source_type:"AUTOMATED_FIRST_PARTY_IMAGE_DISCOVERY",
-        evidence_rule:"SAME_ORIGIN_OFFICIAL_SITE_IMAGE",
-        width_hint:width||null,
-        height_hint:height||null,
-        score
-      });
+      const signal=[attr(tag,"alt"),attr(tag,"class"),attr(tag,"id")].join(" ");
+      const srcset=attr(tag,"srcset")||attr(tag,"data-srcset");
+      if(srcset) {
+        const candidates=srcset.split(",")
+          .map(x=>x.trim().split(/\s+/))
+          .filter(x=>x[0])
+          .sort((a,b)=>(parseFloat(b[1])||0)-(parseFloat(a[1])||0));
+        if(candidates[0]?.[0]) accept(candidates[0][0],doc,{signal,width,height,sourceKind:"SRCSET"});
+      }
+      for(const rawUrl of [attr(tag,"data-src"),attr(tag,"data-lazy-src"),attr(tag,"data-original"),attr(tag,"src")].filter(Boolean)) {
+        accept(rawUrl,doc,{signal,width,height,sourceKind:"IMG"});
+      }
+    }
+
+    // <picture><source srcset> and other source elements.
+    for(const m of doc.raw.matchAll(/<source\b[^>]*(?:srcset|data-srcset)\s*=\s*["']([^"']+)["'][^>]*>/gi)) {
+      const first=String(m[1]||"").split(",").map(x=>x.trim().split(/\s+/)).filter(x=>x[0])
+        .sort((a,b)=>(parseFloat(b[1])||0)-(parseFloat(a[1])||0))[0]?.[0];
+      if(first) accept(first,doc,{signal:m[0],sourceKind:"SRCSET"});
+    }
+
+    // Inline CSS / page-builder background imagery.
+    for(const m of doc.raw.matchAll(/(?:background(?:-image)?\s*:\s*[^;}"']*url\(|data-bg(?:-image)?\s*=\s*["'])\s*["']?([^"')\s]+)["']?/gi)) {
+      accept(m[1],doc,{signal:m[0],sourceKind:"BACKGROUND"});
     }
   }
   return out
     .sort((a,b)=>b.score-a.score)
-    .slice(0,8)
+    .slice(0,12)
     .map(({score,...x})=>x);
 }
 
