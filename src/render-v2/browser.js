@@ -70,7 +70,7 @@ async function renderPage(browser,html,width,height) {
           if(rect.width<24 || rect.height<24) continue;
           const sourceWidth=img.naturalWidth;
           const sourceHeight=img.naturalHeight;
-          const desiredWidth=Math.min(4096,Math.max(sourceWidth,Math.ceil(rect.width*RENDER_DEVICE_SCALE_FACTOR)));
+          const desiredWidth=Math.min(4096,Math.max(sourceWidth,Math.ceil(rect.width*renderScale)));
           const scale=Math.min(4,desiredWidth/sourceWidth);
           if(scale<=1.01) continue;
           const width=Math.max(sourceWidth,Math.round(sourceWidth*scale));
