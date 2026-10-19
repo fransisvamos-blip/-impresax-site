@@ -1,13 +1,23 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V11_ICONIC_COMMISSIONED";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_10_ICONIC_COMMISSIONED";
-export const COMPILER_VERSION = "RS_COMPILER_V1_11_ICONIC_COMMISSIONED";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V12_R107_ULTRA_VISUAL";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_11_R107_ULTRA_VISUAL";
+export const COMPILER_VERSION = "RS_COMPILER_V1_12_R107_ULTRA_VISUAL";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V13_ICONIC_COMMISSIONED";
-export const REMEDIATION_POLICY_VERSION = "V9_ICONIC_COMMISSIONED_POLICY";
-export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V14_R107_ULTRA_VISUAL";
+export const REMEDIATION_POLICY_VERSION = "V10_R107_ULTRA_VISUAL_POLICY";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1";
 export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
 export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
+export const HERO_TEXT_OVER_IMAGE_REQUIRED = true;
+export const HERO_OVERLAY_LEGIBILITY_REQUIRED = true;
+export const HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED = true;
+export const SITEWIDE_VISUAL_POLISH_REQUIRED = true;
+export const PREMIUM_TYPOGRAPHY_REQUIRED = true;
+export const CHEAP_AI_LOOK_FORBIDDEN = true;
+export const LOW_DETAIL_IMAGERY_FORBIDDEN = true;
+export const RENDER_DEVICE_SCALE_FACTOR = 2;
+export const RENDER_JPEG_QUALITY = 96;
+export const QA_JPEG_QUALITY = 72;
 
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
 export const TRIPLE_VARIANT_REQUIRED = true;
@@ -59,7 +69,14 @@ export const QA_SCORE_KEYS = Object.freeze([
   "mobile_premium_integrity","fifteen_k_value_perception",
   "irreproducible_brand_authorship","commissioned_experience_quality",
   "scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality",
-  "transition_art_direction","visual_memory_factor","cross_viewport_art_direction"
+  "transition_art_direction","visual_memory_factor","hero_text_on_image_integration",
+  "hero_overlay_legibility",
+  "sitewide_visual_refinement",
+  "image_quality_perception",
+  "premium_typography_quality",
+  "anti_template_feel",
+  "anti_fake_ai_credibility",
+  "cross_viewport_art_direction"
 ]);
 
 export const DEFAULT_MODELS = Object.freeze({
