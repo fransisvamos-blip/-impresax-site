@@ -1516,6 +1516,28 @@ body{font-family:var(--ix-body-font)}
 
   const r107UltraVisualCss=`
 /* R107 — premium overlay hero + ultra-visual refinement */
+/* Global premium guards: no phantom metric panels; footer identity must stay legible on dark surfaces. */
+.ixg-proof-metrics{
+ grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important
+}
+.ix-v2-footer-identity{
+ background:#f7f6f2!important;
+ padding:10px 14px!important;
+ border-radius:3px!important;
+ box-shadow:0 14px 38px rgba(0,0,0,.22)!important;
+ filter:none!important;
+ isolation:isolate!important
+}
+.ix-v2-footer-logo{
+ opacity:1!important;
+ filter:none!important;
+ mix-blend-mode:multiply!important
+}
+@media(max-width:700px){
+ .ixg-proof-metrics{grid-template-columns:1fr!important}
+ .ix-v2-footer-identity{padding:8px 10px!important}
+ .ix-v2-footer-logo{max-height:40px!important}
+}
 .ixm-hero,.ixb-hero,.ixc-hero{
  position:relative!important;
  isolation:isolate!important;
