@@ -721,3 +721,15 @@ test("R107 remediation discovers same-origin first-party editorial images", () =
   assert.match(remediation, /first_party_image_evidence:firstPartyImages/);
   assert.match(remediation, /logo\|favicon\|icon\|sprite\|avatar/);
 });
+
+
+test("R107 zero-photo packs use deterministic vector artwork instead of AI or fake photos", () => {
+  assert.match(workflows, /createR107DeterministicGraphicHeroAsset/);
+  assert.match(workflows, /R107_DETERMINISTIC_VECTOR_ARTWORK/);
+  assert.match(workflows, /ai_generated:false/);
+  assert.match(workflows, /mime:"image\/svg\+xml"/);
+  assert.match(workflows, /graphicFirstR107/);
+  assert.match(workflows, /sectionTokens\.length<MIN_SECTION_VISUALS && !graphicFirstR107/);
+  assert.match(workflows, /context\.zeroPhoto && EXTERNAL_AI_CALLS_ALLOWED===false/);
+  assert.match(workflows, /source\.mime==="image\/svg\+xml"\?"svg"/);
+});
