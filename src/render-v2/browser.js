@@ -1,9 +1,10 @@
 import puppeteer from "@cloudflare/puppeteer";
+import { RENDER_DEVICE_SCALE_FACTOR, RENDER_JPEG_QUALITY, QA_JPEG_QUALITY, HERO_TEXT_OVER_IMAGE_REQUIRED, HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED } from "./constants.js";
 
 async function renderPage(browser,html,width,height) {
   const page=await browser.newPage();
   try {
-    await page.setViewport({width,height,deviceScaleFactor:1});
+    await page.setViewport({width,height,deviceScaleFactor:RENDER_DEVICE_SCALE_FACTOR});
     await page.setContent(html,{waitUntil:"domcontentloaded",timeout:30000});
     await page.evaluate(async()=>{ if(document.fonts?.ready) await document.fonts.ready; });
     const diagnostics=await page.evaluate(()=>{
@@ -16,6 +17,20 @@ async function renderPage(browser,html,width,height) {
       const nav=document.querySelector(".ix-v2-nav");
       const footer=document.querySelector(".ix-v2-footer");
       const hero=document.querySelector("main #hero");
+      const heroImage=hero?.querySelector("img")||null;
+      const heroH1=hero?.querySelector("h1")||null;
+      const heroLede=hero?.querySelector(".ixg-lede")||hero?.querySelector("p")||null;
+      const heroActions=hero?.querySelector(".ixg-actions")||null;
+      const rect=el=>el?el.getBoundingClientRect():null;
+      const overlaps=(a,b)=>{
+        if(!a||!b) return false;
+        return Math.min(a.right,b.right)>Math.max(a.left,b.left)
+          && Math.min(a.bottom,b.bottom)>Math.max(a.top,b.top);
+      };
+      const imageRect=rect(heroImage);
+      const h1Rect=rect(heroH1);
+      const ledeRect=rect(heroLede);
+      const actionsRect=rect(heroActions);
       const finalCta=document.querySelector("main #final-cta");
       const requiredSections=["hero","positioning","services","trust","bridge","final-cta"];
       return {
@@ -39,6 +54,19 @@ async function renderPage(browser,html,width,height) {
         section_count:document.querySelectorAll("main section").length,
         required_sections_present:requiredSections.filter(id=>document.getElementById(id)),
         hero_action_count:hero?[...hero.querySelectorAll("a")].length:0,
+        hero_text_over_image:Boolean(overlaps(h1Rect,imageRect)),
+        hero_copy_over_image:Boolean(overlaps(ledeRect,imageRect)),
+        hero_cta_over_image:Boolean(overlaps(actionsRect,imageRect)),
+        hero_image_natural_width:Number(heroImage?.naturalWidth||0),
+        hero_image_natural_height:Number(heroImage?.naturalHeight||0),
+        hero_image_rendered_width:Number(imageRect?.width||0),
+        hero_image_rendered_height:Number(imageRect?.height||0),
+        hero_image_resolution_ratio:imageRect&&heroImage
+          ? Math.min(
+              Number(heroImage.naturalWidth||0)/Math.max(1,imageRect.width),
+              Number(heroImage.naturalHeight||0)/Math.max(1,imageRect.height)
+            )
+          : 0,
         final_cta_present:Boolean(finalCta),
         final_cta_action_count:finalCta?[...finalCta.querySelectorAll("a")].length:0,
         clipped_contacts:verifiedContacts
@@ -46,8 +74,8 @@ async function renderPage(browser,html,width,height) {
           .map(el=>(el.textContent||"").trim()).filter(Boolean).slice(0,8)
       };
     });
-    const bytes=await page.screenshot({type:"jpeg",quality:90,fullPage:true});
-    const qaBytes=await page.screenshot({type:"jpeg",quality:55,fullPage:true});
+    const bytes=await page.screenshot({type:"jpeg",quality:RENDER_JPEG_QUALITY,fullPage:true});
+    const qaBytes=await page.screenshot({type:"jpeg",quality:QA_JPEG_QUALITY,fullPage:true});
     return {bytes:new Uint8Array(bytes),qaBytes:new Uint8Array(qaBytes),diagnostics};
   } finally {
     await page.close();
@@ -69,6 +97,10 @@ export function deterministicBrowserGate(desktop,mobile,inputPayload) {
     if(!diag.header_cta_present) issues.push(label+"_HEADER_CTA_MISSING");
     if(Number(diag.h1_count||0)!==1) issues.push(label+"_H1_COUNT_INVALID");
     if(Number(diag.hero_action_count||0)<2) issues.push(label+"_HERO_ACTIONS_INCOMPLETE");
+    if(HERO_TEXT_OVER_IMAGE_REQUIRED && !diag.hero_text_over_image) issues.push(label+"_HERO_H1_NOT_OVER_IMAGE");
+    if(HERO_TEXT_OVER_IMAGE_REQUIRED && !diag.hero_copy_over_image) issues.push(label+"_HERO_COPY_NOT_OVER_IMAGE");
+    if(HERO_TEXT_OVER_IMAGE_REQUIRED && !diag.hero_cta_over_image) issues.push(label+"_HERO_CTA_NOT_OVER_IMAGE");
+    if(HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED && Number(diag.hero_image_resolution_ratio||0)<1) issues.push(label+"_HERO_SOURCE_RESOLUTION_TOO_LOW");
     if(Number(diag.section_count||0)<6) issues.push(label+"_PAGE_ARCHITECTURE_TOO_SHALLOW");
     if((diag.required_sections_present||[]).length<6) issues.push(label+"_REQUIRED_SECTIONS_MISSING");
     if(!diag.final_cta_present || Number(diag.final_cta_action_count||0)<1) issues.push(label+"_FINAL_CTA_INCOMPLETE");
