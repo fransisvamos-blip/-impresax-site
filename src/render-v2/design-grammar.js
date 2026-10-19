@@ -57,17 +57,18 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
     execution_constraints:{
       static_preview:true,no_scripts:true,no_forms:true,immutable_identity:true,
       no_empty_placeholder_geometry:true,
-      mobile_overlay_forbidden:!impresaxMasterProfile,
-      hero_copy_overlay_allowed:impresaxMasterProfile
+      mobile_overlay_forbidden:false,
+      hero_copy_overlay_allowed:true,
+      hero_text_over_image_required:true,
+      premium_typography_required:true,
+      high_resolution_visual_perception_required:true
     }
   };
   const variants={
     A:{
       name:"Structural Field",
       core_idea:"Light industrial composition built from verified copy, structural rules and immutable identity.",
-      hero_logic:impresaxMasterProfile
-        ?"ImpresaX-inspired premium full-bleed HERO_VISUAL with verified headline, body and CTAs overlaid inside the image field; cinematic left/bottom readability gradient; official identity remains compiler-owned."
-        :"Premium image-led split hero using HERO_VISUAL as the dominant photographic anchor, with verified headline/CTA in a clean copy field; official identity remains compiler-owned.",
+      hero_logic:"Premium full-bleed HERO_VISUAL with verified headline, body and CTAs overlaid inside the image field; cinematic readability gradient, high-resolution treatment and official identity remaining compiler-owned.",
       grid:"Asymmetric structural grid with services in measured modules.",
       typography_behavior:"Bold system sans with dense industrial hierarchy.",
       material_language:"Warm light field, black structure"+(accent?", verified accent "+accent:"")+".",
@@ -75,12 +76,12 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
       section_progression:["hero","positioning","services","trust","bridge","contact"],
       cta_behavior:"Anchored solid/outline CTA pair integrated into the hero and close.",
       mobile_reinterpretation:"Single-column structural stack preserving hierarchy and rule rhythm.",
-      fingerprint:{hero_type:impresaxMasterProfile?"cinematic full bleed overlay hero":"premium image split hero",grid_topology:"asymmetric structural grid",typography_mode:impresaxMasterProfile?"editorial serif display plus utility sans":"bold industrial sans",material_system:impresaxMasterProfile?"dark photographic field":"light industrial field",signature_device:"connected rule field",section_rhythm:"measured modular",cta_pattern:"anchored pair",mobile_pattern:impresaxMasterProfile?"bottom anchored overlay":"structured stacked"}
+      fingerprint:{hero_type:"cinematic full bleed overlay hero",grid_topology:"asymmetric structural grid",typography_mode:"editorial display plus utility sans",material_system:"dark photographic field",signature_device:"connected rule field",section_rhythm:"measured modular",cta_pattern:"anchored pair",mobile_pattern:"bottom anchored overlay"}
     },
     B:{
       name:"Trust First Poster",
       core_idea:"Trust-first commercial poster with a materially different information architecture.",
-      hero_logic:"Cinematic architecture-first hero using HERO_VISUAL as the dominant full-bleed photographic field with restrained dark copy treatment, followed immediately by verified trust proof.",
+      hero_logic:"Cinematic architecture-first full-bleed hero with headline, body and CTA overlaid directly on HERO_VISUAL using a restrained editorial veil, followed immediately by verified trust proof.",
       grid:"Trust modules first, then horizontal service ledger rows.",
       typography_behavior:"Large serif display paired with utilitarian sans service typography.",
       material_language:"Dark poster system with high-contrast accent"+(accent?" "+accent:"")+".",
@@ -93,7 +94,7 @@ export function zeroPhotoExecutionDirection(variantKey,inputPayload={}) {
     C:{
       name:"Editorial Ledger",
       core_idea:"Single-column editorial ledger with hairline service rhythm and address/locality emphasis.",
-      hero_logic:"Editorial image-and-copy hero using HERO_VISUAL with a deliberate asymmetric crop, headline rail system and restrained commercial close.",
+      hero_logic:"Editorial full-bleed HERO_VISUAL with headline, body and CTA overlaid inside the photographic field, deliberate asymmetric crop, headline rail system and restrained commercial close.",
       grid:"Hairline ledger rows and text-led sections instead of cards.",
       typography_behavior:"Editorial serif display with restrained sans metadata.",
       material_language:"Neutral editorial field"+(accent?" with verified accent "+accent:"")+".",
@@ -137,15 +138,17 @@ export function sanitizeDirectionForExecution(direction,{hasEditorialAssets=fals
   if(/logo-centric/i.test(hero)) {
     d.hero_logic="Identity-aware hero using the immutable official logo only when composition benefits; no logo reinterpretation";
   }
-  const heroCopyOverlayAllowed=d.execution_constraints?.hero_copy_overlay_allowed===true;
   d.execution_constraints={
     static_preview:true,
     no_scripts:true,
     no_forms:true,
     immutable_identity:true,
     no_empty_placeholder_geometry:true,
-    mobile_overlay_forbidden:!heroCopyOverlayAllowed,
-    hero_copy_overlay_allowed:heroCopyOverlayAllowed
+    mobile_overlay_forbidden:false,
+    hero_copy_overlay_allowed:true,
+    hero_text_over_image_required:true,
+    premium_typography_required:true,
+    high_resolution_visual_perception_required:true
   };
   return d;
 }
@@ -244,7 +247,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     : "";
 
   const mainAB=[
-    impresaxMasterProfile?impresaxHero:"<section id=\"hero\" class=\"ixg ixg-hero "+vclass+"\"><div class=\"ixg-shell\"><div class=\"ixg-hero__grid\"><div class=\"ixg-hero__copy\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h1>"+copyToken("HERO_HEADLINE")+"</h1><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div><figure class=\"ixg-hero__media\"><img class=\"ixg-hero__image\" src=\"{{asset:HERO_VISUAL}}\" alt=\"\"></figure></div></div></section>",
+    impresaxHero,
     "<section id=\"positioning\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
     "<section id=\"services\" class=\"ixg ixg-services "+vclass+"\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></section>",
     logoFirstGraphicBand,
@@ -305,7 +308,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   let main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
   main=main
-    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-commissioned-experience="true" data-authorship="irreproducible" data-scroll-narrative="continuous" data-iconic-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-commissioned-experience="true" data-authorship="irreproducible" data-scroll-narrative="continuous" data-iconic-moment="true" data-hero-text-over-image="required" data-r107-ultra-visual="true"$2')
     .replace(/(<section\b[^>]*\bid="positioning"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-authored-transition="true"$2')
     .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true" data-authored-transition="true"$2')
     .replace(/(<section\b[^>]*\bid="trust"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-iconic-moment="true"$2')
@@ -1511,10 +1514,169 @@ body{font-family:var(--ix-body-font)}
 }
 `;
 
+  const r107UltraVisualCss=`
+/* R107 — premium overlay hero + ultra-visual refinement */
+.ixm-hero,.ixb-hero,.ixc-hero{
+ position:relative!important;
+ isolation:isolate!important;
+ min-height:clamp(700px,72vw,940px)!important;
+ padding:0!important;
+ margin:0!important;
+ background:#0a0b0c!important;
+ color:#fff!important;
+ overflow:hidden!important
+}
+.ixm-hero__media,.ixb-hero__media,.ixc-hero__media{
+ position:absolute!important;
+ inset:0!important;
+ width:100%!important;
+ height:100%!important;
+ min-height:100%!important;
+ margin:0!important;
+ overflow:hidden!important;
+ z-index:0!important
+}
+.ixm-hero__media img,.ixb-hero__media img,.ixc-hero__media img,
+.ixm-hero__image,.ixb-hero__media .ixg-hero__image,.ixc-hero__media .ixg-hero__image{
+ position:absolute!important;
+ inset:0!important;
+ width:100%!important;
+ height:100%!important;
+ min-height:100%!important;
+ max-height:none!important;
+ object-fit:cover!important;
+ image-rendering:auto!important;
+ backface-visibility:hidden!important;
+ transform:translateZ(0) scale(1.012)!important
+}
+.ixm-hero:before,.ixb-hero:before,.ixc-hero:before{
+ content:""!important;
+ position:absolute!important;
+ inset:0!important;
+ z-index:1!important;
+ pointer-events:none!important;
+ background:
+  linear-gradient(90deg,rgba(7,8,9,.91) 0%,rgba(7,8,9,.70) 34%,rgba(7,8,9,.28) 63%,rgba(7,8,9,.08) 100%),
+  linear-gradient(180deg,rgba(0,0,0,.20) 0%,transparent 42%,rgba(0,0,0,.68) 100%)!important
+}
+.ixm-hero__veil{z-index:1!important}
+.ixm-hero__inner,.ixb-hero__inner,.ixc-hero__inner{
+ position:relative!important;
+ z-index:3!important;
+ min-height:clamp(700px,72vw,940px)!important;
+ width:min(calc(100% - 80px),1500px)!important;
+ margin:0 auto!important;
+ padding:clamp(150px,14vw,210px) 0 clamp(66px,7vw,104px)!important
+}
+.ixm-hero__inner{display:flex!important;align-items:flex-end!important}
+.ixb-hero__inner{display:grid!important;align-content:end!important;gap:clamp(18px,2.2vw,30px)!important}
+.ixc-hero__inner{display:flex!important;flex-direction:column!important;justify-content:flex-end!important}
+.ixm-hero__copy,.ixb-hero__inner,.ixc-hero__inner{max-width:100%!important}
+.ixm-hero h1,.ixb-hero h1,.ixc-hero h1{
+ color:#fff!important;
+ text-shadow:0 2px 30px rgba(0,0,0,.35)!important;
+ text-wrap:balance!important;
+ overflow-wrap:normal!important;
+ word-break:normal!important;
+ hyphens:none!important
+}
+.ixm-hero .ixg-kicker,.ixb-hero .ixg-kicker,.ixc-hero .ixg-kicker{
+ color:rgba(255,255,255,.76)!important
+}
+.ixm-hero .ixg-lede,.ixb-hero .ixg-lede,.ixc-hero .ixg-lede{
+ color:rgba(255,255,255,.90)!important;
+ max-width:48ch!important;
+ line-height:1.48!important;
+ text-wrap:pretty!important
+}
+.ixm-hero .ixg-actions,.ixb-hero .ixg-actions,.ixc-hero .ixg-actions{
+ position:relative!important;
+ z-index:4!important
+}
+.ixm-hero .ixg-cta--secondary,.ixb-hero .ixg-cta--secondary,.ixc-hero .ixg-cta--secondary{
+ color:#fff!important;
+ border-color:rgba(255,255,255,.78)!important
+}
+.ixb-hero__meta{border-bottom-color:rgba(255,255,255,.32)!important}
+.ixb-hero h1{max-width:8.8ch!important;font-size:clamp(68px,9.4vw,150px)!important;line-height:.82!important}
+.ixb-hero .ixg-lede{font-size:clamp(17px,1.45vw,22px)!important}
+.ixb-hero .ixg-cta--primary{background:#fff!important;color:#111!important;border-color:#fff!important}
+.ixc-hero h1{max-width:9.5ch!important;font-size:clamp(64px,8.7vw,138px)!important;line-height:.86!important;margin-top:18px!important}
+.ixc-hero__lower{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) auto!important;
+ gap:clamp(28px,5vw,68px)!important;
+ align-items:end!important;
+ margin-top:clamp(28px,4vw,54px)!important;
+ padding-top:24px!important;
+ border-top:1px solid rgba(255,255,255,.44)!important
+}
+.ixc-rail{background:rgba(255,255,255,.52)!important;margin-top:34px!important}
+.ixc-rail:after{background:var(--ix-accent)!important}
+.ixg-section-visual img,.ixb-trust img,.ixb-services img,.ixc-services img,.ixc-trust img{
+ image-rendering:auto!important;
+ backface-visibility:hidden!important;
+ filter:saturate(.96) contrast(1.035)!important
+}
+.ixg h1,.ixg h2,.ixg h3{
+ text-wrap:balance!important;
+ font-kerning:normal!important;
+ font-optical-sizing:auto!important
+}
+.ixg p,.ixg-section-intro,.ixg-lede{
+ text-wrap:pretty!important;
+ orphans:2!important;
+ widows:2!important
+}
+.ixg-section-intro{max-width:52ch!important}
+.ixg-service__body,.ixb-service-body p,.ixc-ledger-value p{max-width:46ch!important}
+.ixg-section-head{align-items:end!important}
+@media(max-width:700px){
+ .ixm-hero,.ixb-hero,.ixc-hero{min-height:720px!important}
+ .ixm-hero__inner,.ixb-hero__inner,.ixc-hero__inner{
+   min-height:720px!important;
+   width:calc(100% - 36px)!important;
+   padding:118px 0 42px!important
+ }
+ .ixm-hero:before,.ixb-hero:before,.ixc-hero:before{
+   background:
+    linear-gradient(180deg,rgba(8,9,10,.24) 0%,rgba(8,9,10,.06) 28%,rgba(8,9,10,.30) 50%,rgba(8,9,10,.94) 78%,rgba(8,9,10,.98) 100%)!important
+ }
+ .ixm-hero h1,.ixb-hero h1,.ixc-hero h1{
+   font-size:clamp(44px,12.4vw,62px)!important;
+   line-height:.91!important;
+   max-width:10.5ch!important
+ }
+ .ixm-hero .ixg-lede,.ixb-hero .ixg-lede,.ixc-hero .ixg-lede{
+   font-size:16px!important;
+   line-height:1.5!important;
+   max-width:31ch!important
+ }
+ .ixm-hero .ixg-actions,.ixb-hero .ixg-actions,.ixc-hero .ixg-actions{
+   display:grid!important;
+   grid-template-columns:1fr!important;
+   gap:10px!important;
+   width:100%!important
+ }
+ .ixm-hero .ixg-cta,.ixb-hero .ixg-cta,.ixc-hero .ixg-cta{
+   width:100%!important;
+   min-height:48px!important;
+   justify-content:center!important;
+   padding:0 18px!important
+ }
+ .ixc-hero__lower{grid-template-columns:1fr!important;gap:18px!important;margin-top:26px!important}
+ .ixc-hero .ixg-cta{border:1px solid rgba(255,255,255,.72)!important;padding:0 18px!important;min-height:48px!important}
+ .ixg-section-intro,.ixg-service__body,.ixb-service-body p,.ixc-ledger-value p{
+   max-width:34em!important;
+   line-height:1.62!important
+ }
+}
+`;
+
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+(variantKey==="C" ? `
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+r107UltraVisualCss+(variantKey==="C" ? `
 /* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
 .ixc-bridge{min-height:0!important;display:block!important}
 .ixc-bridge__inner{grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr)!important;align-items:center!important}
@@ -1543,21 +1705,21 @@ body{font-family:var(--ix-body-font)}
         : variantKey==="C"
           ? ["hero","services","bridge","positioning","trust","final-cta"]
           : ["hero","positioning","services","trust","bridge","final-cta"],
-      surface_policy:"IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1",
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets],
-      hero_visual_strategy:impresaxMasterProfile?"ImpresaX Master V1: full-bleed edge-to-edge HERO_VISUAL with verified copy overlaid in-image and cinematic readability gradient.":"Mandatory premium image-led hero with verified copy field and responsive crop.",
+      hero_visual_strategy:"R107 mandatory full-bleed edge-to-edge HERO_VISUAL with verified headline, body and CTAs overlaid inside the image, premium readability veil and high-resolution capture.",
       hero_subject:"Prospect-relevant commercial scene supplied by HERO_VISUAL.",
       hero_scene_type:"Premium editorial business-context photography.",
-      hero_copy_space:impresaxMasterProfile?"Verified headline/body/CTAs intentionally overlaid inside the photographic hero field.":"Dedicated HTML copy field kept separate from the image.",
-      hero_mobile_crop_strategy:impresaxMasterProfile?"Full-bleed 390px crop with bottom-anchored copy overlay and protective vertical gradient.":"Object-fit cover with subject-preserving 390px crop.",
+      hero_copy_space:"Verified headline/body/CTAs intentionally overlaid inside the photographic hero field on desktop and mobile.",
+      hero_mobile_crop_strategy:"Full-bleed 390px crop with bottom-anchored copy overlay, protective vertical gradient and premium readability.",
       hero_relevance_score:9,
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic R106 ICONIC_COMMISSIONED fallback grammar v8 "+variantKey+": target 9.8-9.9, irreproducible brand authorship, campaign-level image treatment, continuous scroll narrative, coherent signature geometry, authored transitions, visual memory factor and mobile reinterpretation, preserving all R94/R93 gates."
+        +"Deterministic R107 PREMIUM_OVERLAY_HERO_ULTRA_VISUAL fallback grammar v8 "+variantKey+": target 9.8-9.9, irreproducible brand authorship, campaign-level image treatment, continuous scroll narrative, coherent signature geometry, authored transitions, visual memory factor and mobile reinterpretation, preserving all R94/R93 gates."
     },
-    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R106":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R106":"ICONIC_COMMISSIONED_FALLBACK_GRAMMAR_V8"
+    strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R107":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R107":"ICONIC_COMMISSIONED_FALLBACK_GRAMMAR_V8"
   };
 }
 
