@@ -1,4 +1,4 @@
-name: DEDIL C588 Visual Proof
+name: DEDIL R107 Diagnostics Proof
 
 on:
   push:
@@ -21,21 +21,20 @@ jobs:
           node-version: "22"
       - name: Install Wrangler
         run: npm install --no-audit --no-fund
-      - name: Fetch DEDIL screenshots from private R2
+      - name: Fetch DEDIL R107 diagnostics from private R2
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p dedil-visual-proof
+          mkdir -p dedil-r107-diagnostics
           bucket="impresax-render-v2-shadow"
-          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r588/desktop-1440.jpg" --file dedil-visual-proof/c588-desktop.jpg --remote
-          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r588/mobile-390.jpg" --file dedil-visual-proof/c588-mobile.jpg --remote
-          sha256sum dedil-visual-proof/*.jpg | tee dedil-visual-proof/SHA256SUMS.txt
-          test "$(sha256sum dedil-visual-proof/c588-desktop.jpg | cut -d' ' -f1)" = "f4cc52c484e4eff1bf3050fd7409c8f89831286da449df4b90492c28fd0fe6f0"
-          test "$(sha256sum dedil-visual-proof/c588-mobile.jpg | cut -d' ' -f1)" = "4c196b02cf0ae5a39987a56d3de916a38ba33a60ffb2bb0f3bfb19219a68d605"
-      - name: Upload visual proof
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/B/r90/browser-diagnostics.json" --file dedil-r107-diagnostics/b90.json --remote
+          npx wrangler r2 object get "$bucket/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/C/r601/browser-diagnostics.json" --file dedil-r107-diagnostics/c601.json --remote
+          cat dedil-r107-diagnostics/b90.json
+          cat dedil-r107-diagnostics/c601.json
+      - name: Upload R107 diagnostics proof
         uses: actions/upload-artifact@v4
         with:
-          name: dedil-c588-proof
-          path: dedil-visual-proof/
+          name: dedil-r107-diagnostics
+          path: dedil-r107-diagnostics/
           if-no-files-found: error
           retention-days: 1
