@@ -693,3 +693,14 @@ test("R107 retrofit stays deterministic and zero-AI during recovery", () => {
   assert.match(reconcile, /r107_retrofit:r107Recovery/);
   assert.match(reconcile, /r107Recovery \? \{[\s\S]*reason:"ENGINE_CONTRACT_UPGRADE"/);
 });
+
+
+test("R107 Cabina preview auto-holds pack before external visual QA",()=>{
+  const marker=workflows.indexOf("const structuralZeroAiReview=");
+  const qaCall=workflows.indexOf("runVisualQa(this.env",marker);
+  const block=workflows.slice(marker,qaCall);
+  assert.match(block,/context\.r107Retrofit===true/);
+  assert.match(block,/setPackStatus\(sql,params\.packId,"PREVIEW_READY"/);
+  assert.match(block,/cabina_visual_review_hold:true/);
+  assert.match(block,/CABINA_VISUAL_REVIEW/);
+});
