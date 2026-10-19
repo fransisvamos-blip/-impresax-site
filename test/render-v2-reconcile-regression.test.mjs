@@ -696,14 +696,14 @@ test("R107 retrofit stays deterministic and zero-AI during recovery", () => {
 });
 
 
-test("R107 Cabina preview auto-holds pack before external visual QA",()=>{
+test("R107 Cabina preview holds only the complete A/B/C set before external visual QA",()=>{
   const marker=workflows.indexOf("const structuralZeroAiReview=");
   const qaCall=workflows.indexOf("runVisualQa(this.env",marker);
   const block=workflows.slice(marker,qaCall);
   assert.match(block,/context\.r107Retrofit===true/);
   assert.match(block,/setPackStatus\(sql,params\.packId,"PREVIEW_READY"/);
-  assert.match(block,/cabina_visual_review_hold:true/);
-  assert.match(block,/CABINA_VISUAL_REVIEW/);
+  assert.match(block,/cabina_visual_review_hold:completePreviewSet/);
+  assert.match(block,/completePreviewSet\?"CABINA_VISUAL_REVIEW":"R107_PREVIEW_SET_IN_PROGRESS"/);
 });
 
 
