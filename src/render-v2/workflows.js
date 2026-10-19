@@ -1098,9 +1098,16 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             idempotencyKey:"qa:CABINA_DETERMINISTIC_STRUCTURAL:"+params.packId+":"+revision.id
           });
           if(context.r107Retrofit===true) {
+            const setState=await sql`
+              select count(*)::int total,
+                     count(*) filter (where status='PREVIEW_READY')::int preview_ready
+              from render_v2_variants
+              where render_pack_id=${params.packId}::uuid`;
+            const completePreviewSet=Number(setState[0]?.total||0)===3
+              && Number(setState[0]?.preview_ready||0)===3;
             await setPackStatus(sql,params.packId,"PREVIEW_READY",{
-              cabina_visual_review_hold:true,
-              retrofit_status:"CABINA_VISUAL_REVIEW",
+              cabina_visual_review_hold:completePreviewSet,
+              retrofit_status:completePreviewSet?"CABINA_VISUAL_REVIEW":"R107_PREVIEW_SET_IN_PROGRESS",
               master_auto_approve:false
             });
           }
