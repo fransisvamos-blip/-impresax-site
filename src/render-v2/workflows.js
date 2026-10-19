@@ -34,12 +34,10 @@ async function deterministicR107Truth(inputPayload={}) {
   const locality=[inputPayload.city,inputPayload.address].filter(Boolean).join(" · ");
   const businessName=String(inputPayload.business_name||"").trim();
   const serviceTitles=services.map(x=>x.title).filter(Boolean);
-  const heroBody=serviceTitles.length>1
-    ? serviceTitles.slice(0,2).join(" · ")
-    : (locality||String(inputPayload.verified_contacts||"").trim());
-  const servicesIntro=serviceTitles.length>2
-    ? serviceTitles.slice(2).join(" · ")
-    : (serviceTitles.length>1 ? serviceTitles.slice(1).join(" · ") : "");
+  const heroBody=[businessName,String(inputPayload.city||"").trim()].filter(Boolean).join(" · ")
+    || locality
+    || String(inputPayload.verified_contacts||"").trim();
+  const servicesIntro=serviceTitles.join(" · ");
   const content_truth={
     hero_headline:businessName||serviceTitles[0]||"",
     hero_body:heroBody,
