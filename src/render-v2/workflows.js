@@ -584,7 +584,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           ? await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha)
           : null;
         if(!reusable) reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
-        if(!reusable && r107Retrofit && context.zeroPhoto) {
+        if(!reusable && r107Retrofit) {
           reusable=await createR107DeterministicGraphicHeroAsset(this.env,sql,{
             packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
           });
@@ -614,7 +614,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return reusable;
       }
 
-      if(context.zeroPhoto && EXTERNAL_AI_CALLS_ALLOWED===false) {
+      if(EXTERNAL_AI_CALLS_ALLOWED===false) {
         return createR107DeterministicGraphicHeroAsset(this.env,sql,{
           packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
         });
