@@ -262,6 +262,27 @@ export function iconicCommissionedViolations(mainHtml="",css="") {
   return issues;
 }
 
+export function r107UltraVisualViolations(mainHtml="",css="") {
+  const main=String(mainHtml||"");
+  const styles=String(css||"");
+  const issues=[];
+  const hero=main.match(/<section\b[^>]*\bid=["']hero["'][^>]*>/i)?.[0]||"";
+  if(!/\bdata-r107-ultra-visual=["']true["']/i.test(hero)) issues.push("R107_ULTRA_VISUAL_MARKER_REQUIRED");
+  if(!/\bdata-hero-text-over-image=["']required["']/i.test(hero)) issues.push("R107_HERO_TEXT_OVER_IMAGE_MARKER_REQUIRED");
+  if(!/\.ixm-hero__media[\s\S]*position\s*:\s*absolute/i.test(styles)
+     && !/\.ixb-hero__media[\s\S]*position\s*:\s*absolute/i.test(styles)
+     && !/\.ixc-hero__media[\s\S]*position\s*:\s*absolute/i.test(styles)) {
+    issues.push("R107_ABSOLUTE_HERO_MEDIA_REQUIRED");
+  }
+  if(!/text-wrap\s*:\s*balance/i.test(styles)) issues.push("R107_PREMIUM_HEADLINE_FORMATTING_REQUIRED");
+  if(!/text-wrap\s*:\s*pretty/i.test(styles)) issues.push("R107_PREMIUM_BODY_FORMATTING_REQUIRED");
+  if(!/image-rendering\s*:\s*auto/i.test(styles)) issues.push("R107_HIGH_RES_IMAGE_TREATMENT_REQUIRED");
+  if(!/hero_text_on_image_integration|data-hero-text-over-image/i.test(main+"\n"+styles)) {
+    issues.push("R107_HERO_OVERLAY_CONTRACT_REQUIRED");
+  }
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -322,6 +343,14 @@ export function showroomPolicySummary() {
       recognizable_without_logo_or_copy:"REQUIRED",
       section_transitions:"AUTHORED_NOT_STACKED",
       campaign_level_photography_treatment:"REQUIRED",
+      hero_text_over_image:"BLOCKING_DESKTOP_AND_MOBILE",
+      hero_overlay_legibility:"BLOCKING_PREMIUM",
+      high_resolution_visual_perception:"BLOCKING",
+      premium_typography:"BLOCKING_SUPER_PREMIUM",
+      sitewide_visual_polish:"BLOCKING",
+      cheap_ai_look:"FORBIDDEN",
+      low_detail_imagery:"FORBIDDEN",
+      render_density:"2X",
       mobile:"FULL_REINTERPRETATION_REQUIRED"
     },
     conversion:{
