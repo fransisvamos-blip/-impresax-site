@@ -32,13 +32,21 @@ async function deterministicR107Truth(inputPayload={}) {
     .slice(0,6)
     .map(title=>({title,description:""}));
   const locality=[inputPayload.city,inputPayload.address].filter(Boolean).join(" · ");
+  const businessName=String(inputPayload.business_name||"").trim();
+  const serviceTitles=services.map(x=>x.title).filter(Boolean);
+  const heroBody=serviceTitles.length>1
+    ? serviceTitles.slice(0,2).join(" · ")
+    : (locality||String(inputPayload.verified_contacts||"").trim());
+  const servicesIntro=serviceTitles.length>2
+    ? serviceTitles.slice(2).join(" · ")
+    : (serviceTitles.length>1 ? serviceTitles.slice(1).join(" · ") : "");
   const content_truth={
-    hero_headline:services[0]?.title||String(inputPayload.business_name||"").trim(),
-    hero_body:String(inputPayload?.brand_dna?.offer||inputPayload.verified_services||"").trim(),
-    positioning_title:services[1]?.title||"",
+    hero_headline:businessName||serviceTitles[0]||"",
+    hero_body:heroBody,
+    positioning_title:"",
     positioning_body:"",
     services_title:"Competenze e servizi",
-    services_intro:"",
+    services_intro:servicesIntro,
     services,
     trust_title:"Esperienza e affidabilità",
     trust_intro:"",
@@ -920,6 +928,27 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"COMPILE",error:msg,variantKey:params.variantKey,revision:revision.revision,strategyVersion:COMPILER_VERSION})
         );
         await updateRevision(sql,revision.id,{status:"QA_FAILED",renderSpec:generated.spec});
+        const deterministicCompileFailure=
+          context.r107Retrofit===true
+          || context.packMetadata?.structural_divergence_rework_required===true
+          || (EXTERNAL_AI_CALLS_ALLOWED!==true && generated?.deterministic===true);
+        if(deterministicCompileFailure) {
+          await step.do("r"+cycle+"-deterministic-compile-escalation",async()=>{
+            await setVariantStatus(sql,params.variantId,{status:"ESCALATION_REQUIRED"});
+            if(!previewEmitted) await emitParent(this.env,params.parentInstanceId,previewType,{variant_key:params.variantKey,status:"NO_PREVIEW"});
+            await updateWorkflow(sql,event.instanceId,{
+              status:"FAILED",
+              currentStep:"DETERMINISTIC_COMPILE_ESCALATION",
+              errorCode:"DETERMINISTIC_COMPILE_FAILED",
+              metadata:{compile_issues:compiled.issues,deterministic_no_retry:true}
+            });
+            await emitParent(this.env,params.parentInstanceId,terminalType,{
+              variant_key:params.variantKey,status:"ESCALATION_REQUIRED",failure_domain:"STRUCTURAL_GENERATION"
+            });
+            return {ok:true};
+          });
+          return {status:"ESCALATION_REQUIRED",variant:params.variantKey,failure_domain:"STRUCTURAL_GENERATION"};
+        }
         feedback={
           issues:compiled.issues,
           actions:[
