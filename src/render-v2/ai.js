@@ -857,7 +857,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- SALES ARCHITECTURE GATE: beauty must support persuasion. The scroll must make positioning, services, differentiation, process, proof and final action feel intentionally sequenced.",
     "- DETAIL REFINEMENT GATE: inspect micro-alignment, spacing, borders, icon treatment, CTA proportions, overlays, crop discipline, header/footer finish and empty-space balance. A few cheap details are enough to fail the 15K gate.",
     "- MOBILE VALUE PARITY GATE: mobile must retain the same perceived investment as desktop. It is not acceptable for desktop to look 15K while mobile looks like a compressed template.",
-    "- FIFTEEN-K TEST: explicitly answer: would a business owner reasonably believe a serious agency charged 10K-15K for this? Under R106, fifteen_k_value_perception must reach 9.7 before candidate pass.",
+    "- FIFTEEN-K TEST: explicitly answer: would a business owner reasonably believe a serious agency charged 10K-15K for this? Under R107, fifteen_k_value_perception must reach 9.7 before candidate pass.",
     "- R106 ICONIC COMMISSIONED NORTH STAR: design the page as a one-off commissioned brand experience, not a premium website. Target quality is 9.8-9.9. A perfect 10 remains an aspirational north star and must not be awarded casually.",
     "- IRREPRODUCIBLE AUTHORSHIP TEST: mentally remove logo and visible copy. The remaining composition, image treatment, signature geometry, rhythm and transitions must still plausibly belong to this prospect and should be difficult to transplant to another client unchanged.",
     "- CAMPAIGN ART-DIRECTION TEST: key photography must be composed like an editorial brand campaign through crop, layering, overlays, framing, scale and sequence, not merely placed into web containers.",
@@ -948,6 +948,20 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     const score=Number(scores?.[key]??0);
     if(score<8) addGateIssue(key,score,8,"score_below_floor");
   }
+  const r107GlobalFloor={
+    hero_text_on_image_integration:9.4,
+    hero_overlay_legibility:9.5,
+    sitewide_visual_refinement:9.4,
+    image_quality_perception:9.4,
+    premium_typography_quality:9.4,
+    anti_template_feel:9.4,
+    anti_fake_ai_credibility:9.4
+  };
+  for(const [key,required] of Object.entries(r107GlobalFloor)) {
+    const score=Number(scores?.[key]??0);
+    if(score<required) addGateIssue(key,score,required,"r107_quality_gate_below_floor");
+  }
+
   const elevatedGateFloor={
     fifteen_k_value_perception:9.7,
     irreproducible_brand_authorship:9.7,
@@ -1010,7 +1024,9 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "mobile_premium_integrity","fifteen_k_value_perception",
   "irreproducible_brand_authorship","commissioned_experience_quality",
   "scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality",
-  "transition_art_direction","visual_memory_factor","cross_viewport_art_direction"
+  "transition_art_direction","visual_memory_factor","cross_viewport_art_direction",
+  "hero_text_on_image_integration","hero_overlay_legibility","sitewide_visual_refinement",
+  "image_quality_perception","premium_typography_quality","anti_template_feel","anti_fake_ai_credibility"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -1025,7 +1041,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     logoFirstMaster
-      ?"LOGO-FIRST MASTER PASS only when base master gates are >=9, fifteen_k_value_perception and irreproducible_brand_authorship are >=9.7, commissioned_experience_quality is >=9.8, the other R106 iconic gates meet their elevated floors, every other score is >=8, and there are no critical/major unresolved issues."
+      ?"LOGO-FIRST MASTER PASS only when base master gates are >=9, fifteen_k_value_perception and irreproducible_brand_authorship are >=9.7, commissioned_experience_quality is >=9.8, the other R107 ultra-visual gates meet their elevated floors, every other score is >=8, and there are no critical/major unresolved issues."
       :"PASS only when every score is >=8 and there are no critical/major unresolved issues.",
     "The deterministic shell owns the official logo, contact path and footer. A direction described as logo-centric may use the immutable logo in the shell and at most one compiler-owned hero identity placement; never demand a fake/reinterpreted logo.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If it says official_identity_visible=true and broken_images=0, DO NOT claim the official logo is missing, fake, reinterpreted or broken merely because it is visually subtle in the screenshot. Judge its visual prominence separately if needed. If clipped_contacts is empty, do not claim a verified contact is mechanically truncated.",
@@ -1038,6 +1054,11 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
     "HERO HARD GATE: fail if the hero image is generic, irrelevant to the verified vertical/services, visually weak, obviously synthetic/cheap, subordinate to empty geometry, missing a clear focal subject, or badly cropped on mobile.",
     "HERO HARD GATE: the image must materially improve first impression and commercial credibility, with headline/CTA remaining immediately readable.",
+    "R107 UNIVERSAL HERO OVERLAY GATE: on BOTH desktop and mobile, the headline, supporting hero copy and CTA group must be genuinely superimposed over the photographic HERO_VISUAL field. A split hero, text beside/below the image, detached copy panel or fake overlap is a blocking FAIL.",
+    "R107 UNIVERSAL QUALITY GATE: hero_text_on_image_integration >=9.4, hero_overlay_legibility >=9.5, image_quality_perception >=9.4, premium_typography_quality >=9.4, sitewide_visual_refinement >=9.4, anti_template_feel >=9.4 and anti_fake_ai_credibility >=9.4 are blocking for EVERY variant.",
+    "R107 IMAGE QUALITY GATE: fail soft, visibly compressed, pixelated, low-detail, cheap-stock or synthetic-looking photography. Images must feel high-resolution, properly cropped, integrated and credible throughout the page.",
+    "R107 TYPOGRAPHY GATE: typography must look deliberately art-directed and expensive. Fail awkward line breaks, cramped rhythm, generic formatting, weak hierarchy, poor line lengths, orphaned headings, inconsistent spacing or mobile typography that feels like a scaled desktop.",
+    "R107 SITEWIDE POLISH GATE: judge every major section, CTA and footer for premium refinement. A strong hero cannot compensate for generic middle sections, weak image treatment or unfinished typography.",
     pilotHeroLocked?"CABINA-LOCKED HERO: this pilot intentionally preserves a previously approved/pre-QA-passed hero asset while the rest of the page is being perfected. Do NOT demand image replacement merely because another editorial style might be preferable. Still fail real defects: irrelevance, low resolution, obvious AI artifacts, unreadable crop, poor overlay integration, or hero scores below 8.":"",
     logoFirstMaster?"LOGO-FIRST BRAND GATE: the official logo must visibly drive the color system, type personality, shape language and signature device. A generic premium template with the logo pasted on top is a FAIL.":"",
     logoFirstMaster?"LOGO-FIRST HERO GATE: hero must be edge-to-edge/full-bleed with no lateral white/split field, with styled copy and both CTA buttons over the image. Any compromise is a FAIL.":"",
@@ -1055,8 +1076,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     logoFirstMaster?"UNLIMITED-BUDGET TEST: judge whether the page feels as if a top global brand-experience studio had permission to obsess over every scene. If the design is safe, modular, repetitive, timid or easily reusable as a template, score launch_grade_art_direction/custom_composition below 9.":"",
     logoFirstMaster?"R93 TYPOGRAPHY GATE: text_breathing, responsive_type_quality, hero_full_bleed, copy_density_control, desktop_readability_balance, mobile_readability_balance, font_fit_and_originality, headline_line_break_quality and spacing_rhythm are blocking at 9+. Fail crowded text, boxed hero surfaces, excessive one-word headline wrapping, weak mobile line-height, generic font treatment or compressed proof/card typography.":"",
     logoFirstMaster?"R93 SHELL GATE: header_composition_quality, navigation_professionalism, footer_composition_quality and footer_professionalism are blocking at 9+. Fail default-looking menus, weak logo/CTA balance, cramped mobile navigation, thin footers, poor contact hierarchy or flat generic footer surfaces.":"",
-    logoFirstMaster?"R94 15K VALUE GATE: custom_made_feel, premium_art_direction, hero_wow_effect, brand_specificity, imagery_premium_credibility, sales_structure_quality, detail_refinement and mobile_premium_integrity are blocking at 9+. Under R106, fifteen_k_value_perception is elevated to 9.7+. A beautiful 2.5K website is still a FAIL if it does not plausibly look like a 10K-15K commissioned project.":"",
-    logoFirstMaster?"R106 ICONIC COMMISSIONED GATE: irreproducible_brand_authorship >=9.7, commissioned_experience_quality >=9.8, scroll_narrative_continuity >=9.7, signature_system_coherence >=9.7, editorial_campaign_quality >=9.7, transition_art_direction >=9.6, visual_memory_factor >=9.7 and cross_viewport_art_direction >=9.7. Fail anything that still reads as a sequence of premium website sections rather than a one-off commissioned brand experience.":"",
+    logoFirstMaster?"R94 15K VALUE GATE: custom_made_feel, premium_art_direction, hero_wow_effect, brand_specificity, imagery_premium_credibility, sales_structure_quality, detail_refinement and mobile_premium_integrity are blocking at 9+. Under R107, fifteen_k_value_perception is elevated to 9.7+. A beautiful 2.5K website is still a FAIL if it does not plausibly look like a 10K-15K commissioned project.":"",
+    logoFirstMaster?"R107 ICONIC COMMISSIONED GATE: irreproducible_brand_authorship >=9.7, commissioned_experience_quality >=9.8, scroll_narrative_continuity >=9.7, signature_system_coherence >=9.7, editorial_campaign_quality >=9.7, transition_art_direction >=9.6, visual_memory_factor >=9.7 and cross_viewport_art_direction >=9.7. Fail anything that still reads as a sequence of premium website sections rather than a one-off commissioned brand experience.":"",
     "VARIANT:"+variantKey,
     "DIRECTION:"+JSON.stringify(direction),
     "VERIFIED INPUT:"+JSON.stringify(inputPayload),
@@ -1278,6 +1299,8 @@ export async function runSetQa(env,{inputPayload,frames,beforeModelAttempt=null}
     "PASS when set quality and prospect fit are at least 8, every pairwise diversity score is at least "+VARIANT_DIVERGENCE_FLOOR+", and there is no major/critical blocking issue. Minor polish notes may remain and MUST NOT force FAIL.",
     "The three routes are mandatory and must be genuinely different: A="+VARIANT_CREATIVE_ROLES.A+", B="+VARIANT_CREATIVE_ROLES.B+", C="+VARIANT_CREATIVE_ROLES.C+". Do not accept cosmetic restyling of one layout. Identify a weaker conflicting variant only when diversity materially fails; otherwise weakest_variant must be NONE.",
     "All three variants must open with a genuinely premium, prospect-relevant photographic hero. Fail the set if any one route has a weak/generic/cheap hero, if the hero imagery is not relevant to the verified business, or if mobile cropping destroys the focal subject.",
+    "R107 SET RULE: A/B/C must ALL place headline, supporting copy and CTA directly over the hero image on desktop and mobile. Any split/image-beside-copy hero is a hard FAIL.",
+    "R107 SET RULE: all three must show high-resolution visual perception, super-premium typography, refined sitewide image treatment and no cheap AI/template feel.",
     "Each route must also read as a complete premium homepage from header to footer. Fail the set if any route feels like a concept board, a landing-page fragment, a generic template, or a hero plus filler sections.",
     "BROWSER EVIDENCE is authoritative for mechanical facts. If a variant has official_identity_visible=true and deterministic_gate_pass=true, do not claim its official logo is missing, fake, reinterpreted or broken. Judge prominence separately, but never fail immutable identity on a mechanically verified logo.",
     "Do not lower diversity merely because the same immutable official logo appears across A/B/C; identity consistency is required. Judge diversity from composition, section order, typography, material system, signature device and CTA pattern.",
