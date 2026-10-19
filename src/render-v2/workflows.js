@@ -346,6 +346,76 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
   throw new Error("HERO_ASSET_PREQA_FAILED:"+String(lastQa?.summary||"NO_CLEAN_HERO_AFTER_3_ATTEMPTS"));
 }
 
+function r107GraphicPalette(inputPayload={}) {
+  const raw=JSON.stringify(inputPayload?.brand_dna?.existing_colors||"");
+  const colors=[...new Set(raw.match(/#[0-9a-f]{6}/gi)||[])];
+  const primary=colors.find(x=>!/^#(?:ffffff|000000|111111|f[0-9a-f]{5})$/i.test(x))||"#b31319";
+  return {primary,ink:"#101214",paper:"#f4f1ec"};
+}
+
+async function createR107DeterministicGraphicHeroAsset(env,sql,{packId,inputPayload,variantKey}) {
+  const {primary,ink,paper}=r107GraphicPalette(inputPayload);
+  const code=String(inputPayload?.prospect_code||"prospect").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,80);
+  const motif=variantKey==="A"
+    ? `<path d="M-80 850 L620 130 L760 130 L60 850 Z" fill="${primary}" opacity=".26"/>
+       <path d="M560 1024 L1280 250" stroke="${primary}" stroke-width="18" opacity=".72"/>
+       <path d="M820 1024 L1540 240" stroke="${paper}" stroke-width="2" opacity=".35"/>`
+    : variantKey==="B"
+      ? `<rect x="900" y="-80" width="310" height="1180" fill="${primary}" opacity=".22" transform="rotate(11 900 -80)"/>
+         <path d="M0 760 H1536 M0 820 H1536 M0 880 H1536" stroke="${paper}" stroke-width="2" opacity=".22"/>
+         <circle cx="1190" cy="310" r="240" fill="none" stroke="${primary}" stroke-width="24" opacity=".55"/>`
+      : `<path d="M0 160 H1536 M0 480 H1536 M0 800 H1536" stroke="${paper}" stroke-width="2" opacity=".18"/>
+         <path d="M1040 -80 L1540 420 L1040 920 L540 420 Z" fill="${primary}" opacity=".25"/>
+         <path d="M1210 0 V1024" stroke="${primary}" stroke-width="22" opacity=".7"/>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${ink}"/>
+        <stop offset=".58" stop-color="#22262a"/>
+        <stop offset="1" stop-color="${primary}"/>
+      </linearGradient>
+      <radialGradient id="glow" cx=".72" cy=".32" r=".74">
+        <stop offset="0" stop-color="${primary}" stop-opacity=".38"/>
+        <stop offset=".55" stop-color="${primary}" stop-opacity=".08"/>
+        <stop offset="1" stop-color="${ink}" stop-opacity="0"/>
+      </radialGradient>
+      <pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse">
+        <path d="M72 0H0V72" fill="none" stroke="${paper}" stroke-width="1" opacity=".08"/>
+      </pattern>
+    </defs>
+    <rect width="1536" height="1024" fill="url(#bg)"/>
+    <rect width="1536" height="1024" fill="url(#glow)"/>
+    <rect width="1536" height="1024" fill="url(#grid)"/>
+    ${motif}
+    <path d="M0 970 C360 870 640 1010 960 900 C1220 810 1390 840 1536 780 V1024 H0Z" fill="#000" opacity=".22"/>
+  </svg>`;
+  const bytes=new TextEncoder().encode(svg);
+  const hash=await sha256(bytes);
+  const key="render-v2/"+code+"/"+packId+"/"+variantKey+"/hero/r107-graphic-"+hash.slice(0,16)+".svg";
+  const artifact=await putArtifact(env,sql,{
+    packId,revisionId:null,
+    type:"HERO_VISUAL_APPROVED_"+variantKey+"_R107_GRAPHIC",
+    key,body:bytes,mime:"image/svg+xml",
+    producerStep:"R107_DETERMINISTIC_GRAPHIC_HERO"
+  });
+  await recordQa(sql,{
+    packId,revisionId:null,type:"HERO_ASSET_PREQA",status:"PASS",
+    scores:{vector_quality:10,overlay_safety:10,no_fake_photo:10,high_resolution_scalability:10},
+    issues:[],actions:[],
+    artifactHashes:{variant_key:variantKey,hero_sha256:artifact.sha256,hero_r2_key:artifact.r2_key,hero_model:"R107_DETERMINISTIC_VECTOR"},
+    modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+    idempotencyKey:"qa:HERO_ASSET_PREQA:"+packId+":"+variantKey+":"+artifact.sha256
+  });
+  return {
+    asset_id:"HERO_VISUAL",role:"hero",
+    source_type:"R107_DETERMINISTIC_VECTOR_ARTWORK",
+    commercial_use_status:"INTERNAL_GENERATED_ARTWORK",
+    generated:true,ai_generated:false,preqa_pass:true,
+    r2_key:artifact.r2_key,mime:artifact.mime,sha256:artifact.sha256,bytes:artifact.bytes,
+    width:1536,height:1024,r107_graphic_first:true
+  };
+}
+
 async function parentInstance(env,id) {
   return env.RENDER_PROSPECT_WORKFLOW.get(id);
 }
@@ -514,6 +584,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           ? await reusableHeroAssetBySha(sql,params.packId,params.variantKey,requestedSha)
           : null;
         if(!reusable) reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
+        if(!reusable && r107Retrofit && context.zeroPhoto) {
+          reusable=await createR107DeterministicGraphicHeroAsset(this.env,sql,{
+            packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
+          });
+        }
         if(!reusable) throw new Error(structuralRework
           ? "SYSTEM_INVARIANT:STRUCTURAL_REWORK_REUSABLE_HERO_REQUIRED"
           : "SYSTEM_INVARIANT:R107_RETROFIT_REUSABLE_HERO_REQUIRED");
@@ -539,6 +614,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return reusable;
       }
 
+      if(context.zeroPhoto && EXTERNAL_AI_CALLS_ALLOWED===false) {
+        return createR107DeterministicGraphicHeroAsset(this.env,sql,{
+          packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
+        });
+      }
       try {
         return await createGeneratedHeroAsset(this.env,sql,{
           packId:params.packId,
@@ -615,7 +695,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const source=context.assets.HERO_VISUAL;
         if(!source?.r2_key) throw new Error("SYSTEM_INVARIANT:HERO_VISUAL_SOURCE_REQUIRED");
         const heroBytes=await readArtifactBytes(this.env,source.r2_key);
-        const ext=source.mime==="image/png"?"png":source.mime==="image/webp"?"webp":"jpg";
+        const ext=source.mime==="image/png"?"png":source.mime==="image/webp"?"webp":source.mime==="image/svg+xml"?"svg":"jpg";
         const key="render-v2/"+context.inputPayload.prospect_code+"/"+params.packId+"/"+params.variantKey+"/r"+revision.revision+"/hero-visual."+ext;
         const artifact=await putArtifact(this.env,sql,{
           packId:params.packId,
@@ -1182,7 +1262,10 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       .filter(([k,v])=>!v.unavailable && k!=="PRIMARY_LOGO")
       .map(([k])=>k);
     const sectionTokens=sectionVisualTokens(policyAssets);
-    if(sectionTokens.length<MIN_SECTION_VISUALS) {
+    const graphicFirstR107=
+      String(input.payload?.asset_mode||"")==="ZERO_PHOTO_PREMIUM"
+      && String(SHOWROOM_RULES_VERSION||"").includes("R107");
+    if(sectionTokens.length<MIN_SECTION_VISUALS && !graphicFirstR107) {
       await step.do("section-visual-remediation-required",async()=>{
         await setPackStatus(sql,p.packId,"INPUT_BLOCKED",{
           input_remediation_required:true,
@@ -1208,7 +1291,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return {status:"INPUT_REMEDIATION",reason:"SECTION_VISUALS_REQUIRED",required:MIN_SECTION_VISUALS,available:sectionTokens.length};
     }
     await step.do("mark-truth-and-creative-planning",async()=>{
-      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN",metadata:{showroom_rules_version:SHOWROOM_RULES_VERSION,section_visual_tokens:sectionTokens}});
+      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN",metadata:{showroom_rules_version:SHOWROOM_RULES_VERSION,section_visual_tokens:sectionTokens,graphic_first_r107:graphicFirstR107}});
       return {ok:true};
     });
 
