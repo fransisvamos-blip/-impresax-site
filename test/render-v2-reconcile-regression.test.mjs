@@ -376,9 +376,12 @@ test("health accepts intentional isolated pilot mode",()=>{
 });
 
 
-test("ImpresaX master never reuses split-era hero assets",()=>{
+test("R107 Master retrofit may reuse only a certified reusable hero",()=>{
   assert.match(workflows,/const masterProfile=String\(context\.inputPayload\?\.render_profile\|\|""\)==="IMPRESAX_MASTER_V1"/);
-  assert.match(workflows,/ENGINE_CONTRACT_UPGRADE" && !masterProfile/);
+  assert.match(workflows,/if\(params\.initialFeedback\?\.reason==="ENGINE_CONTRACT_UPGRADE"\)/);
+  assert.match(workflows,/latestReusableHeroAsset\(sql,params\.packId,params\.variantKey\)/);
+  assert.match(workflows,/R107_RETROFIT_CERTIFIED_HERO_REQUIRED/);
+  assert.match(workflows,/r107_contract_upgrade_reuse:true/);
 });
 
 test("ImpresaX master hero prompt forbids blank copy space",()=>{
