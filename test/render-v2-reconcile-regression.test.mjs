@@ -751,3 +751,15 @@ test("R107 certified inputs plan truth and A/B/C directions deterministically wi
   assert.match(workflows, /creative-directions-deterministic/);
   assert.doesNotMatch(workflows, /if\(!EXTERNAL_AI_CALLS_ALLOWED && \(!storedTruth \|\| !storedDirections\)\)/);
 });
+
+
+test("R107 deterministic copy sanitizer blocks internal policy text and generic navigation services", () => {
+  assert.match(workflows, /const internalCopy=\/\\b\(\?:usare\\s\+solo/);
+  assert.match(workflows, /const genericService=\/\^\(\?:attività/);
+  assert.match(workflows, /const explicitTrust=verifiedList\(inputPayload\.verified_trust\|\|""\)/);
+  assert.doesNotMatch(workflows, /inputPayload\.verified_trust\|\|inputPayload\?\.brand_dna\?\.trust_signals/);
+  assert.match(showroom, /segnali di fiducia/);
+  assert.match(showroom, /fonti verificate/);
+  assert.match(workflows, /FIRST_PARTY_DISCOVERY_REQUIRED/);
+  assert.match(workflows, /REMEDIATION_POLICY_VERSION/);
+});
