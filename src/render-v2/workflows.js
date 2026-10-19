@@ -1263,7 +1263,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       .map(([k])=>k);
     const sectionTokens=sectionVisualTokens(policyAssets);
     const graphicFirstR107=
-      String(input.payload?.asset_mode||"")==="ZERO_PHOTO_PREMIUM"
+      sectionTokens.length<MIN_SECTION_VISUALS
       && String(SHOWROOM_RULES_VERSION||"").includes("R107");
     if(sectionTokens.length<MIN_SECTION_VISUALS && !graphicFirstR107) {
       await step.do("section-visual-remediation-required",async()=>{
