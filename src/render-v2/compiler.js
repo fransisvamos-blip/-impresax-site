@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations, r107UltraVisualViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -179,11 +179,12 @@ export function validateRenderSpec(spec, manifests) {
   for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys)) issues.push(issue);
   for(const issue of surfaceContractViolations(main)) issues.push(issue);
   for(const issue of flatStrongSectionBackgroundViolations(main,css)) issues.push(issue);
-  const brandRichPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:89|90|93|94|106)_/.test(String(spec?.surface_policy||""));
-  const launchGradePolicy=/^IMPRESAX_RENDER_STANDARD_R(?:90|93|94|106)_/.test(String(spec?.surface_policy||""));
-  const typographyPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:93|94|106)_/.test(String(spec?.surface_policy||""));
-  const fifteenKPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:94|106)_/.test(String(spec?.surface_policy||""));
-  const iconicCommissionedPolicy=String(spec?.surface_policy||"").startsWith("IMPRESAX_RENDER_STANDARD_R106_");
+  const brandRichPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:89|90|93|94|106|107)_/.test(String(spec?.surface_policy||""));
+  const launchGradePolicy=/^IMPRESAX_RENDER_STANDARD_R(?:90|93|94|106|107)_/.test(String(spec?.surface_policy||""));
+  const typographyPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:93|94|106|107)_/.test(String(spec?.surface_policy||""));
+  const fifteenKPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:94|106|107)_/.test(String(spec?.surface_policy||""));
+  const iconicCommissionedPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:106|107)_/.test(String(spec?.surface_policy||""));
+  const r107UltraVisualPolicy=String(spec?.surface_policy||"").startsWith("IMPRESAX_RENDER_STANDARD_R107_");
   if(brandRichPolicy) {
     const brandSurfaceCount=(main.match(/\bdata-brand-surface=["'](?:primary|secondary|dark|tint)["']/gi)||[]).length;
     if(brandSurfaceCount<2) issues.push("BRAND_RICH_SURFACES_REQUIRED:"+brandSurfaceCount+"/2");
@@ -205,6 +206,9 @@ export function validateRenderSpec(spec, manifests) {
   }
   if(iconicCommissionedPolicy) {
     for(const issue of iconicCommissionedViolations(main,css)) issues.push(issue);
+  }
+  if(r107UltraVisualPolicy) {
+    for(const issue of r107UltraVisualViolations(main,css)) issues.push(issue);
   }
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
