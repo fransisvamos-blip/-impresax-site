@@ -527,9 +527,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         if(!reusable) throw new Error("SYSTEM_INVARIANT:PILOT_LOCKED_HERO_NOT_FOUND_OR_NOT_PREQA_PASS");
         return reusable;
       }
-      if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE" && !masterProfile) {
+      if(params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE") {
         const reusable=await latestReusableHeroAsset(sql,params.packId,params.variantKey);
-        if(reusable) return reusable;
+        if(!reusable) throw new Error("SYSTEM_INVARIANT:R107_RETROFIT_CERTIFIED_HERO_REQUIRED");
+        return {...reusable,r107_contract_upgrade_reuse:true};
       }
       try {
         return await createGeneratedHeroAsset(this.env,sql,{
@@ -583,7 +584,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return r;
       });
 
-      if(cycle>1 && feedback?.reason==="HERO_VISUAL_REPAIR" && context.packMetadata?.structural_divergence_rework_required!==true) {
+      if(cycle>1 && feedback?.reason==="HERO_VISUAL_REPAIR" && context.packMetadata?.structural_divergence_rework_required!==true && String(params.initialFeedback?.reason||"")!=="ENGINE_CONTRACT_UPGRADE") {
         const refreshedHero=await step.do("r"+cycle+"-refresh-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
           return createGeneratedHeroAsset(this.env,sql,{
             packId:params.packId,
@@ -632,7 +633,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           const contractUpgradeDeterministic=
             String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
             || String(feedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
-          if(cycle===1 && (structuralDeterministic || contractUpgradeDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))) {
+          if(contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||"")))))) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
