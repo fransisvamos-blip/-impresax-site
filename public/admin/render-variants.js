@@ -93,6 +93,17 @@ function renderLegacyPackCardV2(pack) {
   return html;
 }
 
+function renderR107Compliance(variant, pack){
+  const packR107=String(pack?.quality_contract_version||"")==="RS_QUALITY_V12_R107_ULTRA_VISUAL";
+  const compilerR107=String(variant?.compiler_version||"")==="RS_COMPILER_V1_12_R107_ULTRA_VISUAL";
+  const policyR107=/R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL/i.test(String(variant?.surface_policy||""));
+  const retrofit=/^(true|1|yes)$/i.test(String(pack?.retrofit_required||pack?.r107_retrofit_required||""))
+    || /RUNNING|REQUIRED|CABINA/i.test(String(pack?.retrofit_status||""));
+  if(packR107 && compilerR107 && policyR107) return {label:"R107 UPGRADED",cls:"r107-ok"};
+  if(retrofit) return {label:"RETROFIT REQUIRED",cls:"r107-retrofit"};
+  return {label:"OLD STANDARD",cls:"r107-old"};
+}
+
 function renderV2Ranking(variant, pack) {
   const tags=[];
   if(pack.best_overall_variant===variant.variant_key) tags.push("BEST OVERALL");
@@ -112,7 +123,9 @@ function renderCertifiedVariantCard(variant, pack, prospectId) {
   html += '<div class="render-pack-head"><div>';
   html += '<span class="kicker">VARIANT ' + esc(variant.variant_key) + '</span>';
   html += '<h3>' + esc(variant.creative_direction || variant.name || ("Variant "+variant.variant_key)) + '</h3>';
+  const compliance=renderR107Compliance(variant,pack);
   html += '<div class="render-v2-badges">';
+  html += '<span class="r107-badge '+compliance.cls+'">'+esc(compliance.label)+'</span>';
   if(winner) html += '<span class="winner-badge">WINNER SUGGERITO</span>';
   if(selected) html += '<span class="candidate-badge">CANDIDATA SCELTA · NON MASTER</span>';
   html += '</div></div>';
@@ -122,6 +135,7 @@ function renderCertifiedVariantCard(variant, pack, prospectId) {
   html += '<span><strong>REV.</strong> ' + esc(variant.revision) + '</span>';
   html += '<span><strong>SCORE</strong> ' + esc(variant.reference_score ?? "—") + '</span>';
   html += '<span><strong>DIREZIONE</strong> ' + esc(variant.creative_direction || "—") + '</span>';
+  html += '<span><strong>COMPILER</strong> ' + esc(variant.compiler_version || "—") + '</span>';
   html += '</div>';
 
   if(rankings.length) {
@@ -247,6 +261,8 @@ openRenderingProspect = async function(id) {
       renderContent += '<span>A/C <strong>' + esc(v2Pack.diversity_ac || "—") + '</strong></span>';
       renderContent += '<span>B/C <strong>' + esc(v2Pack.diversity_bc || "—") + '</strong></span>';
       renderContent += '<span>WINNER SUGGERITO <strong>' + esc(v2Pack.winner_variant || "—") + '</strong></span>';
+      renderContent += '<span>STANDARD <strong>' + esc(v2Pack.quality_contract_version || "—") + '</strong></span>';
+      renderContent += '<span>RETROFIT <strong>' + esc(v2Pack.retrofit_status || (String(v2Pack.retrofit_required)==="true" ? "REQUIRED" : "—")) + '</strong></span>';
       renderContent += '</div>';
       if(!completeContract){
         renderContent += '<div class="legacy-warning">CONTRATTO INCOMPLETO: devono essere visibili A, B e C. Nessuna MASTER approval consentita.</div>';
