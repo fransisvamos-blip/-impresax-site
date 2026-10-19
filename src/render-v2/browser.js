@@ -1,6 +1,53 @@
 import puppeteer from "@cloudflare/puppeteer";
 import { RENDER_DEVICE_SCALE_FACTOR, RENDER_JPEG_QUALITY, QA_JPEG_QUALITY, HERO_TEXT_OVER_IMAGE_REQUIRED, HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED } from "./constants.js";
 
+export async function upscaleR107Hero(env,sourceBase64,mime="image/jpeg",{
+  minWidth=3200,
+  minHeight=1800,
+  maxDimension=4096,
+  maxScale=4
+}={}) {
+  if(!env.BROWSER) throw new Error("BROWSER_BINDING_NOT_CONFIGURED");
+  const browser=await puppeteer.launch(env.BROWSER);
+  try {
+    const page=await browser.newPage();
+    try {
+      await page.setViewport({width:64,height:64,deviceScaleFactor:1});
+      await page.setContent("<!doctype html><html><head><style>html,body{margin:0;padding:0;background:#0a0a0a;overflow:hidden}#hero{display:block;margin:0;padding:0}</style></head><body><img id=\"hero\" alt=\"\"></body></html>",{waitUntil:"domcontentloaded",timeout:30000});
+      const source="data:"+String(mime||"image/jpeg")+";base64,"+String(sourceBase64||"");
+      const natural=await page.evaluate(async(src)=>{
+        const img=document.getElementById("hero");
+        img.src=src;
+        if(img.decode) await img.decode();
+        else await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;});
+        return {width:img.naturalWidth,height:img.naturalHeight};
+      },source);
+      const nw=Math.max(1,Number(natural?.width||0));
+      const nh=Math.max(1,Number(natural?.height||0));
+      if(nw<64 || nh<64) throw new Error("R107_HERO_MASTER_SOURCE_INVALID");
+      let scale=Math.max(1,Number(minWidth)/nw,Number(minHeight)/nh);
+      scale=Math.min(scale,Number(maxScale),Number(maxDimension)/nw,Number(maxDimension)/nh);
+      scale=Math.max(1,scale);
+      const width=Math.max(nw,Math.round(nw*scale));
+      const height=Math.max(nh,Math.round(nh*scale));
+      if(scale<=1.001) return {unchanged:true,width:nw,height:nh,source_width:nw,source_height:nh,scale:1};
+      await page.setViewport({width,height,deviceScaleFactor:1});
+      await page.evaluate(({width,height})=>{
+        const img=document.getElementById("hero");
+        Object.assign(document.documentElement.style,{width:width+"px",height:height+"px"});
+        Object.assign(document.body.style,{width:width+"px",height:height+"px"});
+        Object.assign(img.style,{width:width+"px",height:height+"px",objectFit:"fill",imageRendering:"auto"});
+      },{width,height});
+      const bytes=await page.screenshot({type:"jpeg",quality:RENDER_JPEG_QUALITY,fullPage:true});
+      return {unchanged:false,bytes:new Uint8Array(bytes),mime:"image/jpeg",width,height,source_width:nw,source_height:nh,scale:Number(scale.toFixed(4))};
+    } finally {
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
 async function renderPage(browser,html,width,height) {
   const page=await browser.newPage();
   try {
