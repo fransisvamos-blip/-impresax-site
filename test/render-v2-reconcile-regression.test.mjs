@@ -669,7 +669,7 @@ test("R107 compiler inherits previous quality gates and adds ultra-visual gate",
 
 test("R107 high-resolution treatment applies to all visible raster imagery before capture",()=>{
   assert.match(browser,/runtimeImageTreatment=await page\.evaluate/);
-  assert.match(browser,/rect\.width\*RENDER_DEVICE_SCALE_FACTOR/);
+  assert.match(browser,/page\.evaluate\(async\(renderScale\)=>/);\n  assert.match(browser,/rect\.width\*renderScale/);\n  assert.match(browser,/},RENDER_DEVICE_SCALE_FACTOR\);/);
   assert.match(browser,/imageSmoothingQuality="high"/);
   assert.match(browser,/canvas\.toDataURL\("image\/jpeg",0\.96\)/);
   assert.match(browser,/runtime_high_res_treated_images/);
