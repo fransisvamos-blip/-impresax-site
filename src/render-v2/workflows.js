@@ -629,7 +629,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             context.packMetadata?.structural_divergence_rework_required===true
             || String(params.initialFeedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK"
             || String(feedback?.reason||"")==="STRUCTURAL_DIVERGENCE_REWORK";
-          if(cycle===1 && (structuralDeterministic || (context.heroOnly && ["ENGINE_CONTRACT_UPGRADE","QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))) {
+          const contractUpgradeDeterministic=
+            String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
+            || String(feedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
+          if(cycle===1 && (structuralDeterministic || contractUpgradeDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
