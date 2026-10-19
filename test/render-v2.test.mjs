@@ -517,3 +517,23 @@ test("R107 semantic section plan maps visual roles to each structural route",()=
     assert.equal(built.spec.section_visual_strategy,"R107_SEMANTIC_SECTION_MAPPING_V2");
   }
 });
+
+
+test("R107 A bridge keeps all services and uses verified bridge copy",()=>{
+  const copy={
+    HERO_HEADLINE:"Azienda",HERO_BODY:"Testo verificato",
+    POSITIONING_TITLE:"Profilo aziendale",POSITIONING_BODY:"Attività e servizi verificati.",
+    SERVICES_TITLE:"Servizi",SERVICES_INTRO:"Servizi verificati",
+    TRUST_TITLE:"Qualifiche",TRUST_INTRO:"Elementi verificati",
+    BRIDGE_TITLE:"Contatto diretto",BRIDGE_BODY:"info@example.it",
+    CLOSING_TITLE:"Parliamone",CLOSING_BODY:"Contatti",
+    LOCALITY_LINE:"Catanzaro",PRIMARY_CTA_LABEL:"Contatti",SECONDARY_CTA_LABEL:"Approfondisci",
+    SERVICE_1_TITLE:"Uno",SERVICE_2_TITLE:"Due",SERVICE_3_TITLE:"Tre",SERVICE_4_TITLE:"Quattro",
+    TRUST_1:"Certificazione"
+  };
+  const built=buildZeroPhotoPremiumSpec({variantKey:"A",copyManifest:copy,hasIdentity:true,sectionAssetTokens:[]});
+  assert.match(built.spec.main_html,/\{\{copy:BRIDGE_TITLE\}\}/);
+  assert.match(built.spec.main_html,/\{\{copy:BRIDGE_BODY\}\}/);
+  assert.match(built.spec.main_html,/\{\{copy:SERVICE_4_TITLE\}\}/);
+  assert.equal((built.spec.main_html.match(/\{\{copy:SERVICE_4_TITLE\}\}/g)||[]).length,1);
+});

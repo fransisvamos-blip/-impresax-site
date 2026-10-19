@@ -184,8 +184,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     && !trustIsContact(copyManifest,"FOOTER_LINE");
   const positionTitle="POSITIONING_TITLE";
   const positionBody="POSITIONING_BODY";
-  const splitLastService=serviceTitles.length>2;
-  const aGridTitles=splitLastService?serviceTitles.slice(0,-1):serviceTitles;
+  const aGridTitles=serviceTitles;
   const servicesA=aGridTitles.map((titleKey,i)=>{
     const bodyKey="SERVICE_"+(i+1)+"_BODY";
     const body=Object.prototype.hasOwnProperty.call(copyManifest,bodyKey)
@@ -195,11 +194,11 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     const icon="<span class=\"ixg-service__icon "+iconClass+"\" aria-hidden=\"true\"><i></i><i></i><i></i></span>";
     return "<article class=\"ixg-service\"><div class=\"ixg-service__visual\">"+icon+"</div><div class=\"ixg-service__content\"><h3 class=\"ixg-service__title\">"+copyToken(titleKey)+"</h3>"+body+"</div></article>";
   }).join("");
-  const bridgeTitle=splitLastService
-    ? serviceTitles[serviceTitles.length-1]
+  const bridgeTitle=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_TITLE")
+    ? "BRIDGE_TITLE"
     : (trustKeys[0]||"LOCALITY_LINE");
-  const bridgeBody=splitLastService && Object.prototype.hasOwnProperty.call(copyManifest,"SERVICE_"+serviceTitles.length+"_BODY")
-    ? "SERVICE_"+serviceTitles.length+"_BODY"
+  const bridgeBody=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_BODY")
+    ? "BRIDGE_BODY"
     : null;
   const positionBodyMarkup=positionBody?"<p>"+copyToken(positionBody)+"</p>":"";
   const bridgeBodyMarkup=bridgeBody?"<p>"+copyToken(bridgeBody)+"</p>":"";
