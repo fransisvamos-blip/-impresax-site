@@ -10,6 +10,18 @@ function renderSyncStateLabel(variant){
   return "IN SINCRONIZZAZIONE";
 }
 
+function renderR107Compliance(variant, pack){
+  const meta=pack?.metadata||variant?.pack_metadata||{};
+  const packR107=String(pack?.quality_contract_version||variant?.quality_contract_version||"")==="RS_QUALITY_V12_R107_ULTRA_VISUAL";
+  const compilerR107=String(variant?.compiler_version||"")==="RS_COMPILER_V1_12_R107_ULTRA_VISUAL";
+  const policyR107=/R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL/i.test(String(variant?.surface_policy||variant?.render_spec?.surface_policy||""));
+  const retrofit=/^(true|1|yes)$/i.test(String(meta.retrofit_required||meta.r107_retrofit_required||variant?.retrofit_required||""))
+    || /RUNNING|REQUIRED|CABINA/i.test(String(meta.retrofit_status||variant?.retrofit_status||""));
+  if(packR107 && compilerR107 && policyR107) return {label:"R107 UPGRADED",cls:"r107-ok"};
+  if(retrofit) return {label:"RETROFIT REQUIRED",cls:"r107-retrofit"};
+  return {label:"OLD STANDARD",cls:"r107-old"};
+}
+
 function renderVariantCardV2(variant, pack, prospectId) {
   const rejected = /REJECT|ARCHIVED/i.test(String(variant.status || ""));
   const complete = Boolean(variant.desktop_render_url && variant.mobile_render_url);
@@ -33,7 +45,9 @@ function renderVariantCardV2(variant, pack, prospectId) {
   html += '<span class="kicker">' + (sourceV2 ? 'VARIANT ' + esc(variant.variant_key) + ' · REV. ' + esc(variant.revision || variant.certified_revision || '') : (pilotCandidate ? 'PILOT MASTER · REV. ' + esc(variant.pilot_candidate_revision || variant.revision || '') : 'VERSIONE ' + esc(variant.variant_key))) + '</span>';
   html += '<h3>' + esc(sourceV2 ? direction : (variant.name || ("Versione " + variant.variant_key))) + '</h3>';
   if(sourceV2){
+    const compliance=renderR107Compliance(variant,pack);
     html += '<div class="render-v2-badges">';
+    html += '<span class="r107-badge '+compliance.cls+'">'+esc(compliance.label)+'</span>';
     if(variant.winner_suggested) html += '<span class="winner-badge">WINNER SUGGERITO</span>';
     if(selected) html += '<span class="candidate-badge">CANDIDATA SCELTA · NON MASTER</span>';
     html += '</div>';
@@ -46,6 +60,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
     html += '<div class="render-v2-summary">';
     html += '<span><strong>SCORE</strong> ' + esc(variant.reference_score != null ? variant.reference_score : "—") + '</span>';
     html += '<span><strong>DIREZIONE</strong> ' + esc(direction) + '</span>';
+    html += '<span><strong>COMPILER</strong> ' + esc(variant.compiler_version || "—") + '</span>';
     html += '<span><strong>DESKTOP</strong> 1440</span><span><strong>MOBILE</strong> 390</span>';
     html += '</div>';
     if(rankings.length) html += '<div class="render-v2-ranking">' + rankings.map(x=>'<span>'+esc(x)+'</span>').join("") + '</div>';
@@ -219,6 +234,8 @@ openRenderingProspect = async function(id) {
       renderContent += '<span>A/C <strong>' + esc(meta.diversity_ac || certifiedV2Variants[0]?.diversity_ac || "—") + '</strong></span>';
       renderContent += '<span>B/C <strong>' + esc(meta.diversity_bc || certifiedV2Variants[0]?.diversity_bc || "—") + '</strong></span>';
       renderContent += '<span>WINNER SUGGERITO <strong>' + esc(meta.winner_variant || "—") + '</strong></span>';
+      renderContent += '<span>STANDARD <strong>' + esc(latestV2Pack.quality_contract_version || "—") + '</strong></span>';
+      renderContent += '<span>RETROFIT <strong>' + esc(meta.retrofit_status || ((meta.retrofit_required||meta.r107_retrofit_required) ? "REQUIRED" : "—")) + '</strong></span>';
       renderContent += '</div>';
       certifiedV2Variants.forEach(v => {
         // Once the full A/B/C set exists, the old single-pilot flag must never hide or disable Variant A.
