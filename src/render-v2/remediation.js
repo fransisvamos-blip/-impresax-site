@@ -1,7 +1,7 @@
 import { db, getProspect } from "./db.js";
 import { createShadowInputPack } from "./input-pack.js";
 import { safeExternalHttpUrl, ensureArray } from "./utils.js";
-import { REMEDIATION_POLICY_VERSION } from "./constants.js";
+import { REMEDIATION_POLICY_VERSION, EXTERNAL_AI_CALLS_ALLOWED } from "./constants.js";
 
 const UNAVAILABLE=/^(?:|NON[_ ]?DISPONIBILE|N\/A|NA|UNKNOWN|NON[_ ]?VERIFICAT[OA]|NOT_AVAILABLE)$/i;
 
@@ -441,7 +441,9 @@ export async function remediateBlockedPack(env,{prospectId,packId}) {
   const docs=await collectDocs(prospect);
   const contactsFound=extractContacts(docs,prospect);
   const firstPartyImages=firstPartyImageCandidates(docs,prospect);
-  const ai=await extractServices(env,docs,prospect).catch(()=>({services:[],trust:[]}));
+  const ai=EXTERNAL_AI_CALLS_ALLOWED
+    ? await extractServices(env,docs,prospect).catch(()=>({services:[],trust:[]}))
+    : {services:[],trust:[]};
   const deterministicOffers=extractOfferHeadings(docs);
 
   const existingServices=meaningful(source.verified_services)?String(source.verified_services):"";
