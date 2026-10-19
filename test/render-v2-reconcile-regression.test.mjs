@@ -17,6 +17,7 @@ const health=fs.readFileSync(new URL("../src/render-v2/health.js",import.meta.ur
 const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
 const browser=fs.readFileSync(new URL("../src/render-v2/browser.js",import.meta.url),"utf8");
 const compiler=fs.readFileSync(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8");
+const showroom=fs.readFileSync(new URL("../src/render-v2/showroom-policy.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
   assert.match(
