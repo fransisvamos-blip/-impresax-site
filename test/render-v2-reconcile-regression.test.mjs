@@ -711,3 +711,13 @@ test("R107 premium guards prevent phantom metric panels and low-contrast footer 
   assert.match(grammar,/\.ix-v2-footer-identity\{[\s\S]*background:#f7f6f2!important/);
   assert.match(grammar,/\.ix-v2-footer-logo\{[\s\S]*mix-blend-mode:multiply!important/);
 });
+
+
+test("R107 remediation discovers same-origin first-party editorial images", () => {
+  assert.match(remediation, /function firstPartyImageCandidates\(docs,prospect\)/);
+  assert.match(remediation, /SAME_ORIGIN_OFFICIAL_SITE_IMAGE/);
+  assert.match(remediation, /commercial_use_status:"FIRST_PARTY_REFERENCE"/);
+  assert.match(remediation, /first_party_images:\[/);
+  assert.match(remediation, /first_party_image_evidence:firstPartyImages/);
+  assert.match(remediation, /logo\|favicon\|icon\|sprite\|avatar/);
+});
