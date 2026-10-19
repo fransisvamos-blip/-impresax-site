@@ -680,3 +680,15 @@ test("R107 high-resolution treatment applies to all visible raster imagery befor
   assert.match(constants,/RENDER_DEVICE_SCALE_FACTOR = 2/);
   assert.match(constants,/RENDER_JPEG_QUALITY = 96/);
 });
+
+
+test("R107 retrofit stays deterministic and zero-AI during recovery", () => {
+  assert.match(workflows, /const r107Retrofit=/);
+  assert.match(workflows, /context\.r107Retrofit===true/);
+  assert.match(workflows, /SYSTEM_INVARIANT:R107_RETROFIT_REUSABLE_HERO_REQUIRED/);
+  assert.match(workflows, /const contractUpgradeDeterministic=[\s\S]*context\.r107Retrofit===true/);
+  assert.match(reconcile, /const r107Recovery=/);
+  assert.match(reconcile, /const deterministicRecovery=structuralRecovery \|\| r107Recovery/);
+  assert.match(reconcile, /r107_retrofit:r107Recovery/);
+  assert.match(reconcile, /r107Recovery \? \{[\s\S]*reason:"ENGINE_CONTRACT_UPGRADE"/);
+});
