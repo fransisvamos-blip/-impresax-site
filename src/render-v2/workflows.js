@@ -890,6 +890,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             promptVersion:"STRUCTURAL_REWORK_ZERO_AI_V1",
             idempotencyKey:"qa:CABINA_DETERMINISTIC_STRUCTURAL:"+params.packId+":"+revision.id
           });
+          if(context.r107Retrofit===true) {
+            await setPackStatus(sql,params.packId,"PREVIEW_READY",{
+              cabina_visual_review_hold:true,
+              retrofit_status:"CABINA_VISUAL_REVIEW",
+              master_auto_approve:false
+            });
+          }
           await updateWorkflow(sql,event.instanceId,{
             status:"COMPLETED",
             currentStep:"CABINA_VISUAL_REVIEW",
