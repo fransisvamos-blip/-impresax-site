@@ -112,6 +112,17 @@ test("policy detects cheap internal copy and section visual inventory",()=>{
     PHOTO_C:{mime:"image/jpeg"},
     BROKEN:{mime:"image/jpeg",unavailable:true}
   }),["PHOTO_A","PHOTO_B","PHOTO_C"]);
+
+  const curated=sectionVisualTokens({
+    HERO_SOURCE:{role:"hero",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Noleggi-e-Servizi.webp"},
+    STOCKISH:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Certificati-Congratulation.webp"},
+    CARPENTERIA:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Carpenteria-Metallica.webp"},
+    AMIANTO:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Bonifica-Amianto.webp"},
+    ANTENNE:{role:"editorial",mime:"image/webp",source_type:"FIRST_PARTY",source_url:"https://example.test/Antenne-e-Telecomunicazioni.webp"}
+  },{verified_services:"Carpenteria Metallica; Bonifica Amianto; Telecomunicazioni; Certificazioni"});
+  assert.ok(!curated.includes("HERO_SOURCE"),"hero-role visual must not be recycled as a section image");
+  assert.deepEqual(curated.slice(0,3).sort(),["AMIANTO","ANTENNE","CARPENTERIA"].sort());
+  assert.ok(curated.indexOf("STOCKISH")>curated.indexOf("AMIANTO"),"generic celebratory imagery must lose to relevant first-party service photography");
 });
 
 test("workflow and compiler contain hard R90 gates",async()=>{

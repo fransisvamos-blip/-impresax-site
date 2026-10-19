@@ -230,10 +230,26 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     .map(String)
     .filter(token=>/^[A-Z0-9_]+$/.test(token) && token!=="HERO_VISUAL" && token!=="PRIMARY_LOGO"))];
   const preferredSectionAssets=["POSITIONING_VISUAL","SERVICE_MATERIALS_VISUAL","SERVICE_REBAR_VISUAL","TRUST_VISUAL"];
-  const selectedSectionAssets=[
-    ...preferredSectionAssets.filter(token=>suppliedSectionAssets.includes(token)),
-    ...suppliedSectionAssets.filter(token=>!preferredSectionAssets.includes(token))
-  ].slice(0,3);
+  const explicitPreferred=preferredSectionAssets.filter(token=>suppliedSectionAssets.includes(token));
+  const rankedSectionAssets=[
+    ...explicitPreferred,
+    ...suppliedSectionAssets.filter(token=>!explicitPreferred.includes(token))
+  ];
+  const variantVisualPick=(pool=[])=>{
+    if(pool.length<=3 || explicitPreferred.length>=3) return pool.slice(0,3);
+    const recipe=variantKey==="B"
+      ? {start:Math.ceil(pool.length/2),step:1}
+      : variantKey==="C"
+        ? {start:1,step:2}
+        : {start:0,step:1};
+    const picked=[];
+    for(let i=0;i<pool.length*2 && picked.length<3;i++) {
+      const token=pool[(recipe.start+i*recipe.step)%pool.length];
+      if(token && !picked.includes(token)) picked.push(token);
+    }
+    return picked;
+  };
+  const selectedSectionAssets=variantVisualPick(rankedSectionAssets);
   const sectionVisual=(token,modifier="")=>token
     ? "<figure class=\"ixg-section-visual "+modifier+"\"><img src=\"{{asset:"+token+"}}\" alt=\"\"></figure>"
     : "";
@@ -1640,6 +1656,18 @@ body{font-family:var(--ix-body-font)}
  backface-visibility:hidden!important;
  filter:saturate(.96) contrast(1.035)!important
 }
+/* R107 composition guard: first-party imagery must read as an authored scene, never as a leftover thumbnail. */
+.ixg-positioning .ixg-split>.ixg-section-visual{
+ grid-column:1/-1!important;
+ width:min(86%,1180px)!important;
+ min-height:clamp(340px,34vw,560px)!important;
+ max-height:620px!important;
+ margin:18px 0 0 auto!important
+}
+.ixg-positioning .ixg-split>.ixg-section-visual img{
+ min-height:inherit!important;
+ max-height:inherit!important
+}
 .ixg h1,.ixg h2,.ixg h3{
  text-wrap:balance!important;
  font-kerning:normal!important;
@@ -1692,6 +1720,12 @@ body{font-family:var(--ix-body-font)}
    max-width:34em!important;
    line-height:1.62!important
  }
+ .ixg-positioning .ixg-split>.ixg-section-visual{
+   width:100%!important;
+   min-height:220px!important;
+   max-height:320px!important;
+   margin:4px 0 0!important
+ }
 }
 `;
 
@@ -1730,6 +1764,7 @@ body{font-family:var(--ix-body-font)}
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets],
+      section_visual_strategy:"R107_CURATED_VARIANT_ROTATION_V1",
       hero_visual_strategy:"R107 mandatory full-bleed edge-to-edge HERO_VISUAL with verified headline, body and CTAs overlaid inside the image, premium readability veil and high-resolution capture.",
       hero_subject:"Prospect-relevant commercial scene supplied by HERO_VISUAL.",
       hero_scene_type:"Premium editorial business-context photography.",

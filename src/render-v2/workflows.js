@@ -666,11 +666,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       if(inputPayload.secondary_cta) copyManifest.SECONDARY_CTA_LABEL=String(inputPayload.secondary_cta);
       const ctaManifest=buildContactManifest(inputPayload);
       const editorialAssetTokens=Object.keys(assets).filter(k=>k!=="PRIMARY_LOGO" && !assets[k]?.unavailable);
+      const deterministicSectionAssetTokens=sectionVisualTokens(assets,inputPayload);
       const zeroPhoto=editorialAssetTokens.length===0;
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit};
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,deterministicSectionAssetTokens,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit};
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
@@ -836,7 +837,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               copyManifest:context.copyManifest,
               hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
               inputPayload:context.inputPayload,
-              sectionAssetTokens:context.editorialAssetTokens.filter(token=>token!=="HERO_VISUAL")
+              sectionAssetTokens:context.deterministicSectionAssetTokens
             });
             return {spec:deterministic.spec,model:deterministic.strategy,deterministic:true};
           }
@@ -873,7 +874,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             copyManifest:context.copyManifest,
             hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
             inputPayload:context.inputPayload,
-            sectionAssetTokens:context.editorialAssetTokens.filter(token=>token!=="HERO_VISUAL")
+            sectionAssetTokens:context.deterministicSectionAssetTokens
           });
           generated={
             spec:deterministic.spec,

@@ -467,3 +467,28 @@ test("set QA normalization converts unit scale and still blocks material diversi
   assert.equal(r.scores.set_quality,9);
   assert.equal(r.pass,false);
 });
+
+test("R107 deterministic grammar rotates curated section imagery across A/B/C",()=>{
+  const copy={
+    HERO_HEADLINE:"Azienda",HERO_BODY:"Servizi professionali.",
+    POSITIONING_TITLE:"Posizionamento",POSITIONING_BODY:"Esperienza operativa.",
+    SERVICES_TITLE:"Servizi",SERVICES_INTRO:"Attività disponibili.",
+    TRUST_TITLE:"Affidabilità",TRUST_INTRO:"Elementi di fiducia.",
+    CLOSING_TITLE:"Parliamone",CLOSING_BODY:"Contattaci.",LOCALITY_LINE:"Catanzaro",
+    PRIMARY_CTA_LABEL:"Contatti",SECONDARY_CTA_LABEL:"Approfondisci",
+    SERVICE_1_TITLE:"Servizio uno",SERVICE_2_TITLE:"Servizio due",SERVICE_3_TITLE:"Servizio tre",
+    TRUST_1:"Presenza locale"
+  };
+  const sectionAssetTokens=["VISUAL_03","VISUAL_05","VISUAL_06","VISUAL_07","VISUAL_08","VISUAL_09"];
+  const sets={};
+  for(const variantKey of ["A","B","C"]) {
+    const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true,sectionAssetTokens});
+    assert.equal(built.spec.section_visual_strategy,"R107_CURATED_VARIANT_ROTATION_V1");
+    sets[variantKey]=built.spec.used_asset_tokens.slice(1);
+    assert.equal(new Set(sets[variantKey]).size,3);
+  }
+  assert.notDeepEqual(sets.A,sets.B);
+  assert.notDeepEqual(sets.A,sets.C);
+  assert.notDeepEqual(sets.B,sets.C);
+});
+

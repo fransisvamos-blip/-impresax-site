@@ -38,17 +38,68 @@ export function filterHomepageTrustPoints(points=[]) {
   return (Array.isArray(points)?points:[]).filter(point=>!isLowValueHomepageFact(point?.text||point));
 }
 
-export function sectionVisualTokens(assets={}) {
+function normalizedVisualSignal(value="") {
+  return String(value||"")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+}
+
+function verifiedServiceWords(inputPayload={}) {
+  const raw=normalizedVisualSignal(
+    Array.isArray(inputPayload?.verified_services)
+      ? inputPayload.verified_services.map(x=>typeof x==="string"?x:JSON.stringify(x)).join(" ")
+      : inputPayload?.verified_services||""
+  );
+  const stop=new Set(["attivita","servizi","servizio","panoramica","generale","azienda","societa","della","delle","degli","dello","dell","per","con","del"]);
+  return [...new Set(raw.split(/\s+/).filter(x=>x.length>=5 && !stop.has(x)))];
+}
+
+function sectionVisualScore(token,meta={},inputPayload={},index=0) {
+  const source=normalizedVisualSignal(meta?.source_url||meta?.asset_url||"");
+  const role=String(meta?.role||"").toLowerCase();
+  const sourceType=String(meta?.source_type||"").toUpperCase();
+  let score=0;
+  if(role==="editorial") score+=12;
+  if(sourceType.includes("FIRST_PARTY")) score+=22;
+  if(/\.(?:avif|webp|png|jpe?g)(?:\?|$)/i.test(String(meta?.source_url||meta?.asset_url||""))) score+=14;
+  else if(/^https?:\/\//i.test(String(meta?.source_url||meta?.asset_url||""))) score-=18;
+
+  const cheapGeneric=/\b(?:congrat(?:ulation)?|handshake|business people|meeting|teamwork|celebrat(?:ion)?|stock photo|success people)\b/i;
+  if(cheapGeneric.test(source)) score-=90;
+
+  const technical=/\b(?:edil|cantiere|carpenter|metal|amianto|anten|telecom|impiant|nolegg|macchin|costruz|industr|officin|ponteggi|scavi|demoliz)\w*/g;
+  const technicalHits=new Set(source.match(technical)||[]);
+  score+=Math.min(technicalHits.size,4)*7;
+
+  const serviceWords=verifiedServiceWords(inputPayload);
+  let serviceHits=0;
+  for(const word of serviceWords) {
+    const stem=word.length>8?word.slice(0,7):word;
+    if(stem.length>=5 && source.includes(stem)) serviceHits++;
+  }
+  score+=Math.min(serviceHits,4)*11;
+
+  // Keep source order deterministic when quality signals tie.
+  return score-(index*0.0001);
+}
+
+export function sectionVisualTokens(assets={},inputPayload=null) {
   return Object.entries(assets||{})
-    .filter(([token,meta])=>{
+    .map(([token,meta],index)=>({token,meta,index}))
+    .filter(({token,meta})=>{
       if(token==="PRIMARY_LOGO" || token==="HERO_VISUAL") return false;
       if(meta?.unavailable) return false;
       if(String(meta?.role||"").toLowerCase()==="identity") return false;
+      // A first-party hero may become HERO_VISUAL; do not recycle it as a middle-page visual.
       if(String(meta?.role||"").toLowerCase()==="hero") return false;
       if(meta?.mime && !String(meta.mime).startsWith("image/")) return false;
       return true;
     })
-    .map(([token])=>token);
+    .sort((a,b)=>{
+      const delta=sectionVisualScore(b.token,b.meta,inputPayload,b.index)-sectionVisualScore(a.token,a.meta,inputPayload,a.index);
+      return Math.abs(delta)>0.00001?delta:a.index-b.index;
+    })
+    .map(({token})=>token);
 }
 
 export function requiredSectionVisualCount(assets={}) {
