@@ -310,7 +310,7 @@ test("zero-photo grammar compiles all three variants",async()=>{
   };
   for(const variantKey of ["A","B","C"]) {
     const built=buildZeroPhotoPremiumSpec({variantKey,copyManifest:copy,hasIdentity:true});
-    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R106_ICONIC_COMMISSIONED_EXPERIENCE_V1");
+    assert.equal(built.spec.surface_policy,"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1");
     assert.ok((built.spec.main_html.match(/data-brand-surface=/g)||[]).length>=3);
     assert.match(built.spec.main_html,/data-launch-hero="true"/);
     assert.match(built.spec.main_html,/data-hero-full-bleed="true"/);
