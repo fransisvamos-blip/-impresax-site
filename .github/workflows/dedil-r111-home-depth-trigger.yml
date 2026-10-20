@@ -1,0 +1,46 @@
+name: DEDIL R111 15K home-depth trigger
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-r111-home-depth-trigger.yml"
+
+jobs:
+  deploy-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      WORKFLOW_NAME: impresax-render-v2-variant
+      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-r111-home-depth-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Deploy latest R111 worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config wrangler.render-v2.jsonc
+      - name: Trigger DEDIL R111
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"dedil-r111-home-depth-v1","initialFeedback":{"reason":"ENGINE_CONTRACT_UPGRADE","issues":["The homepage is still too short and brochure-like for a 10K-15K perceived-value project.","R111 requires 8-12 purposeful substantial scenes and at least two bespoke editorial middle-scroll feature scenes.","Perche scegliere noi must remain rich with at least three strong reasons plus graphic support.","U-Power must remain entirely separate in Marchi e partnership with the verified official logo."],"actions":["Keep the approved hero locked.","Use R111 home-depth architecture as a blocking source of truth.","Create two materially different editorial feature scenes in the middle scroll using verified services/proof.","Do not add filler or duplicate sections only to reach the section count.","Preserve R109/R110 premium polish, contrast and section-first logic.","Keep external AI disabled."]}}'
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json
+      - name: Wait for R111 render
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..90}; do
+            npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json > /tmp/status.json
+            cat /tmp/status.json
+            if grep -Eq '"status"[[:space:]]*:[[:space:]]*"complete"' /tmp/status.json; then exit 0; fi
+            if grep -Eq '"status"[[:space:]]*:[[:space:]]*"(errored|terminated)"' /tmp/status.json; then exit 1; fi
+            sleep 4
+          done
+          exit 1
