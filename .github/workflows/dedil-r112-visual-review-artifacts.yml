@@ -4,7 +4,7 @@ on:
   push:
     branches: [rendering-v2-shadow]
     paths:
-      - ".github/workflows/dedil-r112-visual-review-artifacts.yml"
+      - ".github/workflows/dedil-r112-final-visual-review-artifacts.yml"
 
 jobs:
   collect:
@@ -24,11 +24,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p review
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r168/desktop-1440.jpg" --remote --file review/dedil-r112-desktop.jpg
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r168/mobile-390.jpg" --remote --file review/dedil-r112-mobile.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r169/desktop-1440.jpg" --remote --file review/dedil-r112-desktop.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r169/mobile-390.jpg" --remote --file review/dedil-r112-mobile.jpg
           file review/*
       - uses: actions/upload-artifact@v4
         with:
-          name: dedil-r112-visual-review
+          name: dedil-r112-final-visual-review
           path: review/
           retention-days: 1
