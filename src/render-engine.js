@@ -1535,6 +1535,12 @@ async function candidates(sql, limit) {
       order by x.version desc limit 1
     ) rp on true
     where p.pipeline_status in ('READY_FOR_RENDERING'::pipeline_status,'RENDERING'::pipeline_status,'RENDER_REWORK'::pipeline_status)
+      and not exists (
+        select 1 from render_v2_packs v2
+        where v2.prospect_id=p.id
+          and v2.shadow_mode=true
+          and v2.status not in ('CANCELLED','SUPERSEDED')
+      )
       and rp.status in ('ART_DIRECTION','BRAND_GATE_HOLD')
       and coalesce((rp.content_map->>'generation_failure_count')::int,0) < ${MAX_GENERATION_FAILURES}
       and (
@@ -1928,6 +1934,12 @@ async function reconcileGenerationCircuitBreakers(sql) {
         error=null,
         updated_at=now()
     where p.render_status='ESCALATION_REQUIRED'
+      and not exists (
+        select 1 from render_v2_packs v2
+        where v2.prospect_id=p.id
+          and v2.shadow_mode=true
+          and v2.status not in ('CANCELLED','SUPERSEDED')
+      )
       and exists (
         select 1 from render_packs rp
         where rp.prospect_id=p.id
@@ -1952,7 +1964,13 @@ async function reconcileGenerationCircuitBreakers(sql) {
         next_action='CABINA_CREATIVE_GENERATION_REVIEW',
         error=coalesce(p.error,'GENERATION_CIRCUIT_BREAKER'),
         updated_at=now()
-    where exists (
+    where not exists (
+      select 1 from render_v2_packs v2
+      where v2.prospect_id=p.id
+        and v2.shadow_mode=true
+        and v2.status not in ('CANCELLED','SUPERSEDED')
+    )
+      and exists (
       select 1 from render_packs rp
       where rp.prospect_id=p.id
         and rp.approved_reference=false
