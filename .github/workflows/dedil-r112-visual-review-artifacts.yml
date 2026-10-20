@@ -4,7 +4,7 @@ on:
   push:
     branches: [rendering-v2-shadow]
     paths:
-      - ".github/workflows/dedil-r112-final-visual-review-artifacts.yml"
+      - ".github/workflows/dedil-r112-visual-review-artifacts.yml"
 
 jobs:
   collect:
