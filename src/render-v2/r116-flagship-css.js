@@ -322,6 +322,13 @@ export const R116_FLAGSHIP_CSS = `
 }
 
 @media(max-width:700px){
+ .ixf-hero__inner,.ixf-positioning__grid,.ixf-services .ixg-services__composition,.ixf-services .ixg-services__grid,.ixf-feature__grid,.ixg-trust-section .ixg-shell,.ixg-partner-proof__grid,.ixm-bridge__grid,.ixg-contact__inner,.ix-v2-footer-grid{min-width:0!important;max-width:100%!important}
+ .ixf-hero__inner>*,.ixf-positioning__grid>*,.ixf-services .ixg-services__composition>*,.ixf-feature__grid>*,.ixg-trust-section .ixg-shell>*,.ixg-partner-proof__grid>*,.ixm-bridge__grid>*,.ixg-contact__inner>*,.ix-v2-footer-grid>*{min-width:0!important;max-width:100%!important}
+ .ixf-hero img,.ixf-positioning img,.ixf-services img,.ixf-feature img,.ixg-trust-section img,.ixg-partner-proof img{max-width:100%!important}
+ .ixg-actions{max-width:100%!important;flex-wrap:wrap!important}
+ .ixg-cta{max-width:100%!important;white-space:normal!important}
+ .ixf-positioning__media,.ixg-feature__stage,.ixg-section-visual{max-width:100%!important}
+
  .ixf-hero{min-height:820px!important}
  .ixf-hero__inner{min-height:820px!important;padding-top:110px!important;padding-bottom:32px!important;gap:30px!important}
  .ixf-hero__copy h1{font-size:clamp(50px,14vw,74px)!important;max-width:9ch!important}
