@@ -210,7 +210,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     const tag=Object.prototype.hasOwnProperty.call(copyManifest,tagKey)
       ? "<span class=\"ixf-service-line__tag\">"+copyToken(tagKey)+"</span>"
       : "";
-    return "<article class=\"ixf-service-line\" data-service-editorial=\"true\" data-service-index-rail=\"locked\"><div class=\"ixf-service-line__index\"><span>0"+(i+1)+"</span>"+tag+"</div><div class=\"ixf-service-line__copy\"><h3 class=\"ixf-service-line__title\">"+copyToken(titleKey)+"</h3>"+body+"</div><span class=\"ixf-service-line__rule\" aria-hidden=\"true\"></span></article>";
+    return "<article class=\"ixf-service-line\" data-service-editorial=\"true\" data-service-index-rail=\"locked\"><div class=\"ixf-service-line__index\"><span class=\"ixf-service-line__mark\" aria-hidden=\"true\"><i></i><i></i><i></i></span>"+tag+"</div><div class=\"ixf-service-line__copy\"><h3 class=\"ixf-service-line__title\">"+copyToken(titleKey)+"</h3>"+body+"</div><span class=\"ixf-service-line__rule\" aria-hidden=\"true\"></span></article>";
   }).join("");
   const bridgeTitle=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_TITLE")
     ? "BRIDGE_TITLE"
@@ -233,26 +233,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     trustReasonSeen.add(value);
     return true;
   });
-  const trustReasonLabel=key=>{
-    const value=String(copyManifest?.[key]||"");
-    if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività";
-    if(/fatturato|ricavi|revenue|turnover|€|euro/i.test(value)) return "Solidità";
-    if(/dipendenti|employees|headcount|addetti/i.test(value)) return "Struttura";
-    return "Dato verificato";
-  };
-  const trustReasonDetail=key=>{
-    const value=String(copyManifest?.[key]||"");
-    if(/fatturato|ricavi|revenue|turnover|€|euro/i.test(value)) return "Dato economico riportato dalla fonte verificata.";
-    if(/dipendenti|employees|headcount|addetti/i.test(value)) return "Organico indicato dalla fonte economica verificata.";
-    if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività aziendale verificata.";
-    return "Informazione supportata dalle fonti verificate del prospect.";
-  };
   const trustReasons=verifiedTrustReasonKeys
-    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__top\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><span class=\"ixg-trust-reason__label\">"+trustReasonLabel(key)+"</span></div><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong><p>"+trustReasonDetail(key)+"</p></article>")
+    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong></article>")
     .join("");
   const trustProofRail="";
   const partnerProof=partnerTrustKeys.length
-    ? "<section id=\"partners\" data-r116-set-piece=\"partners\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-partner-verification=\"verified-only\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map((key,i)=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixf-partner-feature\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\" data-verified-partner=\"true\"><div class=\"ixf-partner-feature__identity\"><span>0"+(i+1)+" · PARTNER VERIFICATO</span>"+logo+"</div><div class=\"ixf-partner-feature__copy\"><strong>"+copyToken(key)+"</strong><i aria-hidden=\"true\"></i></div></article>";}).join("")+"</div></div></section>"
+    ? "<section id=\"partners\" data-r116-set-piece=\"partners\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-partner-verification=\"verified-only\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map((key,i)=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixf-partner-feature\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\" data-verified-partner=\"true\"><div class=\"ixf-partner-feature__identity\">"+logo+"<span class=\"ixf-partner-feature__mark\" aria-hidden=\"true\"><i></i><i></i><i></i></span></div><div class=\"ixf-partner-feature__copy\"><strong>"+copyToken(key)+"</strong><i aria-hidden=\"true\"></i></div></article>";}).join("")+"</div></div></section>"
     : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
