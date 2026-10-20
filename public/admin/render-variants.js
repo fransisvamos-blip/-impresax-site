@@ -1,6 +1,6 @@
 
 /* Gestionale ImpresaX — rendering variants UI
-   Overrides the legacy render panel with complete A/B/C full-home candidates. */
+   Overrides the legacy render panel with complete concept full-home candidates. */
 
 function renderSyncStateLabel(variant){
   const hasDesktop=Boolean(variant.desktop_render_url);
@@ -153,12 +153,13 @@ renderRenderingList = function() {
   } else {
     rows.forEach(p => {
       const v2ReadyCount=Number(p.render_v2_ready_count||0);
-      const v2Ready=String(p.render_v2_status||"").toUpperCase()==="RENDER_READY" && v2ReadyCount===3;
+      const v2Status=String(p.render_v2_status||"").toUpperCase();
+      const v2Ready=["PREVIEW_READY","RENDER_READY","SELECTED","APPROVED"].includes(v2Status) && v2ReadyCount>=1;
       const pilotCandidate=Boolean(p.render_v2_pilot_candidate);
-      // A complete certified A/B/C set always wins over the legacy single-pilot presentation.
+      // A complete certified concept set always wins over the legacy single-pilot presentation.
       const visualStatus=v2Ready ? "RENDER_READY" : (pilotCandidate ? "RENDER_READY" : (p.render_status || p.pipeline_status));
       const visualLabel=v2Ready
-        ? "3 VERSIONI PRONTE"
+        ? "CONCEPT PRONTO"
         : (pilotCandidate ? "PILOT PRONTO · REV. " + esc(p.render_v2_pilot_candidate_revision || "") : tStatus(visualStatus));
       html += '<article class="render-prospect-row ' + (state.renderingSelected === p.id_prospect ? 'selected' : '') + '">';
       html += '<button class="render-prospect-open" data-render-prospect="' + esc(p.id_prospect) + '">';
@@ -167,11 +168,11 @@ renderRenderingList = function() {
       html += '</button>';
       html += '<div class="render-prospect-actions">';
       if (v2Ready) {
-        html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri A / B / C →</button>';
+        html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri concept →</button>';
       } else if (pilotCandidate) {
         html += '<button class="preview-site" data-render-prospect="' + esc(p.id_prospect) + '">Apri pilot rev. ' + esc(p.render_v2_pilot_candidate_revision || "") + ' →</button>';
       } else if (v2ReadyCount>0) {
-        html += '<span class="preview-site disabled">' + esc(v2ReadyCount) + '/3 versioni certificate</span>';
+        html += '<span class="preview-site disabled">Concept in preparazione</span>';
       } else if (String(p.render_v2_status||"").toUpperCase()==="GENERATING") {
         html += '<span class="preview-site disabled">Rendering V3 in corso</span>';
       } else if (p.live_url) {
@@ -209,12 +210,12 @@ openRenderingProspect = async function(id) {
     const v2PackIds = new Set(v2Packs.map(pack => pack.id));
     const v2Variants = (d.render_v2_variants || []).filter(v => v2PackIds.has(v.render_pack_id));
     const latestV2Pack = v2Packs[0] || null;
-    const latestV2Variants = latestV2Pack ? v2Variants.filter(v => v.render_pack_id === latestV2Pack.id) : [];
+    const latestV2Variants = latestV2Pack ? v2Variants.filter(v => v.render_pack_id === latestV2Pack.id && String(v.variant_key||"")==="A") : [];
     const certifiedV2Variants = latestV2Variants
       .filter(v => Boolean(v.desktop_render_url && v.mobile_render_url))
       .sort((a,b) => String(a.variant_key||"").localeCompare(String(b.variant_key||"")));
-    const completeV2Set = certifiedV2Variants.length === 3 &&
-      ["A","B","C"].every(key => certifiedV2Variants.some(v => String(v.variant_key||"") === key));
+    const completeV2Set = certifiedV2Variants.length >= 1 &&
+      certifiedV2Variants.some(v => String(v.variant_key||"") === "A");
     const pilotCandidateVariants = latestV2Variants.filter(v => Boolean(v.pilot_candidate && v.desktop_render_url && v.mobile_render_url));
 
     let renderContent = "";
@@ -227,18 +228,16 @@ openRenderingProspect = async function(id) {
 
     if (latestV2Pack && completeV2Set) {
       const meta=latestV2Pack.metadata || {};
-      renderContent += '<div class="render-contract-note v2-contract"><strong>3 VARIANTI CREATIVE CERTIFICATE · A / B / C</strong><span>Winner suggerito = raccomandazione. MASTER resta human-only e richiede una seconda azione esplicita.</span></div>';
+      renderContent += '<div class="render-contract-note v2-contract"><strong>1 CONCEPT IMPRESAX · PRONTO</strong><span>Desktop 1440 + Mobile 390. MASTER resta human-only e richiede approvazione esplicita.</span></div>';
       renderContent += '<div class="render-v2-pack-meta">';
       renderContent += '<span>SET QA <strong>' + esc(meta.set_qa_score || certifiedV2Variants[0]?.set_qa_score || "—") + ' · ' + esc(meta.set_qa_status || certifiedV2Variants[0]?.set_qa_status || "—") + '</strong></span>';
-      renderContent += '<span>DIVERSITY A/B <strong>' + esc(meta.diversity_ab || certifiedV2Variants[0]?.diversity_ab || "—") + '</strong></span>';
-      renderContent += '<span>A/C <strong>' + esc(meta.diversity_ac || certifiedV2Variants[0]?.diversity_ac || "—") + '</strong></span>';
-      renderContent += '<span>B/C <strong>' + esc(meta.diversity_bc || certifiedV2Variants[0]?.diversity_bc || "—") + '</strong></span>';
-      renderContent += '<span>WINNER SUGGERITO <strong>' + esc(meta.winner_variant || "—") + '</strong></span>';
+      renderContent += '<span>CONCEPT <strong>IMPRESAX MASTER</strong></span>';
+      renderContent += '<span>DELIVERY <strong>DESKTOP 1440 + MOBILE 390</strong></span>';
       renderContent += '<span>STANDARD <strong>' + esc(latestV2Pack.quality_contract_version || "—") + '</strong></span>';
       renderContent += '<span>RETROFIT <strong>' + esc(meta.retrofit_status || ((meta.retrofit_required||meta.r107_retrofit_required) ? "REQUIRED" : "—")) + '</strong></span>';
       renderContent += '</div>';
       certifiedV2Variants.forEach(v => {
-        // Once the full A/B/C set exists, the old single-pilot flag must never hide or disable Variant A.
+        // Once the full concept set exists, the old single-pilot flag must never hide or disable Variant A.
         renderContent += renderVariantCardV2({...v,pilot_candidate:false,pilot_candidate_status:null,pilot_candidate_revision:null}, latestV2Pack, p.id);
       });
     } else if (pilotCandidateVariants.length) {
@@ -247,16 +246,16 @@ openRenderingProspect = async function(id) {
         renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
       });
     } else if (premiumUpgrade) {
-      renderContent += '<div class="render-contract-note warning"><strong>UPGRADE PREMIUM HOME IN CORSO</strong><span>Stiamo ricostruendo le 3 proposte con header/menu premium, hero completa con CTA, sezioni commerciali, trust, CTA finale e footer. Le nuove versioni compariranno insieme solo dopo la certificazione completa A/B/C.</span></div>';
+      renderContent += '<div class="render-contract-note warning"><strong>UPGRADE PREMIUM HOME IN CORSO</strong><span>Stiamo ricostruendo le 3 proposte con header/menu premium, hero completa con CTA, sezioni commerciali, trust, CTA finale e footer. Le nuove versioni compariranno insieme solo dopo la certificazione completa concept.</span></div>';
     } else if (latestV2Pack && certifiedV2Variants.length) {
-      renderContent += '<div class="render-contract-note"><strong>PREMIUM HOME · ' + certifiedV2Variants.length + '/3 VERSIONI CERTIFICATE</strong><span>Queste sono le revisioni complete certificate. Prima scegli la versione; solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+      renderContent += '<div class="render-contract-note"><strong>CONCEPT IMPRESAX PRONTO</strong><span>Prima approva il concept; solo dopo una seconda conferma esplicita lo invii alla Site Factory.</span></div>';
       certifiedV2Variants.forEach(v => {
         renderContent += renderVariantCardV2(v, latestV2Pack, p.id);
       });
     } else if (latestV2Pack) {
-      renderContent += '<div class="render-contract-note warning"><strong>RENDERING V2 IN LAVORAZIONE</strong><span>Le 3 versioni complete compariranno qui automaticamente solo quando saranno certificate.</span></div>';
+      renderContent += '<div class="render-contract-note warning"><strong>RENDERING V2 IN LAVORAZIONE</strong><span>Il concept completo comparirà qui automaticamente appena certificato.</span></div>';
     } else if (variants.length) {
-      renderContent += '<div class="render-contract-note"><strong>3 VERSIONI COMPLETE</strong><span>Prima scegli la versione. Solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
+      renderContent += '<div class="render-contract-note"><strong>1 CONCEPT COMPLETO</strong><span>Prima scegli la versione. Solo dopo una seconda conferma esplicita la invii alla Site Factory.</span></div>';
       variants.forEach(v => {
         const pack = packs.find(x => x.id === v.render_pack_id);
         if (pack) renderContent += renderVariantCardV2(v, pack, p.id);
@@ -270,7 +269,7 @@ openRenderingProspect = async function(id) {
 
     let head = '<div class="detail-head render-detail-head"><div>';
     head += '<span class="kicker">PROGETTAZIONE VISIVA</span><h3>' + esc(p.business_name) + '</h3>';
-    head += '<p class="reference-note">Confronta A/B/C su desktop e mobile. Il winner è solo una raccomandazione: scegliere una candidata NON crea il MASTER; l’approvazione resta una seconda azione umana esplicita.</p></div>';
+    head += '<p class="reference-note">Confronta concept su desktop e mobile. Il winner è solo una raccomandazione: scegliere una candidata NON crea il MASTER; l’approvazione resta una seconda azione umana esplicita.</p></div>';
     if (p.live_url) {
       head += '<a class="preview-site prominent" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
     } else {
