@@ -205,14 +205,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     const bodyKey="SERVICE_"+sourceIndex+"_BODY";
     const tagKey="SERVICE_"+sourceIndex+"_TAG";
     const body=allServicesHaveBodies
-      ? "<p class=\"ixg-service__body\">"+copyToken(bodyKey)+"</p>"
+      ? "<p class=\"ixf-service-line__body\">"+copyToken(bodyKey)+"</p>"
       : "";
     const tag=Object.prototype.hasOwnProperty.call(copyManifest,tagKey)
-      ? "<span class=\"ixg-service__tag\">"+copyToken(tagKey)+"</span>"
+      ? "<span class=\"ixf-service-line__tag\">"+copyToken(tagKey)+"</span>"
       : "";
-    const iconClass="ixg-service__icon--"+String((i%3)+1);
-    const icon="<span class=\"ixg-service__icon "+iconClass+"\" aria-hidden=\"true\"><i></i><i></i><i></i></span>";
-    return "<article class=\"ixg-service\" data-service-card=\"matched\" data-uniform-service-row=\"true\" data-service-index-rail=\"locked\"><div class=\"ixg-service__top\"><div class=\"ixg-service__indexrail\"><span class=\"ixg-service__index\">0"+(i+1)+"</span></div><div class=\"ixg-service__iconrail\">"+icon+"</div></div><div class=\"ixg-service__content\">"+tag+"<h3 class=\"ixg-service__title\">"+copyToken(titleKey)+"</h3>"+body+"</div></article>";
+    return "<article class=\"ixf-service-line\" data-service-editorial=\"true\" data-service-index-rail=\"locked\"><div class=\"ixf-service-line__index\"><span>0"+(i+1)+"</span>"+tag+"</div><div class=\"ixf-service-line__copy\"><h3 class=\"ixf-service-line__title\">"+copyToken(titleKey)+"</h3>"+body+"</div><span class=\"ixf-service-line__rule\" aria-hidden=\"true\"></span></article>";
   }).join("");
   const bridgeTitle=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_TITLE")
     ? "BRIDGE_TITLE"
@@ -226,53 +224,35 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const nonContactTrustKeys=trustKeys.filter(key=>!trustIsContact(copyManifest,key));
   const coreTrustKeys=nonContactTrustKeys;
   const partnerTrustKeys=availableIndexed(copyManifest,"PARTNER_");
-  const trustReasonCandidates=[
-    ...coreTrustKeys,
-    "LOCALITY_LINE",
-    ...serviceTitles,
-    ...serviceBodies,
-    "POSITIONING_TITLE",
-    "POSITIONING_BODY",
-    "FOOTER_LINE"
-  ];
   const trustReasonSeen=new Set();
-  const verifiedTrustReasonKeys=trustReasonCandidates.filter(key=>{
+  const verifiedTrustReasonKeys=coreTrustKeys.filter(key=>{
     if(!Object.prototype.hasOwnProperty.call(copyManifest,key)) return false;
     if(trustIsContact(copyManifest,key)) return false;
     const value=String(copyManifest?.[key]||"").replace(/\s+/g," ").trim().toLowerCase();
     if(!value || trustReasonSeen.has(value)) return false;
     trustReasonSeen.add(value);
     return true;
-  }).slice(0,5);
+  }).slice(0,3);
   const trustReasonLabel=key=>{
     const value=String(copyManifest?.[key]||"");
     if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività";
     if(/fatturato|ricavi|revenue|turnover|€|euro/i.test(value)) return "Solidità";
     if(/dipendenti|employees|headcount|addetti/i.test(value)) return "Struttura";
-    if(/vendita\s+all.?ingrosso|materiali\s+per\s+ediliz/i.test(value)) return "Distribuzione B2B";
-    if(/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(value)) return "Lavorazione";
-    if(key==="LOCALITY_LINE" || /catanzaro|calabria|territorio|locale|presenza operativa/i.test(value)) return "Presenza locale";
-    return "Competenza";
+    return "Dato verificato";
   };
   const trustReasonDetail=key=>{
     const value=String(copyManifest?.[key]||"");
-    if(/vendita\s+all.?ingrosso|distribuzione\s+b2b|materiali\s+per\s+ediliz/i.test(value)) return "Fornitura professionale pensata per imprese e operatori del settore.";
-    if(/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(value)) return "Competenze specifiche su una lavorazione centrale per il cantiere.";
-    if(/catanzaro|calabria|territorio|presenza operativa/i.test(value)) return "Presenza concreta sul territorio e contatto diretto.";
-    if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività aziendale verificata e continuità sul mercato.";
-    return "Un elemento verificato che rafforza affidabilità e valore operativo.";
+    if(/fatturato|ricavi|revenue|turnover|€|euro/i.test(value)) return "Dato economico riportato dalla fonte verificata.";
+    if(/dipendenti|employees|headcount|addetti/i.test(value)) return "Organico indicato dalla fonte economica verificata.";
+    if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività aziendale verificata.";
+    return "Informazione supportata dalle fonti verificate del prospect.";
   };
   const trustReasons=verifiedTrustReasonKeys
     .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__top\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><span class=\"ixg-trust-reason__label\">"+trustReasonLabel(key)+"</span></div><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong><p>"+trustReasonDetail(key)+"</p></article>")
     .join("");
-  const trustProofRail=verifiedTrustReasonKeys.slice(0,3)
-    .map((key,i)=>"<div class=\"ixg-trust-proof__item\"><span>0"+(i+1)+"</span><strong>"+copyToken(key)+"</strong></div>")
-    .join("");
-  const partnerDemoSlots=partnerTrustKeys.length===1
-    ? [1,2,3].map((n,i)=>"<article class=\"ixg-partner-card ixg-partner-card--demo\" data-demo-partner-slot=\"true\" aria-hidden=\"true\"><div class=\"ixg-demo-partner-mark ixg-demo-partner-mark--"+((i%3)+1)+"\"><i></i><i></i><i></i></div><div class=\"ixg-demo-partner-lines\"><i></i><i></i></div></article>").join("")
-    : "";
+  const trustProofRail="";
   const partnerProof=partnerTrustKeys.length
-    ? "<section id=\"partners\" data-r116-set-piece=\"partners\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-partner-facsimile=\"concept-capacity\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+partnerDemoSlots+"</div></div></section>"
+    ? "<section id=\"partners\" data-r116-set-piece=\"partners\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-partner-verification=\"verified-only\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map((key,i)=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixf-partner-feature\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\" data-verified-partner=\"true\"><div class=\"ixf-partner-feature__identity\"><span>0"+(i+1)+" · PARTNER VERIFICATO</span>"+logo+"</div><div class=\"ixf-partner-feature__copy\"><strong>"+copyToken(key)+"</strong><i aria-hidden=\"true\"></i></div></article>";}).join("")+"</div></div></section>"
     : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
@@ -414,11 +394,11 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const mainAB=[
     impresaxHero,
     "<section id=\"positioning\" data-r116-set-piece=\"positioning\" data-section-role=\"positioning\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-positioning ixf-positioning "+vclass+"\"><div class=\"ixg-shell ixf-positioning__grid\"><div class=\"ixg-positioning__statement ixf-positioning__statement\"><span class=\"ixf-section-index\">"+(Object.prototype.hasOwnProperty.call(copyManifest,"STEP_1_NUM")?copyToken("STEP_1_NUM"):"")+"</span><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body ixf-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p><div class=\"ixf-positioning__proof-rail\">"+positionProofRail+"</div></div><div class=\"ixf-positioning__media\">"+sectionVisual1+"</div></div></section>",
-    "<section id=\"services\" data-r116-set-piece=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-services ixf-services "+vclass+"\" data-section-grid=\"locked\" data-detail-grid=\"aligned\" data-service-composition=\"paired-editorial-with-media\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
+    "<section id=\"services\" data-r116-set-piece=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-services ixf-services "+vclass+"\" data-section-grid=\"locked\" data-detail-grid=\"aligned\" data-service-composition=\"flagship-editorial-ledger\" data-uniform-service-rows=\"false\" data-image-placement=\"feature-scenes-only\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition\"><div class=\"ixg-services__grid\">"+servicesA+"</div></div></div></section>",
     featureSection1,
     featureSection2,
     logoFirstGraphicBand,
-    "<section id=\"trust\" data-r116-set-piece=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-proof-support=\"true\" data-contrast-safe=\"true\" data-trust-finish=\"premium-editorial\" data-trust-background=\""+(trustBackgroundVisual?"image":"surface")+"\">"+trustBackgroundVisual+"<div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-proof\">"+trustProofRail+"</div><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
+    "<section id=\"trust\" data-r116-set-piece=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-proof-support=\"true\" data-contrast-safe=\"true\" data-trust-finish=\"premium-editorial\" data-trust-background=\""+(trustBackgroundVisual?"image":"surface")+"\">"+trustBackgroundVisual+"<div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
       ? "<section id=\"bridge\" data-r116-set-piece=\"bridge\" data-section-role=\"contact-bridge\" data-cta-intensity=\"support\" data-cta-premium=\"true\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
       : "<section id=\"bridge\" data-r116-set-piece=\"bridge\" data-section-role=\"contact-bridge\" data-cta-intensity=\"support\" data-cta-premium=\"true\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div><div class=\"ixg-actions\">"+secondary+"</div></div></section>",
