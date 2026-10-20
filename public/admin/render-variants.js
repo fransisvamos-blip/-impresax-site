@@ -1,3 +1,16 @@
+function openFullRenderPreview(url,mode){
+  const old=document.querySelector(".render-full-preview");
+  if(old) old.remove();
+  const overlay=document.createElement("div");
+  overlay.className="render-full-preview";
+  overlay.innerHTML='<div class="render-full-preview-bar"><strong>'+(mode==="mobile"?"MOBILE · 390":"DESKTOP · 1440")+'</strong><span>Homepage completa · grandezza naturale</span><button type="button">Chiudi ×</button></div><div class="render-full-preview-stage '+(mode==="mobile"?"mobile":"desktop")+'"><img src="'+esc(url)+'" alt="Homepage completa"></div>';
+  document.body.appendChild(overlay);
+  document.body.classList.add("render-preview-open");
+  const close=()=>{overlay.remove();document.body.classList.remove("render-preview-open");};
+  overlay.querySelector("button").addEventListener("click",close);
+  overlay.addEventListener("click",e=>{if(e.target===overlay) close();});
+}
+
 
 /* Gestionale ImpresaX — rendering variants UI
    Overrides the legacy render panel with complete A/B/C full-home candidates. */
@@ -145,18 +158,18 @@ function renderCertifiedVariantCard(variant, pack, prospectId) {
   html += '<div class="render-pair">';
   html += '<div><div class="render-label">Desktop · 1440</div>';
   html += complete
-    ? '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener"><img src="' + esc(variant.desktop_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' desktop 1440"></a>'
+    ? '<a href="' + esc(variant.desktop_render_url) + '" class="open-full-render" data-render-mode="desktop" data-render-url="' + esc(variant.desktop_render_url) + '"><img src="' + esc(variant.desktop_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' desktop 1440"></a>'
     : '<div class="missing-render">Desktop certificato non disponibile</div>';
   html += '</div>';
   html += '<div><div class="render-label">Mobile · 390</div>';
   html += complete
-    ? '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener"><img src="' + esc(variant.mobile_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' mobile 390"></a>'
+    ? '<a href="' + esc(variant.mobile_render_url) + '" class="open-full-render" data-render-mode="mobile" data-render-url="' + esc(variant.mobile_render_url) + '"><img src="' + esc(variant.mobile_render_url) + '" alt="Variant ' + esc(variant.variant_key) + ' mobile 390"></a>'
     : '<div class="missing-render">Mobile certificato non disponibile</div>';
   html += '</div></div>';
 
   html += '<div class="variant-preview-actions">';
-  if(variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Apri desktop 1440 ↗</a>';
-  if(variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Apri mobile 390 ↗</a>';
+  if(variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" class="open-full-render" data-render-mode="desktop">Apri desktop completo ↗</a>';
+  if(variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" class="open-full-render" data-render-mode="mobile">Apri mobile completo ↗</a>';
   html += '</div>';
 
   if(variant.implementation_notes) {
@@ -291,6 +304,10 @@ openRenderingProspect = async function(id) {
 
     $("#rendering-detail").innerHTML = head + '<div class="render-pack-stack">' + renderContent + '</div>';
 
+    document.querySelectorAll(".open-full-render").forEach(a => a.addEventListener("click", e => {
+      e.preventDefault();
+      openFullRenderPreview(a.dataset.renderUrl || a.getAttribute("href"),a.dataset.renderMode || "desktop");
+    }));
     document.querySelectorAll(".choose-v2-render").forEach(b => b.addEventListener("click", () => chooseV2Render(
       b.dataset.prospectId,b.dataset.packId,b.dataset.revisionId,b
     )));
