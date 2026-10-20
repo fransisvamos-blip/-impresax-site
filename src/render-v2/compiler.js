@@ -176,7 +176,10 @@ export function validateRenderSpec(spec, manifests) {
   const identityKeys=new Set(Object.keys(manifests?.identity||{}));
   const usedCopyKeys=tokenSet(main,COPY_TOKEN);
   const usedAssetKeys=tokenSet(main,ASSET_TOKEN);
-  for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys)) issues.push(issue);
+  const isR116Flagship=String(spec?.flagship_architecture_standard||"")==="R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1";
+  for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys,{
+    allow_verified_proof_metrics:isR116Flagship
+  })) issues.push(issue);
   for(const issue of surfaceContractViolations(main)) issues.push(issue);
   for(const issue of flatStrongSectionBackgroundViolations(main,css)) issues.push(issue);
   const brandRichPolicy=/^IMPRESAX_RENDER_STANDARD_R(?:89|90|93|94|106|107)_/.test(String(spec?.surface_policy||""));
@@ -290,7 +293,6 @@ export function validateRenderSpec(spec, manifests) {
   }
 
   const detailCraftStandard=String(spec?.detail_craft_standard||"");
-  const isR116Flagship=String(spec?.flagship_architecture_standard||"")==="R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1";
   if(["R113_DETAIL_CRAFTSMANSHIP_V1","R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1"].includes(detailCraftStandard)) {
     const servicesDetailHtml=sectionHtml("services");
     if(servicesDetailHtml && !/data-detail-grid=["']aligned["']/i.test(servicesDetailHtml)) {
