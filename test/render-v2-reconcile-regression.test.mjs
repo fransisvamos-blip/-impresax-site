@@ -573,26 +573,30 @@ test("mobile text identity cannot force header overflow",()=>{
   assert.match(compiler,/\.ix-v2-brand\{max-width:min\(58vw,220px\)\}/);
 });
 
-test("R113 detail craftsmanship locks alignment imagery trust background and demo partner capacity",()=>{
+test("R113 detail craftsmanship retains alignment imagery and trust-background contracts",()=>{
   assert.match(constants,/R113_DETAIL_CRAFTSMANSHIP_V1/);
   assert.match(grammar,/data-service-index-rail=\\"locked\\"/);
   assert.match(grammar,/SERVICE_MATERIALS_VISUAL/);
   assert.match(grammar,/SERVICE_REBAR_VISUAL/);
   assert.match(grammar,/data-trust-background/);
-  assert.match(grammar,/data-demo-partner-slot=\\"true\\"/);
   assert.match(compiler,/R113_SERVICE_DETAIL_GRID_ALIGNMENT_REQUIRED/);
   assert.match(compiler,/R113_FEATURE_1_CONTEXT_IMAGE_REQUIRED/);
   assert.match(compiler,/R113_FEATURE_2_CONTEXT_IMAGE_REQUIRED/);
   assert.match(compiler,/R113_TRUST_BACKGROUND_IMAGE_REQUIRED/);
-  assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
 });
 
-test("R116 partner facsimiles and repeated imagery receive distinct art direction",()=>{
-  assert.match(r116Flagship,/content:"SLOT DEMO"!important/);
-  assert.match(r116Flagship,/\.ixg-partner-card--demo \.ixg-demo-partner-lines\{display:none!important\}/);
-  assert.match(r116Flagship,/object-position:44% 58%!important/);
+test("R116 uses verified-only partner proof and editorial services without repeated overview imagery",()=>{
+  assert.match(grammar,/data-partner-verification=\\"verified-only\\"/);
+  assert.match(grammar,/ixf-partner-feature/);
+  assert.match(grammar,/data-service-editorial=\\"true\\"/);
+  assert.doesNotMatch(grammar,/data-demo-partner-slot=\\"true\\"/);
+  assert.doesNotMatch(r116Flagship,/SLOT DEMO/);
+  assert.doesNotMatch(r116Flagship,/ixg-partner-card--demo/);
+  assert.match(compiler,/R116_UNVERIFIED_PARTNER_PLACEHOLDER_FORBIDDEN/);
+  assert.match(compiler,/R116_REPEATED_MATERIALS_VISUAL_FORBIDDEN/);
+  assert.match(r116Flagship,/\.ixf-service-line\{/);
+  assert.match(r116Flagship,/\.ixf-partner-feature\{/);
   assert.match(r116Flagship,/object-position:82% 48%!important/);
-  assert.match(r116Flagship,/transform:scale\(1\.11\)!important/);
 });
 
 test("R116 final art direction removes legacy band and upgrades shell bridge",()=>{
@@ -613,11 +617,13 @@ test("R116 mobile flagship containment and overflow diagnostics stay enforced",(
   assert.doesNotMatch(r116Flagship,/html,body\{[^}]*overflow-x:hidden/);
 });
 
-test("R116 pilot kick cannot route full redesign through precomputed mode",()=>{
+test("R116 pilot kick cannot route full redesign through precomputed mode or legacy Cabina copy",()=>{
   assert.match(index,/const structuralRedesign=\/STRUCTURAL_DIVERGENCE_REWORK\|FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\/i/);
   assert.match(index,/cabina_precomputed:!structuralRedesign/);
   assert.match(index,/structural_redesign:structuralRedesign/);
   assert.match(index,/Rebuild the page composition under the active flagship architecture standard/);
+  assert.match(workflows,/const fullFlagshipRedesign=\/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\/i/);
+  assert.match(workflows,/structuralRework && !fullFlagshipRedesign/);
 });
 
 test("R116 flagship QA floors are blocking at 9.7-9.8",()=>{
@@ -654,21 +660,19 @@ test("R116 flagship architecture blocks template-grade regressions",()=>{
   assert.match(r116Flagship,/\.ix-v2-footer-grid/);
 });
 
-test("R115 premium finishing differentiates services features shell CTAs and footer",()=>{
+test("R116 supersedes legacy R115 card composition while retaining distinct service feature scenes",()=>{
   assert.match(constants,/R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1/);
-  assert.match(grammar,/data-service-composition=\\"paired-editorial-with-media\\"/);
+  assert.match(grammar,/data-service-composition=\\"flagship-editorial-ledger\\"/);
   assert.match(grammar,/const featureLayout=slot===1\?"cinematic-materials":"technical-rebar"/);
   assert.match(grammar,/data-feature-layout/);
   assert.match(grammar,/data-trust-finish=\\"premium-editorial\\"/);
   assert.match(grammar,/data-cta-premium=\\"true\\"/);
   assert.match(grammar,/R115_SHELL_CSS\+R115_SECTIONS_CSS/);
-  assert.match(compiler,/R115_SERVICE_FEATURE_LOCALITY_FILLER_FORBIDDEN/);
-  assert.match(compiler,/R115_PREMIUM_HEADER_SHELL_REQUIRED/);
-  assert.match(compiler,/R115_PREMIUM_FOOTER_COMPOSITION_REQUIRED/);
+  assert.match(compiler,/const isR116Flagship=/);
+  assert.match(compiler,/detailCraftStandard==="R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1"/);
+  assert.match(compiler,/R116_LEGACY_SERVICE_CARD_GRAMMAR_FORBIDDEN/);
   assert.match(r115Shell,/premium shell, CTA and footer finishing/);
   assert.match(r115Sections,/premium section identity/);
-  assert.match(r115Sections,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(r115Sections,/ixg-feature--two .*grid-column:1/i);
 });
 
 test("R112 browser QA treats SVG hero fallback as resolution-independent",()=>{
