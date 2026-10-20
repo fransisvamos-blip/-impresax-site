@@ -413,6 +413,10 @@ export function validateRenderSpec(spec, manifests) {
     const requiredPositionProof=Math.min(3,availablePositionProof);
     const positioningProof=(flagshipPositioning.match(/ixf-positioning__proof/g)||[]).length;
     if(requiredPositionProof>0 && positioningProof<requiredPositionProof) issues.push("R116_POSITIONING_PROOF_RAIL_REQUIRED:"+positioningProof+"/"+requiredPositionProof);
+    if(assetKeys.has("POSITIONING_VISUAL")) {
+      const positioningVisualCount=(flagshipPositioning.match(/\{\{asset:POSITIONING_VISUAL\}\}/g)||[]).length;
+      if(positioningVisualCount!==1) issues.push("R116_POSITIONING_VISUAL_EXACTLY_ONCE_REQUIRED:"+positioningVisualCount+"/1");
+    }
 
     const editorialServices=(flagshipServices.match(/data-service-editorial=["']true["']/gi)||[]).length;
     if(editorialServices<2) issues.push("R116_SERVICE_EDITORIAL_LEDGER_REQUIRED:"+editorialServices+"/2");
@@ -434,6 +438,7 @@ export function validateRenderSpec(spec, manifests) {
     if(flagshipPartners && !/data-r116-set-piece=["']partners["']/i.test(flagshipPartners)) issues.push("R116_PARTNER_ECOSYSTEM_REQUIRED");
     if(/data-demo-partner-slot=["']true["']/i.test(flagshipPartners)) issues.push("R116_UNVERIFIED_PARTNER_PLACEHOLDER_FORBIDDEN");
     if(flagshipPartners && !/data-partner-verification=["']verified-only["']/i.test(flagshipPartners)) issues.push("R116_VERIFIED_ONLY_PARTNER_ARCHITECTURE_REQUIRED");
+    if(flagshipPartners && !/data-partner-stage=["']commissioned["']/i.test(flagshipPartners)) issues.push("R116_COMMISSIONED_PARTNER_SET_PIECE_REQUIRED");
     if(assetKeys.has("PARTNER_UPOWER_LOGO") && flagshipPartners && (flagshipPartners.match(/\{\{asset:PARTNER_UPOWER_LOGO\}\}/g)||[]).length!==1) {
       issues.push("R116_UPOWER_LOGO_EXACTLY_ONCE_REQUIRED");
     }
