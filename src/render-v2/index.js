@@ -86,6 +86,7 @@ async function runPilotManualKick(env,sql) {
     where status in ('QUEUED','RUNNING','PAUSED')`;
   if(Number(active[0]?.n||0)>0) throw new Error("PILOT_MANUAL_KICK_ACTIVE_WORKFLOW_EXISTS");
 
+  const structuralRedesign=/STRUCTURAL_DIVERGENCE_REWORK|FULL_FLAGSHIP_REDESIGN|FULL_REDESIGN/i.test(reason);
   const params={
     prospectId:pack.prospect_id,
     packId,
@@ -96,13 +97,22 @@ async function runPilotManualKick(env,sql) {
     eventPrefix:String(kick.event_prefix||"r90"),
     initialFeedback:{
       reason,
-      issues:["Cabina requested a targeted launch-grade revision for the locked pilot only."],
-      actions:[
-        "Use the Cabina precomputed RenderSpec exactly.",
-        "Keep external AI disabled.",
-        "Preserve verified content, real imagery and official identity.",
-        "Do not start or mutate any other prospect."
-      ]
+      issues:[structuralRedesign
+        ?"Cabina requested a full structural flagship redesign for the locked pilot only."
+        :"Cabina requested a targeted launch-grade revision for the locked pilot only."],
+      actions:structuralRedesign
+        ?[
+          "Rebuild the page composition under the active flagship architecture standard; do not reuse the previous section structure.",
+          "Reuse only verified copy truth, real imagery and official identity.",
+          "Keep external AI disabled.",
+          "Do not start or mutate any other prospect."
+        ]
+        :[
+          "Use the Cabina precomputed RenderSpec exactly.",
+          "Keep external AI disabled.",
+          "Preserve verified content, real imagery and official identity.",
+          "Do not start or mutate any other prospect."
+        ]
     }
   };
 
@@ -118,7 +128,8 @@ async function runPilotManualKick(env,sql) {
       event_prefix:params.eventPrefix,
       run_key:runKey,
       pilot_manual_kick:true,
-      cabina_precomputed:true,
+      cabina_precomputed:!structuralRedesign,
+      structural_redesign:structuralRedesign,
       queue_enabled:false
     }
   });
