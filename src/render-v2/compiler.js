@@ -277,6 +277,38 @@ export function validateRenderSpec(spec, manifests) {
     issues.push("FINAL_CTA_CONTRACT_REQUIRED");
   }
 
+  if(String(spec?.art_direction_standard||"")==="R109_15K_ART_DIRECTION_GATE_V1") {
+    if(!/\bid=["']services["'][^>]*\bdata-uniform-service-rows=["']true["']/i.test(main)) {
+      issues.push("R109_UNIFORM_SERVICE_ROWS_REQUIRED");
+    }
+    if(!/\bid=["']services["'][^>]*\bdata-image-placement=["']anchored["']/i.test(main)) {
+      issues.push("R109_ANCHORED_SERVICE_MEDIA_REQUIRED");
+    }
+    if(!/\bid=["']trust["'][^>]*\bdata-trust-reasons=["']true["']/i.test(main)) {
+      issues.push("R109_TRUST_REASONS_REQUIRED");
+    }
+    const trustBlock=sectionHtml("trust");
+    if(/data-partner-proof=["']true["']/i.test(trustBlock)) {
+      issues.push("R109_PARTNER_PROOF_MUST_BE_SEPARATE");
+    }
+    for(const id of ["services","trust","bridge","final-cta"]) {
+      const html=sectionHtml(id);
+      if(html && !/data-section-grid=["']locked["']/i.test(html)) issues.push("R109_LOCKED_SECTION_GRID_REQUIRED:"+id);
+    }
+    if(trustBlock && (trustBlock.match(/data-trust-reason=/gi)||[]).length<2) {
+      issues.push("R109_TRUST_SECTION_TOO_THIN");
+    }
+    if(closingHtml && !/data-contrast-safe=["']true["']/i.test(closingHtml)) {
+      issues.push("R109_FINAL_CTA_CONTRAST_MARKER_REQUIRED");
+    }
+    if(!/\.ixg-services__composition\s*\{[\s\S]*grid-template-columns/i.test(css)) {
+      issues.push("R109_SERVICES_COMPOSITION_GRID_REQUIRED");
+    }
+    if(!/\.ixg-trust-reasons\s*\{[\s\S]*grid-template-columns/i.test(css)) {
+      issues.push("R109_TRUST_REASON_GRID_REQUIRED");
+    }
+  }
+
   for(const key of tokenSet(main,COPY_TOKEN)) if(!copyKeys.has(key)) issues.push("UNKNOWN_COPY_TOKEN:"+key);
   for(const key of tokenSet(main,ASSET_TOKEN)) if(!assetKeys.has(key)) issues.push("UNKNOWN_ASSET_TOKEN:"+key);
   for(const key of tokenSet(main,IDENTITY_TOKEN)) if(!identityKeys.has(key)) issues.push("UNKNOWN_IDENTITY_TOKEN:"+key);
