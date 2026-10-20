@@ -232,7 +232,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     if(!value || trustReasonSeen.has(value)) return false;
     trustReasonSeen.add(value);
     return true;
-  }).slice(0,3);
+  });
   const trustReasonLabel=key=>{
     const value=String(copyManifest?.[key]||"");
     if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività";
