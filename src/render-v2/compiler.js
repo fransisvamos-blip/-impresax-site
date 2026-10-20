@@ -438,9 +438,9 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     ".ix-v2-identity-main{width:min(420px,72vw);max-height:180px;object-fit:contain}",
     ".ix-v2-header{position:relative;z-index:20;background:rgba(255,255,255,.94);color:#111;border-bottom:1px solid rgba(17,17,17,.10);backdrop-filter:blur(18px);box-shadow:0 10px 40px rgba(17,17,17,.035)}",
     ".ix-v2-header-inner{width:min(1440px,calc(100% - clamp(36px,7vw,112px)));margin:0 auto;min-height:90px;display:grid;grid-template-columns:minmax(190px,1fr) auto auto;align-items:center;gap:clamp(24px,3.6vw,58px)}",
-    ".ix-v2-brand{display:inline-flex;align-items:center;width:max-content;max-width:100%;text-decoration:none;color:inherit}",
+    ".ix-v2-brand{display:inline-flex;align-items:center;width:max-content;max-width:100%;min-width:0;text-decoration:none;color:inherit}",
     ".ix-v2-logo{width:auto;max-width:min(245px,42vw);max-height:64px;object-fit:contain}",
-    ".ix-v2-wordmark{font:760 clamp(18px,2vw,28px)/1 var(--ix-display-font);letter-spacing:-.035em}",
+    ".ix-v2-wordmark{display:block;min-width:0;max-width:100%;font:760 clamp(18px,2vw,28px)/1 var(--ix-display-font);letter-spacing:-.035em;overflow-wrap:anywhere;word-break:normal}",
     ".ix-v2-nav{display:flex;align-items:center;gap:clamp(20px,2.4vw,36px)}",
     ".ix-v2-nav a,.ix-v2-footer-nav a{color:inherit;text-decoration:none;font:650 12px/1.2 var(--ix-body-font);letter-spacing:.075em;text-transform:uppercase}",
     ".ix-v2-nav a{padding:12px 0;background-image:linear-gradient(currentColor,currentColor);background-repeat:no-repeat;background-size:0 1px;background-position:0 100%;transition:background-size .2s ease}",
@@ -457,7 +457,7 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
     ".ix-v2-footer-address{max-width:38ch;color:rgba(247,246,242,.66);font:430 13px/1.55 var(--ix-body-font);overflow-wrap:anywhere}",
     ".ix-v2-footer-contact{color:#f7f6f2;text-decoration:none;font:650 13px/1.4 var(--ix-body-font);overflow-wrap:anywhere}",
     ".ix-v2-footer-contact:first-child{display:inline-flex;width:max-content;max-width:100%;min-height:44px;align-items:center;padding:0 18px;border:1px solid rgba(255,255,255,.30)}",
-    "@media(max-width:820px){.ix-v2-header{backdrop-filter:blur(14px)}.ix-v2-header-inner{width:min(calc(100% - 28px),1440px);min-height:78px;grid-template-columns:1fr auto;gap:12px}.ix-v2-nav{grid-column:1/-1;grid-row:2;overflow-x:auto;gap:20px;padding:0 0 15px;white-space:nowrap}.ix-v2-nav a{font-size:11px;line-height:1.2;padding:10px 0}.ix-v2-header-cta{grid-column:2;grid-row:1;min-height:42px;padding:0 15px;font-size:10px}.ix-v2-logo{max-width:160px;max-height:50px}.ix-v2-footer{padding:64px 20px 70px}.ix-v2-footer-grid{grid-template-columns:1fr;gap:42px}.ix-v2-footer-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px}.ix-v2-footer-tagline{font-size:15px;line-height:1.65}.ix-v2-footer-contact{font-size:13px;line-height:1.5}}"
+    "@media(max-width:820px){.ix-v2-header{backdrop-filter:blur(14px)}.ix-v2-header-inner{width:min(calc(100% - 28px),1440px);min-height:78px;grid-template-columns:minmax(0,1fr) auto;gap:12px}.ix-v2-nav{grid-column:1/-1;grid-row:2;overflow-x:auto;gap:20px;padding:0 0 15px;white-space:nowrap}.ix-v2-nav a{font-size:11px;line-height:1.2;padding:10px 0}.ix-v2-header-cta{grid-column:2;grid-row:1;min-height:42px;padding:0 15px;font-size:10px}.ix-v2-logo{max-width:160px;max-height:50px}.ix-v2-brand{max-width:min(58vw,220px)}.ix-v2-wordmark{max-width:min(58vw,220px);font-size:clamp(15px,4.6vw,20px);line-height:1.05}.ix-v2-footer{padding:64px 20px 70px}.ix-v2-footer-grid{grid-template-columns:1fr;gap:42px}.ix-v2-footer-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 22px}.ix-v2-footer-tagline{font-size:15px;line-height:1.65}.ix-v2-footer-contact{font-size:13px;line-height:1.5}}"
   ].join("");
 
   const csp="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
