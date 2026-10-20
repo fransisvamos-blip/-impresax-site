@@ -1786,7 +1786,10 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
           deferred.push(key);
           continue;
         }
-        const instanceId="rv2-"+p.packId+"-"+key+"-initial";
+        const parentRunSuffix=String(event.instanceId||"parent")
+          .replace(/[^a-zA-Z0-9_-]+/g,"-")
+          .slice(-64);
+        const instanceId="rv2-"+p.packId+"-"+key+"-"+parentRunSuffix;
         const params={
           prospectId:p.prospectId,packId:p.packId,inputPackId:p.inputPackId,
           variantId:persisted.variants[key],variantKey:key,parentInstanceId:event.instanceId,eventPrefix:"initial"
