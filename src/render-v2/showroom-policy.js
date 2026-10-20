@@ -453,31 +453,31 @@ export function homeDepthViolations(mainHtml="",spec={}) {
 export function sectionSubstanceViolations(mainHtml="",spec={}) {
   const main=String(mainHtml||"");
   const issues=[];
-  const sectionMatches=[...main.matchAll(/<section\\b[^>]*\\bid=["']([^"']+)["'][^>]*>/gi)];
+  const sectionMatches=[...main.matchAll(/<section\b[^>]*\bid=["']([^"']+)["'][^>]*>/gi)];
   const ids=sectionMatches.map(m=>m[1]);
 
   const sectionHtml=id=>{
-    const re=new RegExp('<section\\\\b[^>]*\\\\bid=["\\\\\']'+id+'["\\\\\'][^>]*>[\\\\s\\\\S]*?<\\\\/section>','i');
+    const re=new RegExp('<section\\b[^>]*\\bid=["\\\']'+id+'["\\\'][^>]*>[\\s\\S]*?<\\/section>','i');
     return (main.match(re)||[])[0]||"";
   };
 
   const middleIds=ids.filter(id=>id!=="hero" && id!=="final-cta");
   const richMiddle=middleIds.filter(id=>{
     const html=sectionHtml(id);
-    return /\\bdata-section-substance=["']rich["']/i.test(html)
-      && /\\bdata-commercial-depth=["']high["']/i.test(html)
-      && /\\bdata-mobile-density=["']premium["']/i.test(html);
+    return /\bdata-section-substance=["']rich["']/i.test(html)
+      && /\bdata-commercial-depth=["']high["']/i.test(html)
+      && /\bdata-mobile-density=["']premium["']/i.test(html);
   });
   if(richMiddle.length<MIN_HIGH_VALUE_MIDDLE_SECTIONS) {
     issues.push("R112_HIGH_VALUE_MIDDLE_SECTIONS_REQUIRED:"+richMiddle.length+"/"+MIN_HIGH_VALUE_MIDDLE_SECTIONS);
   }
 
-  const featureIds=middleIds.filter(id=>/\\bdata-editorial-feature=["']true["']/i.test(sectionHtml(id)));
+  const featureIds=middleIds.filter(id=>/\bdata-editorial-feature=["']true["']/i.test(sectionHtml(id)));
   const richFeatures=featureIds.filter(id=>{
     const html=sectionHtml(id);
-    const copyCount=(html.match(/\\{\\{copy:[A-Z0-9_]+\\}\\}/g)||[]).length;
-    return /\\bdata-editorial-substance=["']true["']/i.test(html)
-      && /\\bdata-content-density=["']rich["']/i.test(html)
+    const copyCount=(html.match(/\{\{copy:[A-Z0-9_]+\}\}/g)||[]).length;
+    return /\bdata-editorial-substance=["']true["']/i.test(html)
+      && /\bdata-content-density=["']rich["']/i.test(html)
       && copyCount>=3;
   });
   if(richFeatures.length<MIN_RICH_EDITORIAL_FEATURES) {
@@ -486,8 +486,8 @@ export function sectionSubstanceViolations(mainHtml="",spec={}) {
 
   for(const id of richMiddle) {
     const html=sectionHtml(id);
-    const copyCount=(html.match(/\\{\\{copy:[A-Z0-9_]+\\}\\}/g)||[]).length;
-    const assetCount=(html.match(/\\{\\{asset:[A-Z0-9_]+\\}\\}/g)||[]).length;
+    const copyCount=(html.match(/\{\{copy:[A-Z0-9_]+\}\}/g)||[]).length;
+    const assetCount=(html.match(/\{\{asset:[A-Z0-9_]+\}\}/g)||[]).length;
     if(copyCount<2 && assetCount<1) issues.push("R112_EMPTY_OR_DECORATIVE_SECTION_FORBIDDEN:"+id);
   }
 
@@ -495,15 +495,15 @@ export function sectionSubstanceViolations(mainHtml="",spec={}) {
   if(!trust) {
     issues.push("R112_WHY_US_SECTION_REQUIRED");
   } else {
-    const reasonCount=(trust.match(/\\bdata-trust-reason=["']?\\d+/gi)||[]).length;
+    const reasonCount=(trust.match(/\bdata-trust-reason=["']?\d+/gi)||[]).length;
     if(reasonCount<MIN_WHY_US_REASONS || reasonCount>MAX_WHY_US_REASONS) {
       issues.push("R112_WHY_US_REASON_COUNT_REQUIRED:"+reasonCount+"/"+MIN_WHY_US_REASONS+"-"+MAX_WHY_US_REASONS);
     }
-    if(!/\\bdata-proof-support=["']true["']/i.test(trust)) issues.push("R112_WHY_US_PROOF_SUPPORT_REQUIRED");
-    if(!/\\bdata-section-substance=["']rich["']/i.test(trust)) issues.push("R112_WHY_US_RICHNESS_REQUIRED");
+    if(!/\bdata-proof-support=["']true["']/i.test(trust)) issues.push("R112_WHY_US_PROOF_SUPPORT_REQUIRED");
+    if(!/\bdata-section-substance=["']rich["']/i.test(trust)) issues.push("R112_WHY_US_RICHNESS_REQUIRED");
   }
 
-  const sectorSpecific=middleIds.filter(id=>/\\bdata-commercial-specificity=["']sector["']/i.test(sectionHtml(id)));
+  const sectorSpecific=middleIds.filter(id=>/\bdata-commercial-specificity=["']sector["']/i.test(sectionHtml(id)));
   if(sectorSpecific.length<3) issues.push("R112_SECTOR_SPECIFIC_MIDDLE_DEPTH_REQUIRED:"+sectorSpecific.length+"/3");
 
   const bridge=sectionHtml("bridge");
