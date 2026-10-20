@@ -190,10 +190,16 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const aGridTitles=serviceTitles;
   const allServicesHaveBodies=aGridTitles.length>0 && aGridTitles.every((_,i)=>Object.prototype.hasOwnProperty.call(copyManifest,"SERVICE_"+(i+1)+"_BODY"));
   const featureServiceTitles=serviceTitles.slice(0,2);
+  const stepIndexToken=i=>{
+    const key="STEP_"+(i+1)+"_NUM";
+    return Object.prototype.hasOwnProperty.call(copyManifest,key)
+      ? "<span>"+copyToken(key)+"</span>"
+      : "<i class=\"ixf-index-mark\" aria-hidden=\"true\"></i>";
+  };
   const heroMetaKeys=["HERO_META_1","HERO_META_2","HERO_META_3"].filter(key=>Object.prototype.hasOwnProperty.call(copyManifest,key));
-  const heroMetaRail=heroMetaKeys.map((key,i)=>"<div class=\"ixf-hero__meta-item\" data-meta-index=\""+(i+1)+"\"><span>"+copyToken("STEP_"+(i+1)+"_NUM")+"</span><strong>"+copyToken(key)+"</strong></div>").join("");
+  const heroMetaRail=heroMetaKeys.map((key,i)=>"<div class=\"ixf-hero__meta-item\" data-meta-index=\""+(i+1)+"\">"+stepIndexToken(i)+"<strong>"+copyToken(key)+"</strong></div>").join("");
   const positionProofKeys=["POSITIONING_PROOF_1","POSITIONING_PROOF_2","POSITIONING_PROOF_3"].filter(key=>Object.prototype.hasOwnProperty.call(copyManifest,key));
-  const positionProofRail=positionProofKeys.map((key,i)=>"<div class=\"ixf-positioning__proof\"><span>"+copyToken("STEP_"+(i+1)+"_NUM")+"</span><strong>"+copyToken(key)+"</strong></div>").join("");
+  const positionProofRail=positionProofKeys.map((key,i)=>"<div class=\"ixf-positioning__proof\">"+stepIndexToken(i)+"<strong>"+copyToken(key)+"</strong></div>").join("");
   const servicesA=aGridTitles.map((titleKey,i)=>{
     const sourceIndex=Number(String(titleKey).match(/^SERVICE_(\d+)_TITLE$/)?.[1]||i+1);
     const bodyKey="SERVICE_"+sourceIndex+"_BODY";
@@ -380,7 +386,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     const serviceTag=Object.prototype.hasOwnProperty.call(copyManifest,serviceTagKey)
       ? "<span class=\"ixg-feature__service-tag\">"+copyToken(serviceTagKey)+"</span>"
       : "";
-    return "<section id=\""+sectionId+"\" class=\"ixg ixg-feature ixf-feature "+featureClass+" "+vclass+"\" data-r116-set-piece=\""+featureLayout+"\" data-feature-layout=\""+featureLayout+"\" data-section-role=\"editorial-feature\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" data-editorial-feature=\"true\" data-editorial-substance=\"true\" data-content-density=\"rich\" data-surface=\"art-directed\" data-brand-surface=\""+(slot===1?"dark":"tint")+"\"><div class=\"ixg-shell ixg-feature__grid ixf-feature__grid\"><div class=\"ixg-feature__copy ixf-feature__copy\"><span class=\"ixf-feature__index\">"+copyToken("STEP_"+slot+"_NUM")+"</span>"+serviceTag+"<p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><h2>"+copyToken(resolvedTitle)+"</h2><p class=\"ixg-section-intro\">"+copyToken(resolvedBody)+"</p><div class=\"ixg-feature__evidence\">"+evidence+"</div></div><div class=\"ixg-feature__stage "+(visual?"has-visual":"no-visual")+"\">"+visual+"<div class=\"ixg-feature__device\" aria-hidden=\"true\"><i></i><i></i><i></i><span></span></div></div></div></section>";
+    return "<section id=\""+sectionId+"\" class=\"ixg ixg-feature ixf-feature "+featureClass+" "+vclass+"\" data-r116-set-piece=\""+featureLayout+"\" data-feature-layout=\""+featureLayout+"\" data-section-role=\"editorial-feature\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" data-editorial-feature=\"true\" data-editorial-substance=\"true\" data-content-density=\"rich\" data-surface=\"art-directed\" data-brand-surface=\""+(slot===1?"dark":"tint")+"\"><div class=\"ixg-shell ixg-feature__grid ixf-feature__grid\"><div class=\"ixg-feature__copy ixf-feature__copy\"><span class=\"ixf-feature__index\">"+(Object.prototype.hasOwnProperty.call(copyManifest,"STEP_"+slot+"_NUM")?copyToken("STEP_"+slot+"_NUM"):"")+"</span>"+serviceTag+"<p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><h2>"+copyToken(resolvedTitle)+"</h2><p class=\"ixg-section-intro\">"+copyToken(resolvedBody)+"</p><div class=\"ixg-feature__evidence\">"+evidence+"</div></div><div class=\"ixg-feature__stage "+(visual?"has-visual":"no-visual")+"\">"+visual+"<div class=\"ixg-feature__device\" aria-hidden=\"true\"><i></i><i></i><i></i><span></span></div></div></div></section>";
   };
   const featureSection1=featureServiceSection(1,serviceMaterialsFeatureVisual);
   const featureSection2=featureServiceSection(2,serviceRebarFeatureVisual);
