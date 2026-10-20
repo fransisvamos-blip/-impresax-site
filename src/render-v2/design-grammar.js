@@ -338,7 +338,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     ? sectionVisual("SERVICE_REBAR_VISUAL","ixg-section-visual--feature ixg-section-visual--rebar")
     : sectionVisual3;
   const trustBackgroundVisual=suppliedSectionAssets.includes("TRUST_VISUAL")
-    ? "<figure class=\"ixg-trust-bg\" aria-hidden=\"true\"><img src=\"{{asset:TRUST_VISUAL}}\" alt=\"\"></figure>"
+    ? "<figure class=\"ixg-trust-bg\" aria-hidden=\"true\"><img src=\"{{asset:TRUST_VISUAL}}\" alt=\"\"><span class=\"ixg-trust-bg__veil\"></span></figure>"
     : "";
 
   const featureServiceSection=(slot,visual="")=>{
@@ -2024,7 +2024,7 @@ body{font-family:var(--ix-body-font)}
 .ixg-trust-section{position:relative!important;overflow:hidden!important;background:#17191b!important;color:#fff!important}
 .ixg-trust-bg{position:absolute;inset:0;margin:0;z-index:0}
 .ixg-trust-bg img{width:100%;height:100%;object-fit:cover;filter:saturate(.78) contrast(1.06)}
-.ixg-trust-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(17,18,20,.96) 0%,rgba(17,18,20,.86) 52%,rgba(17,18,20,.72) 100%)}
+.ixg-trust-bg__veil{position:absolute;inset:0;display:block;background:linear-gradient(90deg,rgba(17,18,20,.96) 0%,rgba(17,18,20,.86) 52%,rgba(17,18,20,.72) 100%)}
 .ixg-trust-section>.ixg-shell{position:relative;z-index:1}
 .ixg-trust-section .ixg-section-head--light,.ixg-trust-section .ixg-section-head--light .ixg-section-intro{color:#fff!important}
 .ixg-partner-proof__grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
@@ -2042,7 +2042,7 @@ body{font-family:var(--ix-body-font)}
  .ixg-service__indexrail{padding-top:4px}
  .ixg-service__icon{width:70px!important;height:56px!important;flex-basis:70px!important}
  .ixg-partner-proof__grid{grid-template-columns:1fr!important}
- .ixg-trust-bg:after{background:linear-gradient(180deg,rgba(17,18,20,.88),rgba(17,18,20,.96))}
+ .ixg-trust-bg__veil{background:linear-gradient(180deg,rgba(17,18,20,.88),rgba(17,18,20,.96))}
 }
 
 /* R112 section substance: evidence occupies the scene; whitespace frames it instead of replacing it. */
