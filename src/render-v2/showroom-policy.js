@@ -1,4 +1,4 @@
-import { MIN_SECTION_VISUALS, SHOWROOM_RULES_VERSION, HOME_DEPTH_STANDARD, MIN_HOME_SECTIONS, MAX_HOME_SECTIONS, MIN_HOME_EDITORIAL_FEATURES, MIN_HOME_SUBSTANTIAL_SECTIONS } from "./constants.js";
+import { MIN_SECTION_VISUALS, SHOWROOM_RULES_VERSION, HOME_DEPTH_STANDARD, MIN_HOME_SECTIONS, MAX_HOME_SECTIONS, MIN_HOME_EDITORIAL_FEATURES, MIN_HOME_SUBSTANTIAL_SECTIONS, SECTION_SUBSTANCE_STANDARD, MIN_WHY_US_REASONS, MAX_WHY_US_REASONS, MIN_HIGH_VALUE_MIDDLE_SECTIONS, MIN_RICH_EDITORIAL_FEATURES } from "./constants.js";
 
 const LOW_VALUE_HOMEPAGE_FACTS=[
   /\bfatturato\b/i,
@@ -450,6 +450,79 @@ export function homeDepthViolations(mainHtml="",spec={}) {
   return issues;
 }
 
+export function sectionSubstanceViolations(mainHtml="",spec={}) {
+  const main=String(mainHtml||"");
+  const issues=[];
+  const sectionMatches=[...main.matchAll(/<section\\b[^>]*\\bid=["']([^"']+)["'][^>]*>/gi)];
+  const ids=sectionMatches.map(m=>m[1]);
+
+  const sectionHtml=id=>{
+    const re=new RegExp('<section\\\\b[^>]*\\\\bid=["\\\\\']'+id+'["\\\\\'][^>]*>[\\\\s\\\\S]*?<\\\\/section>','i');
+    return (main.match(re)||[])[0]||"";
+  };
+
+  const middleIds=ids.filter(id=>id!=="hero" && id!=="final-cta");
+  const richMiddle=middleIds.filter(id=>{
+    const html=sectionHtml(id);
+    return /\\bdata-section-substance=["']rich["']/i.test(html)
+      && /\\bdata-commercial-depth=["']high["']/i.test(html)
+      && /\\bdata-mobile-density=["']premium["']/i.test(html);
+  });
+  if(richMiddle.length<MIN_HIGH_VALUE_MIDDLE_SECTIONS) {
+    issues.push("R112_HIGH_VALUE_MIDDLE_SECTIONS_REQUIRED:"+richMiddle.length+"/"+MIN_HIGH_VALUE_MIDDLE_SECTIONS);
+  }
+
+  const featureIds=middleIds.filter(id=>/\\bdata-editorial-feature=["']true["']/i.test(sectionHtml(id)));
+  const richFeatures=featureIds.filter(id=>{
+    const html=sectionHtml(id);
+    const copyCount=(html.match(/\\{\\{copy:[A-Z0-9_]+\\}\\}/g)||[]).length;
+    return /\\bdata-editorial-substance=["']true["']/i.test(html)
+      && /\\bdata-content-density=["']rich["']/i.test(html)
+      && copyCount>=3;
+  });
+  if(richFeatures.length<MIN_RICH_EDITORIAL_FEATURES) {
+    issues.push("R112_RICH_EDITORIAL_FEATURES_REQUIRED:"+richFeatures.length+"/"+MIN_RICH_EDITORIAL_FEATURES);
+  }
+
+  for(const id of richMiddle) {
+    const html=sectionHtml(id);
+    const copyCount=(html.match(/\\{\\{copy:[A-Z0-9_]+\\}\\}/g)||[]).length;
+    const assetCount=(html.match(/\\{\\{asset:[A-Z0-9_]+\\}\\}/g)||[]).length;
+    if(copyCount<2 && assetCount<1) issues.push("R112_EMPTY_OR_DECORATIVE_SECTION_FORBIDDEN:"+id);
+  }
+
+  const trust=sectionHtml("trust");
+  if(!trust) {
+    issues.push("R112_WHY_US_SECTION_REQUIRED");
+  } else {
+    const reasonCount=(trust.match(/\\bdata-trust-reason=["']?\\d+/gi)||[]).length;
+    if(reasonCount<MIN_WHY_US_REASONS || reasonCount>MAX_WHY_US_REASONS) {
+      issues.push("R112_WHY_US_REASON_COUNT_REQUIRED:"+reasonCount+"/"+MIN_WHY_US_REASONS+"-"+MAX_WHY_US_REASONS);
+    }
+    if(!/\\bdata-proof-support=["']true["']/i.test(trust)) issues.push("R112_WHY_US_PROOF_SUPPORT_REQUIRED");
+    if(!/\\bdata-section-substance=["']rich["']/i.test(trust)) issues.push("R112_WHY_US_RICHNESS_REQUIRED");
+  }
+
+  const sectorSpecific=middleIds.filter(id=>/\\bdata-commercial-specificity=["']sector["']/i.test(sectionHtml(id)));
+  if(sectorSpecific.length<3) issues.push("R112_SECTOR_SPECIFIC_MIDDLE_DEPTH_REQUIRED:"+sectorSpecific.length+"/3");
+
+  const bridge=sectionHtml("bridge");
+  const finalCta=sectionHtml("final-cta");
+  if(bridge) {
+    if(!bridge.includes("{{cta:SECONDARY}}")) issues.push("R112_BRIDGE_SECONDARY_ACTION_REQUIRED");
+    if(bridge.includes("{{cta:PRIMARY}}")) issues.push("R112_BRIDGE_PRIMARY_ACTION_FORBIDDEN");
+  }
+  if(finalCta) {
+    if(!finalCta.includes("{{cta:PRIMARY}}")) issues.push("R112_FINAL_PRIMARY_ACTION_REQUIRED");
+    if(finalCta.includes("{{cta:SECONDARY}}")) issues.push("R112_FINAL_SECONDARY_DUPLICATION_FORBIDDEN");
+  }
+
+  const standard=String(spec?.section_substance_standard||"");
+  if(standard!==SECTION_SUBSTANCE_STANDARD) issues.push("R112_SECTION_SUBSTANCE_STANDARD_REQUIRED");
+
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -531,6 +604,16 @@ export function showroomPolicySummary() {
       minimum_editorial_feature_scenes:MIN_HOME_EDITORIAL_FEATURES,
       middle_scroll:"AT_LEAST_6_SCENES_BETWEEN_HERO_AND_CLOSE",
       thin_brochure_home:"BLOCKING_FAIL",
+      section_substance_standard:SECTION_SUBSTANCE_STANDARD,
+      section_substance:"BLOCKING_RICH_NOT_DECORATIVE",
+      commercial_depth:"BLOCKING_HIGH_VALUE_MIDDLE_SCROLL",
+      minimum_high_value_middle_sections:MIN_HIGH_VALUE_MIDDLE_SECTIONS,
+      minimum_rich_editorial_features:MIN_RICH_EDITORIAL_FEATURES,
+      why_us_reason_range:MIN_WHY_US_REASONS+"_TO_"+MAX_WHY_US_REASONS,
+      why_us_proof_support:"REQUIRED",
+      empty_decorative_sections:"FORBIDDEN",
+      duplicate_closing_cta:"FORBIDDEN",
+      mobile_density:"PREMIUM_CONTENT_PARITY_REQUIRED",
       section_blueprint_before_design:"BLOCKING",
       section_purpose_required:"BLOCKING",
       why_us_richness:"MIN_THREE_REASONS_PLUS_GRAPHIC_SUPPORT",
