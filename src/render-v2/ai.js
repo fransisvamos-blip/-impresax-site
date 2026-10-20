@@ -886,6 +886,11 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- DETAIL REFINEMENT GATE: inspect micro-alignment, spacing, borders, icon treatment, CTA proportions, overlays, crop discipline, header/footer finish and empty-space balance. A few cheap details are enough to fail the 15K gate.",
     "- MOBILE VALUE PARITY GATE: mobile must retain the same perceived investment as desktop. It is not acceptable for desktop to look 15K while mobile looks like a compressed template.",
     "- FIFTEEN-K TEST: explicitly answer: would a business owner reasonably believe a serious agency charged 10K-15K for this? Under R107, fifteen_k_value_perception must reach 9.7 before candidate pass.",
+    "- R116 FLAGSHIP PRESENCE: flagship_presence >=9.8. The page must feel like a flagship commission, never merely a polished corporate site.",
+    "- R116 SECTION IDENTITY: section_identity >=9.8. Major scenes must have materially distinct composition logic while sharing one proprietary visual system.",
+    "- R116 EDITORIAL COMPOSITION: editorial_composition >=9.8. Typography, image crop, scale and negative space must feel art-directed at campaign level.",
+    "- R116 LUXURY SIMPLICITY: luxury_simplicity >=9.7. Simplicity must feel expensive and intentional, never empty, generic or under-designed.",
+    "- R116 15K CREDIBILITY: fifteen_k_credibility >=9.8. Judge the actual screenshots as a serious flagship agency commission with no explanatory discount.",
     "- R106 ICONIC COMMISSIONED NORTH STAR: design the page as a one-off commissioned brand experience, not a premium website. Target quality is 9.8-9.9. A perfect 10 remains an aspirational north star and must not be awarded casually.",
     "- IRREPRODUCIBLE AUTHORSHIP TEST: mentally remove logo and visible copy. The remaining composition, image treatment, signature geometry, rhythm and transitions must still plausibly belong to this prospect and should be difficult to transplant to another client unchanged.",
     "- CAMPAIGN ART-DIRECTION TEST: key photography must be composed like an editorial brand campaign through crop, layering, overlays, framing, scale and sequence, not merely placed into web containers.",
@@ -1024,7 +1029,12 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     editorial_campaign_quality:9.7,
     transition_art_direction:9.6,
     visual_memory_factor:9.7,
-    cross_viewport_art_direction:9.7
+    cross_viewport_art_direction:9.7,
+    flagship_presence:9.8,
+    section_identity:9.8,
+    editorial_composition:9.8,
+    luxury_simplicity:9.7,
+    fifteen_k_credibility:9.8
   };
   if(logoFirstMaster) {
     for(const key of masterGateKeys) {
@@ -1051,7 +1061,14 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
   const hardIssues=nextIssues.filter(x=>x?.severity==="critical"||x?.severity==="major");
   const pass=min>=8 && masterGateFloor>=9 && fifteenKScore>=9.7 && authorshipScore>=9.7 && commissionedScore>=9.8 && hardIssues.length===0;
 
-  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor,fifteen_k_value_floor:fifteenKScore,irreproducible_authorship_floor:authorshipScore,commissioned_experience_floor:commissionedScore};
+  const flagshipFloor=Math.min(
+    Number(scores?.flagship_presence??0),
+    Number(scores?.section_identity??0),
+    Number(scores?.editorial_composition??0),
+    Number(scores?.luxury_simplicity??0),
+    Number(scores?.fifteen_k_credibility??0)
+  );
+  return {issues:nextIssues,actions:nextActions,pass,min_score:min,master_gate_floor:masterGateFloor,fifteen_k_value_floor:fifteenKScore,irreproducible_authorship_floor:authorshipScore,commissioned_experience_floor:commissionedScore,flagship_gate_floor:flagshipFloor};
 }
 
 export const LOGO_FIRST_MASTER_GATE_KEYS=[
@@ -1078,6 +1095,7 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "irreproducible_brand_authorship","commissioned_experience_quality",
   "scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality",
   "transition_art_direction","visual_memory_factor","cross_viewport_art_direction",
+  "flagship_presence","section_identity","editorial_composition","luxury_simplicity","fifteen_k_credibility",
   "hero_text_on_image_integration","hero_overlay_legibility","sitewide_visual_refinement",
   "image_quality_perception","premium_typography_quality","anti_template_feel","anti_fake_ai_credibility",
   "homepage_richness","section_depth","content_architecture","commercial_story_depth",
