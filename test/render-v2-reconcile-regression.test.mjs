@@ -53,6 +53,12 @@ test("queue recovery never marks a pack GENERATING when no workflow launched",()
   assert.ok(mark>guard,"GENERATING transition must occur after zero-launch guard");
 });
 
+test("initial child workflow id is unique per parent run",()=>{
+  assert.match(workflows,/parentRunSuffix=String\(event\.instanceId\|\|"parent"\)/);
+  assert.match(workflows,/const instanceId="rv2-"\+p\.packId\+"-"\+key\+"-"\+parentRunSuffix/);
+  assert.doesNotMatch(workflows,/const instanceId="rv2-"\+p\.packId\+"-"\+key\+"-initial"/);
+});
+
 test("generated hero artifact keys are content-addressed",()=>{
   assert.match(workflows,/const imageHash=await sha256\(generated\.bytes\)/);
   assert.match(workflows,/imageHash\.slice\(0,16\)/);
