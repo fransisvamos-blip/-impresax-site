@@ -557,6 +557,11 @@ test("structural rework reuses certified hero and never requests a fresh AI hero
   assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,260}context\.packMetadata\?\.structural_divergence_rework_required!==true[\s\S]{0,180}context\.r107Retrofit!==true/);
 });
 
+test("R112 browser QA treats SVG hero fallback as resolution-independent",()=>{
+  assert.match(browser,/hero_image_is_vector/);
+  assert.match(browser,/!diag\.hero_image_is_vector[\s\S]{0,120}hero_image_resolution_ratio/);
+});
+
 test("R112 zero-AI hero resolution failures auto-fallback to scalable vector art",()=>{
   assert.match(workflows,/HERO_SOURCE_RESOLUTION_TOO_LOW/);
   assert.match(workflows,/hero-resolution-vector-fallback/);
