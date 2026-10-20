@@ -530,7 +530,7 @@ async function drainQueue(env,sql,state) {
   }
 
   const started=[],blocked=[];
-  if(slots>=3) {
+  if(slots>0) {
     const prospects=await sql`
       select p.id,p.rank,p.business_name
       from prospects p
@@ -565,7 +565,7 @@ async function drainQueue(env,sql,state) {
       limit 30`;
 
     for(const prospect of prospects) {
-      if(slots<3) break;
+      if(slots<1) break;
       const created=await createShadowInputPack(env,prospect.id);
       if(created.input_pack?.certification_status!=="PASS") {
         blocked.push({
@@ -578,7 +578,7 @@ async function drainQueue(env,sql,state) {
       }
       const parent=await startParent(env,sql,created.pack,{reason:"QUEUE"});
       if(parent.started) {
-        slots=Math.max(0,slots-3);
+        slots=Math.max(0,slots-1);
         started.push({
           prospect_id:prospect.id,
           rank:prospect.rank,
