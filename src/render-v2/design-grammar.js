@@ -359,7 +359,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
       ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
-      : "<section id=\"bridge\" data-section-depth=\"substantial\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
+      : "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
     "<section id=\"final-cta\" data-section-role=\"conversion\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-contrast-safe=\"true\" data-section-depth=\"substantial\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
@@ -1998,15 +1998,15 @@ body{font-family:var(--ix-body-font)}
       section_ids:variantKey==="A"?sectionBlueprint:(variantKey==="B"
         ? ["hero","trust","services","positioning","bridge","final-cta"]
         : ["hero","services","bridge","positioning","trust","final-cta"]),
-      section_architecture_standard:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
+      section_architecture_standard:variantKey==="A"?"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1":"R107_LEGACY_COMPAT",
       home_depth_standard:variantKey==="A"?"R111_15K_HOME_DEPTH_ARCHITECTURE_V1":"R110_LEGACY_COMPAT",
       section_blueprint:sectionBlueprint,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets,...(partnerTrustKeys.some(key=>/u[-\\s]?power/i.test(String(copyManifest?.[key]||"")))?["PARTNER_UPOWER_LOGO"]:[])].filter(Boolean),
       section_coherence_standard:sectionAssetPlan?.strict_semantic===true?"R108_SECTION_COHERENCE_STRICT_V1":"R107",
-      art_direction_standard:"R109_15K_ART_DIRECTION_GATE_V1",
-      section_first_standard:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
+      art_direction_standard:variantKey==="A"?"R109_15K_ART_DIRECTION_GATE_V1":"R107_LEGACY_COMPAT",
+      section_first_standard:variantKey==="A"?"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1":"R107_LEGACY_COMPAT",
       section_visual_strategy:sectionAssetPlan?.strategy||"R107_CURATED_VARIANT_ROTATION_V1",
       hero_visual_strategy:"R107 mandatory full-bleed edge-to-edge HERO_VISUAL with verified headline, body and CTAs overlaid inside the image, premium readability veil and high-resolution capture.",
       hero_subject:"Prospect-relevant commercial scene supplied by HERO_VISUAL.",
