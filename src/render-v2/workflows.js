@@ -650,6 +650,31 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         : input.payload;
       const assets=await inputAssetsFromDb(sql,params.packId,inputPayload);
       const copyManifest=buildCopyManifest(plan.content_truth_pack,inputPayload);
+      if(String(packMetadata.art_direction_standard||"")==="R109_15K_ART_DIRECTION_GATE_V1") {
+        for(const key of Object.keys(copyManifest)) {
+          if(/^TRUST_\d+$/.test(key) || /^PARTNER_\d+$/.test(key) || /^TRUST_METRIC_/.test(key)) delete copyManifest[key];
+        }
+        const trustFacts=verifiedList(inputPayload.verified_trust||"");
+        let trustIndex=0;
+        let partnerIndex=0;
+        for(const fact of trustFacts) {
+          if(/\b(?:u[-\s]?power|rivenditor|dealer|partner|autorizzat)\b/i.test(fact)) {
+            partnerIndex++;
+            copyManifest["PARTNER_"+partnerIndex]=fact;
+          } else {
+            trustIndex++;
+            copyManifest["TRUST_"+trustIndex]=fact;
+          }
+        }
+        copyManifest.TRUST_TITLE="Perché scegliere noi";
+        copyManifest.TRUST_INTRO=String(inputPayload.city||"").trim()
+          ? "Struttura, affidabilità e presenza operativa a "+String(inputPayload.city).trim()+"."
+          : "Struttura e affidabilità supportate da elementi verificati.";
+        if(partnerIndex>0) {
+          copyManifest.PARTNER_SECTION_TITLE="Marchi e partnership";
+          copyManifest.PARTNER_SECTION_INTRO="Partnership e autorizzazioni commerciali verificate.";
+        }
+      }
       const structuralRework=packMetadata.structural_divergence_rework_required===true
         || params.initialFeedback?.reason==="STRUCTURAL_DIVERGENCE_REWORK";
       const r107Retrofit=
