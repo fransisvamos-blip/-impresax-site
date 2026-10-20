@@ -250,11 +250,11 @@ openRenderingProspect = async function(id) {
     let renderContent = "";
 
     if(v2Pack && v2Variants.length){
-      const expected=["A","B","C"];
+      const expected=["A"];
       const keys=v2Variants.map(v=>v.variant_key);
       const completeContract=expected.every(k=>keys.includes(k));
-      renderContent += '<div class="render-contract-note v2-contract"><strong>3 VARIANTI CREATIVE CERTIFICATE</strong>';
-      renderContent += '<span>Source of truth: revisioni certificate V2. Winner = raccomandazione, MASTER = human-only.</span></div>';
+      renderContent += '<div class="render-contract-note v2-contract"><strong>1 CONCEPT · MASSIMA CURA</strong>';
+      renderContent += '<span>ImpresaX concentra il lavoro su un unico concept desktop + mobile. MASTER = human-only.</span></div>';
       renderContent += '<div class="render-v2-pack-meta">';
       renderContent += '<span>SET QA <strong>' + esc(v2Pack.set_qa_score || "—") + ' · ' + esc(v2Pack.set_qa_status || "—") + '</strong></span>';
       renderContent += '<span>DIVERSITY A/B <strong>' + esc(v2Pack.diversity_ab || "—") + '</strong></span>';
@@ -265,7 +265,7 @@ openRenderingProspect = async function(id) {
       renderContent += '<span>RETROFIT <strong>' + esc(v2Pack.retrofit_status || (String(v2Pack.retrofit_required)==="true" ? "REQUIRED" : "—")) + '</strong></span>';
       renderContent += '</div>';
       if(!completeContract){
-        renderContent += '<div class="legacy-warning">CONTRATTO INCOMPLETO: devono essere visibili A, B e C. Nessuna MASTER approval consentita.</div>';
+        renderContent += '<div class="legacy-warning">CONCEPT IN PREPARAZIONE: attendo desktop + mobile completi prima della validazione MASTER.</div>';
       }
       v2Variants.forEach(v=>{ renderContent += renderCertifiedVariantCard(v,v2Pack,p.id); });
     } else if (variants.length) {
