@@ -277,6 +277,27 @@ export function validateRenderSpec(spec, manifests) {
     issues.push("FINAL_CTA_CONTRACT_REQUIRED");
   }
 
+  if(String(spec?.section_first_standard||spec?.section_architecture_standard||"")==="R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1") {
+    const blueprint=Array.isArray(spec?.section_blueprint)?spec.section_blueprint:[];
+    if(blueprint.length<5) issues.push("R110_SECTION_BLUEPRINT_REQUIRED");
+    const ids=Array.isArray(spec?.section_ids)?spec.section_ids:[];
+    if(JSON.stringify(blueprint)!==JSON.stringify(ids)) issues.push("R110_BLUEPRINT_SECTION_ORDER_MISMATCH");
+    for(const id of blueprint.filter(x=>!["hero"].includes(x))) {
+      const html=sectionHtml(id);
+      if(html && !/data-section-plan=["']approved["']/i.test(html)) issues.push("R110_UNPLANNED_SECTION:"+id);
+    }
+    const trustBlock=sectionHtml("trust");
+    const reasons=(trustBlock.match(/data-trust-reason=/gi)||[]).length;
+    const graphics=(trustBlock.match(/ixg-trust-reason__graphic/g)||[]).length;
+    if(trustBlock && reasons<3) issues.push("R110_WHY_US_MIN_THREE_REASONS");
+    if(trustBlock && graphics<reasons) issues.push("R110_WHY_US_GRAPHIC_SUPPORT_REQUIRED");
+    if(trustBlock && !/ixg-trust-reason\s+p/i.test(spec?.custom_css||"")) issues.push("R110_WHY_US_SUPPORT_COPY_REQUIRED");
+    const partnerBlock=sectionHtml("partners");
+    if(/U[-\s]?Power/i.test(String(main)) && partnerBlock && !/ixg-partner-logo/i.test(partnerBlock)) {
+      issues.push("R110_UPOWER_OFFICIAL_LOGO_REQUIRED");
+    }
+  }
+
   if(String(spec?.art_direction_standard||"")==="R109_15K_ART_DIRECTION_GATE_V1") {
     if(!/\bid=["']services["'][^>]*\bdata-uniform-service-rows=["']true["']/i.test(main)) {
       issues.push("R109_UNIFORM_SERVICE_ROWS_REQUIRED");
