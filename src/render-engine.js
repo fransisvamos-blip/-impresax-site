@@ -1828,7 +1828,13 @@ async function applyGenerationFailureState(sql,row,message) {
         error=${message},
         updated_at=now()
       where id=${row.prospect_id}::uuid
-        and render_status<>'RENDER_READY'`;
+        and render_status<>'RENDER_READY'
+        and not exists (
+          select 1 from render_v2_packs v2
+          where v2.prospect_id=prospects.id
+            and v2.shadow_mode=true
+            and v2.status not in ('CANCELLED','SUPERSEDED')
+        )`;
   } else {
     const active=await sql`select count(*)::int as n from render_jobs
       where worker='cloudflare-workers-ai'
@@ -1852,7 +1858,13 @@ async function applyGenerationFailureState(sql,row,message) {
             error=${message},
             updated_at=now()
           where id=${row.prospect_id}::uuid
-            and render_status<>'RENDER_READY'`;
+            and render_status<>'RENDER_READY'
+            and not exists (
+              select 1 from render_v2_packs v2
+              where v2.prospect_id=prospects.id
+                and v2.shadow_mode=true
+                and v2.status not in ('CANCELLED','SUPERSEDED')
+            )`;
       }
     }
   }
