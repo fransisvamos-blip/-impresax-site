@@ -1081,11 +1081,29 @@ async function suppressLegacyRenderOwnership(sql) {
       )
     returning j.id,j.prospect_id`;
 
+  const supersededFailures=await sql`
+    update render_jobs j
+    set error='SUPERSEDED_BY_RENDER_V2:' || left(coalesce(j.error,'LEGACY_FAILURE'),450),
+        updated_at=now()
+    where j.worker='cloudflare-workers-ai'
+      and j.status='FAILED'
+      and coalesce(j.error,'') not like 'SUPERSEDED_BY%'
+      and exists (
+        select 1
+        from render_v2_packs v2
+        where v2.prospect_id=j.prospect_id
+          and v2.shadow_mode=true
+          and v2.status not in ('CANCELLED','SUPERSEDED')
+      )
+    returning j.id,j.prospect_id`;
+
   const archivedPacks=await sql`
     update render_packs legacy
     set status='ARCHIVED_V2_SUPERSEDED',
         content_map=coalesce(content_map,'{}'::jsonb) || jsonb_build_object(
           'generation_hold',false,
+          'generation_failure_count',0,
+          'generation_success_at',to_jsonb(now()),
           'v2_superseded',true,
           'v2_superseded_at',to_jsonb(now()),
           'v2_ownership','RENDER_V2'
@@ -1104,6 +1122,7 @@ async function suppressLegacyRenderOwnership(sql) {
 
   return {
     cancelled_legacy_jobs:cancelledJobs.length,
+    superseded_legacy_failures:supersededFailures.length,
     archived_legacy_packs:archivedPacks.length,
     legacy_pack_ids:archivedPacks.map(x=>x.id)
   };
