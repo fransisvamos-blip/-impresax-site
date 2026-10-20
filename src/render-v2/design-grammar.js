@@ -195,7 +195,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       : "";
     const iconClass="ixg-service__icon--"+String((i%3)+1);
     const icon="<span class=\"ixg-service__icon "+iconClass+"\" aria-hidden=\"true\"><i></i><i></i><i></i></span>";
-    return "<article class=\"ixg-service\" data-uniform-service-row=\"true\"><div class=\"ixg-service__visual\"><span class=\"ixg-service__index\">0"+(i+1)+"</span>"+icon+"</div><div class=\"ixg-service__content\"><h3 class=\"ixg-service__title\">"+copyToken(titleKey)+"</h3>"+body+"</div></article>";
+    return "<article class=\"ixg-service\" data-uniform-service-row=\"true\" data-service-index-rail=\"locked\"><div class=\"ixg-service__indexrail\"><span class=\"ixg-service__index\">0"+(i+1)+"</span></div><div class=\"ixg-service__iconrail\">"+icon+"</div><div class=\"ixg-service__content\"><h3 class=\"ixg-service__title\">"+copyToken(titleKey)+"</h3>"+body+"</div></article>";
   }).join("");
   const bridgeTitle=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_TITLE")
     ? "BRIDGE_TITLE"
@@ -251,8 +251,11 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const trustProofRail=verifiedTrustReasonKeys.slice(0,3)
     .map((key,i)=>"<div class=\"ixg-trust-proof__item\"><span>0"+(i+1)+"</span><strong>"+copyToken(key)+"</strong></div>")
     .join("");
+  const partnerDemoSlots=partnerTrustKeys.length===1
+    ? [1,2,3].map((n,i)=>"<article class=\"ixg-partner-card ixg-partner-card--demo\" data-demo-partner-slot=\"true\" aria-hidden=\"true\"><div class=\"ixg-demo-partner-mark ixg-demo-partner-mark--"+((i%3)+1)+"\"><i></i><i></i><i></i></div><div class=\"ixg-demo-partner-lines\"><i></i><i></i></div></article>").join("")
+    : "";
   const partnerProof=partnerTrustKeys.length
-    ? "<section id=\"partners\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+"</div></div></section>"
+    ? "<section id=\"partners\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+partnerDemoSlots+"</div></div></section>"
     : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
@@ -328,6 +331,16 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const sectionVisual2=sectionVisual(selectedSectionAssets[1],"ixg-section-visual--two");
   const sectionVisual3=sectionVisual(selectedSectionAssets[2],"ixg-section-visual--three");
 
+  const serviceMaterialsFeatureVisual=suppliedSectionAssets.includes("SERVICE_MATERIALS_VISUAL")
+    ? sectionVisual("SERVICE_MATERIALS_VISUAL","ixg-section-visual--feature ixg-section-visual--materials")
+    : sectionVisual2;
+  const serviceRebarFeatureVisual=suppliedSectionAssets.includes("SERVICE_REBAR_VISUAL")
+    ? sectionVisual("SERVICE_REBAR_VISUAL","ixg-section-visual--feature ixg-section-visual--rebar")
+    : sectionVisual3;
+  const trustBackgroundVisual=suppliedSectionAssets.includes("TRUST_VISUAL")
+    ? "<figure class=\"ixg-trust-bg\" aria-hidden=\"true\"><img src=\"{{asset:TRUST_VISUAL}}\" alt=\"\"></figure>"
+    : "";
+
   const featureServiceSection=(slot,visual="")=>{
     const titleKey=featureServiceTitles[slot-1]||null;
     const serviceIndex=titleKey
@@ -353,8 +366,8 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     const featureClass=slot===1?"ixg-feature--one":"ixg-feature--two";
     return "<section id=\""+sectionId+"\" class=\"ixg ixg-feature "+featureClass+" "+vclass+"\" data-section-role=\"editorial-feature\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" data-editorial-feature=\"true\" data-editorial-substance=\"true\" data-content-density=\"rich\" data-surface=\"art-directed\" data-brand-surface=\""+(slot===1?"dark":"tint")+"\"><div class=\"ixg-shell ixg-feature__grid\"><div class=\"ixg-feature__copy\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><h2>"+copyToken(resolvedTitle)+"</h2><p class=\"ixg-section-intro\">"+copyToken(resolvedBody)+"</p><div class=\"ixg-feature__evidence\">"+evidence+"</div></div><div class=\"ixg-feature__stage "+(visual?"has-visual":"no-visual")+"\">"+visual+"<div class=\"ixg-feature__device\" aria-hidden=\"true\"><i></i><i></i><i></i><span></span></div></div></div></section>";
   };
-  const featureSection1=featureServiceSection(1,sectionVisual3);
-  const featureSection2=featureServiceSection(2,"");
+  const featureSection1=featureServiceSection(1,serviceMaterialsFeatureVisual);
+  const featureSection2=featureServiceSection(2,serviceRebarFeatureVisual);
   const featureSectionIds=[
     featureServiceTitles[0]?"service-feature-1":"brand-scene-1",
     featureServiceTitles[1]?"service-feature-2":"brand-scene-2"
@@ -379,11 +392,11 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const mainAB=[
     impresaxHero,
     "<section id=\"positioning\" data-section-role=\"positioning\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
-    "<section id=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
+    "<section id=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-detail-grid=\"aligned\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
     featureSection1,
     featureSection2,
     logoFirstGraphicBand,
-    "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-proof-support=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-proof\">"+trustProofRail+"</div><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
+    "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-proof-support=\"true\" data-contrast-safe=\"true\" data-trust-background=\""+(trustBackgroundVisual?"image":"surface")+"\">"+trustBackgroundVisual+"<div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-proof\">"+trustProofRail+"</div><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
       ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-cta-intensity=\"support\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
       : "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-cta-intensity=\"support\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div><div class=\"ixg-actions\">"+secondary+"</div></div></section>",
@@ -1997,6 +2010,41 @@ body{font-family:var(--ix-body-font)}
 .ixg-feature--two{color:var(--ix-ink);background:radial-gradient(circle at 15% 15%,rgba(255,255,255,.96),transparent 35%),linear-gradient(128deg,var(--ix-paper) 0%,#fff 52%,rgba(17,17,17,.055) 100%)}
 .ixg-feature--two .ixg-feature__grid{grid-template-columns:minmax(0,1.1fr) minmax(300px,.7fr)}
 .ixg-feature--two .ixg-feature__device{color:var(--ix-ink);border-color:rgba(17,17,17,.14);box-shadow:0 30px 86px rgba(17,17,17,.10);background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(17,17,17,.045))}
+/* R113 detail craftsmanship: aligned index rails, editorial imagery, photographic trust and demo partner capacity. */
+.ixg-service{grid-template-columns:54px 148px minmax(0,1fr)!important;align-items:center!important}
+.ixg-service__indexrail{display:flex;align-items:flex-start;justify-content:flex-start;align-self:stretch;padding-top:8px}
+.ixg-service__index{display:block;width:42px;text-align:left;font-variant-numeric:tabular-nums;line-height:1!important}
+.ixg-service__iconrail{display:flex;align-items:center;justify-content:flex-start;min-width:0}
+.ixg-service__visual{display:contents!important}
+.ixg-feature__evidence{background:transparent!important;border:0!important;gap:12px!important}
+.ixg-feature__evidence-row{border:1px solid rgba(127,127,127,.16);border-radius:10px;background:rgba(255,255,255,.06)!important;min-height:94px;box-shadow:0 16px 36px rgba(0,0,0,.08)}
+.ixg-feature--two .ixg-feature__evidence-row{background:rgba(255,255,255,.86)!important}
+.ixg-feature__stage.has-visual .ixg-feature__device{display:none}
+.ixg-feature__stage.has-visual>.ixg-section-visual{position:absolute!important;inset:0!important;border-radius:2px!important;box-shadow:0 34px 90px rgba(0,0,0,.18)!important}
+.ixg-trust-section{position:relative!important;overflow:hidden!important;background:#17191b!important;color:#fff!important}
+.ixg-trust-bg{position:absolute;inset:0;margin:0;z-index:0}
+.ixg-trust-bg img{width:100%;height:100%;object-fit:cover;filter:saturate(.78) contrast(1.06)}
+.ixg-trust-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(17,18,20,.96) 0%,rgba(17,18,20,.86) 52%,rgba(17,18,20,.72) 100%)}
+.ixg-trust-section>.ixg-shell{position:relative;z-index:1}
+.ixg-trust-section .ixg-section-head--light,.ixg-trust-section .ixg-section-head--light .ixg-section-intro{color:#fff!important}
+.ixg-partner-proof__grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
+.ixg-partner-card{min-height:190px!important}
+.ixg-partner-card--demo{border-style:dashed!important;background:linear-gradient(145deg,#fff 0%,#f2f1ee 100%)!important;opacity:.72;justify-content:center!important}
+.ixg-demo-partner-mark{position:relative;width:82px;height:58px;margin-bottom:18px}
+.ixg-demo-partner-mark i{position:absolute;display:block;background:#bbb}
+.ixg-demo-partner-mark--1 i:nth-child(1){width:58px;height:10px;left:0;top:6px}.ixg-demo-partner-mark--1 i:nth-child(2){width:42px;height:10px;left:12px;top:25px}.ixg-demo-partner-mark--1 i:nth-child(3){width:24px;height:10px;left:28px;top:44px}
+.ixg-demo-partner-mark--2 i{border-radius:50%}.ixg-demo-partner-mark--2 i:nth-child(1){width:58px;height:58px;left:0;top:0;background:transparent;border:2px solid #bbb}.ixg-demo-partner-mark--2 i:nth-child(2){width:30px;height:30px;left:14px;top:14px}.ixg-demo-partner-mark--2 i:nth-child(3){width:10px;height:10px;left:24px;top:24px;background:var(--ix-accent)}
+.ixg-demo-partner-mark--3 i:nth-child(1){width:70px;height:2px;left:0;top:12px}.ixg-demo-partner-mark--3 i:nth-child(2){width:54px;height:2px;left:0;top:28px}.ixg-demo-partner-mark--3 i:nth-child(3){width:38px;height:2px;left:0;top:44px}
+.ixg-demo-partner-lines{display:grid;gap:8px;width:72%}.ixg-demo-partner-lines i{display:block;height:7px;background:#ddd;border-radius:999px}.ixg-demo-partner-lines i:last-child{width:58%}
+@media(max-width:900px){.ixg-partner-proof__grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:700px){
+ .ixg-service{grid-template-columns:42px 74px minmax(0,1fr)!important;column-gap:12px!important}
+ .ixg-service__indexrail{padding-top:4px}
+ .ixg-service__icon{width:70px!important;height:56px!important;flex-basis:70px!important}
+ .ixg-partner-proof__grid{grid-template-columns:1fr!important}
+ .ixg-trust-bg:after{background:linear-gradient(180deg,rgba(17,18,20,.88),rgba(17,18,20,.96))}
+}
+
 /* R112 section substance: evidence occupies the scene; whitespace frames it instead of replacing it. */
 .ixg-feature__evidence{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin-top:8px;background:currentColor;border:1px solid rgba(127,127,127,.18)}
 .ixg-feature__evidence-row{min-height:86px;padding:16px 18px;background:inherit;display:grid;grid-template-columns:30px minmax(0,1fr);align-items:start;gap:12px}
@@ -2051,6 +2099,7 @@ body{font-family:var(--ix-body-font)}
       section_architecture_standard:variantKey==="A"?"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1":"R107_LEGACY_COMPAT",
       home_depth_standard:variantKey==="A"?"R111_15K_HOME_DEPTH_ARCHITECTURE_V1":"R110_LEGACY_COMPAT",
       section_substance_standard:variantKey==="A"?"R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1":"R110_LEGACY_COMPAT",
+      detail_craft_standard:variantKey==="A"?"R113_DETAIL_CRAFTSMANSHIP_V1":"R110_LEGACY_COMPAT",
       section_blueprint:sectionBlueprint,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
