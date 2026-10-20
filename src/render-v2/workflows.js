@@ -1100,6 +1100,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             promptVersion:"STRUCTURAL_REWORK_ZERO_AI_V1",
             idempotencyKey:"qa:CABINA_DETERMINISTIC_STRUCTURAL:"+params.packId+":"+revision.id
           });
+          if(VARIANT_KEYS.length===1) {
+            await updateRevision(sql,revision.id,{status:"RENDER_READY",score:10,compilerVersion:COMPILER_VERSION});
+            await setVariantStatus(sql,params.variantId,{status:"RENDER_READY",bestQa:revision.revision,certified:revision.revision});
+          }
           if(context.r107Retrofit===true) {
             const setState=await sql`
               select count(*)::int total,
