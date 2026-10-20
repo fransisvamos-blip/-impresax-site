@@ -265,6 +265,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
       selectedSectionAssets.push(planned);
       continue;
     }
+    if(sectionAssetPlan?.strict_semantic===true) {
+      selectedSectionAssets.push(null);
+      continue;
+    }
     const fallback=fallbackSectionAssets.find(token=>token && !selectedSectionAssets.includes(token));
     if(fallback) selectedSectionAssets.push(fallback);
   }
@@ -1760,6 +1764,29 @@ body{font-family:var(--ix-body-font)}
 .ixg-trust-section .ixg-section-intro,.ixg-trust-section p,.ix-v2-footer p,.ix-v2-footer a{color:rgba(255,255,255,.92)!important;opacity:1!important}
 .ixg-trust-section .ixg-kicker,.ix-v2-footer .ixg-kicker,.ix-v2-footer strong{color:#fff!important;opacity:1!important}
 .ixg-trust-section .ixg-kicker,.ix-v2-footer strong{color:#fff!important}
+/* Section coherence system: one grid, one narrative, no random composition. */
+.ixg-section-head{grid-template-columns:minmax(190px,240px) minmax(0,1fr)!important;align-items:start!important;column-gap:clamp(32px,5vw,72px)!important}
+.ixg-services__grid{grid-template-columns:1fr!important}
+.ixg-service{
+ display:grid!important;
+ grid-template-columns:120px minmax(0,1fr)!important;
+ column-gap:clamp(28px,4vw,64px)!important;
+ row-gap:12px!important;
+ align-items:start!important;
+ min-height:0!important
+}
+.ixg-service__visual{grid-column:1!important;grid-row:1 / span 2!important;align-self:start!important}
+.ixg-service__content{grid-column:2!important;display:grid!important;gap:14px!important;align-content:start!important}
+.ixg-service__title,.ixg-service__body{margin:0!important;max-width:34ch!important}
+.ixg-section-visual{margin-top:clamp(28px,4vw,52px)!important}
+.ixg-trust-section .ixg-section-visual:empty{display:none!important}
+.ixg-trust-section .ixg-section-head{align-items:start!important}
+.ixg-trust-grid,.ixc-trust__inner{align-items:stretch!important}
+@media(max-width:700px){
+ .ixg-section-head{grid-template-columns:1fr!important;gap:14px!important}
+ .ixg-service{grid-template-columns:72px minmax(0,1fr)!important;column-gap:18px!important}
+ .ixg-service__visual{grid-column:1!important}.ixg-service__content{grid-column:2!important}
+}
 .ixg-service,.ixg-trust,.ixg-bridge__evidence-row{
  border:1px solid rgba(32,34,36,.10);
  box-shadow:0 18px 52px rgba(17,17,17,.08),0 2px 8px rgba(17,17,17,.04);
