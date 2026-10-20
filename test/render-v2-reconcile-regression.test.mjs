@@ -570,6 +570,20 @@ test("mobile text identity cannot force header overflow",()=>{
   assert.match(compiler,/\.ix-v2-brand\{max-width:min\(58vw,220px\)\}/);
 });
 
+test("R113 detail craftsmanship locks alignment imagery trust background and demo partner capacity",()=>{
+  assert.match(constants,/R113_DETAIL_CRAFTSMANSHIP_V1/);
+  assert.match(grammar,/data-service-index-rail=\\"locked\\"/);
+  assert.match(grammar,/SERVICE_MATERIALS_VISUAL/);
+  assert.match(grammar,/SERVICE_REBAR_VISUAL/);
+  assert.match(grammar,/data-trust-background/);
+  assert.match(grammar,/data-demo-partner-slot=\\"true\\"/);
+  assert.match(compiler,/R113_SERVICE_DETAIL_GRID_ALIGNMENT_REQUIRED/);
+  assert.match(compiler,/R113_FEATURE_1_CONTEXT_IMAGE_REQUIRED/);
+  assert.match(compiler,/R113_FEATURE_2_CONTEXT_IMAGE_REQUIRED/);
+  assert.match(compiler,/R113_TRUST_BACKGROUND_IMAGE_REQUIRED/);
+  assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
+});
+
 test("R112 browser QA treats SVG hero fallback as resolution-independent",()=>{
   assert.match(browser,/hero_image_is_vector/);
   assert.match(browser,/!diag\.hero_image_is_vector[\s\S]{0,120}hero_image_resolution_ratio/);
