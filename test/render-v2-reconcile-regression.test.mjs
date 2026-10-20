@@ -18,6 +18,8 @@ const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url)
 const browser=fs.readFileSync(new URL("../src/render-v2/browser.js",import.meta.url),"utf8");
 const compiler=fs.readFileSync(new URL("../src/render-v2/compiler.js",import.meta.url),"utf8");
 const showroom=fs.readFileSync(new URL("../src/render-v2/showroom-policy.js",import.meta.url),"utf8");
+const r115Shell=fs.readFileSync(new URL("../src/render-v2/r115-shell-css.js",import.meta.url),"utf8");
+const r115Sections=fs.readFileSync(new URL("../src/render-v2/r115-sections-css.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
   assert.match(
@@ -582,6 +584,22 @@ test("R113 detail craftsmanship locks alignment imagery trust background and dem
   assert.match(compiler,/R113_FEATURE_2_CONTEXT_IMAGE_REQUIRED/);
   assert.match(compiler,/R113_TRUST_BACKGROUND_IMAGE_REQUIRED/);
   assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
+});
+
+test("R115 premium finishing differentiates services features shell CTAs and footer",()=>{
+  assert.match(constants,/R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1/);
+  assert.match(grammar,/data-service-composition=\\"paired-editorial-with-media\\"/);
+  assert.match(grammar,/data-feature-layout=\\"\\"\+featureLayout\+\\"/);
+  assert.match(grammar,/data-trust-finish=\\"premium-editorial\\"/);
+  assert.match(grammar,/data-cta-premium=\\"true\\"/);
+  assert.match(grammar,/R115_SHELL_CSS\+R115_SECTIONS_CSS/);
+  assert.match(compiler,/R115_SERVICE_FEATURE_LOCALITY_FILLER_FORBIDDEN/);
+  assert.match(compiler,/R115_PREMIUM_HEADER_SHELL_REQUIRED/);
+  assert.match(compiler,/R115_PREMIUM_FOOTER_COMPOSITION_REQUIRED/);
+  assert.match(r115Shell,/premium shell, CTA and footer finishing/);
+  assert.match(r115Sections,/premium section identity/);
+  assert.match(r115Sections,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(r115Sections,/ixg-feature--two .*grid-column:1/i);
 });
 
 test("R112 browser QA treats SVG hero fallback as resolution-independent",()=>{
