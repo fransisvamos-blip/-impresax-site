@@ -765,8 +765,8 @@ test("R107 deterministic copy sanitizer blocks internal policy text and generic 
   assert.match(workflows, /REMEDIATION_POLICY_VERSION/);
 });
 
-test("R107 Cabina visual-review hold waits for the complete A/B/C preview set",()=>{
-  assert.match(workflows,/count\(\*\) filter \(where status='PREVIEW_READY'\)::int preview_ready/);
+test("R107 Cabina visual-review hold waits for the complete single-concept preview set",()=>{
+  assert.match(workflows,/count\(\*\) filter \(where status in \('PREVIEW_READY','RENDER_READY'\)\)::int preview_ready/);
   assert.match(workflows,/Number\(setState\[0\]\?\.total\|\|0\)===VARIANT_KEYS\.length/);
   assert.match(workflows,/Number\(setState\[0\]\?\.preview_ready\|\|0\)===VARIANT_KEYS\.length/);
   assert.match(workflows,/cabina_visual_review_hold:completePreviewSet/);
