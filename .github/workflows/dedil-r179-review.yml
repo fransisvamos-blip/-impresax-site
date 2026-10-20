@@ -1,11 +1,11 @@
-name: DEDIL r179 Private Review
+name: DEDIL r180 Private Review
 
 on:
   push:
     branches:
       - rendering-v2-shadow
     paths:
-      - ".github/workflows/dedil-r179-review.yml"
+      - ".github/workflows/dedil-r180-review.yml"
 
 permissions:
   contents: read
@@ -24,14 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Pull r179 review artifacts from private R2
+      - name: Pull r180 review artifacts from private R2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
         run: |
           set -euo pipefail
           mkdir -p review
-          BASE="render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r179"
+          BASE="render-v2/CZ-063/8595c9d2-9d53-424b-a660-82102b9db5b3/A/r180"
           npx wrangler r2 object get "impresax-render-v2-shadow/$BASE/desktop-1440.jpg" --file="review/desktop-1440.jpg" --remote
           npx wrangler r2 object get "impresax-render-v2-shadow/$BASE/mobile-390.jpg" --file="review/mobile-390.jpg" --remote
           npx wrangler r2 object get "impresax-render-v2-shadow/$BASE/browser-diagnostics.json" --file="review/browser-diagnostics.json" --remote
@@ -40,7 +40,7 @@ jobs:
       - name: Upload private review bundle
         uses: actions/upload-artifact@v4
         with:
-          name: dedil-r179-private-review
+          name: dedil-r180-private-review
           path: review/
           retention-days: 1
           if-no-files-found: error
