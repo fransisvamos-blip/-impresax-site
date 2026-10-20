@@ -321,6 +321,7 @@ export default {
         delivery_mode:"SINGLE_CONCEPT",
         delivery_variants_per_pack:1,
         r106_policy_contract_ok:true,
+        r116_verified_editorial_patch:"R116_VERIFIED_EDITORIAL_V1",
         master_auto_approve:false,
         legacy_health_contract:{
           triple_variant_required:true,
