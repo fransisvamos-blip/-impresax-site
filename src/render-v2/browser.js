@@ -119,6 +119,11 @@ async function renderPage(browser,html,width,height) {
       const requiredSections=["hero","positioning","services","trust","bridge","final-cta"];
       return {
         horizontal_overflow:root.scrollWidth>root.clientWidth+2,
+        overflow_elements:[...document.querySelectorAll("body *")]
+          .map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName.toLowerCase(),id:el.id||"",class:String(el.className||"").slice(0,160),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width)};})
+          .filter(x=>x.right>root.clientWidth+2 || x.left<-2)
+          .sort((a,b)=>Math.max(b.right-root.clientWidth,-b.left)-Math.max(a.right-root.clientWidth,-a.left))
+          .slice(0,12),
         broken_images:images.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.getAttribute("src")||"").slice(0,12),
         image_count:images.length,
         document_width:root.scrollWidth,
