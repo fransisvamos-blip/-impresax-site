@@ -236,7 +236,7 @@ openRenderingProspect = async function(id) {
     });
     const v2Pack=v2Packs.find(pack=>String(pack.status||"").toUpperCase()==="RENDER_READY") || v2Packs[0] || null;
     const v2Variants=(d.render_v2_variants || [])
-      .filter(v=>v2Pack && v.render_pack_id===v2Pack.id)
+      .filter(v=>v2Pack && v.render_pack_id===v2Pack.id && String(v.variant_key)==="A")
       .sort((a,b)=>String(a.variant_key).localeCompare(String(b.variant_key)));
 
     const allVariants = d.render_variants || [];
@@ -257,10 +257,8 @@ openRenderingProspect = async function(id) {
       renderContent += '<span>ImpresaX concentra il lavoro su un unico concept desktop + mobile. MASTER = human-only.</span></div>';
       renderContent += '<div class="render-v2-pack-meta">';
       renderContent += '<span>SET QA <strong>' + esc(v2Pack.set_qa_score || "—") + ' · ' + esc(v2Pack.set_qa_status || "—") + '</strong></span>';
-      renderContent += '<span>DIVERSITY A/B <strong>' + esc(v2Pack.diversity_ab || "—") + '</strong></span>';
-      renderContent += '<span>A/C <strong>' + esc(v2Pack.diversity_ac || "—") + '</strong></span>';
-      renderContent += '<span>B/C <strong>' + esc(v2Pack.diversity_bc || "—") + '</strong></span>';
-      renderContent += '<span>WINNER SUGGERITO <strong>' + esc(v2Pack.winner_variant || "—") + '</strong></span>';
+      renderContent += '<span>CONCEPT <strong>IMPRESAX MASTER</strong></span>';
+      renderContent += '<span>DELIVERY <strong>DESKTOP 1440 + MOBILE 390</strong></span>';
       renderContent += '<span>STANDARD <strong>' + esc(v2Pack.quality_contract_version || "—") + '</strong></span>';
       renderContent += '<span>RETROFIT <strong>' + esc(v2Pack.retrofit_status || (String(v2Pack.retrofit_required)==="true" ? "REQUIRED" : "—")) + '</strong></span>';
       renderContent += '</div>';
@@ -283,7 +281,7 @@ openRenderingProspect = async function(id) {
 
     let head = '<div class="detail-head render-detail-head"><div>';
     head += '<span class="kicker">PROGETTAZIONE VISIVA</span><h3>' + esc(p.business_name) + '</h3>';
-    head += '<p class="reference-note">Confronta A/B/C su desktop e mobile. Il winner è solo suggerito: nessuna variante diventa MASTER senza approvazione umana.</p></div>';
+    head += '<p class="reference-note">Un solo concept ImpresaX ad altissimo livello. Apri desktop o mobile per vedere la homepage completa a grandezza naturale; MASTER solo dopo approvazione umana.</p></div>';
     if (p.live_url) {
       head += '<a class="preview-site prominent" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
     } else {
