@@ -42,6 +42,7 @@ export const PREMIUM_BUTTON_SYSTEM_REQUIRED = true;
 export const MATERIAL_DEPTH_REQUIRED = true;
 export const DETAIL_CRAFT_STANDARD = "R113_DETAIL_CRAFTSMANSHIP_V1";
 export const PREMIUM_SECTION_IDENTITY_STANDARD = "R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1";
+export const FLAGSHIP_ARCHITECTURE_STANDARD = "R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1";
 export const SERVICE_INDEX_ALIGNMENT_REQUIRED = true;
 export const EDITORIAL_FEATURE_IMAGE_REQUIRED_WHEN_AVAILABLE = true;
 export const TRUST_BACKGROUND_IMAGE_PREFERRED = true;
@@ -84,7 +85,8 @@ export const QA_SCORE_KEYS = Object.freeze([
   "premium_feel","wow_effect","prospect_desire","preview_sales_power",
   "section_premium_quality","iconography_quality","graphic_support_quality","trust_visual_quality",
   "commercial_desirability","client_wow_effect",
-  "luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality","high_end_typography",
+  "luxury_b2b_feel","premium_visual_rhythm","editorial_showcase_quality",
+  "flagship_presence","section_identity","editorial_composition","luxury_simplicity","fifteen_k_credibility","high_end_typography",
   "brand_elevation","cta_spectacle","showroom_conversion_power",
   "section_imagery_quality","real_imagery_credibility","copy_sophistication",
   "section_copy_distinctness","visual_storytelling","surface_personalization",
