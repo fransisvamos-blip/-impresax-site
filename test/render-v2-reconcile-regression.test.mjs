@@ -587,6 +587,15 @@ test("R113 detail craftsmanship locks alignment imagery trust background and dem
   assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
 });
 
+test("R116 mobile flagship containment and overflow diagnostics stay enforced",()=>{
+  assert.match(browser,/overflow_elements/);
+  assert.match(browser,/x\.right>root\.clientWidth\+2 \|\| x\.left<-2/);
+  assert.match(r116Flagship,/\.ixf-hero__inner,.ixf-positioning__grid/);
+  assert.match(r116Flagship,/min-width:0!important;max-width:100%!important/);
+  assert.match(r116Flagship,/\.ixg-actions\{max-width:100%!important;flex-wrap:wrap!important\}/);
+  assert.doesNotMatch(r116Flagship,/html,body\{[^}]*overflow-x:hidden/);
+});
+
 test("R116 pilot kick cannot route full redesign through precomputed mode",()=>{
   assert.match(index,/const structuralRedesign=\/STRUCTURAL_DIVERGENCE_REWORK\|FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\/i/);
   assert.match(index,/cabina_precomputed:!structuralRedesign/);
