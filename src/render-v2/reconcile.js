@@ -1468,6 +1468,60 @@ async function syncLockedPilotCandidate(sql,pilotControl) {
   return {pack_id:packId,variant_key:"A",revision:nextRevision,revision_id:candidate.revision_id,score:candidate.score};
 }
 
+async function normalizeCabinaPreviewHolds(sql) {
+  const rows=await sql`
+    select p.id,p.status
+    from render_v2_packs p
+    where p.shadow_mode=true
+      and p.approved_reference=false
+      and p.selected_variant_revision_id is null
+      and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
+      and p.status<>'PREVIEW_READY'
+      and (
+        select count(*)::int
+        from render_v2_variants v
+        where v.render_pack_id=p.id
+      )=3
+      and (
+        select count(*)::int
+        from render_v2_variants v
+        join render_variant_revisions r
+          on r.variant_id=v.id
+         and r.revision=v.current_revision
+        where v.render_pack_id=p.id
+          and v.status='PREVIEW_READY'
+          and r.status='PREVIEW_READY'
+          and nullif(r.desktop_r2_key,'') is not null
+          and nullif(r.mobile_r2_key,'') is not null
+      )=3
+      and not exists (
+        select 1
+        from render_workflows_v2 w
+        where w.render_pack_id=p.id
+          and w.workflow_type='VARIANT'
+          and w.status in ('QUEUED','RUNNING','PAUSED')
+      )
+    order by p.updated_at
+    limit 50`;
+  const normalized=[];
+  for(const row of rows) {
+    await setPackStatus(sql,row.id,"PREVIEW_READY",{
+      cabina_visual_review_hold:true,
+      retrofit_status:"CABINA_VISUAL_REVIEW",
+      master_auto_approve:false,
+      cabina_preview_state_normalized_at:new Date().toISOString(),
+      cabina_preview_state_normalized_from:String(row.status||"")
+    });
+    normalized.push({
+      pack_id:row.id,
+      from_status:String(row.status||""),
+      to_status:"PREVIEW_READY",
+      reason:"COMPLETE_CABINA_PREVIEW_SET"
+    });
+  }
+  return normalized;
+}
+
 export async function reconcileV2(env) {
   const sql=db(env);
   const summary={started:[],reconciled:[],errors:[]};
@@ -1507,6 +1561,7 @@ export async function reconcileV2(env) {
     });
     return summary;
   }
+  summary.cabina_preview_hold_normalization=await normalizeCabinaPreviewHolds(sql);
   summary.prospect_projection_sync=await syncProspectRenderProjection(sql);
   summary.set_qa_cache_sync=await syncCurrentSetQaCaches(sql);
   summary.engine_hot_swap_cancelled=await cancelSupersededStructuralRework(env,sql);
