@@ -3,6 +3,8 @@ import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVari
 import { prospectCircuitState, packCircuitOverridePending, consumePackCircuitOverride } from "./circuit.js";
 import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
 const QUALITY_UPGRADE_MAX_ATTEMPTS=3;
+const R107_STABLE_REARM_EPOCH="R107_STABLE_2026_10_20_A";
+const R107_STABLE_REARM_CUTOFF="2026-10-20T00:01:00.000Z";
 
 function platformStatus(value) {
   const raw=typeof value==="string" ? value : value?.status;
@@ -1468,6 +1470,88 @@ async function syncLockedPilotCandidate(sql,pilotControl) {
   return {pack_id:packId,variant_key:"A",revision:nextRevision,revision_id:candidate.revision_id,score:candidate.score};
 }
 
+async function rearmLegacyR107EligiblePacks(sql) {
+  const eligible=await sql`
+    select p.id,p.status,p.prospect_id,p.input_pack_id,p.metadata,ip.payload,
+           (
+             select max(w.last_event_at)
+             from render_workflows_v2 w
+             where w.render_pack_id=p.id
+           ) as latest_workflow_at
+    from render_v2_packs p
+    join render_input_packs ip on ip.id=p.input_pack_id
+    where p.shadow_mode=true
+      and p.approved_reference=false
+      and p.selected_variant_revision_id is null
+      and p.status in ('ESCALATION_REQUIRED','INPUT_BLOCKED')
+      and ip.certification_status='PASS'
+      and coalesce(jsonb_array_length(ip.certification_issues),0)=0
+      and upper(coalesce(ip.payload->>'contact_data_state','')) in ('VERIFICATO','V2_FIRST_PARTY_VERIFIED')
+      and nullif(trim(coalesce(ip.payload->>'verified_contacts','')),'') is not null
+      and coalesce(p.metadata->>'r107_stable_rearm_epoch','')<>${R107_STABLE_REARM_EPOCH}
+      and coalesce((
+        select max(w.last_event_at)
+        from render_workflows_v2 w
+        where w.render_pack_id=p.id
+      ),p.updated_at) < ${R107_STABLE_REARM_CUTOFF}::timestamptz
+      and not exists (
+        select 1
+        from render_workflows_v2 w
+        where w.render_pack_id=p.id
+          and w.status in ('QUEUED','RUNNING','PAUSED')
+      )
+      and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=false
+      and (
+        p.status='ESCALATION_REQUIRED'
+        or (
+          p.status='INPUT_BLOCKED'
+          and (
+            coalesce((p.metadata->>'graphic_assisted_r107')::boolean,false)=true
+            or upper(coalesce(ip.payload->>'asset_mode',''))='ZERO_PHOTO_PREMIUM'
+          )
+        )
+      )
+    order by p.priority asc,p.updated_at asc
+    limit 50`;
+
+  const rearmed=[];
+  for(const row of eligible) {
+    const common={
+      r107_stable_rearm_epoch:R107_STABLE_REARM_EPOCH,
+      r107_stable_rearmed_at:new Date().toISOString(),
+      r107_retrofit_required:true,
+      r107_retrofit_requested:true,
+      retrofit_required:true,
+      retrofit_status:"QUEUED",
+      deterministic_planning_required:true,
+      master_auto_approve:false,
+      auto_recovery_attempt:0,
+      auto_recovery_exhausted:false,
+      recovery_exhausted:false,
+      quality_upgrade_exhausted:false,
+      recovery_wave_needs_next_attempt:false,
+      auto_recovery_partial_open:false
+    };
+    if(String(row.status)==="INPUT_BLOCKED") {
+      await setPackStatus(sql,row.id,"INPUT_READY",{
+        ...common,
+        graphic_assisted_r107:true,
+        remediation_exhausted:false,
+        input_remediation_required:false,
+        legacy_input_block_cleared_by:"R107_CERTIFIED_ZERO_PHOTO_GRAPHIC_ASSIST"
+      });
+      rearmed.push({pack_id:row.id,from_status:"INPUT_BLOCKED",to_status:"INPUT_READY",reason:"CERTIFIED_R107_ZERO_PHOTO_REARM"});
+    } else {
+      await setPackStatus(sql,row.id,"ESCALATION_REQUIRED",{
+        ...common,
+        legacy_recovery_exhaustion_cleared_by:"R107_STABLE_ENGINE_EPOCH"
+      });
+      rearmed.push({pack_id:row.id,from_status:"ESCALATION_REQUIRED",to_status:"ESCALATION_REQUIRED",reason:"R107_STABLE_ENGINE_ONE_TIME_REARM"});
+    }
+  }
+  return rearmed;
+}
+
 async function normalizeCabinaPreviewHolds(sql) {
   const rows=await sql`
     select p.id,p.status
@@ -1561,6 +1645,7 @@ export async function reconcileV2(env) {
     });
     return summary;
   }
+  summary.r107_stable_rearm=await rearmLegacyR107EligiblePacks(sql);
   summary.cabina_preview_hold_normalization=await normalizeCabinaPreviewHolds(sql);
   summary.prospect_projection_sync=await syncProspectRenderProjection(sql);
   summary.set_qa_cache_sync=await syncCurrentSetQaCaches(sql);
