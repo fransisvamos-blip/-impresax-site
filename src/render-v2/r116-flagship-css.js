@@ -366,6 +366,54 @@ export const R116_FLAGSHIP_CSS = `
 }
 .ixg-bridge[data-r116-set-piece="bridge"] .ixg-actions{align-self:end!important;margin:0!important}
 
+
+/* R116 final partner + imagery differentiation pass. */
+.ixf-services .ixg-services__composition>.ixg-section-visual img{
+ object-position:44% 58%!important;
+ transform:scale(1.015)!important;
+ transform-origin:center!important
+}
+.ixg-feature--one .ixg-feature__stage.has-visual>.ixg-section-visual{overflow:hidden!important}
+.ixg-feature--one .ixg-feature__stage.has-visual>.ixg-section-visual img{
+ object-position:82% 48%!important;
+ transform:scale(1.11)!important;
+ transform-origin:78% 50%!important;
+ filter:saturate(.72) contrast(1.12) brightness(.88)!important
+}
+.ixg-partner-card--demo{
+ position:relative!important;
+ overflow:hidden!important;
+ border:1px solid rgba(32,34,36,.14)!important;
+ background:#ebe9e4!important;
+ opacity:1!important;
+ padding:28px!important
+}
+.ixg-partner-card--demo:before{
+ content:"SLOT DEMO"!important;
+ position:absolute!important;left:26px!important;top:24px!important;
+ font:800 8px/1 var(--ix-body-font)!important;letter-spacing:.16em!important;
+ color:rgba(32,34,36,.48)!important
+}
+.ixg-partner-card--demo:after{
+ content:""!important;position:absolute!important;
+ left:26px!important;right:26px!important;bottom:24px!important;height:2px!important;
+ background:linear-gradient(90deg,var(--ix-brand-primary) 0 30%,rgba(32,34,36,.16) 30% 100%)!important
+}
+.ixg-partner-card--demo .ixg-demo-partner-lines{display:none!important}
+.ixg-partner-card--demo .ixg-demo-partner-mark{
+ width:110px!important;height:86px!important;margin:auto 0 38px!important;
+ opacity:.82!important;filter:none!important
+}
+.ixg-partner-card--demo .ixg-demo-partner-mark i{background:#252729!important}
+.ixg-partner-card--demo .ixg-demo-partner-mark--1 i:nth-child(1),
+.ixg-partner-card--demo .ixg-demo-partner-mark--1 i:nth-child(2),
+.ixg-partner-card--demo .ixg-demo-partner-mark--1 i:nth-child(3){height:7px!important}
+.ixg-partner-card--demo .ixg-demo-partner-mark--2 i:nth-child(1){border-color:#252729!important;background:transparent!important}
+.ixg-partner-card--demo .ixg-demo-partner-mark--2 i:nth-child(3){background:var(--ix-brand-primary)!important}
+.ixg-partner-card--demo:nth-child(3){background:#e4e2dd!important}
+.ixg-partner-card--demo:nth-child(4){background:#dedcd7!important}
+.ixg-partner-card--demo:nth-child(4) .ixg-demo-partner-mark{transform:rotate(-6deg)!important}
+
 @media(max-width:980px){
  .ixf-hero__inner{grid-template-columns:1fr!important;grid-template-rows:auto!important;align-content:end!important}
  .ixf-hero__meta-rail{grid-column:1!important;grid-row:auto!important;grid-template-columns:repeat(3,1fr)!important}
@@ -385,6 +433,11 @@ export const R116_FLAGSHIP_CSS = `
 }
 
 @media(max-width:700px){
+ .ixg-partner-card--demo{min-height:128px!important;padding:18px!important}
+ .ixg-partner-card--demo:before{left:16px!important;top:15px!important;font-size:7px!important}
+ .ixg-partner-card--demo:after{left:16px!important;right:16px!important;bottom:14px!important}
+ .ixg-partner-card--demo .ixg-demo-partner-mark{width:72px!important;height:54px!important;margin:auto 0 24px!important;transform:scale(.78)!important;transform-origin:left center!important}
+
  .ix-v2-header{padding:10px 10px 0!important}
  .ix-v2-header-inner{min-height:62px!important;padding:8px 8px 8px 12px!important;grid-template-columns:minmax(0,1fr) auto!important}
  .ix-v2-nav{display:none!important}
