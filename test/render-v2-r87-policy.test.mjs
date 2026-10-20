@@ -139,7 +139,7 @@ test("policy detects cheap internal copy and section visual inventory",()=>{
   assert.equal(semantic.trust,"SAFETY");
   assert.notEqual(semantic.services,"STOCKISH");
   assert.equal(new Set(semantic.used).size,semantic.used.length);
-  assert.equal(semantic.strategy,"R107_SEMANTIC_SECTION_MAPPING_V2");
+  assert.equal(semantic.strategy,"R108_SECTION_COHERENCE_STRICT_V1");
 });
 
 test("workflow and compiler contain hard R90 gates",async()=>{
