@@ -676,6 +676,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
+      const lockedSha=String(context.packMetadata?.hero_lock_sha256||"").trim().toLowerCase();
+      if(lockedSha) {
+        const locked=await reusableHeroAssetBySha(sql,params.packId,params.variantKey,lockedSha);
+        if(!locked) throw new Error("SYSTEM_INVARIANT:CABINA_HERO_LOCK_NOT_FOUND");
+        return {...locked,cabina_hero_lock:true,hero_selection_mode:"CABINA_CURATED_HERO_LOCK"};
+      }
       const verified=explicitHeroAsset(context.assets,context.inputPayload);
       if(verified) return verified;
       const structuralRework=
