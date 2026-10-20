@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations, r107UltraVisualViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -209,6 +209,14 @@ export function validateRenderSpec(spec, manifests) {
   }
   if(r107UltraVisualPolicy) {
     for(const issue of r107UltraVisualViolations(main,css)) issues.push(issue);
+  }
+
+  if(String(spec?.home_depth_standard||"")==="R111_15K_HOME_DEPTH_ARCHITECTURE_V1") {
+    for(const issue of homeDepthViolations(main,spec)) issues.push(issue);
+    const blueprint=Array.isArray(spec?.section_blueprint)?spec.section_blueprint:[];
+    if(JSON.stringify(blueprint)!==JSON.stringify(sectionIds)) {
+      issues.push("R111_BLUEPRINT_SECTION_ORDER_MISMATCH");
+    }
   }
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
