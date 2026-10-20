@@ -1,4 +1,4 @@
-name: DEDIL R109 trust-partner deploy and render
+name: DEDIL R109 strong trust deploy and render
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-r109-trust-partner-v1
+      INSTANCE_ID: rv2-8595c9d2-9d53-424b-a660-82102b9db5b3-A-r109-strong-trust-v1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"dedil-r109-trust-partner-v1","initialFeedback":{"reason":"ENGINE_CONTRACT_UPGRADE","issues":["R109 15K art-direction gate with strict trust/partner separation.","Keep Cabina-locked approved hero.","Enrich Perché scegliere noi with verified company facts; move U-Power into a separate Marchi e partnership section.","All sections must pass premium geometry, contrast, saturation and semantic coherence."],"actions":["Prefer no visual over a wrong visual.","One section equals one semantic message, one coherent visual system and locked grid.","Keep the approved hero unchanged.","Apply blocking contrast, saturation and premium polish globally.","Keep external AI disabled."]}}'
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"8595c9d2-9d53-424b-a660-82102b9db5b3","inputPackId":"0db11b64-b638-4dff-90fd-41b132c309af","variantId":"1f5af9d8-c9a8-4659-b389-84b9cc7f528d","variantKey":"A","parentInstanceId":"rpv2-8595c9d2-9d53-424b-a660-82102b9db5b3","eventPrefix":"dedil-r109-strong-trust-v1","initialFeedback":{"reason":"ENGINE_CONTRACT_UPGRADE","issues":["R109 15K art-direction gate with strict trust/partner separation.","Keep Cabina-locked approved hero.","Build Perché scegliere noi from strong verified company reasons only; keep U-Power exclusively inside a separate Marchi e partnership section.","All sections must pass premium geometry, contrast, saturation and semantic coherence."],"actions":["Prefer no visual over a wrong visual.","One section equals one semantic message, one coherent visual system and locked grid.","Keep the approved hero unchanged.","Apply blocking contrast, saturation and premium polish globally.","Keep external AI disabled."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json
       - name: Wait for DEDIL R108 final
         shell: bash
