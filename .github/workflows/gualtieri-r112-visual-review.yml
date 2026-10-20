@@ -1,4 +1,4 @@
-name: Gualtieri R112 visual review
+name: Gualtieri R112 final visual review
 
 on:
   push:
@@ -19,15 +19,15 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Fetch R112 screenshots
+      - name: Fetch final R112 screenshots
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p review
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-104/7ba0aa4c-5598-4ef8-a81e-6d9fd4e03ced/A/r4/desktop-1440.jpg" --remote --file review/gualtieri-r112-desktop.jpg
-          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-104/7ba0aa4c-5598-4ef8-a81e-6d9fd4e03ced/A/r4/mobile-390.jpg" --remote --file review/gualtieri-r112-mobile.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-104/7ba0aa4c-5598-4ef8-a81e-6d9fd4e03ced/A/r5/desktop-1440.jpg" --remote --file review/gualtieri-r112-desktop.jpg
+          npx wrangler r2 object get "impresax-render-v2-shadow/render-v2/CZ-104/7ba0aa4c-5598-4ef8-a81e-6d9fd4e03ced/A/r5/mobile-390.jpg" --remote --file review/gualtieri-r112-mobile.jpg
       - uses: actions/upload-artifact@v4
         with:
-          name: gualtieri-r112-visual-review
+          name: gualtieri-r112-final-visual-review
           path: review/
           retention-days: 1
