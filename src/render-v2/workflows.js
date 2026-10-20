@@ -655,17 +655,27 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           if(/^TRUST_\d+$/.test(key) || /^PARTNER_\d+$/.test(key) || /^TRUST_METRIC_/.test(key)) delete copyManifest[key];
         }
         const trustFacts=verifiedList(inputPayload.verified_trust||"");
-        let trustIndex=0;
-        let partnerIndex=0;
+        const serviceFacts=verifiedList(inputPayload.verified_services||"");
+        const companyReasons=[];
+        const partnerFacts=[];
         for(const fact of trustFacts) {
           if(/\b(?:u[-\s]?power|rivenditor|dealer|partner|autorizzat)\b/i.test(fact)) {
-            partnerIndex++;
-            copyManifest["PARTNER_"+partnerIndex]=fact;
-          } else {
-            trustIndex++;
-            copyManifest["TRUST_"+trustIndex]=fact;
+            partnerFacts.push(fact);
+            continue;
           }
+          if(/\b(?:fatturato|ricavi|revenue|turnover|dipendenti|employees|headcount|addetti)\b/i.test(fact)) continue;
+          companyReasons.push(fact);
         }
+        for(const service of serviceFacts) {
+          if(companyReasons.length>=3) break;
+          if(!companyReasons.some(x=>x.toLowerCase()===service.toLowerCase())) companyReasons.push(service);
+        }
+        if(companyReasons.length<3 && String(inputPayload.city||"").trim()) {
+          companyReasons.push("Presenza operativa a "+String(inputPayload.city).trim()+".");
+        }
+        companyReasons.slice(0,3).forEach((fact,i)=>{ copyManifest["TRUST_"+(i+1)]=fact; });
+        partnerFacts.forEach((fact,i)=>{ copyManifest["PARTNER_"+(i+1)]=fact; });
+        const partnerIndex=partnerFacts.length;
         copyManifest.TRUST_TITLE="Perché scegliere noi";
         copyManifest.TRUST_INTRO=String(inputPayload.city||"").trim()
           ? "Struttura, affidabilità e presenza operativa a "+String(inputPayload.city).trim()+"."
