@@ -23,8 +23,8 @@ import {
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R111 showroom standard extends the zero-extra-AI ultra-visual contract with 15K home depth",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R111_15K_HOME_DEPTH_V1");
+test("R112 showroom standard extends home depth with section substance and commercial density",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R112_SECTION_SUBSTANCE_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
@@ -32,6 +32,11 @@ test("R111 showroom standard extends the zero-extra-AI ultra-visual contract wit
   assert.equal(showroomPolicySummary().visual.home_depth_standard,"R111_15K_HOME_DEPTH_ARCHITECTURE_V1");
   assert.equal(showroomPolicySummary().visual.homepage_sections,"8_TO_12_SUBSTANTIAL_SCENES");
   assert.equal(showroomPolicySummary().visual.minimum_editorial_feature_scenes,2);
+  assert.equal(showroomPolicySummary().visual.section_substance_standard,"R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1");
+  assert.equal(showroomPolicySummary().visual.minimum_high_value_middle_sections,3);
+  assert.equal(showroomPolicySummary().visual.minimum_rich_editorial_features,2);
+  assert.equal(showroomPolicySummary().visual.why_us_reason_range,"4_TO_6");
+  assert.equal(showroomPolicySummary().visual.duplicate_closing_cta,"FORBIDDEN");
   assert.equal(showroomPolicySummary().visual.section_surfaces,"ART_DIRECTED_LAYERED_BRAND_SPECIFIC");
   assert.equal(showroomPolicySummary().visual.minimum_brand_rich_sections,2);
   assert.equal(showroomPolicySummary().visual.logo_watermark,"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED");
