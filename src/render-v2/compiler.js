@@ -213,7 +213,10 @@ export function validateRenderSpec(spec, manifests) {
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
   const usedSectionAssets=usedAssetKeys.filter(key=>key!=="HERO_VISUAL");
-  const requiredSectionAssets=availableSectionAssets.length>=MIN_SECTION_VISUALS ? MIN_SECTION_VISUALS : 0;
+  const strictSectionCoherence=String(spec?.section_coherence_standard||"")==="R108_SECTION_COHERENCE_STRICT_V1";
+  const requiredSectionAssets=strictSectionCoherence
+    ? (availableSectionAssets.length>0 ? 1 : 0)
+    : (availableSectionAssets.length>=MIN_SECTION_VISUALS ? MIN_SECTION_VISUALS : 0);
   if(requiredSectionAssets>0 && usedSectionAssets.length<requiredSectionAssets) {
     issues.push("SECTION_VISUAL_DENSITY_REQUIRED:"+usedSectionAssets.length+"/"+requiredSectionAssets);
   }
@@ -246,15 +249,15 @@ export function validateRenderSpec(spec, manifests) {
     const re=new RegExp('<section\\b[^>]*\\bid\\s*=\\s*["\\\']'+id+'["\\\'][^>]*>[\\s\\S]*?<\\/section>','i');
     return (main.match(re)||[])[0]||"";
   };
-  if(requiredSectionAssets>=MIN_SECTION_VISUALS) {
+  if(requiredSectionAssets>0) {
     const sectionsUsingVisuals=sectionIds
       .filter(id=>id!=="hero")
       .filter(id=>{
         const html=sectionHtml(id);
         return usedSectionAssets.some(token=>html.includes("{{asset:"+token+"}}"));
       });
-    if(new Set(sectionsUsingVisuals).size<MIN_SECTION_VISUALS) {
-      issues.push("SECTION_VISUAL_DISTRIBUTION_REQUIRED:"+new Set(sectionsUsingVisuals).size+"/"+MIN_SECTION_VISUALS);
+    if(new Set(sectionsUsingVisuals).size<requiredSectionAssets) {
+      issues.push("SECTION_VISUAL_DISTRIBUTION_REQUIRED:"+new Set(sectionsUsingVisuals).size+"/"+requiredSectionAssets);
     }
   }
   const positioningHtml=sectionHtml("positioning");
