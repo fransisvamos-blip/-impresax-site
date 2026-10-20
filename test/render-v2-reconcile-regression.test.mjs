@@ -531,7 +531,7 @@ test("premium pilot requires iconography and graphic richness",()=>{
 
 
 test("logo-first partner proof remains a separate branded section and editorial ledgers remain available",()=>{
-  assert.match(ai,/PARTNER_1/);
+  assert.match(ai,/out\["PARTNER_"\+partnerOutIndex\]/);
   assert.match(ai,/PARTNER_SECTION_TITLE/);
   assert.match(grammar,/ixg-partner-proof/);
   assert.match(grammar,/ixg-partner-logo/);
