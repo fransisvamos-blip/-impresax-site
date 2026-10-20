@@ -18,6 +18,13 @@ export const LOW_DETAIL_IMAGERY_FORBIDDEN = true;
 export const RENDER_DEVICE_SCALE_FACTOR = 2;
 export const RENDER_JPEG_QUALITY = 96;
 export const QA_JPEG_QUALITY = 72;
+export const HERO_FIRST_PIPELINE_REQUIRED = true;
+export const HERO_SELECTION_PREMIUM_RANKING_REQUIRED = true;
+export const TEXT_BACKGROUND_CONTRAST_REQUIRED = true;
+export const FULL_SIZE_CLIENT_PREVIEW_REQUIRED = true;
+export const PREMIUM_SECTION_POLISH_REQUIRED = true;
+export const PREMIUM_BUTTON_SYSTEM_REQUIRED = true;
+export const MATERIAL_DEPTH_REQUIRED = true;
 
 // Delivery policy: new prospect packs ship one ImpresaX-authored concept.
 // Legacy A/B/C packs remain readable/recoverable for backward compatibility.
