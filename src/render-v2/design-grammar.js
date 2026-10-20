@@ -2011,13 +2011,15 @@ body{font-family:var(--ix-body-font)}
  linear-gradient(145deg,rgba(255,255,255,.08),rgba(17,17,17,.035));opacity:.78}
 .ixg-feature__stage.no-visual:after{content:"";position:absolute;inset:11%;border:1px solid currentColor;opacity:.18;transform:rotate(-2deg);pointer-events:none}
 @media(max-width:700px){
- .ixg-feature{padding:68px 0}
- .ixg-feature__grid,.ixg-feature--two .ixg-feature__grid{grid-template-columns:1fr;gap:34px}
- .ixg-feature__stage{min-height:240px}
+ .ixg-feature{padding:52px 0}
+ .ixg-feature__grid,.ixg-feature--two .ixg-feature__grid{grid-template-columns:1fr;gap:24px}
+ .ixg-feature__stage{min-height:200px}
+ .ixg-feature__stage.no-visual{min-height:150px;max-height:180px}
  .ixg-feature__copy h2{max-width:100%}
  .ixg-feature__evidence{grid-template-columns:1fr}
- .ixg-feature__evidence-row{min-height:70px}
- .ixg-feature__device{min-height:240px}
+ .ixg-feature__evidence-row{min-height:66px}
+ .ixg-feature__device{min-height:200px}
+ .ixg-feature__stage.no-visual .ixg-feature__device{min-height:150px}
 }
 ` : "")+(variantKey==="C" ? `
 /* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
