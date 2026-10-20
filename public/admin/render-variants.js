@@ -121,7 +121,7 @@ function renderCertifiedVariantCard(variant, pack, prospectId) {
   let html="";
   html += '<article class="render-pack-card render-variant-card render-v2-certified ' + (winner ? 'winner-suggested ' : '') + (selected ? 'approved' : '') + '">';
   html += '<div class="render-pack-head"><div>';
-  html += '<span class="kicker">VARIANT ' + esc(variant.variant_key) + '</span>';
+  html += '<span class="kicker">CONCEPT IMPRESAX</span>';
   html += '<h3>' + esc(variant.creative_direction || variant.name || ("Variant "+variant.variant_key)) + '</h3>';
   const compliance=renderR107Compliance(variant,pack);
   html += '<div class="render-v2-badges">';
