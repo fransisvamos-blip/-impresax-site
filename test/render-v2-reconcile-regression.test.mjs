@@ -562,6 +562,15 @@ test("R112 browser QA treats SVG hero fallback as resolution-independent",()=>{
   assert.match(browser,/!diag\.hero_image_is_vector[\s\S]{0,120}hero_image_resolution_ratio/);
 });
 
+test("R112 preserves real hero identity by upscaling raster before vector fallback",()=>{
+  assert.match(workflows,/createR112UpscaledHeroAsset/);
+  assert.match(workflows,/upscaleR107Hero/);
+  assert.match(workflows,/hero-resolution-raster-upscale/);
+  assert.match(workflows,/R112_DETERMINISTIC_RASTER_UPSCALE/);
+  assert.match(workflows,/fallbackMode="RASTER_UPSCALE"/);
+  assert.match(workflows,/VECTOR_LAST_RESORT/);
+});
+
 test("R112 zero-AI hero resolution failures auto-fallback to scalable vector art",()=>{
   assert.match(workflows,/HERO_SOURCE_RESOLUTION_TOO_LOW/);
   assert.match(workflows,/hero-resolution-vector-fallback/);
