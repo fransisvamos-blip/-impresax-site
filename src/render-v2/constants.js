@@ -1,10 +1,10 @@
-export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V13_R111_HOME_DEPTH";
-export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_12_R111_HOME_DEPTH";
-export const COMPILER_VERSION = "RS_COMPILER_V1_13_R111_HOME_DEPTH";
+export const QUALITY_CONTRACT_VERSION = "RS_QUALITY_V14_R112_SECTION_SUBSTANCE";
+export const EXECUTION_ENGINE_VERSION = "RS_ENGINE_V2_13_R112_SECTION_SUBSTANCE";
+export const COMPILER_VERSION = "RS_COMPILER_V1_14_R112_SECTION_SUBSTANCE";
 export const MODEL_ROUTE_VERSION = "ROUTES_2026_10_D_SHOWROOM";
-export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V15_R111_HOME_DEPTH";
+export const PROMPT_VERSION = "RENDER_V2_PROMPTS_V16_R112_SECTION_SUBSTANCE";
 export const REMEDIATION_POLICY_VERSION = "V12_R107_MEDIA_DISCOVERY_ZERO_AI_POLICY";
-export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R111_15K_HOME_DEPTH_V1";
+export const SHOWROOM_RULES_VERSION = "IMPRESAX_RENDER_STANDARD_R112_SECTION_SUBSTANCE_V1";
 export const RENDER_GENERATION_MODE = "CHATGPT_CABINA_ZERO_EXTRA_AI";
 export const EXTERNAL_AI_CALLS_ALLOWED = false;
 export const MIN_SECTION_VISUALS = 3;
@@ -31,6 +31,13 @@ export const MIN_HOME_SECTIONS = 8;
 export const MAX_HOME_SECTIONS = 12;
 export const MIN_HOME_EDITORIAL_FEATURES = 2;
 export const MIN_HOME_SUBSTANTIAL_SECTIONS = 7;
+export const SECTION_SUBSTANCE_STANDARD = "R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1";
+export const MIN_WHY_US_REASONS = 4;
+export const MAX_WHY_US_REASONS = 6;
+export const MIN_HIGH_VALUE_MIDDLE_SECTIONS = 3;
+export const MIN_RICH_EDITORIAL_FEATURES = 2;
+export const CTA_DUPLICATION_FORBIDDEN = true;
+export const EMPTY_DECORATIVE_SECTION_FORBIDDEN = true;
 export const PREMIUM_BUTTON_SYSTEM_REQUIRED = true;
 export const MATERIAL_DEPTH_REQUIRED = true;
 
@@ -96,6 +103,8 @@ export const QA_SCORE_KEYS = Object.freeze([
   "anti_template_feel",
   "anti_fake_ai_credibility",
   "homepage_richness","section_depth","content_architecture","commercial_story_depth",
+  "section_substance","commercial_depth","middle_scroll_value","why_us_strength",
+  "anti_empty_layout","cta_distinction","mobile_density_quality",
   "cross_viewport_art_direction"
 ]);
 
