@@ -664,7 +664,7 @@ test("R107 contract upgrade is fully deterministic and reuses certified hero for
   assert.doesNotMatch(workflows,/ENGINE_CONTRACT_UPGRADE" && !masterProfile/);
   assert.match(workflows,/const contractUpgradeDeterministic=/);
   assert.match(workflows,/context\.r107Retrofit===true/);
-  assert.match(workflows,/if\(contractUpgradeDeterministic \|\| \(cycle===1/);
+  assert.match(workflows,/if\(zeroAiQueueDeterministic \|\| contractUpgradeDeterministic \|\| \(cycle===1/);
   assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,320}context\.r107Retrofit!==true/);
   assert.match(reconcile,/R107 premium overlay-hero ultra-visual contract/);
   assert.match(reconcile,/2x device density and premium JPEG quality/);
@@ -755,7 +755,7 @@ test("R107 certified inputs plan truth and A/B/C directions deterministically wi
   assert.match(workflows, /async function deterministicR107Directions\(inputPayload=\{\},assetTokens=\[\]\)/);
   assert.match(workflows, /R107_DETERMINISTIC_TRUTH/);
   assert.match(workflows, /R107_DETERMINISTIC_DIRECTION_PLANNER/);
-  assert.match(workflows, /const deterministicPlanning=!EXTERNAL_AI_CALLS_ALLOWED/);
+  assert.match(workflows, /const deterministicPlanning=zeroAiDeterministicMode/);
   assert.match(workflows, /content-truth-deterministic/);
   assert.match(workflows, /creative-directions-deterministic/);
   assert.doesNotMatch(workflows, /if\(!EXTERNAL_AI_CALLS_ALLOWED && \(!storedTruth \|\| !storedDirections\)\)/);
