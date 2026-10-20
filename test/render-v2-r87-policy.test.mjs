@@ -23,12 +23,15 @@ import {
 } from "../src/render-v2/showroom-policy.js";
 import { buildCopyManifest } from "../src/render-v2/ai.js";
 
-test("R107 showroom standard is the global zero-extra-AI ultra-visual contract",()=>{
-  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1");
+test("R111 showroom standard extends the zero-extra-AI ultra-visual contract with 15K home depth",()=>{
+  assert.equal(SHOWROOM_RULES_VERSION,"IMPRESAX_RENDER_STANDARD_R111_15K_HOME_DEPTH_V1");
   assert.equal(RENDER_GENERATION_MODE,"CHATGPT_CABINA_ZERO_EXTRA_AI");
   assert.equal(EXTERNAL_AI_CALLS_ALLOWED,false);
   assert.equal(MIN_SECTION_VISUALS,3);
   assert.equal(showroomPolicySummary().visual.minimum_section_visuals,3);
+  assert.equal(showroomPolicySummary().visual.home_depth_standard,"R111_15K_HOME_DEPTH_ARCHITECTURE_V1");
+  assert.equal(showroomPolicySummary().visual.homepage_sections,"8_TO_12_SUBSTANTIAL_SCENES");
+  assert.equal(showroomPolicySummary().visual.minimum_editorial_feature_scenes,2);
   assert.equal(showroomPolicySummary().visual.section_surfaces,"ART_DIRECTED_LAYERED_BRAND_SPECIFIC");
   assert.equal(showroomPolicySummary().visual.minimum_brand_rich_sections,2);
   assert.equal(showroomPolicySummary().visual.logo_watermark,"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED");
@@ -90,10 +93,10 @@ test("copy manifest never turns revenue or employees into homepage metrics",()=>
   },{brand_gate_mode:"LOGO_FIRST_V1",city:"Catanzaro"});
   const values=Object.values(manifest).join(" | ");
   assert.doesNotMatch(values,/17,94|dipendenti/i);
-  assert.equal(manifest.TRUST_1,"Rivenditore autorizzato U-Power");
-  assert.equal(manifest.TRUST_METRIC_1,"U-Power");
-  assert.equal(manifest.TRUST_METRIC_LABEL_1,"Rivenditore autorizzato");
-  assert.equal(manifest.TRUST_METRIC_2,undefined);
+  assert.equal(manifest.TRUST_1,undefined);
+  assert.equal(manifest.PARTNER_1,"Rivenditore autorizzato U-Power");
+  assert.equal(manifest.PARTNER_SECTION_TITLE,"Marchi e partnership");
+  assert.equal(manifest.TRUST_METRIC_1,undefined);
 });
 
 test("policy detects cheap internal copy and section visual inventory",()=>{
