@@ -587,6 +587,13 @@ test("R113 detail craftsmanship locks alignment imagery trust background and dem
   assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
 });
 
+test("R116 pilot kick cannot route full redesign through precomputed mode",()=>{
+  assert.match(index,/const structuralRedesign=\/STRUCTURAL_DIVERGENCE_REWORK\|FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\/i/);
+  assert.match(index,/cabina_precomputed:!structuralRedesign/);
+  assert.match(index,/structural_redesign:structuralRedesign/);
+  assert.match(index,/Rebuild the page composition under the active flagship architecture standard/);
+});
+
 test("R116 flagship architecture blocks template-grade regressions",()=>{
   assert.match(constants,/R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1/);
   assert.match(grammar,/data-r116-flagship=\\"true\\"/);
