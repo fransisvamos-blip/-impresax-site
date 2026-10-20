@@ -298,6 +298,11 @@ export function validateRenderSpec(spec, manifests) {
     if(trustBlock && (trustBlock.match(/data-trust-reason=/gi)||[]).length<2) {
       issues.push("R109_TRUST_SECTION_TOO_THIN");
     }
+    const hasPartnerCopy=/\{\{copy:PARTNER_\d+\}\}/.test(main);
+    const partnerBlock=sectionHtml("partners");
+    if(hasPartnerCopy && !partnerBlock) issues.push("R109_PARTNER_SECTION_REQUIRED");
+    if(/\{\{copy:PARTNER_\d+\}\}/.test(trustBlock)) issues.push("R109_PARTNER_COPY_FORBIDDEN_IN_TRUST");
+    if(partnerBlock && !/data-partner-proof=["']true["']/i.test(partnerBlock)) issues.push("R109_PARTNER_SECTION_CONTRACT_REQUIRED");
     if(closingHtml && !/data-contrast-safe=["']true["']/i.test(closingHtml)) {
       issues.push("R109_FINAL_CTA_CONTRAST_MARKER_REQUIRED");
     }
