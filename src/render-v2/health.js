@@ -1,4 +1,4 @@
-import { COMPILER_VERSION, QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, HOME_DEPTH_STANDARD, MIN_HOME_SECTIONS, MAX_HOME_SECTIONS, MIN_HOME_EDITORIAL_FEATURES, MIN_HOME_SUBSTANTIAL_SECTIONS } from "./constants.js";
+import { COMPILER_VERSION, QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, HOME_DEPTH_STANDARD, MIN_HOME_SECTIONS, MAX_HOME_SECTIONS, MIN_HOME_EDITORIAL_FEATURES, MIN_HOME_SUBSTANTIAL_SECTIONS, SECTION_SUBSTANCE_STANDARD, MIN_WHY_US_REASONS, MAX_WHY_US_REASONS, MIN_HIGH_VALUE_MIDDLE_SECTIONS, MIN_RICH_EDITORIAL_FEATURES } from "./constants.js";
 
 export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const rows=await sql`
@@ -288,14 +288,30 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     && Number(x.metadata?.global_middle_scroll_min_scenes||0)>=6
     && x.metadata?.global_thin_brochure_home_forbidden===true
   );
+  const r112SectionSubstanceOk=(
+    x.metadata?.section_substance_standard===SECTION_SUBSTANCE_STANDARD
+    && Number(x.metadata?.global_minimum_why_us_reasons||0)>=MIN_WHY_US_REASONS
+    && Number(x.metadata?.global_maximum_why_us_reasons||99)<=MAX_WHY_US_REASONS
+    && Number(x.metadata?.global_minimum_high_value_middle_sections||0)>=MIN_HIGH_VALUE_MIDDLE_SECTIONS
+    && Number(x.metadata?.global_minimum_rich_editorial_features||0)>=MIN_RICH_EDITORIAL_FEATURES
+    && x.metadata?.global_empty_decorative_sections_forbidden===true
+    && x.metadata?.global_duplicate_closing_cta_forbidden===true
+    && x.metadata?.global_mobile_density_parity_required===true
+  );
   const concurrencyOk=active<=maxConcurrency;
   const countersOk=Object.values(counters).every(n=>n===0);
   return {
-    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r106PolicyOk && r111HomeDepthOk,
+    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r106PolicyOk && r111HomeDepthOk && r112SectionSubstanceOk,
     operating_mode:pilotMode?"PILOT_SINGLE_PROSPECT":queueReady?"QUEUE_READY":"NOT_READY",
     pilot_single_prospect:pilotMode,
     r106_policy_contract_ok:r106PolicyOk,
     r111_home_depth_contract_ok:r111HomeDepthOk,
+    r112_section_substance_contract_ok:r112SectionSubstanceOk,
+    section_substance_standard:SECTION_SUBSTANCE_STANDARD,
+    minimum_why_us_reasons:MIN_WHY_US_REASONS,
+    maximum_why_us_reasons:MAX_WHY_US_REASONS,
+    minimum_high_value_middle_sections:MIN_HIGH_VALUE_MIDDLE_SECTIONS,
+    minimum_rich_editorial_features:MIN_RICH_EDITORIAL_FEATURES,
     home_depth_standard:HOME_DEPTH_STANDARD,
     minimum_home_sections:MIN_HOME_SECTIONS,
     maximum_home_sections:MAX_HOME_SECTIONS,
