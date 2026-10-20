@@ -182,15 +182,18 @@ export function requiredSectionVisualCount(assets={}) {
   return Math.min(MIN_SECTION_VISUALS,available);
 }
 
-export function copyPolicyViolations(copyManifest={},usedKeys=[]) {
+export function copyPolicyViolations(copyManifest={},usedKeys=[],options={}) {
   const keys=(usedKeys?.length?usedKeys:Object.keys(copyManifest||{})).filter(k=>k in (copyManifest||{}));
   const issues=[];
   const normalized=new Map();
+  const allowVerifiedProofMetrics=options?.allow_verified_proof_metrics===true;
 
   for(const key of keys) {
     const value=String(copyManifest?.[key]||"").replace(/\s+/g," ").trim();
     if(!value) continue;
-    if(isLowValueHomepageFact(value)) issues.push("LOW_VALUE_CORPORATE_STAT_VISIBLE:"+key);
+    if(isLowValueHomepageFact(value) && !(allowVerifiedProofMetrics && /^TRUST_\d+$/.test(key))) {
+      issues.push("LOW_VALUE_CORPORATE_STAT_VISIBLE:"+key);
+    }
     if(INTERNAL_OR_CHEAP_COPY.some(re=>re.test(value))) issues.push("INTERNAL_OR_GENERIC_COPY_VISIBLE:"+key);
     if(value.length>=45) {
       const n=value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
@@ -496,8 +499,10 @@ export function sectionSubstanceViolations(mainHtml="",spec={}) {
     issues.push("R112_WHY_US_SECTION_REQUIRED");
   } else {
     const reasonCount=(trust.match(/\bdata-trust-reason=["']?\d+/gi)||[]).length;
-    if(reasonCount<MIN_WHY_US_REASONS || reasonCount>MAX_WHY_US_REASONS) {
-      issues.push("R112_WHY_US_REASON_COUNT_REQUIRED:"+reasonCount+"/"+MIN_WHY_US_REASONS+"-"+MAX_WHY_US_REASONS);
+    const r116Flagship=String(spec?.flagship_architecture_standard||"")===FLAGSHIP_ARCHITECTURE_STANDARD;
+    const minimumTrustReasons=r116Flagship?3:MIN_WHY_US_REASONS;
+    if(reasonCount<minimumTrustReasons || reasonCount>MAX_WHY_US_REASONS) {
+      issues.push((r116Flagship?"R116_VERIFIED_PROOF_REASON_COUNT_REQUIRED":"R112_WHY_US_REASON_COUNT_REQUIRED")+":"+reasonCount+"/"+minimumTrustReasons+"-"+MAX_WHY_US_REASONS);
     }
     if(!/\bdata-proof-support=["']true["']/i.test(trust)) issues.push("R112_WHY_US_PROOF_SUPPORT_REQUIRED");
     if(!/\bdata-section-substance=["']rich["']/i.test(trust)) issues.push("R112_WHY_US_RICHNESS_REQUIRED");
