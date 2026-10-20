@@ -1105,12 +1105,44 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       }
 
       if(!captured.gate.pass) {
-        const msg="BROWSER_DETERMINISTIC_GATE:"+captured.gate.issues.join("|");
+        const gateIssues=Array.isArray(captured.gate.issues)?captured.gate.issues:[];
+        const msg="BROWSER_DETERMINISTIC_GATE:"+gateIssues.join("|");
         const fail=await step.do("r"+cycle+"-record-browser-gate-failure",async()=>
           recordTypedFailure(sql,{packId:params.packId,workflowInstanceId:event.instanceId,revisionId:revision.id,stepName:"BROWSER_DIAGNOSTICS",error:msg,variantKey:params.variantKey,revision:revision.revision,strategyVersion:"BROWSER_GATE_V1"})
         );
         await updateRevision(sql,revision.id,{status:"QA_FAILED",desktopKey:captured.desktop.r2_key,mobileKey:captured.mobile.r2_key});
-        feedback={issues:captured.gate.issues,actions:["Fix only the deterministic browser defects."]};
+
+        const heroResolutionFailure=gateIssues.some(issue=>/HERO_SOURCE_RESOLUTION_TOO_LOW/i.test(String(issue||"")));
+        const currentHeroIsVector=String(context.assets?.HERO_VISUAL?.mime||"")==="image/svg+xml"
+          || /DETERMINISTIC_VECTOR/i.test(String(context.assets?.HERO_VISUAL?.source_type||""));
+        if(EXTERNAL_AI_CALLS_ALLOWED!==true && heroResolutionFailure && !currentHeroIsVector) {
+          const fallbackHero=await step.do("r"+cycle+"-hero-resolution-vector-fallback",async()=>{
+            return createR107DeterministicGraphicHeroAsset(this.env,sql,{
+              packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
+            });
+          });
+          context.assets={...context.assets,HERO_VISUAL:fallbackHero};
+          context.editorialAssetTokens=[...new Set([...context.editorialAssetTokens,"HERO_VISUAL"])];
+          feedback={
+            reason:"DETERMINISTIC_HERO_RESOLUTION_FALLBACK",
+            issues:gateIssues,
+            actions:["Replace the undersized first-party hero with the scalable deterministic vector hero while preserving verified copy and section substance."]
+          };
+          await updateWorkflow(sql,event.instanceId,{
+            status:"RUNNING",
+            currentStep:"HERO_RESOLUTION_FALLBACK",
+            errorCode:null,
+            metadata:{
+              hero_resolution_fallback:true,
+              hero_fallback_mime:fallbackHero.mime,
+              hero_fallback_sha256:fallbackHero.sha256,
+              failed_revision:revision.revision
+            }
+          });
+          continue;
+        }
+
+        feedback={issues:gateIssues,actions:["Fix only the deterministic browser defects."]};
         if(fail.change_strategy) break;
         continue;
       }
