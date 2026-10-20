@@ -1106,8 +1106,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                      count(*) filter (where status='PREVIEW_READY')::int preview_ready
               from render_v2_variants
               where render_pack_id=${params.packId}::uuid`;
-            const completePreviewSet=Number(setState[0]?.total||0)===3
-              && Number(setState[0]?.preview_ready||0)===3;
+            const completePreviewSet=Number(setState[0]?.total||0)===VARIANT_KEYS.length
+              && Number(setState[0]?.preview_ready||0)===VARIANT_KEYS.length;
             await setPackStatus(sql,params.packId,"PREVIEW_READY",{
               cabina_visual_review_hold:completePreviewSet,
               retrofit_status:completePreviewSet?"CABINA_VISUAL_REVIEW":"R107_PREVIEW_SET_IN_PROGRESS",
