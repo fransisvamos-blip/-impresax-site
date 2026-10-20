@@ -296,6 +296,8 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     && Number(x.metadata?.global_minimum_rich_editorial_features||0)>=MIN_RICH_EDITORIAL_FEATURES
     && x.metadata?.global_empty_decorative_sections_forbidden===true
     && x.metadata?.global_duplicate_closing_cta_forbidden===true
+    && x.metadata?.global_partner_logo_isolation_required===true
+    && x.metadata?.global_support_bridge_compact_required===true
     && x.metadata?.global_mobile_density_parity_required===true
   );
   const concurrencyOk=active<=maxConcurrency;
@@ -312,6 +314,8 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     maximum_why_us_reasons:MAX_WHY_US_REASONS,
     minimum_high_value_middle_sections:MIN_HIGH_VALUE_MIDDLE_SECTIONS,
     minimum_rich_editorial_features:MIN_RICH_EDITORIAL_FEATURES,
+    partner_logo_isolation_required:true,
+    support_bridge_compact_required:true,
     home_depth_standard:HOME_DEPTH_STANDARD,
     minimum_home_sections:MIN_HOME_SECTIONS,
     maximum_home_sections:MAX_HOME_SECTIONS,
