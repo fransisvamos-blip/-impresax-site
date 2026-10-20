@@ -506,15 +506,27 @@ export function sectionSubstanceViolations(mainHtml="",spec={}) {
   const sectorSpecific=middleIds.filter(id=>/\bdata-commercial-specificity=["']sector["']/i.test(sectionHtml(id)));
   if(sectorSpecific.length<3) issues.push("R112_SECTOR_SPECIFIC_MIDDLE_DEPTH_REQUIRED:"+sectorSpecific.length+"/3");
 
+  const partners=sectionHtml("partners");
+  const partnerLogoTokens=[...new Set([...main.matchAll(/\{\{asset:(PARTNER_[A-Z0-9_]+_LOGO)\}\}/g)].map(m=>m[1]))];
+  if(partnerLogoTokens.length) {
+    if(!partners) issues.push("R112_PARTNER_LOGO_SECTION_REQUIRED");
+    const outsidePartners=partners ? main.replace(partners,"") : main;
+    for(const token of partnerLogoTokens) {
+      if(outsidePartners.includes("{{asset:"+token+"}}")) issues.push("R112_PARTNER_LOGO_OUTSIDE_PARTNERS_FORBIDDEN:"+token);
+    }
+  }
+
   const bridge=sectionHtml("bridge");
   const finalCta=sectionHtml("final-cta");
   if(bridge) {
     if(!bridge.includes("{{cta:SECONDARY}}")) issues.push("R112_BRIDGE_SECONDARY_ACTION_REQUIRED");
     if(bridge.includes("{{cta:PRIMARY}}")) issues.push("R112_BRIDGE_PRIMARY_ACTION_FORBIDDEN");
+    if(!/\bdata-cta-intensity=["']support["']/i.test(bridge)) issues.push("R112_BRIDGE_SUPPORT_INTENSITY_REQUIRED");
   }
   if(finalCta) {
     if(!finalCta.includes("{{cta:PRIMARY}}")) issues.push("R112_FINAL_PRIMARY_ACTION_REQUIRED");
     if(finalCta.includes("{{cta:SECONDARY}}")) issues.push("R112_FINAL_SECONDARY_DUPLICATION_FORBIDDEN");
+    if(!/\bdata-cta-intensity=["']primary["']/i.test(finalCta)) issues.push("R112_FINAL_PRIMARY_INTENSITY_REQUIRED");
   }
 
   const standard=String(spec?.section_substance_standard||"");
@@ -613,6 +625,8 @@ export function showroomPolicySummary() {
       why_us_proof_support:"REQUIRED",
       empty_decorative_sections:"FORBIDDEN",
       duplicate_closing_cta:"FORBIDDEN",
+      partner_logo_isolation:"PARTNER_LOGOS_ONLY_INSIDE_PARTNERS_SECTION",
+      support_bridge:"COMPACT_SECONDARY_CONTACT_SCENE",
       mobile_density:"PREMIUM_CONTENT_PARITY_REQUIRED",
       section_blueprint_before_design:"BLOCKING",
       section_purpose_required:"BLOCKING",
