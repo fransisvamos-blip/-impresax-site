@@ -289,7 +289,8 @@ export function validateRenderSpec(spec, manifests) {
     issues.push("FINAL_CTA_CONTRACT_REQUIRED");
   }
 
-  if(String(spec?.detail_craft_standard||"")==="R113_DETAIL_CRAFTSMANSHIP_V1") {
+  const detailCraftStandard=String(spec?.detail_craft_standard||"");
+  if(["R113_DETAIL_CRAFTSMANSHIP_V1","R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1"].includes(detailCraftStandard)) {
     const servicesDetailHtml=sectionHtml("services");
     if(servicesDetailHtml && !/data-detail-grid=["']aligned["']/i.test(servicesDetailHtml)) {
       issues.push("R113_SERVICE_DETAIL_GRID_ALIGNMENT_REQUIRED");
@@ -324,6 +325,63 @@ export function validateRenderSpec(spec, manifests) {
     }
     if(assetKeys.has("TRUST_VISUAL") && !/\.ixg-trust-bg\s*\{[\s\S]*position\s*:\s*absolute/i.test(css)) {
       issues.push("R113_TRUST_BACKGROUND_CSS_REQUIRED");
+    }
+  }
+
+  if(detailCraftStandard==="R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1") {
+    const r115Services=sectionHtml("services");
+    const r115Feature1=sectionHtml("service-feature-1");
+    const r115Feature2=sectionHtml("service-feature-2");
+    const r115Trust=sectionHtml("trust");
+    const r115Partners=sectionHtml("partners");
+    const r115Bridge=sectionHtml("bridge");
+    const r115Final=sectionHtml("final-cta");
+
+    if(!/data-service-composition=["']paired-editorial-with-media["']/i.test(r115Services)) {
+      issues.push("R115_PAIRED_SERVICE_COMPOSITION_REQUIRED");
+    }
+    const matchedCards=(r115Services.match(/data-service-card=["']matched["']/gi)||[]).length;
+    if(matchedCards<2) issues.push("R115_MATCHED_SERVICE_CARDS_REQUIRED:"+matchedCards+"/2");
+
+    if(!/data-feature-layout=["']cinematic-materials["']/i.test(r115Feature1)) {
+      issues.push("R115_FEATURE_1_DISTINCT_LAYOUT_REQUIRED");
+    }
+    if(!/data-feature-layout=["']technical-rebar["']/i.test(r115Feature2)) {
+      issues.push("R115_FEATURE_2_DISTINCT_LAYOUT_REQUIRED");
+    }
+    if(r115Feature1.includes("{{copy:LOCALITY_LINE}}") || r115Feature2.includes("{{copy:LOCALITY_LINE}}")) {
+      issues.push("R115_SERVICE_FEATURE_LOCALITY_FILLER_FORBIDDEN");
+    }
+    if(copyKeys.has("SERVICE_1_TAG") && !r115Feature1.includes("{{copy:SERVICE_1_TAG}}")) {
+      issues.push("R115_FEATURE_1_SERVICE_TAG_REQUIRED");
+    }
+    if(copyKeys.has("SERVICE_2_TAG") && !r115Feature2.includes("{{copy:SERVICE_2_TAG}}")) {
+      issues.push("R115_FEATURE_2_SERVICE_TAG_REQUIRED");
+    }
+
+    if(!/data-trust-finish=["']premium-editorial["']/i.test(r115Trust)) {
+      issues.push("R115_PREMIUM_TRUST_FINISH_REQUIRED");
+    }
+    const verifiedPartnerKeys=Object.keys(manifests?.copy||{}).filter(key=>/^PARTNER_\d+$/.test(key));
+    if(verifiedPartnerKeys.length===1 && !/data-partner-facsimile=["']concept-capacity["']/i.test(r115Partners)) {
+      issues.push("R115_PARTNER_FACSIMILE_CAPACITY_REQUIRED");
+    }
+
+    if(!/data-cta-premium=["']true["']/i.test(r115Bridge) || !/data-cta-premium=["']true["']/i.test(r115Final)) {
+      issues.push("R115_PREMIUM_CTA_SCENES_REQUIRED");
+    }
+    if((main.match(/data-premium-button=["']true["']/gi)||[]).length<3) {
+      issues.push("R115_PREMIUM_BUTTON_SYSTEM_REQUIRED");
+    }
+
+    if(!/\.ix-v2-header-inner\s*\{[\s\S]*box-shadow/i.test(css)) {
+      issues.push("R115_PREMIUM_HEADER_SHELL_REQUIRED");
+    }
+    if(!/\.ix-v2-footer-grid\s*\{[\s\S]*border-top/i.test(css)) {
+      issues.push("R115_PREMIUM_FOOTER_COMPOSITION_REQUIRED");
+    }
+    if(!/\.ixg-services__composition\s*\{[\s\S]*grid-template-columns/i.test(css)) {
+      issues.push("R115_SERVICE_MEDIA_GRID_REQUIRED");
     }
   }
 
