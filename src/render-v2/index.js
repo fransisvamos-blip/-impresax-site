@@ -309,6 +309,8 @@ export default {
         minimum_section_visuals:MIN_SECTION_VISUALS,
         delivery_mode:"SINGLE_CONCEPT",
         delivery_variants_per_pack:1,
+        r106_policy_contract_ok:true,
+        master_auto_approve:false,
         legacy_health_contract:{
           triple_variant_required:true,
           minimum_variants_per_pack:3,
