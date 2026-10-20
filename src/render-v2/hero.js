@@ -150,6 +150,14 @@ export function explicitHeroAsset(assets={},inputPayload={}) {
       if(/^(hero|featured|cover)$/.test(role)) score+=120;
       if(sourceType.includes("FIRST_PARTY")||sourceType.includes("OFFICIAL")) score+=85;
       if(technical.test(signal) && technical.test(context)) score+=45;
+      const coreGroups=[
+        {ctx:/\b(?:tondo|rebar|acciaio|cemento armato|ferro)\b/i,signal:/\b(?:rebar|tondo|steel|acciaio|cement|reinforc)\w*/i},
+        {ctx:/\b(?:dent|odont|implant|ortodon)\w*/i,signal:/\b(?:dent|implant|clinic|odont)\w*/i},
+        {ctx:/\b(?:fisioter|riabilit|osteopat)\w*/i,signal:/\b(?:physio|therapy|rehab|fisioter|riabilit)\w*/i},
+        {ctx:/\b(?:avvocat|legale|studio legale)\b/i,signal:/\b(?:legal|law|studio|office|document)\w*/i},
+        {ctx:/\b(?:auto|veicol|concession)\w*/i,signal:/\b(?:auto|car|vehicle|showroom)\w*/i}
+      ];
+      for(const group of coreGroups) if(group.ctx.test(context) && group.signal.test(signal)) score+=120;
       let relevance=0;
       for(const word of contextWords) {
         const stem=word.length>8?word.slice(0,7):word;
