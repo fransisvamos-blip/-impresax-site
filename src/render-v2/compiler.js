@@ -293,7 +293,8 @@ export function validateRenderSpec(spec, manifests) {
     if(trustBlock && graphics<reasons) issues.push("R110_WHY_US_GRAPHIC_SUPPORT_REQUIRED");
     if(trustBlock && !/ixg-trust-reason\s+p/i.test(spec?.custom_css||"")) issues.push("R110_WHY_US_SUPPORT_COPY_REQUIRED");
     const partnerBlock=sectionHtml("partners");
-    if(/U[-\s]?Power/i.test(String(main)) && partnerBlock && !/ixg-partner-logo/i.test(partnerBlock)) {
+    const hasUPowerPartner=Object.entries(manifests?.copy||{}).some(([key,value])=>/^PARTNER_\d+$/.test(key) && /u[-\s]?power/i.test(String(value||"")));
+    if(hasUPowerPartner && (!partnerBlock || !/ixg-partner-logo/i.test(partnerBlock))) {
       issues.push("R110_UPOWER_OFFICIAL_LOGO_REQUIRED");
     }
   }
