@@ -19,6 +19,12 @@ export const RENDER_DEVICE_SCALE_FACTOR = 2;
 export const RENDER_JPEG_QUALITY = 96;
 export const QA_JPEG_QUALITY = 72;
 
+// Delivery policy: new prospect packs ship one ImpresaX-authored concept.
+// Legacy A/B/C packs remain readable/recoverable for backward compatibility.
+export const DELIVERY_RENDER_MODE = "SINGLE_CONCEPT";
+export const DELIVERY_VARIANT_KEYS = Object.freeze(["A"]);
+export const DELIVERY_VARIANTS_PER_PACK = 1;
+
 export const VARIANT_KEYS = Object.freeze(["A","B","C"]);
 export const TRIPLE_VARIANT_REQUIRED = true;
 export const MINIMUM_VARIANTS_PER_PACK = 3;
