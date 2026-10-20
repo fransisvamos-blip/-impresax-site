@@ -1,4 +1,4 @@
-import { COMPILER_VERSION, QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE } from "./constants.js";
+import { COMPILER_VERSION, QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, SHOWROOM_RULES_VERSION, RENDER_GENERATION_MODE, EXTERNAL_AI_CALLS_ALLOWED, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, HOME_DEPTH_STANDARD, MIN_HOME_SECTIONS, MAX_HOME_SECTIONS, MIN_HOME_EDITORIAL_FEATURES, MIN_HOME_SUBSTANTIAL_SECTIONS } from "./constants.js";
 
 export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
   const rows=await sql`
@@ -279,13 +279,28 @@ export async function operationalInvariantSnapshot(sql,{maxAiCalls=90}={}) {
     && x.metadata?.master_auto_approve===MASTER_AUTO_APPROVE
     && x.metadata?.neutral_only_page_forbidden===true
   );
+  const r111HomeDepthOk=(
+    x.metadata?.home_depth_standard===HOME_DEPTH_STANDARD
+    && Number(x.metadata?.global_home_min_sections||0)>=MIN_HOME_SECTIONS
+    && Number(x.metadata?.global_home_max_sections||0)<=MAX_HOME_SECTIONS
+    && Number(x.metadata?.global_minimum_editorial_feature_scenes||0)>=MIN_HOME_EDITORIAL_FEATURES
+    && Number(x.metadata?.global_minimum_substantial_sections||0)>=MIN_HOME_SUBSTANTIAL_SECTIONS
+    && Number(x.metadata?.global_middle_scroll_min_scenes||0)>=6
+    && x.metadata?.global_thin_brochure_home_forbidden===true
+  );
   const concurrencyOk=active<=maxConcurrency;
   const countersOk=Object.values(counters).every(n=>n===0);
   return {
-    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r106PolicyOk,
+    operational_ok:(queueReady||pilotMode) && concurrencyOk && countersOk && r106PolicyOk && r111HomeDepthOk,
     operating_mode:pilotMode?"PILOT_SINGLE_PROSPECT":queueReady?"QUEUE_READY":"NOT_READY",
     pilot_single_prospect:pilotMode,
     r106_policy_contract_ok:r106PolicyOk,
+    r111_home_depth_contract_ok:r111HomeDepthOk,
+    home_depth_standard:HOME_DEPTH_STANDARD,
+    minimum_home_sections:MIN_HOME_SECTIONS,
+    maximum_home_sections:MAX_HOME_SECTIONS,
+    minimum_editorial_feature_scenes:MIN_HOME_EDITORIAL_FEATURES,
+    minimum_substantial_sections:MIN_HOME_SUBSTANTIAL_SECTIONS,
     showroom_rules_version:SHOWROOM_RULES_VERSION,
     render_generation_mode:RENDER_GENERATION_MODE,
     external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,
