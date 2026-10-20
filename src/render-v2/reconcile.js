@@ -793,8 +793,9 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
   const priorAttempts=Number(pack.metadata?.auto_recovery_attempt||0);
 
   if(!variants.length) {
-    if(slots<3) {
-      return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:3,available_slots:slots,slots_used:0};
+    const requiredSlots=pack?.metadata?.single_concept_mode===true?1:3;
+    if(slots<requiredSlots) {
+      return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:requiredSlots,available_slots:slots,slots_used:0};
     }
     if(priorAttempts>=3) {
       const exhaustedAt=new Date().toISOString();
@@ -846,7 +847,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
       params:{prospectId:pack.prospect_id,packId:pack.id,inputPackId:pack.input_pack_id}
     });
     await setPackStatus(sql,pack.id,"PLANNING",{auto_recovery_attempt:attempt,auto_recovery_run_key:runKey});
-    return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status(),slots_used:3};
+    return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status(),slots_used:requiredSlots};
   }
 
   const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
@@ -1810,7 +1811,7 @@ export async function reconcileV2(env) {
   renderSlots=initialFill.slots;
 
   const orphanPacks=await sql`
-    select p.id,p.prospect_id,p.input_pack_id
+    select p.id,p.prospect_id,p.input_pack_id,p.metadata
     from render_v2_packs p
     join render_input_packs i on i.id=p.input_pack_id
     join prospects pr on pr.id=p.prospect_id
@@ -1828,11 +1829,12 @@ export async function reconcileV2(env) {
     limit 10`;
 
   for(const pack of orphanPacks) {
-    if(renderSlots<3) break;
+    const requiredSlots=pack?.metadata?.single_concept_mode===true?1:3;
+    if(renderSlots<requiredSlots) break;
     try {
       const started=await startOrRecoverParent(env,sql,pack);
       summary.started.push(started);
-      renderSlots=Math.max(0,renderSlots-3);
+      renderSlots=Math.max(0,renderSlots-requiredSlots);
     } catch(error) {
       summary.errors.push({pack_id:pack.id,error:String(error?.message||error)});
     }
