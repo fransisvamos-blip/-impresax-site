@@ -185,14 +185,15 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const positionTitle="POSITIONING_TITLE";
   const positionBody="POSITIONING_BODY";
   const aGridTitles=serviceTitles;
+  const allServicesHaveBodies=aGridTitles.length>0 && aGridTitles.every((_,i)=>Object.prototype.hasOwnProperty.call(copyManifest,"SERVICE_"+(i+1)+"_BODY"));
   const servicesA=aGridTitles.map((titleKey,i)=>{
     const bodyKey="SERVICE_"+(i+1)+"_BODY";
-    const body=Object.prototype.hasOwnProperty.call(copyManifest,bodyKey)
+    const body=allServicesHaveBodies
       ? "<p class=\"ixg-service__body\">"+copyToken(bodyKey)+"</p>"
       : "";
     const iconClass="ixg-service__icon--"+String((i%3)+1);
     const icon="<span class=\"ixg-service__icon "+iconClass+"\" aria-hidden=\"true\"><i></i><i></i><i></i></span>";
-    return "<article class=\"ixg-service\"><div class=\"ixg-service__visual\">"+icon+"</div><div class=\"ixg-service__content\"><h3 class=\"ixg-service__title\">"+copyToken(titleKey)+"</h3>"+body+"</div></article>";
+    return "<article class=\"ixg-service\" data-uniform-service-row=\"true\"><div class=\"ixg-service__visual\"><span class=\"ixg-service__index\">0"+(i+1)+"</span>"+icon+"</div><div class=\"ixg-service__content\"><h3 class=\"ixg-service__title\">"+copyToken(titleKey)+"</h3>"+body+"</div></article>";
   }).join("");
   const bridgeTitle=Object.prototype.hasOwnProperty.call(copyManifest,"BRIDGE_TITLE")
     ? "BRIDGE_TITLE"
@@ -203,6 +204,20 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const positionBodyMarkup=positionBody?"<p>"+copyToken(positionBody)+"</p>":"";
   const bridgeBodyMarkup=bridgeBody?"<p>"+copyToken(bridgeBody)+"</p>":"";
   const nonContactTrustKeys=trustKeys.filter(key=>!trustIsContact(copyManifest,key));
+  const trustIsPartnerProof=key=>/u[-\s]?power|rivenditor|dealer|partner|autorizzat/i.test(String(copyManifest?.[key]||""));
+  const partnerTrustKeys=nonContactTrustKeys.filter(trustIsPartnerProof);
+  const coreTrustKeys=nonContactTrustKeys.filter(key=>!trustIsPartnerProof(key));
+  const verifiedTrustReasonKeys=[...new Set([
+    ...coreTrustKeys,
+    ...serviceTitles,
+    "LOCALITY_LINE"
+  ])].slice(0,3);
+  const trustReasons=verifiedTrustReasonKeys
+    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><strong>"+copyToken(key)+"</strong></article>")
+    .join("");
+  const partnerProof=partnerTrustKeys.length
+    ? "<section class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-grid=\"locked\"><div class=\"ixg-shell ixg-partner-proof__inner\">"+partnerTrustKeys.map(key=>"<strong>"+copyToken(key)+"</strong>").join("")+"</div></section>"
+    : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
     .join("");
@@ -287,13 +302,13 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const mainAB=[
     impresaxHero,
     "<section id=\"positioning\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
-    "<section id=\"services\" class=\"ixg ixg-services "+vclass+"\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></section>",
+    "<section id=\"services\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
     logoFirstGraphicBand,
-    "<section id=\"trust\" class=\"ixg ixg-trust-section "+vclass+"\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header>"+logoFirstProofMetrics+"<div class=\"ixg-trust-grid\">"+trust+"</div>"+sectionVisual3+"</div></section>",
+    "<section id=\"trust\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header>"+logoFirstProofMetrics+"<div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
-      ? "<section id=\"bridge\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
+      ? "<section id=\"bridge\" data-section-grid=\"locked\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
       : "<section id=\"bridge\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
-    "<section id=\"final-cta\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
+    "<section id=\"final-cta\" data-section-grid=\"locked\" data-contrast-safe=\"true\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
   const bTrustRows=trustKeys
@@ -1790,6 +1805,41 @@ body{font-family:var(--ix-body-font)}
  .ixg-service{grid-template-columns:72px minmax(0,1fr)!important;column-gap:18px!important}
  .ixg-service__visual{grid-column:1!important}.ixg-service__content{grid-column:2!important}
 }
+/* R109 15K art-direction gate: geometry, hierarchy, anchored media, complete trust. */
+.ixg-services__composition{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:clamp(36px,5vw,72px);align-items:start}
+.ixg-services__composition:not(.has-visual){grid-template-columns:1fr}
+.ixg-services__grid{display:grid!important;grid-template-columns:1fr!important;border-top:1px solid rgba(24,26,28,.14)}
+.ixg-service{display:grid!important;grid-template-columns:120px minmax(0,1fr)!important;align-items:center!important;column-gap:28px!important;min-height:142px!important;padding:24px 0!important;border-bottom:1px solid rgba(24,26,28,.14)!important;border-left:0!important;border-right:0!important;border-top:0!important;border-radius:0!important;box-shadow:none!important}
+.ixg-service__visual{display:grid!important;grid-template-columns:42px 1fr!important;gap:14px!important;align-items:center!important}
+.ixg-service__index{font:700 20px/1 var(--ix-display-font);color:var(--ix-accent);opacity:.48}
+.ixg-service__content{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;align-content:center!important}
+.ixg-service__title{margin:0!important;max-width:26ch!important;font-size:clamp(24px,2.2vw,38px)!important;line-height:1.02!important}
+.ixg-service__body{margin:0!important;max-width:42ch!important}
+.ixg-services__composition>.ixg-section-visual{margin:0!important;width:100%!important;min-height:100%!important;max-height:none!important;aspect-ratio:4/5!important;align-self:stretch!important;border-radius:0!important;box-shadow:0 24px 70px rgba(17,17,17,.14)!important}
+.ixg-services__composition>.ixg-section-visual img{width:100%!important;height:100%!important;object-fit:cover!important}
+.ixg-trust-reasons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:rgba(255,255,255,.16);margin-top:34px}
+.ixg-trust-reason{min-height:180px;padding:28px;background:#202224;display:flex;flex-direction:column;justify-content:space-between;gap:28px}
+.ixg-trust-reason__index{font:700 12px/1 var(--ix-body-font);letter-spacing:.12em;color:var(--ix-accent)}
+.ixg-trust-reason strong{font:700 clamp(19px,1.8vw,28px)/1.08 var(--ix-display-font);color:#fff!important;max-width:18ch}
+.ixg-partner-proof{background:#f7f6f2!important;color:#17191b!important;padding:clamp(38px,5vw,72px) 0!important}
+.ixg-partner-proof__inner{display:flex;align-items:center;justify-content:space-between;gap:32px;border-top:1px solid rgba(24,26,28,.16);border-bottom:1px solid rgba(24,26,28,.16);padding:28px 0}
+.ixg-partner-proof strong{font:700 clamp(22px,2.4vw,40px)/1.04 var(--ix-display-font);color:#17191b!important}
+.ixm-bridge{background:linear-gradient(105deg,#f7f6f2 0%,#f7f6f2 62%,rgba(179,19,25,.18) 100%)!important;color:#17191b!important}
+.ixm-bridge h2,.ixm-bridge p,.ixm-bridge .ixg-kicker{color:#17191b!important;opacity:1!important}
+.ixg-contact{filter:saturate(1.14) contrast(1.04)}
+.ix-v2-footer,.ix-v2-footer *{opacity:1!important}
+.ix-v2-footer a,.ix-v2-footer strong,.ix-v2-footer span,.ix-v2-footer p{color:#fff!important}
+@media(max-width:700px){
+ .ixg-services__composition{grid-template-columns:1fr;gap:26px}
+ .ixg-service{grid-template-columns:78px minmax(0,1fr)!important;min-height:118px!important;padding:18px 0!important;column-gap:16px!important}
+ .ixg-service__visual{grid-template-columns:26px 1fr!important;gap:10px!important}
+ .ixg-service__index{font-size:14px}
+ .ixg-service__title{font-size:clamp(20px,6.2vw,28px)!important}
+ .ixg-services__composition>.ixg-section-visual{aspect-ratio:16/10!important;min-height:0!important}
+ .ixg-trust-reasons{grid-template-columns:1fr}
+ .ixg-trust-reason{min-height:126px;padding:22px}
+ .ixg-partner-proof__inner{align-items:flex-start;flex-direction:column}
+}
 .ixg-service,.ixg-trust,.ixg-bridge__evidence-row{
  border:1px solid rgba(32,34,36,.10);
  box-shadow:0 18px 52px rgba(17,17,17,.08),0 2px 8px rgba(17,17,17,.04);
@@ -1858,6 +1908,7 @@ body{font-family:var(--ix-body-font)}
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets].filter(Boolean),
       section_coherence_standard:sectionAssetPlan?.strict_semantic===true?"R108_SECTION_COHERENCE_STRICT_V1":"R107",
+      art_direction_standard:"R109_15K_ART_DIRECTION_GATE_V1",
       section_visual_strategy:sectionAssetPlan?.strategy||"R107_CURATED_VARIANT_ROTATION_V1",
       hero_visual_strategy:"R107 mandatory full-bleed edge-to-edge HERO_VISUAL with verified headline, body and CTAs overlaid inside the image, premium readability veil and high-resolution capture.",
       hero_subject:"Prospect-relevant commercial scene supplied by HERO_VISUAL.",
