@@ -344,7 +344,9 @@ test("zero-photo grammar compiles all three variants",async()=>{
       assert.ok((built.spec.main_html.match(/data-section-substance="rich"/g)||[]).length>=5);
       assert.ok((built.spec.main_html.match(/data-commercial-depth="high"/g)||[]).length>=3);
       assert.ok((built.spec.main_html.match(/data-editorial-substance="true"/g)||[]).length>=2);
-      assert.ok((built.spec.main_html.match(/data-trust-reason="\d+"/g)||[]).length>=4);
+      assert.ok((built.spec.main_html.match(/data-trust-reason="\d+"/g)||[]).length>=3);
+      const trust=(built.spec.main_html.match(/<section\b[^>]*id="trust"[^>]*>[\s\S]*?<\/section>/i)||[])[0]||"";
+      assert.doesNotMatch(trust,/\{\{copy:(?:LOCALITY_LINE|SERVICE_\d+_(?:TITLE|BODY)|POSITIONING_(?:TITLE|BODY)|FOOTER_LINE)\}\}/);
       const bridge=(built.spec.main_html.match(/<section\b[^>]*id="bridge"[^>]*>[\s\S]*?<\/section>/i)||[])[0]||"";
       const close=(built.spec.main_html.match(/<section\b[^>]*id="final-cta"[^>]*>[\s\S]*?<\/section>/i)||[])[0]||"";
       assert.match(bridge,/\{\{cta:SECONDARY\}\}/);
