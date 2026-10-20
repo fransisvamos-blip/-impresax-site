@@ -143,6 +143,7 @@ async function renderPage(browser,html,width,height) {
         hero_cta_over_image:Boolean(overlaps(actionsRect,imageRect)),
         hero_image_natural_width:Number(heroImage?.naturalWidth||0),
         hero_image_natural_height:Number(heroImage?.naturalHeight||0),
+        hero_image_is_vector:/^data:image\/svg\+xml/i.test(String(heroImage?.currentSrc||heroImage?.src||"")),
         hero_image_rendered_width:Number(imageRect?.width||0),
         hero_image_rendered_height:Number(imageRect?.height||0),
         hero_image_resolution_ratio:imageRect&&heroImage
@@ -186,7 +187,7 @@ export function deterministicBrowserGate(desktop,mobile,inputPayload) {
     if(HERO_TEXT_OVER_IMAGE_REQUIRED && !diag.hero_text_over_image) issues.push(label+"_HERO_H1_NOT_OVER_IMAGE");
     if(HERO_TEXT_OVER_IMAGE_REQUIRED && !diag.hero_copy_over_image) issues.push(label+"_HERO_COPY_NOT_OVER_IMAGE");
     if(HERO_TEXT_OVER_IMAGE_REQUIRED && !diag.hero_cta_over_image) issues.push(label+"_HERO_CTA_NOT_OVER_IMAGE");
-    if(HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED && Number(diag.hero_image_resolution_ratio||0)<1) issues.push(label+"_HERO_SOURCE_RESOLUTION_TOO_LOW");
+    if(HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED && !diag.hero_image_is_vector && Number(diag.hero_image_resolution_ratio||0)<1) issues.push(label+"_HERO_SOURCE_RESOLUTION_TOO_LOW");
     if(Number(diag.section_count||0)<6) issues.push(label+"_PAGE_ARCHITECTURE_TOO_SHALLOW");
     if((diag.required_sections_present||[]).length<6) issues.push(label+"_REQUIRED_SECTIONS_MISSING");
     if(!diag.final_cta_present || Number(diag.final_cta_action_count||0)<1) issues.push(label+"_FINAL_CTA_INCOMPLETE");
