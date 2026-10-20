@@ -612,6 +612,17 @@ test("R116 pilot kick cannot route full redesign through precomputed mode",()=>{
   assert.match(index,/Rebuild the page composition under the active flagship architecture standard/);
 });
 
+test("R116 flagship QA floors are blocking at 9.7-9.8",()=>{
+  assert.match(ai,/flagship_presence:9\.8/);
+  assert.match(ai,/section_identity:9\.8/);
+  assert.match(ai,/editorial_composition:9\.8/);
+  assert.match(ai,/luxury_simplicity:9\.7/);
+  assert.match(ai,/fifteen_k_credibility:9\.8/);
+  assert.match(ai,/flagship_gate_floor/);
+  assert.match(ai,/R116 FLAGSHIP PRESENCE/);
+  assert.match(ai,/R116 15K CREDIBILITY/);
+});
+
 test("R116 flagship architecture blocks template-grade regressions",()=>{
   assert.match(constants,/R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1/);
   assert.match(grammar,/data-r116-flagship=\\"true\\"/);
