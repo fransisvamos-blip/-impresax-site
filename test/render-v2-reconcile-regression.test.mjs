@@ -20,6 +20,7 @@ const compiler=fs.readFileSync(new URL("../src/render-v2/compiler.js",import.met
 const showroom=fs.readFileSync(new URL("../src/render-v2/showroom-policy.js",import.meta.url),"utf8");
 const r115Shell=fs.readFileSync(new URL("../src/render-v2/r115-shell-css.js",import.meta.url),"utf8");
 const r115Sections=fs.readFileSync(new URL("../src/render-v2/r115-sections-css.js",import.meta.url),"utf8");
+const r116Flagship=fs.readFileSync(new URL("../src/render-v2/r116-flagship-css.js",import.meta.url),"utf8");
 
 test("exhausted GENERATING packs are eligible for immediate ghost closure",()=>{
   assert.match(
@@ -584,6 +585,28 @@ test("R113 detail craftsmanship locks alignment imagery trust background and dem
   assert.match(compiler,/R113_FEATURE_2_CONTEXT_IMAGE_REQUIRED/);
   assert.match(compiler,/R113_TRUST_BACKGROUND_IMAGE_REQUIRED/);
   assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
+});
+
+test("R116 flagship architecture blocks template-grade regressions",()=>{
+  assert.match(constants,/R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1/);
+  assert.match(grammar,/data-r116-flagship=\\"true\\"/);
+  assert.match(grammar,/data-r116-set-piece/);
+  assert.match(grammar,/ixf-hero__meta-rail/);
+  assert.match(grammar,/ixf-positioning__proof-rail/);
+  assert.match(grammar,/flagship_architecture_standard:variantKey===\\"A\\"\?\\"R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1\\"/);
+  assert.match(compiler,/R116_FLAGSHIP_SET_PIECES_REQUIRED/);
+  assert.match(compiler,/R116_POSITIONING_PROOF_RAIL_REQUIRED/);
+  assert.match(compiler,/R116_CINEMATIC_HERO_CSS_REQUIRED/);
+  assert.match(compiler,/R116_FINAL_CTA_SCALE_SHIFT_REQUIRED/);
+  assert.match(r116Flagship,/R116 FLAGSHIP PREMIUM ARCHITECTURE/);
+  assert.match(r116Flagship,/\.ixf-hero__inner/);
+  assert.match(r116Flagship,/\.ixf-positioning__grid/);
+  assert.match(r116Flagship,/\.ixf-services/);
+  assert.match(r116Flagship,/\.ixg-feature--one/);
+  assert.match(r116Flagship,/\.ixg-feature--two/);
+  assert.match(r116Flagship,/\.ixg-trust-section/);
+  assert.match(r116Flagship,/\.ixg-partner-proof__grid/);
+  assert.match(r116Flagship,/\.ix-v2-footer-grid/);
 });
 
 test("R115 premium finishing differentiates services features shell CTAs and footer",()=>{
