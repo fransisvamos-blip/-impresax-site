@@ -1,4 +1,4 @@
-import { MIN_SECTION_VISUALS, SHOWROOM_RULES_VERSION } from "./constants.js";
+import { MIN_SECTION_VISUALS, SHOWROOM_RULES_VERSION, HOME_DEPTH_STANDARD, MIN_HOME_SECTIONS, MAX_HOME_SECTIONS, MIN_HOME_EDITORIAL_FEATURES, MIN_HOME_SUBSTANTIAL_SECTIONS } from "./constants.js";
 
 const LOW_VALUE_HOMEPAGE_FACTS=[
   /\bfatturato\b/i,
@@ -416,6 +416,40 @@ export function r107UltraVisualViolations(mainHtml="",css="") {
   return issues;
 }
 
+export function homeDepthViolations(mainHtml="",spec={}) {
+  const main=String(mainHtml||"");
+  const issues=[];
+  const sections=[...main.matchAll(/<section\b[^>]*\bid=["']([^"']+)["'][^>]*>/gi)];
+  const count=sections.length;
+  if(count<MIN_HOME_SECTIONS) issues.push("R111_HOME_SECTION_DEPTH_REQUIRED:"+count+"/"+MIN_HOME_SECTIONS);
+  if(count>MAX_HOME_SECTIONS) issues.push("R111_HOME_SECTION_BLOAT:"+count+"/"+MAX_HOME_SECTIONS);
+
+  const substantial=sections.filter(m=>/\bdata-section-depth=["']substantial["']/i.test(m[0])).length;
+  if(substantial<MIN_HOME_SUBSTANTIAL_SECTIONS) {
+    issues.push("R111_SUBSTANTIAL_SECTION_DEPTH_REQUIRED:"+substantial+"/"+MIN_HOME_SUBSTANTIAL_SECTIONS);
+  }
+
+  const editorialFeatures=sections.filter(m=>/\bdata-editorial-feature=["']true["']/i.test(m[0])).length;
+  if(editorialFeatures<MIN_HOME_EDITORIAL_FEATURES) {
+    issues.push("R111_EDITORIAL_FEATURE_SCENES_REQUIRED:"+editorialFeatures+"/"+MIN_HOME_EDITORIAL_FEATURES);
+  }
+
+  const ids=sections.map(m=>m[1]);
+  const heroIndex=ids.indexOf("hero");
+  const finalIndex=ids.indexOf("final-cta");
+  const middleScenes=(heroIndex>=0 && finalIndex>heroIndex) ? finalIndex-heroIndex-1 : 0;
+  if(middleScenes<6) issues.push("R111_MIDDLE_SCROLL_DEPTH_REQUIRED:"+middleScenes+"/6");
+
+  const heroTag=sections.find(m=>m[1]==="hero")?.[0]||"";
+  if(!/\bdata-home-depth=["']15k["']/i.test(heroTag)) issues.push("R111_15K_HOME_DEPTH_MARKER_REQUIRED");
+
+  const blueprint=Array.isArray(spec?.section_blueprint)?spec.section_blueprint:[];
+  if(blueprint.length && (blueprint.length<MIN_HOME_SECTIONS || blueprint.length>MAX_HOME_SECTIONS)) {
+    issues.push("R111_BLUEPRINT_DEPTH_RANGE_REQUIRED:"+blueprint.length+"/"+MIN_HOME_SECTIONS+"-"+MAX_HOME_SECTIONS);
+  }
+  return issues;
+}
+
 export function showroomPolicySummary() {
   return Object.freeze({
     version:SHOWROOM_RULES_VERSION,
@@ -491,6 +525,12 @@ export function showroomPolicySummary() {
       section_narrative_unit:"ONE_MESSAGE_ONE_VISUAL_SYSTEM",
       art_direction_gate:"R109_15K_ART_DIRECTION_GATE_V1",
       section_first_architecture:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
+      home_depth_standard:HOME_DEPTH_STANDARD,
+      homepage_sections:"8_TO_12_SUBSTANTIAL_SCENES",
+      minimum_substantial_sections:MIN_HOME_SUBSTANTIAL_SECTIONS,
+      minimum_editorial_feature_scenes:MIN_HOME_EDITORIAL_FEATURES,
+      middle_scroll:"AT_LEAST_6_SCENES_BETWEEN_HERO_AND_CLOSE",
+      thin_brochure_home:"BLOCKING_FAIL",
       section_blueprint_before_design:"BLOCKING",
       section_purpose_required:"BLOCKING",
       why_us_richness:"MIN_THREE_REASONS_PLUS_GRAPHIC_SUPPORT",
