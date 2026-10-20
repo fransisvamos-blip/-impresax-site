@@ -886,7 +886,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             context.r107Retrofit===true
             || String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
             || String(feedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
-          if(contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||"")))))) {
+          const zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true
+            && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI";
+          if(zeroAiQueueDeterministic || contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||"")))))) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
@@ -1125,11 +1127,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       previewEmitted=true;
 
       const structuralZeroAiReview=
-        (
-          context.packMetadata?.structural_divergence_rework_required===true
+        EXTERNAL_AI_CALLS_ALLOWED!==true
+        && (
+          generated?.deterministic===true
+          || context.packMetadata?.structural_divergence_rework_required===true
           || context.r107Retrofit===true
-        )
-        && EXTERNAL_AI_CALLS_ALLOWED!==true;
+        );
       if(structuralZeroAiReview) {
         await step.do("r"+cycle+"-structural-zero-ai-deterministic-ready",async()=>{
           await recordQa(sql,{
@@ -1458,7 +1461,9 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       .filter(([k,v])=>!v.unavailable && k!=="PRIMARY_LOGO")
       .map(([k])=>k);
     const sectionTokens=sectionVisualTokens(policyAssets);
-    const r107Active=String(SHOWROOM_RULES_VERSION||"").includes("R107");
+    const r107Active=/IMPRESAX_RENDER_STANDARD_R(?:107|108|109|110|111|112)_/i.test(String(SHOWROOM_RULES_VERSION||""));
+    const zeroAiDeterministicMode=EXTERNAL_AI_CALLS_ALLOWED!==true
+      && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI";
     const discoveryState=await step.do("load-first-party-discovery-state",async()=>{
       const rows=await sql`
         select website_url,source_data
@@ -1529,7 +1534,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return {status:"INPUT_REMEDIATION",reason:"SECTION_VISUALS_REQUIRED",required:MIN_SECTION_VISUALS,available:sectionTokens.length};
     }
     await step.do("mark-truth-and-creative-planning",async()=>{
-      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN",metadata:{showroom_rules_version:SHOWROOM_RULES_VERSION,section_visual_tokens:sectionTokens,graphic_first_r107:graphicFirstR107}});
+      await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"TRUTH_AND_CREATIVE_PLAN",metadata:{showroom_rules_version:SHOWROOM_RULES_VERSION,section_visual_tokens:sectionTokens,graphic_first_r107:graphicFirstR107,zero_ai_deterministic_mode:zeroAiDeterministicMode}});
       return {ok:true};
     });
 
@@ -1538,7 +1543,7 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       step.do("load-creative-directions-component",async()=>getDirectionPlan(sql,p.packId))
     ]);
 
-    const deterministicPlanning=!EXTERNAL_AI_CALLS_ALLOWED && String(SHOWROOM_RULES_VERSION||"").includes("R107");
+    const deterministicPlanning=zeroAiDeterministicMode;
 
     const truthDraftPromise=storedTruth
       ? Promise.resolve({
