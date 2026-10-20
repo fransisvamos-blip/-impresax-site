@@ -290,7 +290,8 @@ export function validateRenderSpec(spec, manifests) {
   }
 
   const detailCraftStandard=String(spec?.detail_craft_standard||"");
-  if(["R113_DETAIL_CRAFTSMANSHIP_V1","R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1","R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1"].includes(detailCraftStandard)) {
+  const isR116Flagship=String(spec?.flagship_architecture_standard||"")==="R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1";
+  if(["R113_DETAIL_CRAFTSMANSHIP_V1","R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1"].includes(detailCraftStandard)) {
     const servicesDetailHtml=sectionHtml("services");
     if(servicesDetailHtml && !/data-detail-grid=["']aligned["']/i.test(servicesDetailHtml)) {
       issues.push("R113_SERVICE_DETAIL_GRID_ALIGNMENT_REQUIRED");
@@ -328,7 +329,7 @@ export function validateRenderSpec(spec, manifests) {
     }
   }
 
-  if(["R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1","R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1"].includes(detailCraftStandard)) {
+  if(detailCraftStandard==="R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1") {
     const r115Services=sectionHtml("services");
     const r115Feature1=sectionHtml("service-feature-1");
     const r115Feature2=sectionHtml("service-feature-2");
@@ -385,7 +386,7 @@ export function validateRenderSpec(spec, manifests) {
     }
   }
 
-  if(String(spec?.flagship_architecture_standard||"")==="R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1") {
+  if(isR116Flagship) {
     const flagshipHero=sectionHtml("hero");
     const flagshipPositioning=sectionHtml("positioning");
     const flagshipServices=sectionHtml("services");
@@ -411,8 +412,10 @@ export function validateRenderSpec(spec, manifests) {
     const positioningProof=(flagshipPositioning.match(/ixf-positioning__proof/g)||[]).length;
     if(requiredPositionProof>0 && positioningProof<requiredPositionProof) issues.push("R116_POSITIONING_PROOF_RAIL_REQUIRED:"+positioningProof+"/"+requiredPositionProof);
 
-    const matchedServices=(flagshipServices.match(/data-service-card=["']matched["']/gi)||[]).length;
-    if(matchedServices<2) issues.push("R116_MATCHED_SERVICE_EDITORIAL_SYSTEM_REQUIRED:"+matchedServices+"/2");
+    const editorialServices=(flagshipServices.match(/data-service-editorial=["']true["']/gi)||[]).length;
+    if(editorialServices<2) issues.push("R116_SERVICE_EDITORIAL_LEDGER_REQUIRED:"+editorialServices+"/2");
+    if(/data-service-card=/i.test(flagshipServices)) issues.push("R116_LEGACY_SERVICE_CARD_GRAMMAR_FORBIDDEN");
+    if(flagshipServices.includes("{{asset:SERVICE_MATERIALS_VISUAL}}")) issues.push("R116_REPEATED_MATERIALS_VISUAL_FORBIDDEN");
 
     if(!/data-r116-set-piece=["']cinematic-materials["']/i.test(flagshipFeature1)) issues.push("R116_MATERIALS_SET_PIECE_REQUIRED");
     if(!/data-r116-set-piece=["']technical-rebar["']/i.test(flagshipFeature2)) issues.push("R116_REBAR_SET_PIECE_REQUIRED");
@@ -421,7 +424,17 @@ export function validateRenderSpec(spec, manifests) {
     }
 
     if(!/data-r116-set-piece=["']trust["']/i.test(flagshipTrust)) issues.push("R116_TRUST_PROOF_ARCHITECTURE_REQUIRED");
+    const verifiedTrustReasons=(flagshipTrust.match(/data-trust-reason=/gi)||[]).length;
+    if(verifiedTrustReasons<3) issues.push("R116_THREE_VERIFIED_PROOF_FACTS_REQUIRED:"+verifiedTrustReasons+"/3");
+    if(/\{\{copy:(?:LOCALITY_LINE|SERVICE_\d+_(?:TITLE|BODY)|POSITIONING_(?:TITLE|BODY)|FOOTER_LINE)\}\}/i.test(flagshipTrust)) {
+      issues.push("R116_NON_PROOF_COPY_IN_TRUST_FORBIDDEN");
+    }
     if(flagshipPartners && !/data-r116-set-piece=["']partners["']/i.test(flagshipPartners)) issues.push("R116_PARTNER_ECOSYSTEM_REQUIRED");
+    if(/data-demo-partner-slot=["']true["']/i.test(flagshipPartners)) issues.push("R116_UNVERIFIED_PARTNER_PLACEHOLDER_FORBIDDEN");
+    if(flagshipPartners && !/data-partner-verification=["']verified-only["']/i.test(flagshipPartners)) issues.push("R116_VERIFIED_ONLY_PARTNER_ARCHITECTURE_REQUIRED");
+    if(assetKeys.has("PARTNER_UPOWER_LOGO") && flagshipPartners && (flagshipPartners.match(/\{\{asset:PARTNER_UPOWER_LOGO\}\}/g)||[]).length!==1) {
+      issues.push("R116_UPOWER_LOGO_EXACTLY_ONCE_REQUIRED");
+    }
     if(!/data-r116-set-piece=["']bridge["']/i.test(flagshipBridge)) issues.push("R116_BRIDGE_BRAND_OBJECT_REQUIRED");
     if(!/data-r116-set-piece=["']final-cta["']/i.test(flagshipFinal)) issues.push("R116_FINAL_CLIMAX_REQUIRED");
 
@@ -465,7 +478,7 @@ export function validateRenderSpec(spec, manifests) {
     }
   }
 
-  if(String(spec?.art_direction_standard||"")==="R109_15K_ART_DIRECTION_GATE_V1") {
+  if(String(spec?.art_direction_standard||"")==="R109_15K_ART_DIRECTION_GATE_V1" && !isR116Flagship) {
     if(!/\bid=["']services["'][^>]*\bdata-uniform-service-rows=["']true["']/i.test(main)) {
       issues.push("R109_UNIFORM_SERVICE_ROWS_REQUIRED");
     }
