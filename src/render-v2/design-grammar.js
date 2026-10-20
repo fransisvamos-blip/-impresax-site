@@ -1,3 +1,5 @@
+import { R115_SHELL_CSS } from "./r115-shell-css.js";
+import { R115_SECTIONS_CSS } from "./r115-sections-css.js";
 function copyToken(key){ return "{{copy:"+key+"}}"; }
 function ctaToken(key){ return "{{cta:"+key+"}}"; }
 
@@ -2084,7 +2086,7 @@ body{font-family:var(--ix-body-font)}
  .ixg-feature__device{min-height:200px}
  .ixg-feature__stage.no-visual .ixg-feature__device{min-height:150px}
 }
-` : "")+(variantKey==="C" ? `
+` : "")+(variantKey==="A" ? R115_SHELL_CSS+R115_SECTIONS_CSS : "")+(variantKey==="C" ? `
 /* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
 .ixc-bridge{min-height:0!important;display:block!important}
 .ixc-bridge__inner{grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr)!important;align-items:center!important}
