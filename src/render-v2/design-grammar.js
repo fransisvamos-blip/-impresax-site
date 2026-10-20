@@ -276,7 +276,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const r89Lines="<div class=\"ixr89-lines\" data-surface-art aria-hidden=\"true\"><i></i><i></i><i></i></div>";
   const suppliedSectionAssets=[...new Set((sectionAssetTokens||[])
     .map(String)
-    .filter(token=>/^[A-Z0-9_]+$/.test(token) && token!=="HERO_VISUAL" && token!=="PRIMARY_LOGO"))];
+    .filter(token=>/^[A-Z0-9_]+$/.test(token) && token!=="HERO_VISUAL" && token!=="PRIMARY_LOGO" && !/^PARTNER_[A-Z0-9_]+_LOGO$/.test(token)))];
   const preferredSectionAssets=["POSITIONING_VISUAL","SERVICE_MATERIALS_VISUAL","SERVICE_REBAR_VISUAL","TRUST_VISUAL"];
   const explicitPreferred=preferredSectionAssets.filter(token=>suppliedSectionAssets.includes(token));
   const rankedSectionAssets=[
@@ -385,9 +385,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     logoFirstGraphicBand,
     "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-commercial-depth=\"high\" data-mobile-density=\"premium\" data-commercial-specificity=\"sector\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-proof-support=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-proof\">"+trustProofRail+"</div><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
-      ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
+      ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-cta-intensity=\"support\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
       : "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div><div class=\"ixg-actions\">"+secondary+"</div></div></section>",
-    "<section id=\"final-cta\" data-section-role=\"conversion\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-contrast-safe=\"true\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+"</div></div></section>"
+    "<section id=\"final-cta\" data-section-role=\"conversion\" data-cta-intensity=\"primary\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-contrast-safe=\"true\" data-section-depth=\"substantial\" data-section-substance=\"rich\" data-mobile-density=\"premium\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+"</div></div></section>"
   ].join("");
 
   const bTrustRows=trustKeys
@@ -526,10 +526,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 .ixg-service__body{color:#45423c!important;font-weight:500!important;line-height:1.48!important}
 .ixg-trust-section{background:#0d0e0e}
 .ixg-trust strong{font-family:Georgia,'Times New Roman',serif;font-weight:400!important}
-.ixm-bridge{background:#f7f6f2!important;border-top:1px solid rgba(17,17,17,.16);border-bottom:1px solid rgba(17,17,17,.16)}
+.ixm-bridge{background:#f7f6f2!important;border-top:1px solid rgba(17,17,17,.16);border-bottom:1px solid rgba(17,17,17,.16);padding:clamp(52px,5.5vw,82px) 0!important;min-height:0!important}
 .ixm-bridge__grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(36px,6vw,90px);align-items:end}
 .ixm-bridge__copy{max-width:840px;display:grid;gap:18px}
-.ixm-bridge h2{max-width:14ch;font-size:clamp(46px,6.3vw,92px)!important}
+.ixm-bridge h2{max-width:18ch;font-size:clamp(34px,4.4vw,58px)!important;line-height:.98!important}
 .ixm-bridge .ixg-actions{margin-top:0!important}
 .ix-v2-footer{background:#0d0e0e!important;color:#f7f6f2!important}
 .ix-v2-footer-identity{display:inline-flex!important;width:max-content!important;min-height:0!important;background:transparent!important;padding:0!important;border-radius:0!important;box-shadow:none!important;filter:drop-shadow(0 2px 10px rgba(0,0,0,.22))}
