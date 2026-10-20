@@ -1,7 +1,7 @@
 import { db, persistWorkflow, updateWorkflow, setPackStatus, setVariantStatus } from "./db.js";
 import { renderConcurrencyState, activeVariantWorkflowRows, unstartedInitialVariants } from "./concurrency.js";
 import { prospectCircuitState, packCircuitOverridePending, consumePackCircuitOverride } from "./circuit.js";
-import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION } from "./constants.js";
+import { QUALITY_CONTRACT_VERSION, EXECUTION_ENGINE_VERSION, MODEL_ROUTE_VERSION, COMPILER_VERSION, DELIVERY_VARIANT_KEYS } from "./constants.js";
 const QUALITY_UPGRADE_MAX_ATTEMPTS=3;
 const R107_STABLE_REARM_EPOCH="R107_STABLE_2026_10_20_A";
 const R107_STABLE_REARM_CUTOFF="2026-10-20T00:01:00.000Z";
@@ -311,7 +311,7 @@ async function preemptLowerPriorityRecoveryForQualityUpgrade(env,sql) {
 
   const target=targets[0];
   const targetRank=Number(target.rank ?? 2147483647);
-  const desiredSlots=Math.min(3,state.limit);
+  const desiredSlots=Math.min(Math.max(1,DELIVERY_VARIANT_KEYS.length),state.limit);
   let need=Math.max(0,desiredSlots-state.slots);
   if(need<=0) return {preempted:[],slots_added:0,target};
 
@@ -524,15 +524,16 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
     left join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
     where v.render_pack_id=${pack.id}::uuid
     order by v.variant_key`;
-  if(variants.length!==3) return {started:false,reason:"THREE_VARIANTS_REQUIRED",pack_id:pack.id,slots_used:0};
+  const deliveryVariants=variants.filter(v=>DELIVERY_VARIANT_KEYS.includes(String(v.variant_key)));
+  if(!deliveryVariants.length) return {started:false,reason:"DELIVERY_VARIANT_REQUIRED",pack_id:pack.id,slots_used:0};
 
   const firstUpgrade=String(pack.metadata?.quality_upgrade_to||"")!==QUALITY_CONTRACT_VERSION;
   const previousContract=firstUpgrade?pack.quality_contract_version:(pack.metadata?.quality_upgrade_from||pack.quality_contract_version);
   const runKey=contractSlug(QUALITY_CONTRACT_VERSION);
 
   if(firstUpgrade) {
-    if(variants.some(v=>!v.certified_revision_id)) {
-      return {started:false,reason:"THREE_CERTIFIED_VARIANTS_REQUIRED",pack_id:pack.id,slots_used:0};
+    if(deliveryVariants.some(v=>!v.certified_revision_id)) {
+      return {started:false,reason:"DELIVERY_VARIANT_CERTIFICATION_REQUIRED",pack_id:pack.id,slots_used:0};
     }
     await sql`
       update render_v2_packs
@@ -564,7 +565,7 @@ async function upgradeLegacyReadyPack(env,sql,availableSlots) {
 
   const launched=[];
   const exhaustedKeys=[];
-  for(const variant of variants) {
+  for(const variant of deliveryVariants) {
     if(slots<=0) break;
     const alreadyCurrent=
       variant.status==="RENDER_READY" &&
@@ -788,12 +789,13 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
        order by w.created_at desc limit 1) latest_workflow_status
     from render_v2_variants v
     where v.render_pack_id=${pack.id}::uuid
-    order by v.variant_key`;
+    order by v.variant_key;
+  const deliveryVariants=variants.filter(v=>DELIVERY_VARIANT_KEYS.includes(String(v.variant_key)))`;
 
   const priorAttempts=Number(pack.metadata?.auto_recovery_attempt||0);
 
   if(!variants.length) {
-    const requiredSlots=pack?.metadata?.single_concept_mode===true?1:3;
+    const requiredSlots=Math.max(1,DELIVERY_VARIANT_KEYS.length);
     if(slots<requiredSlots) {
       return {pack_id:pack.id,started:false,reason:"CONCURRENCY_CAP",required_slots:requiredSlots,available_slots:slots,slots_used:0};
     }
@@ -850,7 +852,7 @@ async function recoverEscalatedQueuePack(env,sql,pack,availableSlots) {
     return {pack_id:pack.id,started:true,type:"PROSPECT",instance_id:instanceId,status:await instance.status(),slots_used:requiredSlots};
   }
 
-  const pending=variants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
+  const pending=deliveryVariants.filter(v=>!(v.status==="RENDER_READY" && v.certified_revision));
   if(pending.length===0) return {pack_id:pack.id,started:false,reason:"ALL_VARIANTS_READY",slots_used:0};
 
   const activeRecoveryRows=await sql`
