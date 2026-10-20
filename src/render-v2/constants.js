@@ -40,6 +40,11 @@ export const CTA_DUPLICATION_FORBIDDEN = true;
 export const EMPTY_DECORATIVE_SECTION_FORBIDDEN = true;
 export const PREMIUM_BUTTON_SYSTEM_REQUIRED = true;
 export const MATERIAL_DEPTH_REQUIRED = true;
+export const DETAIL_CRAFT_STANDARD = "R113_DETAIL_CRAFTSMANSHIP_V1";
+export const SERVICE_INDEX_ALIGNMENT_REQUIRED = true;
+export const EDITORIAL_FEATURE_IMAGE_REQUIRED_WHEN_AVAILABLE = true;
+export const TRUST_BACKGROUND_IMAGE_PREFERRED = true;
+export const DEMO_PARTNER_PLACEHOLDER_ALLOWED = true;
 
 // Delivery policy: new prospect packs ship one ImpresaX-authored concept.
 // Legacy A/B/C packs remain readable/recoverable for backward compatibility.
@@ -105,6 +110,7 @@ export const QA_SCORE_KEYS = Object.freeze([
   "homepage_richness","section_depth","content_architecture","commercial_story_depth",
   "section_substance","commercial_depth","middle_scroll_value","why_us_strength",
   "anti_empty_layout","cta_distinction","mobile_density_quality",
+  "micro_alignment_quality","service_module_quality","section_image_completeness","partner_showcase_quality",
   "cross_viewport_art_direction"
 ]);
 
