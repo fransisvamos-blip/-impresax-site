@@ -1747,10 +1747,49 @@ body{font-family:var(--ix-body-font)}
 }
 `;
 
+  const premiumPolishCss=`
+/* R107 premium finishing pass: contrast, depth, buttons and section refinement. */
+.ixg-positioning,.ixg-services,.ixg-bridge,.ixg-contact{color:#202224}
+.ixg-positioning p,.ixg-services p,.ixg-bridge p,.ixg-contact p{color:rgba(32,34,36,.82)}
+.ixg-trust-section,.ix-v2-footer{color:#f7f6f2}
+.ixg-trust-section .ixg-section-intro,.ixg-trust-section p,.ix-v2-footer p,.ix-v2-footer a{color:rgba(247,246,242,.82)!important}
+.ixg-trust-section .ixg-kicker,.ix-v2-footer strong{color:#fff!important}
+.ixg-service,.ixg-trust,.ixg-bridge__evidence-row{
+ border:1px solid rgba(32,34,36,.10);
+ box-shadow:0 18px 52px rgba(17,17,17,.08),0 2px 8px rgba(17,17,17,.04);
+}
+.ixg-trust{border-color:rgba(255,255,255,.12);box-shadow:0 18px 48px rgba(0,0,0,.24)}
+.ixg-section-visual{box-shadow:0 22px 70px rgba(17,17,17,.14);overflow:hidden}
+.ixg-section-visual img{display:block;width:100%;height:100%;object-fit:cover}
+.ixg-cta,.ix-v2-header-cta{
+ min-height:48px;
+ border-radius:4px!important;
+ font-weight:800;
+ letter-spacing:.065em;
+ box-shadow:0 10px 26px rgba(17,17,17,.14);
+ transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.ixg-cta--primary{box-shadow:0 14px 34px rgba(17,17,17,.20)}
+.ixg-cta--secondary{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.ixm-hero__veil{
+ background:
+ linear-gradient(90deg,rgba(8,9,10,.96) 0%,rgba(8,9,10,.80) 30%,rgba(8,9,10,.40) 56%,rgba(8,9,10,.10) 78%,rgba(8,9,10,.22) 100%),
+ linear-gradient(180deg,rgba(0,0,0,.30) 0%,transparent 38%,rgba(0,0,0,.46) 100%)!important
+}
+.ixm-hero h1,.ixm-hero .ixg-lede,.ixm-hero .ixg-kicker{text-shadow:0 2px 22px rgba(0,0,0,.28)}
+@media(max-width:700px){
+ .ixg-service,.ixg-trust,.ixg-bridge__evidence-row{box-shadow:0 12px 34px rgba(17,17,17,.08)}
+ .ixm-hero__veil{
+  background:linear-gradient(180deg,rgba(8,9,10,.28) 0%,rgba(8,9,10,.08) 28%,rgba(8,9,10,.38) 55%,rgba(8,9,10,.94) 80%,#0d0e0e 100%)!important
+ }
+ .ixg-cta{min-height:50px}
+}
+`;
+
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+r107UltraVisualCss+(variantKey==="C" ? `
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+r107UltraVisualCss+premiumPolishCss+(variantKey==="C" ? `
 /* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
 .ixc-bridge{min-height:0!important;display:block!important}
 .ixc-bridge__inner{grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr)!important;align-items:center!important}
