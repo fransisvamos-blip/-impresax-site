@@ -1132,6 +1132,7 @@ async function syncProspectRenderProjection(sql) {
         current_step=d.current_step,
         error=d.error,
         next_action=d.next_action,
+        retry_count=case when d.render_status in ('PREVIEW_READY','RENDER_READY') then 0 else pr.retry_count end,
         updated_at=now()
     from desired d
     where pr.id=d.prospect_id
@@ -1140,6 +1141,7 @@ async function syncProspectRenderProjection(sql) {
         or pr.current_step is distinct from d.current_step
         or pr.error is distinct from d.error
         or pr.next_action is distinct from d.next_action
+        or (d.render_status in ('PREVIEW_READY','RENDER_READY') and pr.retry_count<>0)
       )
     returning pr.id,d.pack_id,pr.render_status,pr.current_step,pr.error,pr.next_action`;
   return {updated:rows.length,prospects:rows};
