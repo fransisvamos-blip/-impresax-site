@@ -718,7 +718,6 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             partnerFacts.push(fact);
             continue;
           }
-          if(/\b(?:fatturato|ricavi|revenue|turnover|dipendenti|employees|headcount|addetti)\b/i.test(fact)) continue;
           companyReasons.push(fact);
         }
         const whyUsFromService=service=>{
@@ -759,7 +758,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         || String(packMetadata.master_reference_status||"")==="R107_RETROFIT_RUNNING"
         || String(packMetadata.quality_upgrade_to||"")===QUALITY_CONTRACT_VERSION
         || params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE";
-      const cabinaCopyManifest=(cabinaPrecomputed || structuralRework)
+      const fullFlagshipRedesign=/FULL_FLAGSHIP_REDESIGN|FULL_REDESIGN/i.test(String(params.initialFeedback?.reason||""));
+      const cabinaCopyManifest=(cabinaPrecomputed || (structuralRework && !fullFlagshipRedesign))
         && packMetadata.cabina_precomputed_copy_manifest
         && typeof packMetadata.cabina_precomputed_copy_manifest==="object"
         ? packMetadata.cabina_precomputed_copy_manifest
