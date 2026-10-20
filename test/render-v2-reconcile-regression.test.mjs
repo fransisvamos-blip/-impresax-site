@@ -587,6 +587,15 @@ test("R113 detail craftsmanship locks alignment imagery trust background and dem
   assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
 });
 
+test("R116 final art direction removes legacy band and upgrades shell bridge",()=>{
+  assert.match(r116Flagship,/\.ixm-graphic-band\{display:none!important\}/);
+  assert.match(r116Flagship,/\.ix-v2-header\{[\s\S]*position:absolute!important/);
+  assert.match(r116Flagship,/\.ixg-bridge\[data-r116-set-piece="bridge"\]/);
+  assert.match(r116Flagship,/font-size:clamp\(64px,7vw,110px\)/);
+  assert.match(r116Flagship,/\.ixg-feature--one \.ixg-feature__stage:before,[\s\S]*display:none!important/);
+  assert.match(r116Flagship,/\.ix-v2-nav\{display:none!important\}/);
+});
+
 test("R116 mobile flagship containment and overflow diagnostics stay enforced",()=>{
   assert.match(browser,/overflow_elements/);
   assert.match(browser,/x\.right>root\.clientWidth\+2 \|\| x\.left<-2/);
