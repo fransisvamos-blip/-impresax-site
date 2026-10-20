@@ -283,7 +283,7 @@ openRenderingProspect = async function(id) {
 
     let head = '<div class="detail-head render-detail-head"><div>';
     head += '<span class="kicker">PROGETTAZIONE VISIVA</span><h3>' + esc(p.business_name) + '</h3>';
-    head += '<p class="reference-note">Confronta A/B/C su desktop e mobile. Il winner è solo suggerito: nessuna variante diventa MASTER senza approvazione umana.</p></div>';
+    head += '<p class="reference-note">Un solo concept ImpresaX, completo desktop e mobile. MASTER solo con approvazione umana.</p></div>';
     if (p.live_url) {
       head += '<a class="preview-site prominent" href="' + esc(p.live_url) + '" target="_blank" rel="noopener">Anteprima sito ↗</a>';
     } else {
