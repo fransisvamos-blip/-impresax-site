@@ -571,11 +571,13 @@ test("R112 preserves real hero identity by upscaling raster before vector fallba
   assert.match(workflows,/VECTOR_LAST_RESORT/);
 });
 
-test("R112 zero-AI hero resolution failures auto-fallback to scalable vector art",()=>{
+test("R112 zero-AI hero resolution failures retain vector art as last-resort fallback",()=>{
   assert.match(workflows,/HERO_SOURCE_RESOLUTION_TOO_LOW/);
+  assert.match(workflows,/hero-resolution-raster-upscale/);
   assert.match(workflows,/hero-resolution-vector-fallback/);
   assert.match(workflows,/createR107DeterministicGraphicHeroAsset\(this\.env,sql/);
-  assert.match(workflows,/reason:"DETERMINISTIC_HERO_RESOLUTION_FALLBACK"/);
+  assert.match(workflows,/DETERMINISTIC_HERO_RESOLUTION_FALLBACK/);
+  assert.match(workflows,/VECTOR_LAST_RESORT/);
   assert.match(workflows,/hero_resolution_fallback:true/);
 });
 
