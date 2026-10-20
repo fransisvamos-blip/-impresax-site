@@ -676,7 +676,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
-      const verified=explicitHeroAsset(context.assets);
+      const verified=explicitHeroAsset(context.assets,context.inputPayload);
       if(verified) return verified;
       const structuralRework=
         context.packMetadata?.structural_divergence_rework_required===true
