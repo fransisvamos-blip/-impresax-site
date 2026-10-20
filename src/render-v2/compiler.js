@@ -289,6 +289,44 @@ export function validateRenderSpec(spec, manifests) {
     issues.push("FINAL_CTA_CONTRACT_REQUIRED");
   }
 
+  if(String(spec?.detail_craft_standard||"")==="R113_DETAIL_CRAFTSMANSHIP_V1") {
+    const servicesDetailHtml=sectionHtml("services");
+    if(servicesDetailHtml && !/data-detail-grid=["']aligned["']/i.test(servicesDetailHtml)) {
+      issues.push("R113_SERVICE_DETAIL_GRID_ALIGNMENT_REQUIRED");
+    }
+    const serviceRows=(servicesDetailHtml.match(/data-service-index-rail=["']locked["']/gi)||[]).length;
+    if(servicesDetailHtml && serviceRows<2) issues.push("R113_SERVICE_INDEX_RAIL_REQUIRED:"+serviceRows+"/2");
+
+    const feature1=sectionHtml("service-feature-1");
+    const feature2=sectionHtml("service-feature-2");
+    if(assetKeys.has("SERVICE_MATERIALS_VISUAL") && (!feature1 || !feature1.includes("{{asset:SERVICE_MATERIALS_VISUAL}}"))) {
+      issues.push("R113_FEATURE_1_CONTEXT_IMAGE_REQUIRED");
+    }
+    if(assetKeys.has("SERVICE_REBAR_VISUAL") && (!feature2 || !feature2.includes("{{asset:SERVICE_REBAR_VISUAL}}"))) {
+      issues.push("R113_FEATURE_2_CONTEXT_IMAGE_REQUIRED");
+    }
+
+    if(assetKeys.has("TRUST_VISUAL")) {
+      const trustDetailHtml=sectionHtml("trust");
+      if(!trustDetailHtml.includes("{{asset:TRUST_VISUAL}}")) issues.push("R113_TRUST_BACKGROUND_IMAGE_REQUIRED");
+      if(!/data-trust-background=["']image["']/i.test(trustDetailHtml)) issues.push("R113_TRUST_BACKGROUND_MARKER_REQUIRED");
+    }
+
+    const verifiedPartnerKeys=Object.keys(manifests?.copy||{}).filter(key=>/^PARTNER_\d+$/.test(key));
+    if(verifiedPartnerKeys.length===1) {
+      const partnerDetailHtml=sectionHtml("partners");
+      const demoSlots=(partnerDetailHtml.match(/data-demo-partner-slot=["']true["']/gi)||[]).length;
+      if(demoSlots<3) issues.push("R113_PARTNER_DEMO_CAPACITY_REQUIRED:"+demoSlots+"/3");
+    }
+
+    if(!/\.ixg-service__indexrail\s*\{[\s\S]*font-variant-numeric|\.ixg-service__index\s*\{[\s\S]*font-variant-numeric/i.test(css)) {
+      issues.push("R113_TABULAR_SERVICE_INDEX_CSS_REQUIRED");
+    }
+    if(assetKeys.has("TRUST_VISUAL") && !/\.ixg-trust-bg\s*\{[\s\S]*position\s*:\s*absolute/i.test(css)) {
+      issues.push("R113_TRUST_BACKGROUND_CSS_REQUIRED");
+    }
+  }
+
   if(String(spec?.section_first_standard||spec?.section_architecture_standard||"")==="R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1") {
     const blueprint=Array.isArray(spec?.section_blueprint)?spec.section_blueprint:[];
     if(blueprint.length<5) issues.push("R110_SECTION_BLUEPRINT_REQUIRED");
