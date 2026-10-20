@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations, sectionSubstanceViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -217,6 +217,10 @@ export function validateRenderSpec(spec, manifests) {
     if(JSON.stringify(blueprint)!==JSON.stringify(sectionIds)) {
       issues.push("R111_BLUEPRINT_SECTION_ORDER_MISMATCH");
     }
+  }
+
+  if(String(spec?.section_substance_standard||"")==="R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1") {
+    for(const issue of sectionSubstanceViolations(main,spec)) issues.push(issue);
   }
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
