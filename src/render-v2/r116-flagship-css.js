@@ -397,11 +397,21 @@ export const R116_FLAGSHIP_CSS = `
  gap:22px!important;
  padding:12px 0!important
 }
-.ixf-service-line__index>span{
- font:820 clamp(44px,4.4vw,70px)/.9 var(--ix-display-font)!important;
- letter-spacing:-.055em!important;
- color:var(--ix-brand-primary)!important
+.ixf-service-line__mark{
+ width:clamp(72px,8vw,124px)!important;
+ height:clamp(58px,6vw,92px)!important;
+ display:grid!important;
+ align-content:center!important;
+ gap:8px!important
 }
+.ixf-service-line__mark i{
+ display:block!important;
+ height:3px!important;
+ background:var(--ix-brand-primary)!important
+}
+.ixf-service-line__mark i:nth-child(1){width:100%!important}
+.ixf-service-line__mark i:nth-child(2){width:68%!important}
+.ixf-service-line__mark i:nth-child(3){width:36%!important}
 .ixf-service-line__tag{
  max-width:24ch!important;
  font:760 9px/1.35 var(--ix-body-font)!important;
@@ -458,27 +468,28 @@ export const R116_FLAGSHIP_CSS = `
  padding:34px 30px!important;
  background:rgba(10,11,12,.30)!important
 }
-.ixg-trust-reason__label{
- font:760 9px/1 var(--ix-body-font)!important;
- letter-spacing:.15em!important;
- text-transform:uppercase!important;
- color:rgba(255,255,255,.54)!important
+.ixg-trust-reason__graphic{
+ width:min(150px,62%)!important;
+ min-height:94px!important;
+ display:grid!important;
+ align-content:center!important;
+ gap:9px!important;
+ margin-bottom:auto!important
 }
-.ixg-trust-reason__index{color:var(--ix-brand-primary)!important}
+.ixg-trust-reason__graphic i{
+ display:block!important;
+ height:3px!important;
+ background:rgba(255,255,255,.22)!important
+}
+.ixg-trust-reason__graphic i:nth-child(1){width:100%!important;background:var(--ix-brand-primary)!important}
+.ixg-trust-reason__graphic i:nth-child(2){width:72%!important}
+.ixg-trust-reason__graphic i:nth-child(3){width:44%!important}
 .ixg-trust-reason strong{
  max-width:18ch!important;
  font:620 clamp(22px,2.2vw,34px)/1.05 var(--ix-display-font)!important;
  letter-spacing:-.035em!important;
  color:#fff!important
 }
-.ixg-trust-reason p{
- max-width:34ch!important;
- margin-top:22px!important;
- font-size:13px!important;
- line-height:1.55!important;
- color:rgba(255,255,255,.57)!important
-}
-
 .ixg-partner-proof__grid{
  display:grid!important;
  grid-template-columns:1fr!important;
@@ -501,12 +512,19 @@ export const R116_FLAGSHIP_CSS = `
  justify-content:space-between!important;
  border-right:1px solid rgba(32,34,36,.18)!important
 }
-.ixf-partner-feature__identity>span{
- font:800 9px/1 var(--ix-body-font)!important;
- letter-spacing:.17em!important;
- text-transform:uppercase!important;
- color:rgba(32,34,36,.50)!important
+.ixf-partner-feature__mark{
+ width:min(190px,58%)!important;
+ display:grid!important;
+ gap:10px!important
 }
+.ixf-partner-feature__mark i{
+ display:block!important;
+ height:3px!important;
+ background:rgba(32,34,36,.20)!important
+}
+.ixf-partner-feature__mark i:nth-child(1){width:100%!important;background:var(--ix-brand-primary)!important}
+.ixf-partner-feature__mark i:nth-child(2){width:68%!important}
+.ixf-partner-feature__mark i:nth-child(3){width:38%!important}
 .ixf-partner-feature .ixg-partner-logo{
  width:min(320px,88%)!important;
  max-width:100%!important;
@@ -622,7 +640,7 @@ export const R116_FLAGSHIP_CSS = `
   padding:34px 0 42px!important
  }
  .ixf-service-line__index{min-height:68px!important;padding:0!important}
- .ixf-service-line__index>span{font-size:46px!important}
+ .ixf-service-line__mark{width:92px!important;height:58px!important}
  .ixf-service-line__title{font-size:clamp(42px,11vw,58px)!important;max-width:100%!important}
  .ixf-service-line__body{margin-top:18px!important}
  .ixf-service-line__rule{display:none!important}
