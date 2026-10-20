@@ -557,6 +557,14 @@ test("structural rework reuses certified hero and never requests a fresh AI hero
   assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,260}context\.packMetadata\?\.structural_divergence_rework_required!==true[\s\S]{0,180}context\.r107Retrofit!==true/);
 });
 
+test("R112 zero-AI queue always stays on deterministic planning, generation and Cabina review",()=>{
+  assert.match(workflows,/const deterministicPlanning=zeroAiDeterministicMode/);
+  assert.match(workflows,/zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true[\s\S]{0,180}RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"/);
+  assert.match(workflows,/if\(zeroAiQueueDeterministic \|\| contractUpgradeDeterministic/);
+  assert.match(workflows,/generated\?\.deterministic===true[\s\S]{0,180}context\.packMetadata\?\.structural_divergence_rework_required/);
+  assert.match(workflows,/IMPRESAX_RENDER_STANDARD_R\(\?:107\|108\|109\|110\|111\|112\)_/);
+});
+
 test("operational rollout tick reconciles before queue rollout",()=>{
   const route=index.indexOf('url.pathname==="/shadow/rollout/tick"');
   assert.ok(route>=0);
