@@ -1165,6 +1165,7 @@ async function syncProspectRenderProjection(sql) {
           when status='RENDER_READY' then 'CABINA_RENDER_REVIEW'
           when status='GENERATING' then 'RENDER_V2_GENERATING'
           when status='QA_RUNNING' then 'RENDER_V2_QA'
+          when status='PREVIEW_READY' and coalesce((metadata->>'cabina_visual_review_hold')::boolean,false)=true then 'CABINA_RENDER_REVIEW'
           when status in ('PREVIEW_READY','PREVIEW_PARTIAL') then 'RENDER_V2_PREVIEW'
           when status='REWORK' then 'RENDER_V2_REWORK'
           when status='PLANNING' then 'RENDER_V2_PLANNING'
@@ -1183,6 +1184,7 @@ async function syncProspectRenderProjection(sql) {
         end error,
         case
           when status='RENDER_READY' then 'CABINA_RENDER_SELECTION'
+          when status='PREVIEW_READY' and coalesce((metadata->>'cabina_visual_review_hold')::boolean,false)=true then 'CABINA_RENDER_SELECTION'
           when status in ('GENERATING','QA_RUNNING','PREVIEW_READY','PREVIEW_PARTIAL','REWORK','PLANNING') then 'AUTO_RENDERING'
           when status='INPUT_READY' then 'WAIT_RENDER_CAPACITY'
           when status='ESCALATION_REQUIRED' then 'AUTO_RECOVERY_OR_CABINA'
