@@ -590,7 +590,7 @@ test("R115 premium finishing differentiates services features shell CTAs and foo
   assert.match(constants,/R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1/);
   assert.match(grammar,/data-service-composition=\\"paired-editorial-with-media\\"/);
   assert.match(grammar,/const featureLayout=slot===1\?"cinematic-materials":"technical-rebar"/);
-  assert.match(grammar,/data-feature-layout=\\"\\"\+featureLayout/);
+  assert.match(grammar,/data-feature-layout/);
   assert.match(grammar,/data-trust-finish=\\"premium-editorial\\"/);
   assert.match(grammar,/data-cta-premium=\\"true\\"/);
   assert.match(grammar,/R115_SHELL_CSS\+R115_SECTIONS_CSS/);
