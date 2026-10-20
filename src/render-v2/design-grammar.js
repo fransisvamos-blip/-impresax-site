@@ -203,6 +203,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     : null;
   const positionBodyMarkup=positionBody?"<p>"+copyToken(positionBody)+"</p>":"";
   const bridgeBodyMarkup=bridgeBody?"<p>"+copyToken(bridgeBody)+"</p>":"";
+  const vclass="ixg-"+variantKey.toLowerCase();
   const nonContactTrustKeys=trustKeys.filter(key=>!trustIsContact(copyManifest,key));
   const trustIsPartnerProof=key=>/u[-\s]?power|rivenditor|dealer|partner|autorizzat/i.test(String(copyManifest?.[key]||""));
   const partnerTrustKeys=nonContactTrustKeys.filter(trustIsPartnerProof);
@@ -232,8 +233,6 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const logoFirstProofMetrics=(logoFirstMode&&proofMetrics)
     ? "<div class=\"ixg-proof-metrics\">"+proofMetrics+"</div>"
     : "";
-  const vclass="ixg-"+variantKey.toLowerCase();
-
   const primary="<a class=\"ixg-cta ixg-cta--primary\" href=\""+ctaToken("PRIMARY")+"\">"+copyToken("PRIMARY_CTA_LABEL")+"</a>";
   const secondary="<a class=\"ixg-cta ixg-cta--secondary\" href=\""+ctaToken("SECONDARY")+"\">"+copyToken("SECONDARY_CTA_LABEL")+"</a>";
   const brandWatermark=hasIdentity
