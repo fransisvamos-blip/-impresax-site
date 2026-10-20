@@ -557,6 +557,13 @@ test("structural rework reuses certified hero and never requests a fresh AI hero
   assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,260}context\.packMetadata\?\.structural_divergence_rework_required!==true[\s\S]{0,180}context\.r107Retrofit!==true/);
 });
 
+test("mobile text identity cannot force header overflow",()=>{
+  assert.match(compiler,/grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(compiler,/\.ix-v2-brand\{[^}]*min-width:0/);
+  assert.match(compiler,/\.ix-v2-wordmark\{[^}]*overflow-wrap:anywhere/);
+  assert.match(compiler,/\.ix-v2-brand\{max-width:min\(58vw,220px\)\}/);
+});
+
 test("R112 browser QA treats SVG hero fallback as resolution-independent",()=>{
   assert.match(browser,/hero_image_is_vector/);
   assert.match(browser,/!diag\.hero_image_is_vector[\s\S]{0,120}hero_image_resolution_ratio/);
