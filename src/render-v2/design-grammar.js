@@ -2026,10 +2026,12 @@ body{font-family:var(--ix-body-font)}
 .ixg-trust-bg img{width:100%;height:100%;object-fit:cover;filter:saturate(.78) contrast(1.06)}
 .ixg-trust-bg__veil{position:absolute;inset:0;display:block;background:linear-gradient(90deg,rgba(17,18,20,.96) 0%,rgba(17,18,20,.86) 52%,rgba(17,18,20,.72) 100%)}
 .ixg-trust-section>.ixg-shell{position:relative;z-index:1}
+.ixg-trust-section .ixg-trust-proof__item{background:rgba(22,24,26,.68)!important;backdrop-filter:blur(4px)}
+.ixg-trust-section .ixg-trust-reason{background:rgba(24,26,28,.78)!important;backdrop-filter:blur(5px)}
 .ixg-trust-section .ixg-section-head--light,.ixg-trust-section .ixg-section-head--light .ixg-section-intro{color:#fff!important}
 .ixg-partner-proof__grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
 .ixg-partner-card{min-height:190px!important}
-.ixg-partner-card--demo{border-style:dashed!important;background:linear-gradient(145deg,#fff 0%,#f2f1ee 100%)!important;opacity:.72;justify-content:center!important}
+.ixg-partner-card--demo{border-style:dashed!important;background:linear-gradient(145deg,#fff 0%,#f2f1ee 100%)!important;opacity:.86;justify-content:center!important;min-height:164px!important}
 .ixg-demo-partner-mark{position:relative;width:82px;height:58px;margin-bottom:18px}
 .ixg-demo-partner-mark i{position:absolute;display:block;background:#bbb}
 .ixg-demo-partner-mark--1 i:nth-child(1){width:58px;height:10px;left:0;top:6px}.ixg-demo-partner-mark--1 i:nth-child(2){width:42px;height:10px;left:12px;top:25px}.ixg-demo-partner-mark--1 i:nth-child(3){width:24px;height:10px;left:28px;top:44px}
@@ -2041,8 +2043,12 @@ body{font-family:var(--ix-body-font)}
  .ixg-service{grid-template-columns:42px 74px minmax(0,1fr)!important;column-gap:12px!important}
  .ixg-service__indexrail{padding-top:4px}
  .ixg-service__icon{width:70px!important;height:56px!important;flex-basis:70px!important}
- .ixg-partner-proof__grid{grid-template-columns:1fr!important}
- .ixg-trust-bg__veil{background:linear-gradient(180deg,rgba(17,18,20,.88),rgba(17,18,20,.96))}
+ .ixg-partner-proof__grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+ .ixg-partner-card:not(.ixg-partner-card--demo){grid-column:1/-1;min-height:158px!important}
+ .ixg-partner-card--demo{min-height:86px!important;padding:12px!important;gap:8px!important;align-items:center!important}
+ .ixg-partner-card--demo .ixg-demo-partner-mark{width:38px;height:34px;margin:0!important;transform:scale(.62);transform-origin:center}
+ .ixg-partner-card--demo .ixg-demo-partner-lines{display:none!important}
+ .ixg-trust-bg__veil{background:linear-gradient(180deg,rgba(17,18,20,.86),rgba(17,18,20,.94))}
 }
 
 /* R112 section substance: evidence occupies the scene; whitespace frames it instead of replacing it. */
