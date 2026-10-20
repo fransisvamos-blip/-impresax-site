@@ -599,6 +599,20 @@ test("R116 uses verified-only partner proof and editorial services without repea
   assert.match(r116Flagship,/object-position:82% 48%!important/);
 });
 
+test("R116 commissioned v7 composition binds verified positioning imagery and museum-grade partner proof",()=>{
+  assert.match(grammar,/const positioningEditorialVisual=suppliedSectionAssets\.includes\("POSITIONING_VISUAL"\)/);
+  assert.match(grammar,/ixg-section-visual--positioning/);
+  assert.match(grammar,/data-partner-stage=\\"commissioned\\"/);
+  assert.match(compiler,/R116_POSITIONING_VISUAL_EXACTLY_ONCE_REQUIRED/);
+  assert.match(compiler,/R116_COMMISSIONED_PARTNER_SET_PIECE_REQUIRED/);
+  assert.match(r116Flagship,/R116 commissioned art-direction pass V2/);
+  assert.match(r116Flagship,/grid-template-columns:minmax\(250px,.62fr\) minmax\(260px,.52fr\) minmax\(520px,1.16fr\)!important/);
+  assert.match(r116Flagship,/\.ixf-positioning__media \.ixg-section-visual img/);
+  assert.match(r116Flagship,/\.ixf-partner-feature__copy\{[\s\S]*background:#101213!important/);
+  assert.match(r116Flagship,/\.ixm-bridge \.ixg-cta--secondary\{[\s\S]*min-height:210px!important/);
+  assert.match(r116Flagship,/\.ixg-contact \.ixg-cta--primary\{[\s\S]*min-height:190px!important/);
+});
+
 test("R116 final art direction removes legacy band and upgrades shell bridge",()=>{
   assert.match(r116Flagship,/\.ixm-graphic-band\{display:none!important\}/);
   assert.match(r116Flagship,/\.ix-v2-header\{[\s\S]*position:absolute!important/);
