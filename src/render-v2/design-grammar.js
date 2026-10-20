@@ -1750,9 +1750,15 @@ body{font-family:var(--ix-body-font)}
   const premiumPolishCss=`
 /* R107 premium finishing pass: contrast, depth, buttons and section refinement. */
 .ixg-positioning,.ixg-services,.ixg-bridge,.ixg-contact{color:#202224}
-.ixg-positioning p,.ixg-services p,.ixg-bridge p,.ixg-contact p{color:rgba(32,34,36,.82)}
+.ixg-positioning p,.ixg-services p,.ixg-bridge p,.ixg-contact p{color:rgba(24,26,28,.94)!important;opacity:1!important}
+.ixg-positioning .ixg-kicker,.ixg-services .ixg-kicker,.ixg-bridge .ixg-kicker,.ixg-contact .ixg-kicker,
+.ixg-positioning .ixg-section-intro,.ixg-services .ixg-section-intro,.ixg-bridge .ixg-section-intro,.ixg-contact .ixg-section-intro{
+ color:rgba(24,26,28,.92)!important;opacity:1!important
+}
+.ixg-service__body,.ixg-bridge__evidence-row p,.ixg-proof-metric p{color:rgba(24,26,28,.92)!important;opacity:1!important}
 .ixg-trust-section,.ix-v2-footer{color:#f7f6f2}
-.ixg-trust-section .ixg-section-intro,.ixg-trust-section p,.ix-v2-footer p,.ix-v2-footer a{color:rgba(247,246,242,.82)!important}
+.ixg-trust-section .ixg-section-intro,.ixg-trust-section p,.ix-v2-footer p,.ix-v2-footer a{color:rgba(255,255,255,.92)!important;opacity:1!important}
+.ixg-trust-section .ixg-kicker,.ix-v2-footer .ixg-kicker,.ix-v2-footer strong{color:#fff!important;opacity:1!important}
 .ixg-trust-section .ixg-kicker,.ix-v2-footer strong{color:#fff!important}
 .ixg-service,.ixg-trust,.ixg-bridge__evidence-row{
  border:1px solid rgba(32,34,36,.10);
