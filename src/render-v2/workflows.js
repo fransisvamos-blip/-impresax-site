@@ -1673,6 +1673,14 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
     }
     const allPreview=Object.values(previewEvents).every(e=>e.payload?.status==="PREVIEW_READY");
     if(allPreview) await step.do("mark-preview-ready",async()=>setPackStatus(sql,p.packId,"PREVIEW_READY"));
+    if(allPreview && VARIANT_KEYS.length===1) {
+      await step.do("single-concept-preview-hold",async()=>{
+        await setPackStatus(sql,p.packId,"PREVIEW_READY",{cabina_visual_review_hold:true,retrofit_status:"CABINA_VISUAL_REVIEW",delivery_mode:"SINGLE_CONCEPT",delivery_variant_count:1,master_auto_approve:false});
+        await updateWorkflow(sql,event.instanceId,{status:"COMPLETED",currentStep:"CABINA_VISUAL_REVIEW_HOLD",errorCode:null,metadata:{single_concept_delivery:true}});
+        return {ok:true};
+      });
+      return {status:"CABINA_VISUAL_REVIEW_HOLD",delivery_mode:"SINGLE_CONCEPT",variant:"A"};
+    }
 
     const terminal={};
     for(const key of VARIANT_KEYS) {
