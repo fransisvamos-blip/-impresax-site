@@ -7,6 +7,7 @@ import { stableStringify, safeExternalHttpUrl } from "../src/render-v2/utils.js"
 import { normalizeVerifiedPhone, buildContactManifest } from "../src/render-v2/contacts.js";
 import { sanitizeDirectionForExecution, buildZeroPhotoPremiumSpec } from "../src/render-v2/design-grammar.js";
 import { extractStructured, normalizeSetQaResult, applyVisualQaScoreGates } from "../src/render-v2/ai.js";
+import { copyPolicyViolations, sectionSubstanceViolations } from "../src/render-v2/showroom-policy.js";
 
 const manifests={
   copy:{
@@ -50,6 +51,36 @@ const premiumCss=(
   ".bridge-grid,.final-grid{grid-template-columns:1.1fr .9fr;align-items:end}.final-grid a{display:inline-flex;margin:8px;padding:14px 20px;border:1px solid currentColor;text-decoration:none}"+
   "@media(max-width:700px){.ix-v2-header-inner{grid-template-columns:1fr auto}.ix-v2-nav{grid-column:1/-1;overflow-x:auto;padding-bottom:14px}.ix-v2-footer-grid,.hero,.section-head,.service-grid,.trust-grid,.bridge-grid,.final-grid{grid-template-columns:1fr}.hero{min-height:auto;padding:48px 20px}.hero-media{min-height:340px}.hero h1{font-size:clamp(42px,12vw,64px)}.section-shell{width:min(calc(100% - 40px),1240px)}section{padding:60px 0}}"
 );
+
+test("R116 permits verified economic proof only inside trust tokens",()=>{
+  const copy={
+    TRUST_1:"Impresa attiva",
+    TRUST_2:"Fatturato 2024 di €17,94 milioni",
+    TRUST_3:"19 dipendenti indicati dalla fonte economica",
+    HERO_BODY:"Fatturato 2024 di €17,94 milioni"
+  };
+  assert.deepEqual(
+    copyPolicyViolations(copy,["TRUST_1","TRUST_2","TRUST_3"],{allow_verified_proof_metrics:true}),
+    []
+  );
+  assert.ok(
+    copyPolicyViolations(copy,["HERO_BODY"],{allow_verified_proof_metrics:true})
+      .includes("LOW_VALUE_CORPORATE_STAT_VISIBLE:HERO_BODY")
+  );
+});
+
+test("R116 trust architecture accepts three verified proof facts without legacy filler",()=>{
+  const main='<section id="trust" data-section-substance="rich" data-proof-support="true">'
+    +'<article data-trust-reason="1">{{copy:TRUST_1}}</article>'
+    +'<article data-trust-reason="2">{{copy:TRUST_2}}</article>'
+    +'<article data-trust-reason="3">{{copy:TRUST_3}}</article>'
+    +'</section>';
+  const issues=sectionSubstanceViolations(main,{
+    section_substance_standard:"R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1",
+    flagship_architecture_standard:"R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1"
+  });
+  assert.equal(issues.some(x=>x.startsWith("R116_VERIFIED_PROOF_REASON_COUNT_REQUIRED")),false);
+});
 
 test("stableStringify is deterministic",()=>{
   assert.equal(stableStringify({b:1,a:2}),stableStringify({a:2,b:1}));
