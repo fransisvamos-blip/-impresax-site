@@ -724,7 +724,7 @@ export function buildCopyManifest(content,inputPayload={}) {
     if(isPartnerTrust(value)) {
       partnerOutIndex++;
       out["PARTNER_"+partnerOutIndex]=value;
-    } else if(!/\b(?:fatturato|ricavi|revenue|turnover|dipendenti|employees|headcount|addetti)\b/i.test(value)) {
+    } else {
       trustOutIndex++;
       out["TRUST_"+trustOutIndex]=value;
     }
