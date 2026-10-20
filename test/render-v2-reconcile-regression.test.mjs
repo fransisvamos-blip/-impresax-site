@@ -593,7 +593,8 @@ test("R116 flagship architecture blocks template-grade regressions",()=>{
   assert.match(grammar,/data-r116-set-piece/);
   assert.match(grammar,/ixf-hero__meta-rail/);
   assert.match(grammar,/ixf-positioning__proof-rail/);
-  assert.match(grammar,/flagship_architecture_standard/);\n  assert.match(grammar,/R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1/);
+  assert.match(grammar,/flagship_architecture_standard/);
+  assert.match(grammar,/R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1/);
   assert.match(compiler,/R116_FLAGSHIP_SET_PIECES_REQUIRED/);
   assert.match(compiler,/R116_POSITIONING_PROOF_RAIL_REQUIRED/);
   assert.match(compiler,/R116_CINEMATIC_HERO_CSS_REQUIRED/);
