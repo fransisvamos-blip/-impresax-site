@@ -62,8 +62,10 @@ async function deterministicR107Truth(inputPayload={}) {
     services_title:"Competenze e servizi",
     services_intro:servicesIntro,
     services,
-    trust_title:"Esperienza e affidabilità",
-    trust_intro:"",
+    trust_title:"Perché scegliere noi",
+    trust_intro:String(inputPayload.city||"").trim()
+      ? "Struttura, affidabilità e presenza operativa a "+String(inputPayload.city).trim()+"."
+      : "Struttura e affidabilità supportate da elementi verificati.",
     trust_points:verifiedTrust.map(text=>({text})),
     locality_line:locality,
     primary_cta_label:String(inputPayload.primary_cta||"Contatti").trim(),
