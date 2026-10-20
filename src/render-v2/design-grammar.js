@@ -221,11 +221,19 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     if(key==="LOCALITY_LINE" || /catanzaro|calabria|territorio|locale|presenza operativa/i.test(value)) return "Presenza locale";
     return "Competenza";
   };
+  const trustReasonDetail=key=>{
+    const value=String(copyManifest?.[key]||"");
+    if(/vendita\s+all.?ingrosso|distribuzione\s+b2b|materiali\s+per\s+ediliz/i.test(value)) return "Fornitura professionale pensata per imprese e operatori del settore.";
+    if(/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(value)) return "Competenze specifiche su una lavorazione centrale per il cantiere.";
+    if(/catanzaro|calabria|territorio|presenza operativa/i.test(value)) return "Presenza concreta sul territorio e contatto diretto.";
+    if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività aziendale verificata e continuità sul mercato.";
+    return "Un elemento verificato che rafforza affidabilità e valore operativo.";
+  };
   const trustReasons=verifiedTrustReasonKeys
-    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><span class=\"ixg-trust-reason__label\">"+trustReasonLabel(key)+"</span><strong>"+copyToken(key)+"</strong></article>")
+    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__top\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><span class=\"ixg-trust-reason__label\">"+trustReasonLabel(key)+"</span></div><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong><p>"+trustReasonDetail(key)+"</p></article>")
     .join("");
   const partnerProof=partnerTrustKeys.length
-    ? "<section id=\"partners\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>"<article class=\"ixg-partner-card\"><span>Marchio partner</span><strong>"+copyToken(key)+"</strong></article>").join("")+"</div></div></section>"
+    ? "<section id=\"partners\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"https://a.storyblok.com/f/285625047486899/1230x511/eed5934aef/logo_workwear_black.png\" alt=\"U-Power\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+"</div></div></section>"
     : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
@@ -306,16 +314,26 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     ? "<section class=\"ixg ixm-graphic-band\" aria-hidden=\"true\"><div class=\"ixg-shell ixm-graphic-band__inner\"><span class=\"ixm-graphic-band__mark\"><i></i><i></i><i></i></span><span class=\"ixm-graphic-band__rail\"><i></i><i></i><i></i><i></i></span><span class=\"ixm-graphic-band__mark ixm-graphic-band__mark--end\"><i></i><i></i><i></i></span></div></section>"
     : "";
 
+  const sectionBlueprint=[
+    "hero",
+    ...(positionTitle||positionBody?["positioning"]:[]),
+    ...(serviceTitles.length?["services"]:[]),
+    ...(verifiedTrustReasonKeys.length>=2?["trust"]:[]),
+    ...(partnerTrustKeys.length?["partners"]:[]),
+    ...(bridgeTitle||bridgeBody?["bridge"]:[]),
+    "final-cta"
+  ];
+
   const mainAB=[
     impresaxHero,
-    "<section id=\"positioning\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
-    "<section id=\"services\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
+    "<section id=\"positioning\" data-section-role=\"positioning\" data-section-plan=\"approved\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
+    "<section id=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
     logoFirstGraphicBand,
-    "<section id=\"trust\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
+    "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
-      ? "<section id=\"bridge\" data-section-grid=\"locked\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
+      ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
       : "<section id=\"bridge\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
-    "<section id=\"final-cta\" data-section-grid=\"locked\" data-contrast-safe=\"true\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
+    "<section id=\"final-cta\" data-section-role=\"conversion\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-contrast-safe=\"true\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
   const bTrustRows=trustKeys
@@ -1828,6 +1846,16 @@ body{font-family:var(--ix-body-font)}
 .ixg-trust-reason{min-height:180px;padding:28px;background:#202224;display:flex;flex-direction:column;justify-content:space-between;gap:28px}
 .ixg-trust-reason__index{font:700 12px/1 var(--ix-body-font);letter-spacing:.12em;color:var(--ix-accent)}
 .ixg-trust-reason__label{font:700 11px/1.2 var(--ix-body-font);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+.ixg-trust-reason__top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.ixg-trust-reason__graphic{position:relative;width:100%;height:78px;margin:4px 0 6px;overflow:hidden}
+.ixg-trust-reason__graphic i{position:absolute;display:block}
+.ixg-trust-reason__graphic--1 i{height:2px;background:var(--ix-accent);left:0;transform-origin:left center}
+.ixg-trust-reason__graphic--1 i:nth-child(1){top:18px;width:76%;transform:rotate(-4deg)}.ixg-trust-reason__graphic--1 i:nth-child(2){top:38px;width:54%;transform:rotate(3deg)}.ixg-trust-reason__graphic--1 i:nth-child(3){top:58px;width:88%;transform:rotate(-1deg)}
+.ixg-trust-reason__graphic--2 i{border:1px solid rgba(255,255,255,.32);border-radius:50%}
+.ixg-trust-reason__graphic--2 i:nth-child(1){width:72px;height:72px;left:0;top:3px}.ixg-trust-reason__graphic--2 i:nth-child(2){width:48px;height:48px;left:18px;top:15px}.ixg-trust-reason__graphic--2 i:nth-child(3){width:12px;height:12px;left:48px;top:33px;background:var(--ix-accent);border-color:var(--ix-accent)}
+.ixg-trust-reason__graphic--3 i{background:rgba(255,255,255,.18)}
+.ixg-trust-reason__graphic--3 i:nth-child(1){width:74%;height:1px;left:0;top:20px}.ixg-trust-reason__graphic--3 i:nth-child(2){width:46%;height:1px;left:18%;top:40px}.ixg-trust-reason__graphic--3 i:nth-child(3){width:12px;height:12px;right:8%;top:34px;background:var(--ix-accent);transform:rotate(45deg)}
+.ixg-trust-reason p{margin:0!important;color:rgba(255,255,255,.74)!important;max-width:30ch;font-size:14px;line-height:1.55}
 .ixg-trust-reason strong{font:700 clamp(19px,1.8vw,28px)/1.08 var(--ix-display-font);color:#fff!important;max-width:18ch}
 .ixg-partner-proof{background:#f7f6f2!important;color:#17191b!important;padding:0 0 clamp(56px,7vw,96px)!important}
 .ixg-partner-proof .ixg-section-head{color:#17191b!important}
@@ -1835,7 +1863,8 @@ body{font-family:var(--ix-body-font)}
 .ixg-partner-proof__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
 .ixg-partner-card{min-height:180px;padding:30px;border:1px solid rgba(24,26,28,.16);background:#fff;display:flex;flex-direction:column;justify-content:space-between;gap:36px;box-shadow:0 18px 48px rgba(17,17,17,.06)}
 .ixg-partner-card span{font:700 11px/1.2 var(--ix-body-font);letter-spacing:.14em;text-transform:uppercase;color:rgba(23,25,27,.58)}
-.ixg-partner-card strong{font:700 clamp(24px,2.6vw,42px)/1.04 var(--ix-display-font);color:#17191b!important;max-width:18ch}
+.ixg-partner-card strong{font:700 clamp(18px,1.5vw,24px)/1.2 var(--ix-display-font);color:#17191b!important;max-width:28ch}
+.ixg-partner-logo{display:block;width:min(310px,72%);height:auto;object-fit:contain;object-position:left center;filter:none!important}
 .ixm-bridge{background:linear-gradient(105deg,#f7f6f2 0%,#f7f6f2 62%,rgba(179,19,25,.18) 100%)!important;color:#17191b!important}
 .ixm-bridge h2,.ixm-bridge p,.ixm-bridge .ixg-kicker{color:#17191b!important;opacity:1!important}
 .ixg-contact{filter:saturate(1.14) contrast(1.04)}
@@ -1911,16 +1940,17 @@ body{font-family:var(--ix-body-font)}
  .ixg-kicker{line-height:1.35!important}
 }
 `,
-      section_ids:variantKey==="B"
+      section_ids:variantKey==="A"?sectionBlueprint:(variantKey==="B"
         ? ["hero","trust","services","positioning","bridge","final-cta"]
-        : variantKey==="C"
-          ? ["hero","services","bridge","positioning","trust","final-cta"]
-          : ["hero","positioning","services","trust",...(partnerTrustKeys.length?["partners"]:[]),"bridge","final-cta"],
+        : ["hero","services","bridge","positioning","trust","final-cta"]),
+      section_architecture_standard:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
+      section_blueprint:sectionBlueprint,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
       used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets].filter(Boolean),
       section_coherence_standard:sectionAssetPlan?.strict_semantic===true?"R108_SECTION_COHERENCE_STRICT_V1":"R107",
       art_direction_standard:"R109_15K_ART_DIRECTION_GATE_V1",
+      section_first_standard:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
       section_visual_strategy:sectionAssetPlan?.strategy||"R107_CURATED_VARIANT_ROTATION_V1",
       hero_visual_strategy:"R107 mandatory full-bleed edge-to-edge HERO_VISUAL with verified headline, body and CTAs overlaid inside the image, premium readability veil and high-resolution capture.",
       hero_subject:"Prospect-relevant commercial scene supplied by HERO_VISUAL.",
