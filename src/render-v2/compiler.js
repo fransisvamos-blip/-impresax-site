@@ -397,14 +397,19 @@ export function validateRenderSpec(spec, manifests) {
     const flagshipFinal=sectionHtml("final-cta");
 
     if(!/data-r116-flagship=["']true["']/i.test(flagshipHero)) issues.push("R116_FLAGSHIP_HERO_REQUIRED");
-    if((flagshipHero.match(/ixf-hero__meta-item/g)||[]).length<3) issues.push("R116_HERO_META_RAIL_REQUIRED");
+    const availableHeroMeta=Object.keys(manifests?.copy||{}).filter(key=>/^HERO_META_[123]$/.test(key)).length;
+    const requiredHeroMeta=Math.min(3,availableHeroMeta);
+    const heroMetaCount=(flagshipHero.match(/ixf-hero__meta-item/g)||[]).length;
+    if(requiredHeroMeta>0 && heroMetaCount<requiredHeroMeta) issues.push("R116_HERO_META_RAIL_REQUIRED:"+heroMetaCount+"/"+requiredHeroMeta);
     if(!/ixf-hero__signature/i.test(flagshipHero)) issues.push("R116_HERO_SIGNATURE_SYSTEM_REQUIRED");
 
     const setPieces=(main.match(/data-r116-set-piece=["'][^"']+["']/gi)||[]).length;
     if(setPieces<8) issues.push("R116_FLAGSHIP_SET_PIECES_REQUIRED:"+setPieces+"/8");
 
+    const availablePositionProof=Object.keys(manifests?.copy||{}).filter(key=>/^POSITIONING_PROOF_[123]$/.test(key)).length;
+    const requiredPositionProof=Math.min(3,availablePositionProof);
     const positioningProof=(flagshipPositioning.match(/ixf-positioning__proof/g)||[]).length;
-    if(positioningProof<3) issues.push("R116_POSITIONING_PROOF_RAIL_REQUIRED:"+positioningProof+"/3");
+    if(requiredPositionProof>0 && positioningProof<requiredPositionProof) issues.push("R116_POSITIONING_PROOF_RAIL_REQUIRED:"+positioningProof+"/"+requiredPositionProof);
 
     const matchedServices=(flagshipServices.match(/data-service-card=["']matched["']/gi)||[]).length;
     if(matchedServices<2) issues.push("R116_MATCHED_SERVICE_EDITORIAL_SYSTEM_REQUIRED:"+matchedServices+"/2");
