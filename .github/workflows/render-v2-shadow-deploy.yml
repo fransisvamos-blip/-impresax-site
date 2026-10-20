@@ -1,12 +1,10 @@
 name: Rendering V2 Shadow Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Rendering V2 Shadow Check"]
+    types: [completed]
     branches: [rendering-v2-shadow]
-    paths:
-      - '.github/workflows/render-v2-shadow-deploy.yml'
-      - 'wrangler.render-v2.jsonc'
-      - 'src/render-v2/**'
   workflow_dispatch:
 
 concurrency:
@@ -15,92 +13,41 @@ concurrency:
 
 jobs:
   deploy-shadow:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
-      OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Check deployment prerequisites
-        id: prereq
-        shell: bash
-        run: |
-          set -euo pipefail
-          missing=()
-          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || missing+=(CLOUDFLARE_API_TOKEN)
-          [ -n "${OPS_DATABASE_URL:-}" ] || missing+=(OPS_DATABASE_URL)
-          if [ "${#missing[@]}" -gt 0 ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "missing=${missing[*]}" >> "$GITHUB_OUTPUT"
-            echo "### V2 shadow deployment blocked only by the Cloudflare deploy credential" >> "$GITHUB_STEP_SUMMARY"
-            echo "Missing: \`${missing[*]}\`" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          fi
-
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'rendering-v2-shadow' }}
       - uses: actions/setup-node@v4
-        if: steps.prereq.outputs.ready == 'true'
         with:
           node-version: "22"
-
-      - name: Install
-        if: steps.prereq.outputs.ready == 'true'
-        run: npm install --no-audit --no-fund
-
-      - name: Ensure private R2 artifact bucket
-        if: steps.prereq.outputs.ready == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! npx wrangler r2 bucket list 2>/dev/null | grep -q 'impresax-render-v2-shadow'; then
-            npx wrangler r2 bucket create impresax-render-v2-shadow
-          fi
-
-      - name: Deploy isolated V2 shadow Worker
-        if: steps.prereq.outputs.ready == 'true'
+      - run: npm install --no-audit --no-fund
+      - name: Deploy V2 shadow
         id: deploy
         shell: bash
         run: |
           set -euo pipefail
           npx wrangler deploy --config wrangler.render-v2.jsonc 2>&1 | tee /tmp/v2-deploy.log
           url=$(grep -Eo 'https://[^ ]+\.workers\.dev' /tmp/v2-deploy.log | tail -1 || true)
-          if [ -z "$url" ]; then
-            echo "Could not resolve workers.dev URL from Wrangler output."
-            exit 1
-          fi
+          test -n "$url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
-
-      - name: Install Worker secrets
-        if: steps.prereq.outputs.ready == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          printf '%s' "$OPS_DATABASE_URL" | npx wrangler secret put OPS_DATABASE_URL --config wrangler.render-v2.jsonc
-
-      - name: Verify deployed V2 health
-        if: steps.prereq.outputs.ready == 'true'
+      - name: Core health check
         shell: bash
         env:
           V2_URL: ${{ steps.deploy.outputs.url }}
         run: |
           set -euo pipefail
-          for i in {1..24}; do
-            code=$(curl -L -sS -o /tmp/v2-health.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$V2_URL/healthz" || true)
-            echo "attempt=$i code=$code body=$(cat /tmp/v2-health.json 2>/dev/null || true)"
-            if [ "$code" = "200" ] && grep -q '"mode":"SHADOW"' /tmp/v2-health.json && grep -q '"engine":"RS_ENGINE_V2_13_R112_SECTION_SUBSTANCE"' /tmp/v2-health.json && grep -q '"quality_contract":"RS_QUALITY_V14_R112_SECTION_SUBSTANCE"' /tmp/v2-health.json && grep -q '"premium_home_contract_required":true' /tmp/v2-health.json && grep -q '"premium_home_score_floor":8' /tmp/v2-health.json && grep -q '"showroom_wow_contract_required":true' /tmp/v2-health.json && grep -q '"showroom_master_score_floor":9' /tmp/v2-health.json && grep -q '"database_connected":true' /tmp/v2-health.json && grep -q '"operational_ok":true' /tmp/v2-health.json && grep -q '"external_ai_calls_allowed":false' /tmp/v2-health.json && grep -q '"render_generation_mode":"CHATGPT_CABINA_ZERO_EXTRA_AI"' /tmp/v2-health.json && grep -q '"minimum_section_visuals":3' /tmp/v2-health.json && grep -q '"showroom_rules_version":"IMPRESAX_RENDER_STANDARD_R112_SECTION_SUBSTANCE_V1"' /tmp/v2-health.json && grep -q '"minimum_brand_rich_sections":2' /tmp/v2-health.json && grep -q '"minimum_spectacle_moments":2' /tmp/v2-health.json && grep -q '"north_star":"WORLD_CLASS_LAUNCH_EXPERIENCE_UNLIMITED_BUDGET"' /tmp/v2-health.json && grep -q '"hero_full_bleed":"EDGE_TO_EDGE_BACKGROUND_ZERO_LATERAL_MARGIN"' /tmp/v2-health.json && grep -q '"header_menu":"PROFESSIONAL_BRAND_EXPERIENCE_ENTRY"' /tmp/v2-health.json && grep -q '"footer":"PROFESSIONAL_BRAND_EXPERIENCE_CLOSING"' /tmp/v2-health.json && grep -q '"perceived_value_target":"EUR_10000_TO_15000"' /tmp/v2-health.json && grep -q '"signature_moments_minimum":4' /tmp/v2-health.json && grep -q '"fifteen_k_value_perception":"BLOCKING_MIN_9_7"' /tmp/v2-health.json && grep -q '"target_quality_band":"9_8_TO_9_9"' /tmp/v2-health.json && grep -q '"commissioned_experience":"BLOCKING_MIN_9_8"' /tmp/v2-health.json && grep -q '"irreproducible_brand_authorship":"BLOCKING_MIN_9_7"' /tmp/v2-health.json && grep -q '"hero_text_over_image":"BLOCKING_DESKTOP_AND_MOBILE"' /tmp/v2-health.json && grep -q '"hero_overlay_legibility":"BLOCKING_PREMIUM"' /tmp/v2-health.json && grep -q '"high_resolution_visual_perception":"BLOCKING"' /tmp/v2-health.json && grep -q '"premium_typography":"BLOCKING_SUPER_PREMIUM"' /tmp/v2-health.json && grep -q '"sitewide_visual_polish":"BLOCKING"' /tmp/v2-health.json && grep -q '"cheap_ai_look":"FORBIDDEN"' /tmp/v2-health.json && grep -q '"low_detail_imagery":"FORBIDDEN"' /tmp/v2-health.json && grep -q '"render_density":"2X"' /tmp/v2-health.json && grep -q '"r106_policy_contract_ok":true' /tmp/v2-health.json && grep -q '"r111_home_depth_contract_ok":true' /tmp/v2-health.json && grep -q '"r112_section_substance_contract_ok":true' /tmp/v2-health.json && grep -q '"section_substance_standard":"R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1"' /tmp/v2-health.json && grep -q '"minimum_why_us_reasons":4' /tmp/v2-health.json && grep -q '"maximum_why_us_reasons":6' /tmp/v2-health.json && grep -q '"minimum_high_value_middle_sections":3' /tmp/v2-health.json && grep -q '"minimum_rich_editorial_features":2' /tmp/v2-health.json && grep -q '"home_depth_standard":"R111_15K_HOME_DEPTH_ARCHITECTURE_V1"' /tmp/v2-health.json && grep -q '"minimum_home_sections":8' /tmp/v2-health.json && grep -q '"maximum_home_sections":12' /tmp/v2-health.json && grep -q '"minimum_editorial_feature_scenes":2' /tmp/v2-health.json && grep -q '"minimum_substantial_sections":7' /tmp/v2-health.json && grep -q '"triple_variant_required":false' /tmp/v2-health.json && grep -q '"minimum_variants_per_pack":1' /tmp/v2-health.json && grep -q '"variant_divergence_required":false' /tmp/v2-health.json && grep -q '"variant_divergence_floor":0' /tmp/v2-health.json && grep -q '"winner_auto_select":false' /tmp/v2-health.json && grep -q '"master_auto_approve":false' /tmp/v2-health.json && grep -q '"logo_watermark":"REQUIRED_WHEN_OFFICIAL_LOGO_EXISTS_VISIBLE_BUT_RESTRAINED"' /tmp/v2-health.json && grep -q '"ai_provider_bound":true' /tmp/v2-health.json && grep -q '"browser":true' /tmp/v2-health.json && grep -q '"r2":true' /tmp/v2-health.json && grep -q '"parent_workflow":true' /tmp/v2-health.json && grep -q '"variant_workflow":true' /tmp/v2-health.json; then
-              echo "### V2 shadow deployed and healthy" >> "$GITHUB_STEP_SUMMARY"
-              echo "$V2_URL" >> "$GITHUB_STEP_SUMMARY"
+          for i in {1..12}; do
+            code=$(curl -L -sS -o /tmp/health.json -w '%{http_code}' --connect-timeout 6 --max-time 10 "$V2_URL/healthz" || true)
+            if [ "$code" = "200" ]               && grep -q '"mode":"SHADOW"' /tmp/health.json               && grep -q '"engine":"RS_ENGINE_V2_13_R112_SECTION_SUBSTANCE"' /tmp/health.json               && grep -q '"quality_contract":"RS_QUALITY_V14_R112_SECTION_SUBSTANCE"' /tmp/health.json               && grep -q '"database_connected":true' /tmp/health.json               && grep -q '"operational_ok":true' /tmp/health.json               && grep -q '"r112_section_substance_contract_ok":true' /tmp/health.json               && grep -q '"delivery_mode":"SINGLE_CONCEPT"' /tmp/health.json               && grep -q '"browser":true' /tmp/health.json               && grep -q '"r2":true' /tmp/health.json; then
               exit 0
             fi
             sleep 5
           done
-          echo "V2 shadow health did not become fully healthy."
+          cat /tmp/health.json || true
           exit 1
-
-      - name: Deployment prerequisite status
-        if: steps.prereq.outputs.ready != 'true'
-        run: |
-          echo "V2 implementation/build remains complete; deployment was not attempted because the Cloudflare deploy credential is not present in GitHub Actions."

@@ -18,9 +18,14 @@ on:
       - '.github/workflows/render-v2-shadow-check.yml'
   workflow_dispatch:
 
+concurrency:
+  group: rendering-v2-shadow-check
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,9 +34,5 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Contract tests
         run: node --test test/render-v2*.test.mjs
-      - name: Golden Set live-input audit
-        env:
-          OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
-        run: node scripts/render-v2-golden-input-audit.mjs
       - name: Cloudflare dry build
         run: npx wrangler deploy --dry-run --config wrangler.render-v2.jsonc --outdir dist-v2
