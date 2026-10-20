@@ -206,7 +206,7 @@ export async function createShadowInputPack(env,prospectRef) {
       ${prospect.id}::uuid,${certification.pass?"INPUT_READY":"INPUT_BLOCKED"},
       ${QUALITY_CONTRACT_VERSION},${EXECUTION_ENGINE_VERSION},${MODEL_ROUTE_VERSION},
       ${prospect.priority==="A"?10:prospect.priority==="B"?50:100},true,
-      ${JSON.stringify({source:"V2_SHADOW",input_hash:contentHash})}::jsonb
+      ${JSON.stringify({source:"V2_SHADOW",input_hash:contentHash,delivery_mode:"SINGLE_CONCEPT",single_concept_mode:true,delivery_variant_count:1,master_auto_approve:false})}::jsonb
     ) returning *`;
   const pack=packRows[0];
   const inputRows=await sql`
