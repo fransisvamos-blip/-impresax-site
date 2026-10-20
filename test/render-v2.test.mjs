@@ -438,7 +438,7 @@ test("visual QA deterministic gate passes when R106 elevated floors pass",()=>{
   assert.equal(gated.issues.length,0);
 });
 
-test("set QA normalization accepts three genuinely divergent routes and selects a winner",()=>{
+test("single-concept delivery keeps human master approval while legacy set QA stays parseable",()=>{
   const r=normalizeSetQaResult({
     pass:false,
     weakest_variant:"C",
@@ -446,9 +446,9 @@ test("set QA normalization accepts three genuinely divergent routes and selects 
     issues:["Variant C address block is slightly large.","Variant B headings marginally lower scannability."],
     actions:[]
   });
-  assert.equal(TRIPLE_VARIANT_REQUIRED,true);
-  assert.equal(MINIMUM_VARIANTS_PER_PACK,3);
-  assert.equal(AUTO_SELECT_VARIANT_WINNER,true);
+  assert.equal(TRIPLE_VARIANT_REQUIRED,false);
+  assert.equal(MINIMUM_VARIANTS_PER_PACK,1);
+  assert.equal(AUTO_SELECT_VARIANT_WINNER,false);
   assert.equal(MASTER_AUTO_APPROVE,false);
   assert.equal(r.pass,true);
   assert.equal(r.weakest_variant,"NONE");
