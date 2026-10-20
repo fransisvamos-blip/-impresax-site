@@ -242,11 +242,7 @@ export const R116_FLAGSHIP_CSS = `
  grid-template-columns:1.55fr repeat(3,1fr)!important;
  gap:12px!important;align-items:stretch!important
 }
-.ixg-partner-card{min-height:260px!important;padding:30px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important}
-.ixg-partner-card:not(.ixg-partner-card--demo){border-top:5px solid var(--ix-brand-primary)!important;box-shadow:0 28px 70px rgba(24,25,27,.08)!important}
 .ixg-partner-logo{max-width:210px!important;max-height:100px!important}
-.ixg-partner-card--demo{box-shadow:none!important;background:#eceae5!important}
-.ixg-partner-card--demo .ixg-demo-partner-mark{margin:auto 0 30px!important}
 
 .ixm-bridge{
  padding:clamp(110px,10vw,160px) 0!important;
@@ -552,16 +548,15 @@ export const R116_FLAGSHIP_CSS = `
  .ixg-feature--two .ixg-feature__stage{grid-column:1!important;grid-row:2!important}
  .ixg-feature--two .ixf-feature__copy{grid-column:1!important;grid-row:1!important}
  .ixg-trust-reasons{grid-template-columns:repeat(2,1fr)!important}
- .ixg-partner-proof__grid{grid-template-columns:repeat(2,1fr)!important}
- .ix-v2-footer-grid{grid-template-columns:1fr 1fr!important}
-}
-
-
+ .ixg-partner-proof__grid{grid-template-columns:1fr!important}
  .ixf-service-line{grid-template-columns:minmax(120px,.25fr) minmax(0,1fr) 44px!important;gap:28px!important}
  .ixf-service-line:nth-child(2){padding-left:0!important}
  .ixf-partner-feature{grid-template-columns:minmax(220px,.55fr) minmax(0,1fr)!important}
  .ixf-partner-feature__identity{padding-right:36px!important}
  .ixf-partner-feature__copy{padding-left:44px!important}
+ .ix-v2-footer-grid{grid-template-columns:1fr 1fr!important}
+}
+
 @media(max-width:700px){
 
  .ix-v2-header{padding:10px 10px 0!important}
@@ -600,9 +595,6 @@ export const R116_FLAGSHIP_CSS = `
  .ixf-services{padding:86px 0!important}
  .ixf-services .ixg-section-head{grid-template-columns:1fr!important;gap:18px!important}
  .ixf-services .ixg-section-intro{font-size:32px!important}
- .ixf-services .ixg-service{min-height:300px!important;padding:26px!important}
- .ixf-services .ixg-service:nth-child(even){padding:26px!important}
- .ixf-services .ixg-services__composition>.ixg-section-visual{min-height:300px!important}
  .ixg-feature--one,.ixg-feature--two{padding:90px 0!important}
  .ixg-feature--one .ixg-feature__copy h2,.ixg-feature--two .ixg-feature__copy h2{font-size:clamp(46px,12vw,66px)!important;max-width:100%!important}
  .ixg-feature--one .ixg-feature__stage,.ixg-feature--two .ixg-feature__stage{min-height:300px!important}
