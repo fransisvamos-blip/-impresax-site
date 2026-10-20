@@ -57,6 +57,7 @@ export async function unstartedInitialVariants(sql,limit=20) {
       limit 1
     ) pw on true
     where p.shadow_mode=true
+      and v.variant_key in ('A')
       and p.status in ('PLANNING','GENERATING','PREVIEW_PARTIAL','PREVIEW_READY','QA_RUNNING','REWORK')
       and pr.retry_count<pr.max_retries
       and coalesce(pr.error,'')<>'GENERATION_CIRCUIT_BREAKER'
