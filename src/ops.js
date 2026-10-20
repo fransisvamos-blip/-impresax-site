@@ -496,7 +496,11 @@ async function dashboard(sql) {
               and r.desktop_r2_key is not null
               and r.mobile_r2_key is not null
               and (
-                exists(
+                (
+                  coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
+                  and v.variant_key='A'
+                )
+                or exists(
                   select 1 from render_qa_results_v2 hq
                   where hq.variant_revision_id=r.id
                     and hq.qa_type='HERO_VISUAL'
@@ -623,7 +627,13 @@ async function prospectDetail(sql, id) {
   const pilotMode=String(pilotControl.phase||"")==="PILOT_SINGLE_PROSPECT";
 
   const normalizedV2=v2Variants.map(v=>{
-    const normalPackReady=["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||""));
+    const packMeta=v.pack_metadata||{};
+    const singleConceptReady=
+      String(v.pack_status||"")==="PREVIEW_READY" &&
+      packMeta.single_concept_mode===true &&
+      packMeta.cabina_visual_review_hold===true &&
+      String(v.variant_key||"")==="A";
+    const normalPackReady=["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) || singleConceptReady;
     const pilotCandidate=
       pilotMode &&
       String(v.render_pack_id||"")===pilotPackId &&
@@ -637,8 +647,7 @@ async function prospectDetail(sql, id) {
       v.status==="RENDER_READY" &&
       v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
-      Boolean(v.visual_preview_passed);
-    const packMeta=v.pack_metadata||{};
+      (Boolean(v.visual_preview_passed) || singleConceptReady);
     const directionKey=v.variant_key==="A" ? "variant_A_direction" : (v.variant_key==="B" ? "variant_B_direction" : "variant_C_direction");
     const creativeDirection=String(packMeta[directionKey] || (
       v.variant_key==="A" ? "ICONIC_EDITORIAL" :
