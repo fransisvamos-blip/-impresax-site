@@ -5,7 +5,7 @@ on:
     branches:
       - rendering-v2-shadow
     paths:
-      - ".github/workflows/dedil-r180-review.yml"
+      - ".github/workflows/dedil-r179-review.yml"
 
 permissions:
   contents: read
