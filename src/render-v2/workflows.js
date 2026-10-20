@@ -666,9 +666,20 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           if(/\b(?:fatturato|ricavi|revenue|turnover|dipendenti|employees|headcount|addetti)\b/i.test(fact)) continue;
           companyReasons.push(fact);
         }
+        const whyUsFromService=service=>{
+          const value=String(service||"").replace(/\s+/g," ").trim().replace(/[.]+$/,"");
+          if(/vendita\s+all.?ingrosso|materiali\s+per\s+ediliz/i.test(value)) {
+            return "Distribuzione B2B specializzata nei materiali per l’edilizia.";
+          }
+          if(/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(value)) {
+            return "Competenza nella lavorazione del tondo per cemento armato.";
+          }
+          return value ? "Competenza specialistica verificata: "+value+"." : "";
+        };
         for(const service of serviceFacts) {
           if(companyReasons.length>=3) break;
-          if(!companyReasons.some(x=>x.toLowerCase()===service.toLowerCase())) companyReasons.push(service);
+          const reason=whyUsFromService(service);
+          if(reason && !companyReasons.some(x=>x.toLowerCase()===reason.toLowerCase())) companyReasons.push(reason);
         }
         if(companyReasons.length<3 && String(inputPayload.city||"").trim()) {
           companyReasons.push("Presenza operativa a "+String(inputPayload.city).trim()+".");
