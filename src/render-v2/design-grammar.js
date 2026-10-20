@@ -186,8 +186,10 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const positionBody="POSITIONING_BODY";
   const aGridTitles=serviceTitles;
   const allServicesHaveBodies=aGridTitles.length>0 && aGridTitles.every((_,i)=>Object.prototype.hasOwnProperty.call(copyManifest,"SERVICE_"+(i+1)+"_BODY"));
+  const featureServiceTitles=serviceTitles.slice(0,2);
   const servicesA=aGridTitles.map((titleKey,i)=>{
-    const bodyKey="SERVICE_"+(i+1)+"_BODY";
+    const sourceIndex=Number(String(titleKey).match(/^SERVICE_(\d+)_TITLE$/)?.[1]||i+1);
+    const bodyKey="SERVICE_"+sourceIndex+"_BODY";
     const body=allServicesHaveBodies
       ? "<p class=\"ixg-service__body\">"+copyToken(bodyKey)+"</p>"
       : "";
@@ -233,7 +235,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__top\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><span class=\"ixg-trust-reason__label\">"+trustReasonLabel(key)+"</span></div><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong><p>"+trustReasonDetail(key)+"</p></article>")
     .join("");
   const partnerProof=partnerTrustKeys.length
-    ? "<section id=\"partners\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+"</div></div></section>"
+    ? "<section id=\"partners\" data-section-depth=\"substantial\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+"</div></div></section>"
     : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
@@ -309,7 +311,29 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const sectionVisual2=sectionVisual(selectedSectionAssets[1],"ixg-section-visual--two");
   const sectionVisual3=sectionVisual(selectedSectionAssets[2],"ixg-section-visual--three");
 
-  const impresaxHero="<section id=\"hero\" class=\"ixg ixm-hero "+vclass+"\" data-premium-hero=\"true\"><figure class=\"ixm-hero__media\"><img class=\"ixg-hero__image ixm-hero__image\" src=\"{{asset:HERO_VISUAL}}\" alt=\"\"></figure><div class=\"ixm-hero__veil\" aria-hidden=\"true\"></div><div class=\"ixg-shell ixm-hero__inner\"><div class=\"ixm-hero__copy\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h1>"+copyToken("HERO_HEADLINE")+"</h1><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div></div></section>";
+  const featureServiceSection=(slot,visual="")=>{
+    const titleKey=featureServiceTitles[slot-1]||null;
+    const serviceIndex=titleKey
+      ? Number(String(titleKey).match(/^SERVICE_(\d+)_TITLE$/)?.[1]||slot)
+      : null;
+    const serviceBodyKey=serviceIndex ? "SERVICE_"+serviceIndex+"_BODY" : null;
+    const hasServiceBody=serviceBodyKey && Object.prototype.hasOwnProperty.call(copyManifest,serviceBodyKey);
+    const fallbackTitle=slot===1?"POSITIONING_TITLE":"LOCALITY_LINE";
+    const fallbackBody=slot===1?"POSITIONING_BODY":"FOOTER_LINE";
+    const resolvedTitle=titleKey||fallbackTitle;
+    const resolvedBody=hasServiceBody?serviceBodyKey:fallbackBody;
+    const sectionId=titleKey?"service-feature-"+slot:"brand-scene-"+slot;
+    const featureClass=slot===1?"ixg-feature--one":"ixg-feature--two";
+    return "<section id=\""+sectionId+"\" class=\"ixg ixg-feature "+featureClass+" "+vclass+"\" data-section-role=\"editorial-feature\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" data-editorial-feature=\"true\" data-surface=\"art-directed\" data-brand-surface=\""+(slot===1?"dark":"tint")+"\"><div class=\"ixg-shell ixg-feature__grid\"><div class=\"ixg-feature__copy\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><h2>"+copyToken(resolvedTitle)+"</h2><p class=\"ixg-section-intro\">"+copyToken(resolvedBody)+"</p></div><div class=\"ixg-feature__stage\">"+visual+"<div class=\"ixg-feature__device\" aria-hidden=\"true\"><i></i><i></i><i></i><span></span></div></div></div></section>";
+  };
+  const featureSection1=featureServiceSection(1,sectionVisual3);
+  const featureSection2=featureServiceSection(2,"");
+  const featureSectionIds=[
+    featureServiceTitles[0]?"service-feature-1":"brand-scene-1",
+    featureServiceTitles[1]?"service-feature-2":"brand-scene-2"
+  ];
+
+  const impresaxHero="<section id=\"hero\" class=\"ixg ixm-hero "+vclass+"\" data-premium-hero=\"true\" data-home-depth=\"15k\" data-section-depth=\"substantial\"><figure class=\"ixm-hero__media\"><img class=\"ixg-hero__image ixm-hero__image\" src=\"{{asset:HERO_VISUAL}}\" alt=\"\"></figure><div class=\"ixm-hero__veil\" aria-hidden=\"true\"></div><div class=\"ixg-shell ixm-hero__inner\"><div class=\"ixm-hero__copy\"><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h1>"+copyToken("HERO_HEADLINE")+"</h1><p class=\"ixg-lede\">"+copyToken("HERO_BODY")+"</p><div class=\"ixg-actions\">"+primary+secondary+"</div></div></div></section>";
   const logoFirstGraphicBand=logoFirstMode
     ? "<section class=\"ixg ixm-graphic-band\" aria-hidden=\"true\"><div class=\"ixg-shell ixm-graphic-band__inner\"><span class=\"ixm-graphic-band__mark\"><i></i><i></i><i></i></span><span class=\"ixm-graphic-band__rail\"><i></i><i></i><i></i><i></i></span><span class=\"ixm-graphic-band__mark ixm-graphic-band__mark--end\"><i></i><i></i><i></i></span></div></section>"
     : "";
@@ -318,6 +342,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     "hero",
     ...(positionTitle||positionBody?["positioning"]:[]),
     ...(serviceTitles.length?["services"]:[]),
+    ...featureSectionIds,
     ...(verifiedTrustReasonKeys.length>=2?["trust"]:[]),
     ...(partnerTrustKeys.length?["partners"]:[]),
     ...(bridgeTitle||bridgeBody?["bridge"]:[]),
@@ -326,14 +351,16 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   const mainAB=[
     impresaxHero,
-    "<section id=\"positioning\" data-section-role=\"positioning\" data-section-plan=\"approved\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
-    "<section id=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
+    "<section id=\"positioning\" data-section-role=\"positioning\" data-section-plan=\"approved\" data-section-depth=\"substantial\" class=\"ixg ixg-positioning "+vclass+"\"><div class=\"ixg-shell ixg-split\"><div class=\"ixg-positioning__statement\"><h2>"+copyToken(positionTitle)+"</h2></div><div class=\"ixg-positioning__body\">"+positionBodyMarkup+"<p class=\"ixg-locality\">"+copyToken("LOCALITY_LINE")+"</p></div>"+sectionVisual1+"</div></section>",
+    "<section id=\"services\" data-section-role=\"services\" data-section-plan=\"approved\" data-section-depth=\"substantial\" class=\"ixg ixg-services "+vclass+"\" data-section-grid=\"locked\" data-uniform-service-rows=\"true\" data-image-placement=\"anchored\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("SERVICES_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("SERVICES_INTRO")+"</p></header><div class=\"ixg-services__composition"+(sectionVisual2?" has-visual":"")+"\"><div class=\"ixg-services__grid\">"+servicesA+"</div>"+sectionVisual2+"</div></div></section>",
+    featureSection1,
+    featureSection2,
     logoFirstGraphicBand,
-    "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
+    "<section id=\"trust\" data-section-role=\"why-us\" data-section-plan=\"approved\" data-section-depth=\"substantial\" class=\"ixg ixg-trust-section "+vclass+"\" data-section-grid=\"locked\" data-trust-reasons=\"true\" data-contrast-safe=\"true\"><div class=\"ixg-shell\"><header class=\"ixg-section-head ixg-section-head--light\"><p class=\"ixg-kicker\">"+copyToken("TRUST_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("TRUST_INTRO")+"</p></header><div class=\"ixg-trust-reasons\">"+trustReasons+"</div></div></section>"+partnerProof,
     impresaxMasterProfile
-      ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
-      : "<section id=\"bridge\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
-    "<section id=\"final-cta\" data-section-role=\"conversion\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-contrast-safe=\"true\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
+      ? "<section id=\"bridge\" data-section-role=\"contact-bridge\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-section-depth=\"substantial\" class=\"ixg ixg-bridge ixm-bridge "+vclass+"\"><div class=\"ixg-shell ixm-bridge__grid\"><div class=\"ixm-bridge__copy\"><p class=\"ixg-kicker\">"+copyToken("BRIDGE_TITLE")+"</p><h2>"+copyToken("SECONDARY_CTA_LABEL")+"</h2><p class=\"ixg-section-intro\">"+copyToken("BRIDGE_BODY")+"</p></div><div class=\"ixg-actions\">"+secondary+"</div></div></section>"
+      : "<section id=\"bridge\" data-section-depth=\"substantial\" class=\"ixg ixg-bridge "+vclass+"\"><div class=\"ixg-shell ixg-bridge__grid\"><div class=\"ixg-bridge__copy\"><h2>"+copyToken(bridgeTitle)+"</h2>"+bridgeBodyMarkup+"</div><div class=\"ixg-bridge__evidence\">"+aBridgeEvidenceRows+"</div></div></section>",
+    "<section id=\"final-cta\" data-section-role=\"conversion\" data-section-plan=\"approved\" data-section-grid=\"locked\" data-contrast-safe=\"true\" data-section-depth=\"substantial\" class=\"ixg ixg-contact "+vclass+"\"><div class=\"ixg-shell ixg-contact__inner\"><div><p class=\"ixg-kicker\">"+copyToken("LOCALITY_LINE")+"</p><h2>"+copyToken("CLOSING_TITLE")+"</h2><p class=\"ixg-section-intro\">"+copyToken("CLOSING_BODY")+"</p></div><div class=\"ixg-actions\">"+primary+secondary+"</div></div></section>"
   ].join("");
 
   const bTrustRows=trustKeys
@@ -1916,7 +1943,35 @@ body{font-family:var(--ix-body-font)}
   return {
     spec:{
       main_html:main,
-      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+r107UltraVisualCss+premiumPolishCss+(variantKey==="C" ? `
+      custom_css:base+(variants[variantKey]||variants.A)+impresaxMasterCss+logoFirstCss+r89SurfaceCss+r90LaunchCss+r93TypographyCss+r94ValueCss+r106IconicCss+r107UltraVisualCss+premiumPolishCss+(variantKey==="A" ? `
+/* R111 15K homepage depth: authored middle-scroll editorial scenes. */
+.ixg-feature{position:relative;overflow:hidden;padding:clamp(88px,10vw,154px) 0}
+.ixg-feature__grid{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:clamp(48px,8vw,126px);align-items:center}
+.ixg-feature__copy{display:grid;gap:clamp(18px,2.2vw,30px);position:relative;z-index:2}
+.ixg-feature__copy h2{max-width:12ch}
+.ixg-feature__copy .ixg-section-intro{max-width:54ch}
+.ixg-feature__stage{position:relative;min-height:clamp(360px,40vw,590px);display:grid;align-items:stretch}
+.ixg-feature__stage>.ixg-section-visual{margin:0!important;width:100%!important;min-height:100%!important;max-height:none!important;position:absolute;inset:0}
+.ixg-feature__stage>.ixg-section-visual img{min-height:100%!important;max-height:none!important}
+.ixg-feature__device{position:relative;min-height:100%;overflow:hidden;border:1px solid rgba(255,255,255,.18);box-shadow:0 34px 90px rgba(0,0,0,.20);background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.025))}
+.ixg-feature__device i,.ixg-feature__device span{position:absolute;display:block}
+.ixg-feature__device i:nth-child(1){inset:9% 8% auto 8%;height:1px;background:currentColor;opacity:.28}
+.ixg-feature__device i:nth-child(2){right:11%;top:15%;width:34%;aspect-ratio:1;border:1px solid currentColor;opacity:.20;transform:rotate(11deg)}
+.ixg-feature__device i:nth-child(3){left:10%;bottom:12%;width:54%;height:22%;border-left:4px solid currentColor;border-bottom:1px solid currentColor;opacity:.34}
+.ixg-feature__device span{right:0;bottom:0;width:46%;height:46%;background:linear-gradient(135deg,transparent,rgba(255,255,255,.12));clip-path:polygon(100% 0,100% 100%,0 100%)}
+.ixg-feature--one{color:#f7f6f2;background:radial-gradient(circle at 82% 18%,var(--ix-brand-glow,rgba(255,255,255,.12)),transparent 32%),linear-gradient(135deg,#111214 0%,#202326 58%,#0d0e0f 100%)}
+.ixg-feature--one .ixg-kicker,.ixg-feature--one .ixg-section-intro{color:rgba(247,246,242,.68)}
+.ixg-feature--two{color:var(--ix-ink);background:radial-gradient(circle at 15% 15%,rgba(255,255,255,.96),transparent 35%),linear-gradient(128deg,var(--ix-paper) 0%,#fff 52%,rgba(17,17,17,.055) 100%)}
+.ixg-feature--two .ixg-feature__grid{grid-template-columns:minmax(0,1.1fr) minmax(300px,.7fr)}
+.ixg-feature--two .ixg-feature__device{color:var(--ix-ink);border-color:rgba(17,17,17,.14);box-shadow:0 30px 86px rgba(17,17,17,.10);background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(17,17,17,.045))}
+@media(max-width:700px){
+ .ixg-feature{padding:68px 0}
+ .ixg-feature__grid,.ixg-feature--two .ixg-feature__grid{grid-template-columns:1fr;gap:34px}
+ .ixg-feature__stage{min-height:280px}
+ .ixg-feature__copy h2{max-width:100%}
+ .ixg-feature__device{min-height:280px}
+}
+` : "")+(variantKey==="C" ? `
 /* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
 .ixc-bridge{min-height:0!important;display:block!important}
 .ixc-bridge__inner{grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr)!important;align-items:center!important}
@@ -1944,6 +1999,7 @@ body{font-family:var(--ix-body-font)}
         ? ["hero","trust","services","positioning","bridge","final-cta"]
         : ["hero","services","bridge","positioning","trust","final-cta"]),
       section_architecture_standard:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
+      home_depth_standard:variantKey==="A"?"R111_15K_HOME_DEPTH_ARCHITECTURE_V1":"R110_LEGACY_COMPAT",
       section_blueprint:sectionBlueprint,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
@@ -1961,7 +2017,7 @@ body{font-family:var(--ix-body-font)}
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic R107 PREMIUM_OVERLAY_HERO_ULTRA_VISUAL fallback grammar v8 "+variantKey+": target 9.8-9.9, irreproducible brand authorship, campaign-level image treatment, continuous scroll narrative, coherent signature geometry, authored transitions, visual memory factor and mobile reinterpretation, preserving all R94/R93 gates."
+        +"Deterministic R111 HOME_DEPTH grammar v1 "+variantKey+": 8-12 scene homepage architecture, two authored middle-scroll editorial features, target 9.8-9.9, irreproducible brand authorship, campaign-level treatment, continuous scroll narrative and mobile reinterpretation, preserving all R107/R110 gates."
     },
     strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R107":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R107":"ICONIC_COMMISSIONED_FALLBACK_GRAMMAR_V8"
   };
