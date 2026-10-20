@@ -662,8 +662,9 @@ export function buildCopyManifest(content,inputPayload={}) {
   const trustTitle=uniqueOr([content?.trust_title],"Perché scegliere noi");
   const trustNorms=new Set(trustTexts.map(norm));
   const rawTrustIntro=String(content?.trust_intro||"").replace(/\s+/g," ").trim();
+  const rawTrustIntroIsPartner=/\b(?:u[-\s]?power|rivenditor|dealer|partner|autorizzat)\b/i.test(rawTrustIntro);
   const trustIntro=uniqueOr([
-    rawTrustIntro && !trustNorms.has(norm(rawTrustIntro)) ? rawTrustIntro : ""
+    rawTrustIntro && !trustNorms.has(norm(rawTrustIntro)) && !rawTrustIntroIsPartner ? rawTrustIntro : ""
   ],shortLocality ? "Affidabilità e presenza sul territorio di "+shortLocality+"." : "Affidabilità costruita su elementi concreti.");
   const bridgeTitle="Contatto diretto";
   const bridgeBody=verifiedContact || (shortLocality ? "Sede operativa: "+shortLocality : "Contatto aziendale verificato.");
