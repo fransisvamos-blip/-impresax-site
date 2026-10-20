@@ -1107,7 +1107,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           if(context.r107Retrofit===true) {
             const setState=await sql`
               select count(*)::int total,
-                     count(*) filter (where status='PREVIEW_READY')::int preview_ready
+                     count(*) filter (where status in ('PREVIEW_READY','RENDER_READY'))::int preview_ready
               from render_v2_variants
               where render_pack_id=${params.packId}::uuid
                 and variant_key='A'`;
