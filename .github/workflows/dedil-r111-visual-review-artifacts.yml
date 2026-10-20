@@ -1,0 +1,26 @@
+name: DEDIL R111 visual review artifacts
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/dedil-r111-visual-review-artifacts.yml"
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch current R111 screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p review
+          curl -fLsS "https://impresax-render-v2-shadow.fransisvamos.workers.dev/shadow/artifact/265cf19b-bf52-450f-ba2a-135d8e7cc971" -o review/dedil-r111-desktop.jpg
+          curl -fLsS "https://impresax-render-v2-shadow.fransisvamos.workers.dev/shadow/artifact/699cb992-fa7d-48a3-be5a-70e0e0bb1dd5" -o review/dedil-r111-mobile.jpg
+          file review/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dedil-r111-visual-review
+          path: review/
+          retention-days: 1
