@@ -143,7 +143,10 @@ export function explicitHeroAsset(assets={},inputPayload={}) {
       String(meta?.role||"").toLowerCase()!=="identity"
     )
     .map(([token,meta],index)=>{
-      const signal=String(meta?.source_url||meta?.asset_url||token||"").toLowerCase();
+      const signal=String(meta?.source_url||meta?.asset_url||token||"")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g," ").trim();
       const role=String(meta?.role||"").toLowerCase();
       const sourceType=String(meta?.source_type||"").toUpperCase();
       let score=0;
