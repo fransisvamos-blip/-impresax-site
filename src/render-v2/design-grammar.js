@@ -233,7 +233,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__top\"><span class=\"ixg-trust-reason__index\">0"+(i+1)+"</span><span class=\"ixg-trust-reason__label\">"+trustReasonLabel(key)+"</span></div><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong><p>"+trustReasonDetail(key)+"</p></article>")
     .join("");
   const partnerProof=partnerTrustKeys.length
-    ? "<section id=\"partners\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"https://a.storyblok.com/f/285625047486899/1230x511/eed5934aef/logo_workwear_black.png\" alt=\"U-Power\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+"</div></div></section>"
+    ? "<section id=\"partners\" class=\"ixg ixg-partner-proof "+vclass+"\" data-partner-proof=\"true\" data-section-role=\"brand-partnership\" data-section-plan=\"approved\" data-section-grid=\"locked\"><div class=\"ixg-shell\"><header class=\"ixg-section-head\"><p class=\"ixg-kicker\">"+copyToken("PARTNER_SECTION_TITLE")+"</p><p class=\"ixg-section-intro\">"+copyToken("PARTNER_SECTION_INTRO")+"</p></header><div class=\"ixg-partner-proof__grid\">"+partnerTrustKeys.map(key=>{const value=String(copyManifest?.[key]||"");const upower=/u[-\\s]?power/i.test(value);const logo=upower?"<img class=\"ixg-partner-logo\" src=\"{{asset:PARTNER_UPOWER_LOGO}}\" alt=\"\">":"";return "<article class=\"ixg-partner-card\" data-partner-brand=\""+(upower?"U-POWER":"VERIFIED")+"\"><span>Marchio partner</span>"+logo+"<strong>"+copyToken(key)+"</strong></article>";}).join("")+"</div></div></section>"
     : "";
   const aBridgeEvidenceRows=(nonContactTrustKeys.length?nonContactTrustKeys.slice(0,2):["LOCALITY_LINE"])
     .map(key=>"<div class=\"ixg-bridge__evidence-row\"><strong>"+copyToken(key)+"</strong></div>")
@@ -1947,7 +1947,7 @@ body{font-family:var(--ix-body-font)}
       section_blueprint:sectionBlueprint,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
-      used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets].filter(Boolean),
+      used_asset_tokens:["HERO_VISUAL",...selectedSectionAssets,...(partnerTrustKeys.some(key=>/u[-\\s]?power/i.test(String(copyManifest?.[key]||"")))?["PARTNER_UPOWER_LOGO"]:[])].filter(Boolean),
       section_coherence_standard:sectionAssetPlan?.strict_semantic===true?"R108_SECTION_COHERENCE_STRICT_V1":"R107",
       art_direction_standard:"R109_15K_ART_DIRECTION_GATE_V1",
       section_first_standard:"R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1",
