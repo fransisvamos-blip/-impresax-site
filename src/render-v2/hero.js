@@ -123,33 +123,56 @@ function sectorDirection(inputPayload={}) {
   return "Create a believable premium real-world scene directly relevant to the verified business category and services. The environment and people must clearly communicate the actual commercial activity, not a generic corporate stock concept.";
 }
 
-export function explicitHeroAsset(assets={}) {
-  let candidates=Object.entries(assets).filter(([token,meta])=>
-    token!=="PRIMARY_LOGO" &&
-    !meta?.unavailable &&
-    meta?.r2_key &&
-    /^(hero|featured|cover)$/i.test(String(meta?.role||""))
-  );
-  if(!candidates.length) {
-    candidates=Object.entries(assets)
-      .filter(([token,meta])=>
-        token!=="PRIMARY_LOGO" &&
-        token!=="HERO_VISUAL" &&
-        !meta?.unavailable &&
-        meta?.r2_key &&
-        String(meta?.mime||"").startsWith("image/") &&
-        String(meta?.role||"").toLowerCase()!=="identity"
-      )
-      .sort((a,b)=>Number(b[1]?.bytes||0)-Number(a[1]?.bytes||0));
-  }
+export function explicitHeroAsset(assets={},inputPayload={}) {
+  const context=[
+    inputPayload?.vertical,
+    inputPayload?.verified_services,
+    inputPayload?.brand_dna?.offer,
+    inputPayload?.brand_dna?.business_type
+  ].map(x=>String(x||"").toLowerCase()).join(" ");
+  const contextWords=[...new Set(context.replace(/[^a-z0-9à-ÿ]+/gi," ").split(/\s+/).filter(x=>x.length>=5))];
+  const cheap=/\b(?:handshake|meeting|teamwork|celebrat|congrat|stock|generic|business people|success people)\b/i;
+  const technical=/\b(?:rebar|tondo|acciaio|steel|cement|edil|cantiere|costruz|material|warehouse|industr|officin|macchin|carpenter)\w*/i;
+  const candidates=Object.entries(assets)
+    .filter(([token,meta])=>
+      token!=="PRIMARY_LOGO" &&
+      token!=="HERO_VISUAL" &&
+      !meta?.unavailable &&
+      meta?.r2_key &&
+      String(meta?.mime||"").startsWith("image/") &&
+      String(meta?.role||"").toLowerCase()!=="identity"
+    )
+    .map(([token,meta],index)=>{
+      const signal=String(meta?.source_url||meta?.asset_url||token||"").toLowerCase();
+      const role=String(meta?.role||"").toLowerCase();
+      const sourceType=String(meta?.source_type||"").toUpperCase();
+      let score=0;
+      if(/^(hero|featured|cover)$/.test(role)) score+=120;
+      if(sourceType.includes("FIRST_PARTY")||sourceType.includes("OFFICIAL")) score+=85;
+      if(technical.test(signal) && technical.test(context)) score+=45;
+      let relevance=0;
+      for(const word of contextWords) {
+        const stem=word.length>8?word.slice(0,7):word;
+        if(stem.length>=5 && signal.includes(stem)) relevance++;
+      }
+      score+=Math.min(relevance,5)*18;
+      if(cheap.test(signal)) score-=160;
+      const bytes=Math.max(0,Number(meta?.bytes||0));
+      score+=Math.min(28,Math.log10(bytes+10)*4);
+      score-=index*0.001;
+      return {token,meta,score};
+    })
+    .sort((a,b)=>b.score-a.score);
   if(!candidates.length) return null;
-  const [sourceToken,meta]=candidates[0];
+  const winner=candidates[0];
   return {
-    ...meta,
+    ...winner.meta,
     asset_id:"HERO_VISUAL",
     role:"hero",
-    source_type:meta.source_type||"VERIFIED_INPUT",
-    hero_source_token:sourceToken,
+    source_type:winner.meta.source_type||"VERIFIED_INPUT",
+    hero_source_token:winner.token,
+    hero_selection_score:Number(winner.score.toFixed(3)),
+    hero_selection_mode:"HERO_FIRST_PREMIUM_RANKING",
     generated:false
   };
 }
