@@ -106,24 +106,34 @@ export function sectionVisualTokens(assets={},inputPayload=null) {
     .map(({token})=>token);
 }
 
-function semanticSectionScore(entry,section) {
-  const source=normalizedVisualSignal(entry?.meta?.source_url||entry?.meta?.asset_url||"");
+function semanticSectionScore(entry,section,inputPayload={}) {
+  const source=normalizedVisualSignal(entry?.meta?.source_url||entry?.meta?.asset_url||entry?.token||"");
   let score=Number(entry?.base_score||0);
   const broad=/\b(?:ediliz|impiant|costruz|cantiere|nolegg|serviz|azienda|sede|operativ|industr|officin)\w*/g;
-  const narrow=/\b(?:amianto|anten|telecom|carpenter|metal|meccanic|assicur|pratic|finanzi|garanzi|soccorso|demoliz|scav)\w*/g;
-  const trust=/\b(?:qualit|sicurezz|formazion|certific|accredit|conform|normativ|autorizzat)\w*/g;
+  const narrow=/\b(?:amianto|anten|telecom|carpenter|metal|meccanic|assicur|pratic|finanzi|garanzi|soccorso|demoliz|scav|tondo|rebar|acciaio|cement|material)\w*/g;
+  const trust=/\b(?:qualit|sicurezz|formazion|certific|accredit|conform|normativ|autorizzat|partner|rivenditor|dealer|upower|u power)\w*/g;
   const broadHits=new Set(source.match(broad)||[]).size;
   const narrowHits=new Set(source.match(narrow)||[]).size;
   const trustHits=new Set(source.match(trust)||[]).size;
+  const serviceWords=verifiedServiceWords(inputPayload);
+  let serviceHits=0;
+  for(const word of serviceWords){
+    const stem=word.length>8?word.slice(0,7):word;
+    if(stem.length>=5 && source.includes(stem)) serviceHits++;
+  }
   if(section==="services") {
     score+=Math.min(narrowHits,3)*28;
+    score+=Math.min(serviceHits,4)*28;
     score+=Math.min(broadHits,2)*8;
     score-=Math.min(trustHits,2)*10;
+    if(serviceHits===0 && narrowHits===0) score-=120;
   } else if(section==="trust") {
-    score+=Math.min(trustHits,3)*42;
-    score-=Math.min(narrowHits,3)*14;
+    score+=Math.min(trustHits,3)*52;
+    score-=Math.min(narrowHits,3)*18;
+    if(trustHits===0) score-=180;
   } else {
     score+=Math.min(broadHits,3)*24;
+    score+=Math.min(serviceHits,2)*12;
     score-=Math.min(narrowHits,3)*12;
     score-=Math.min(trustHits,2)*10;
   }
@@ -144,22 +154,26 @@ export function sectionVisualPlan(assets={},inputPayload=null,variantKey="A") {
   for(const role of roles) {
     const ranked=entries
       .filter(entry=>!used.has(entry.token))
-      .map(entry=>({...entry,semantic_score:semanticSectionScore(entry,role)}))
+      .map(entry=>({...entry,semantic_score:semanticSectionScore(entry,role,inputPayload)}))
       .sort((a,b)=>{
         const delta=b.semantic_score-a.semantic_score;
         return Math.abs(delta)>0.00001?delta:a.index-b.index;
       });
     if(!ranked.length){plan[role]=null;continue;}
     const best=ranked[0].semantic_score;
-    const window=role==="services"?22:14;
-    const near=ranked.filter(entry=>entry.semantic_score>=best-window);
+    const semanticFloor=role==="trust"?35:(role==="services"?28:8);
+    if(best<semanticFloor){plan[role]=null;continue;}
+    const window=role==="services"?18:12;
+    const near=ranked.filter(entry=>entry.semantic_score>=Math.max(semanticFloor,best-window));
     const offset=role==="services"?serviceOffset:0;
     const picked=near[offset%near.length]||ranked[0];
     plan[role]=picked.token;
     used.add(picked.token);
   }
   plan.used=[...used];
-  plan.strategy="R107_SEMANTIC_SECTION_MAPPING_V2";
+  plan.strategy="R108_SECTION_COHERENCE_STRICT_V1";
+  plan.strict_semantic=true;
+  plan.allow_empty_instead_of_wrong_asset=true;
   return plan;
 }
 
@@ -470,6 +484,11 @@ export function showroomPolicySummary() {
       text_background_contrast:"BLOCKING_NO_LOW_CONTRAST_TEXT",
       premium_section_polish:"BLOCKING_DEPTH_SHADOWS_SURFACES_SPACING",
       premium_button_system:"BLOCKING_REFINED_HIERARCHY_TOUCH_TARGETS",
+      section_alignment_grid:"BLOCKING_COMMON_BASELINES_AND_COLUMNS",
+      section_semantic_coherence:"BLOCKING_COPY_IMAGE_TRUST_MUST_MATCH",
+      unrelated_section_visuals:"FORBIDDEN",
+      empty_visual_preferred_over_wrong_visual:true,
+      section_narrative_unit:"ONE_MESSAGE_ONE_VISUAL_SYSTEM",
       hero_text_over_image:"BLOCKING_DESKTOP_AND_MOBILE",
       hero_overlay_legibility:"BLOCKING_PREMIUM",
       high_resolution_visual_perception:"BLOCKING",
