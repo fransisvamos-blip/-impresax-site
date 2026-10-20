@@ -290,7 +290,7 @@ export function validateRenderSpec(spec, manifests) {
   }
 
   const detailCraftStandard=String(spec?.detail_craft_standard||"");
-  if(["R113_DETAIL_CRAFTSMANSHIP_V1","R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1"].includes(detailCraftStandard)) {
+  if(["R113_DETAIL_CRAFTSMANSHIP_V1","R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1","R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1"].includes(detailCraftStandard)) {
     const servicesDetailHtml=sectionHtml("services");
     if(servicesDetailHtml && !/data-detail-grid=["']aligned["']/i.test(servicesDetailHtml)) {
       issues.push("R113_SERVICE_DETAIL_GRID_ALIGNMENT_REQUIRED");
@@ -328,7 +328,7 @@ export function validateRenderSpec(spec, manifests) {
     }
   }
 
-  if(detailCraftStandard==="R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1") {
+  if(["R115_PREMIUM_SECTION_IDENTITY_FINISHING_V1","R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1"].includes(detailCraftStandard)) {
     const r115Services=sectionHtml("services");
     const r115Feature1=sectionHtml("service-feature-1");
     const r115Feature2=sectionHtml("service-feature-2");
@@ -383,6 +383,59 @@ export function validateRenderSpec(spec, manifests) {
     if(!/\.ixg-services__composition\s*\{[\s\S]*grid-template-columns/i.test(css)) {
       issues.push("R115_SERVICE_MEDIA_GRID_REQUIRED");
     }
+  }
+
+  if(String(spec?.flagship_architecture_standard||"")==="R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1") {
+    const flagshipHero=sectionHtml("hero");
+    const flagshipPositioning=sectionHtml("positioning");
+    const flagshipServices=sectionHtml("services");
+    const flagshipFeature1=sectionHtml("service-feature-1");
+    const flagshipFeature2=sectionHtml("service-feature-2");
+    const flagshipTrust=sectionHtml("trust");
+    const flagshipPartners=sectionHtml("partners");
+    const flagshipBridge=sectionHtml("bridge");
+    const flagshipFinal=sectionHtml("final-cta");
+
+    if(!/data-r116-flagship=["']true["']/i.test(flagshipHero)) issues.push("R116_FLAGSHIP_HERO_REQUIRED");
+    if((flagshipHero.match(/ixf-hero__meta-item/g)||[]).length<3) issues.push("R116_HERO_META_RAIL_REQUIRED");
+    if(!/ixf-hero__signature/i.test(flagshipHero)) issues.push("R116_HERO_SIGNATURE_SYSTEM_REQUIRED");
+
+    const setPieces=(main.match(/data-r116-set-piece=["'][^"']+["']/gi)||[]).length;
+    if(setPieces<8) issues.push("R116_FLAGSHIP_SET_PIECES_REQUIRED:"+setPieces+"/8");
+
+    const positioningProof=(flagshipPositioning.match(/ixf-positioning__proof/g)||[]).length;
+    if(positioningProof<3) issues.push("R116_POSITIONING_PROOF_RAIL_REQUIRED:"+positioningProof+"/3");
+
+    const matchedServices=(flagshipServices.match(/data-service-card=["']matched["']/gi)||[]).length;
+    if(matchedServices<2) issues.push("R116_MATCHED_SERVICE_EDITORIAL_SYSTEM_REQUIRED:"+matchedServices+"/2");
+
+    if(!/data-r116-set-piece=["']cinematic-materials["']/i.test(flagshipFeature1)) issues.push("R116_MATERIALS_SET_PIECE_REQUIRED");
+    if(!/data-r116-set-piece=["']technical-rebar["']/i.test(flagshipFeature2)) issues.push("R116_REBAR_SET_PIECE_REQUIRED");
+    if(flagshipFeature1.includes("{{copy:LOCALITY_LINE}}") || flagshipFeature2.includes("{{copy:LOCALITY_LINE}}")) {
+      issues.push("R116_CONTEXTLESS_LOCALITY_FILLER_FORBIDDEN");
+    }
+
+    if(!/data-r116-set-piece=["']trust["']/i.test(flagshipTrust)) issues.push("R116_TRUST_PROOF_ARCHITECTURE_REQUIRED");
+    if(flagshipPartners && !/data-r116-set-piece=["']partners["']/i.test(flagshipPartners)) issues.push("R116_PARTNER_ECOSYSTEM_REQUIRED");
+    if(!/data-r116-set-piece=["']bridge["']/i.test(flagshipBridge)) issues.push("R116_BRIDGE_BRAND_OBJECT_REQUIRED");
+    if(!/data-r116-set-piece=["']final-cta["']/i.test(flagshipFinal)) issues.push("R116_FINAL_CLIMAX_REQUIRED");
+
+    if((main.match(/data-premium-button=["']true["']/gi)||[]).length<3) issues.push("R116_BRAND_OBJECT_BUTTON_SYSTEM_REQUIRED");
+
+    const cssChecks=[
+      ["R116_CINEMATIC_HERO_CSS_REQUIRED",/\.ixf-hero__inner\s*\{/i],
+      ["R116_POSITIONING_ASYMMETRY_CSS_REQUIRED",/\.ixf-positioning__grid\s*\{/i],
+      ["R116_SERVICES_EDITORIAL_CSS_REQUIRED",/\.ixf-services\s+\.ixg-services__composition\s*\{/i],
+      ["R116_FEATURE_ONE_IDENTITY_CSS_REQUIRED",/\.ixg-feature--one\s+\.ixf-feature__grid\s*\{/i],
+      ["R116_FEATURE_TWO_IDENTITY_CSS_REQUIRED",/\.ixg-feature--two\s+\.ixf-feature__grid\s*\{/i],
+      ["R116_TRUST_ARCHITECTURE_CSS_REQUIRED",/\.ixg-trust-section\s+\.ixg-section-head\s*\{/i],
+      ["R116_PARTNER_MUSEUM_CSS_REQUIRED",/\.ixg-partner-proof__grid\s*\{/i],
+      ["R116_PREMIUM_FOOTER_CSS_REQUIRED",/\.ix-v2-footer-grid\s*\{/i]
+    ];
+    for(const [code,re] of cssChecks) if(!re.test(css)) issues.push(code);
+
+    if(!/min-height\s*:\s*clamp\(820px,92svh,1120px\)/i.test(css)) issues.push("R116_HERO_SCALE_SHIFT_REQUIRED");
+    if(!/font-size\s*:\s*clamp\(74px,8\.8vw,142px\)/i.test(css)) issues.push("R116_FINAL_CTA_SCALE_SHIFT_REQUIRED");
   }
 
   if(String(spec?.section_first_standard||spec?.section_architecture_standard||"")==="R110_SECTION_FIRST_PREMIUM_ARCHITECTURE_V1") {
