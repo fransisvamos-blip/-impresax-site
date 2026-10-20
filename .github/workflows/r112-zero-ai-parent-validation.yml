@@ -1,0 +1,77 @@
+name: R112 zero-AI parent validation
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/r112-zero-ai-parent-validation.yml"
+
+jobs:
+  validate-parent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      WORKFLOW_NAME: impresax-render-v2-prospect
+      INSTANCE_ID: rpv2-a97be122-9eab-4942-a479-9fddca01dd33-r112-zero-ai-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Deploy current R112 worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config wrangler.render-v2.jsonc
+      - name: Reset validation pack from provider-only escalation
+        shell: bash
+        env:
+          OPS_DATABASE_URL: ${{ secrets.OPS_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import postgres from "postgres";
+          const sql=postgres(process.env.OPS_DATABASE_URL,{ssl:"require",max:1});
+          await sql`
+            update render_v2_packs
+            set status='PLANNING',
+                metadata=(metadata - 'auto_recovery_partial_open')
+                  || jsonb_build_object(
+                    'r112_zero_ai_parent_validation',true,
+                    'r112_zero_ai_parent_validation_started_at',now()
+                  ),
+                updated_at=now()
+            where id='a97be122-9eab-4942-a479-9fddca01dd33'::uuid
+          `;
+          await sql`
+            update prospects
+            set current_step='RENDERING',
+                render_status='GENERATING',
+                error=null,
+                hold_reason=null,
+                updated_at=now()
+            where id='5a03a8d1-e080-4f53-bf38-214c24f67248'::uuid
+          `;
+          await sql.end();
+          NODE
+      - name: Trigger standard parent workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARAMS='{"prospectId":"5a03a8d1-e080-4f53-bf38-214c24f67248","packId":"a97be122-9eab-4942-a479-9fddca01dd33","inputPackId":"80462259-99f9-488c-a36b-833ca9358b2e"}'
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json
+      - name: Wait for standard parent completion
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..120}; do
+            npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json > /tmp/status.json
+            cat /tmp/status.json
+            if grep -Eq '"status"[[:space:]]*:[[:space:]]*"complete"' /tmp/status.json; then exit 0; fi
+            if grep -Eq '"status"[[:space:]]*:[[:space:]]*"(errored|terminated)"' /tmp/status.json; then exit 1; fi
+            sleep 4
+          done
+          exit 1
