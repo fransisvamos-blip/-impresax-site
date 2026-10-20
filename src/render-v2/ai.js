@@ -741,9 +741,10 @@ const renderSpecSchema={
   properties:{
     main_html:{type:"string",minLength:1400},
     custom_css:{type:"string",minLength:1400},
-    section_ids:{type:"array",minItems:6,maxItems:10,items:{type:"string"}},
+    section_ids:{type:"array",minItems:8,maxItems:12,items:{type:"string"}},
     section_architecture_standard:{type:"string"},
     section_first_standard:{type:"string"},
+    home_depth_standard:{type:"string"},
     section_blueprint:{type:"array",items:{type:"string"}},
     used_copy_tokens:{type:"array",minItems:6,items:{type:"string"}},
     used_asset_tokens:{type:"array",items:{type:"string"}},
@@ -756,7 +757,7 @@ const renderSpecSchema={
     implementation_notes:{type:"string"}
   },
   required:[
-    "main_html","custom_css","section_ids","used_copy_tokens","used_asset_tokens",
+    "main_html","custom_css","section_ids","home_depth_standard","used_copy_tokens","used_asset_tokens",
     "hero_visual_strategy","hero_subject","hero_scene_type","hero_copy_space",
     "hero_mobile_crop_strategy","hero_relevance_score","implementation_notes"
   ]
@@ -797,8 +798,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "",
     "HTML CONTRACT:",
     "- main_html is the CONTENT INSIDE <main>; NEVER output <main>, <html>, <head>, <body>, <header> or <footer> tags.",
-    "- Use at least 6 substantial <section> blocks and ALWAYS include these exact ids: hero, positioning, services, trust, bridge, final-cta.",
-    "- The journey must read like a finished premium business homepage: hero -> positioning -> services -> trust/proof -> commercial bridge -> final CTA. Add 1-2 extra substantial sections only when verified content supports them.",
+    "- R111 HOME DEPTH: use 8-12 substantial <section> blocks and ALWAYS include these exact ids: hero, positioning, services, trust, bridge, final-cta.",
+    "- The journey must read like a commissioned premium business homepage: hero -> positioning -> services -> at least TWO distinct editorial feature scenes -> trust/proof -> commercial bridge -> final CTA. Use 8-12 sections total; never pad with filler.",
     "- The hero MUST contain an <h1> using {{copy:HERO_HEADLINE}}, a visible {{copy:HERO_BODY}}, and TWO visible button-style anchors using {{cta:PRIMARY}} and {{cta:SECONDARY}}.",
     "- services MUST visibly use {{copy:SERVICES_TITLE}} and {{copy:SERVICES_INTRO}} before the service modules.",
     "- trust MUST visibly use {{copy:TRUST_TITLE}} and {{copy:TRUST_INTRO}} before the trust modules.",
@@ -865,6 +866,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- HEADER / MENU RULE: the top navigation must look intentionally designed and professionally resolved: balanced logo scale, calm spacing, legible navigation hierarchy, confident primary CTA and strong mobile behavior. It must not look like a default website header.",
     "- FOOTER RULE: the footer is the final scene of the brand experience, not an afterthought. It needs clear identity, navigation hierarchy, contact structure, generous spacing and a premium branded surface.",
     "- R94 VALUE-PERCEPTION NORTH STAR: the site may be sold around EUR 2,500, but the screenshots must plausibly look like a EUR 10,000-15,000 top-tier agency project. If it merely looks worth the selling price, it fails.",
+    "- R111 HOME RICHNESS GATE: the hero cannot carry the value perception alone. The body of the homepage must contain enough authored commercial depth to feel like a complete commissioned project, with at least six meaningful scenes between hero and final CTA.",
+    "- R111 EDITORIAL FEATURE GATE: include at least two bespoke middle-scroll feature scenes that elevate specific verified services, capabilities, process, locality or proof. They must have different composition logic from the services grid and from each other.",
+    "- R111 NO-FILLER RULE: 8-12 sections is a structural range, not permission to duplicate copy. Every scene must have a different persuasive job and must advance the commercial story.",
     "- CUSTOM-MADE GATE: the composition must feel difficult to reuse unchanged for another prospect. Require at least three authored signature moments tied to this brand, sector, imagery and commercial story.",
     "- PREMIUM ART-DIRECTION GATE: judge the whole page as a commissioned brand experience, not a component library. Strong hero alone cannot compensate for ordinary middle sections.",
     "- BRAND SPECIFICITY GATE: logo, brand color, geometry, imagery, copy hierarchy and sector cues must create unmistakable ownership by the prospect.",
@@ -899,7 +903,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- PREMIUM RHYTHM FLOOR: whitespace, contrast, section transitions and graphic support must create controlled tension and release from hero through final CTA.",
     "- The hero must look sellable at first glance: premium image quality, obvious relevance to this prospect, strong focal hierarchy, believable real-world scene and excellent desktop/mobile cropping.",
     "- hero_visual_strategy / hero_subject / hero_scene_type / hero_copy_space / hero_mobile_crop_strategy must describe what is ACTUALLY implemented. hero_relevance_score must be your self-check and should be >=8 before returning.",
-    "- section_ids must list the actual section ids and contain 6-10 entries.",
+    "- section_ids must list the actual section ids and contain 8-12 entries. home_depth_standard must be R111_15K_HOME_DEPTH_ARCHITECTURE_V1.",
     "- used_copy_tokens and used_asset_tokens must report only tokens actually used.",
     "- Do not add a separate <footer> inside main_html; the deterministic shell already owns the site footer.",
     "",
@@ -977,6 +981,17 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     if(score<required) addGateIssue(key,score,required,"r107_quality_gate_below_floor");
   }
 
+  const r111HomeDepthFloor={
+    homepage_richness:9.7,
+    section_depth:9.6,
+    content_architecture:9.7,
+    commercial_story_depth:9.6
+  };
+  for(const [key,required] of Object.entries(r111HomeDepthFloor)) {
+    const score=Number(scores?.[key]??0);
+    if(score<required) addGateIssue(key,score,required,"r111_home_depth_gate_below_floor");
+  }
+
   const elevatedGateFloor={
     fifteen_k_value_perception:9.7,
     irreproducible_brand_authorship:9.7,
@@ -1041,7 +1056,8 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "scroll_narrative_continuity","signature_system_coherence","editorial_campaign_quality",
   "transition_art_direction","visual_memory_factor","cross_viewport_art_direction",
   "hero_text_on_image_integration","hero_overlay_legibility","sitewide_visual_refinement",
-  "image_quality_perception","premium_typography_quality","anti_template_feel","anti_fake_ai_credibility"
+  "image_quality_perception","premium_typography_quality","anti_template_feel","anti_fake_ai_credibility",
+  "homepage_richness","section_depth","content_architecture","commercial_story_depth"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -1066,6 +1082,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "FULL-HOME HARD GATE: header_quality, navigation_quality, page_architecture, section_quality, final_cta_quality and footer_quality are blocking. Any score below 8 means FAIL. Under R94, header/menu/footer professionalism and 15K perceived-value is additionally judged through 9+ master gates and cannot pass as merely acceptable shell chrome.",
     "FULL-HOME HARD GATE: fail if the header is only logo + tiny link, if navigation looks missing/unfinished, if hero lacks readable headline/body and two designed actions, if sections feel repetitive or empty, if the final CTA is weak, or if the footer looks like a thin afterthought.",
     "Judge the whole scroll journey. A beautiful hero cannot compensate for a weak middle or weak footer.",
+    "R111 HOME DEPTH HARD GATE: homepage_richness >=9.7, section_depth >=9.6, content_architecture >=9.7 and commercial_story_depth >=9.6 are blocking. Fail a short brochure-like homepage even when individual sections are attractive.",
+    "R111 HOME DEPTH HARD GATE: require 8-12 purposeful substantial scenes, at least two bespoke editorial feature scenes in the middle scroll, and a clear progression from desire to understanding to proof to action. Repetition or filler is a FAIL.",
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
     "HERO HARD GATE: fail if the hero image is generic, irrelevant to the verified vertical/services, visually weak, obviously synthetic/cheap, subordinate to empty geometry, missing a clear focal subject, or badly cropped on mobile.",
     "HERO HARD GATE: the image must materially improve first impression and commercial credibility, with headline/CTA remaining immediately readable.",
