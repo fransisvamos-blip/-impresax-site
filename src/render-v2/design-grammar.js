@@ -216,7 +216,9 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     if(/impresa\s+attiva|attiv/i.test(value)) return "Operatività";
     if(/fatturato|ricavi|revenue|turnover|€|euro/i.test(value)) return "Solidità";
     if(/dipendenti|employees|headcount|addetti/i.test(value)) return "Struttura";
-    if(key==="LOCALITY_LINE" || /catanzaro|calabria|territorio|locale/i.test(value)) return "Presenza locale";
+    if(/vendita\s+all.?ingrosso|materiali\s+per\s+ediliz/i.test(value)) return "Distribuzione B2B";
+    if(/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(value)) return "Lavorazione";
+    if(key==="LOCALITY_LINE" || /catanzaro|calabria|territorio|locale|presenza operativa/i.test(value)) return "Presenza locale";
     return "Competenza";
   };
   const trustReasons=verifiedTrustReasonKeys
