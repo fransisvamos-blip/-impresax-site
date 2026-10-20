@@ -1063,6 +1063,52 @@ export async function startOrRecoverParent(env,sql,pack) {
   return {instance_id:instanceId,status:await instance.status()};
 }
 
+async function suppressLegacyRenderOwnership(sql) {
+  const cancelledJobs=await sql`
+    update render_jobs j
+    set status='FAILED',
+        error='SUPERSEDED_BY_RENDER_V2',
+        completed_at=coalesce(completed_at,now()),
+        updated_at=now()
+    where j.worker='cloudflare-workers-ai'
+      and j.status in ('RUNNING','COMPLETING')
+      and exists (
+        select 1
+        from render_v2_packs v2
+        where v2.prospect_id=j.prospect_id
+          and v2.shadow_mode=true
+          and v2.status not in ('CANCELLED','SUPERSEDED')
+      )
+    returning j.id,j.prospect_id`;
+
+  const archivedPacks=await sql`
+    update render_packs legacy
+    set status='ARCHIVED_V2_SUPERSEDED',
+        content_map=coalesce(content_map,'{}'::jsonb) || jsonb_build_object(
+          'generation_hold',false,
+          'v2_superseded',true,
+          'v2_superseded_at',to_jsonb(now()),
+          'v2_ownership','RENDER_V2'
+        )
+    where legacy.approved_reference=false
+      and upper(legacy.status) not like '%ARCHIVED%'
+      and upper(legacy.status) not like '%REJECT%'
+      and exists (
+        select 1
+        from render_v2_packs v2
+        where v2.prospect_id=legacy.prospect_id
+          and v2.shadow_mode=true
+          and v2.status not in ('CANCELLED','SUPERSEDED')
+      )
+    returning legacy.id,legacy.prospect_id`;
+
+  return {
+    cancelled_legacy_jobs:cancelledJobs.length,
+    archived_legacy_packs:archivedPacks.length,
+    legacy_pack_ids:archivedPacks.map(x=>x.id)
+  };
+}
+
 async function syncProspectRenderProjection(sql) {
   const rows=await sql`
     with latest_pack as (
@@ -1648,6 +1694,7 @@ export async function reconcileV2(env) {
     });
     return summary;
   }
+  summary.legacy_render_v2_ownership=await suppressLegacyRenderOwnership(sql);
   summary.r107_stable_rearm=await rearmLegacyR107EligiblePacks(sql);
   summary.cabina_preview_hold_normalization=await normalizeCabinaPreviewHolds(sql);
   summary.prospect_projection_sync=await syncProspectRenderProjection(sql);
