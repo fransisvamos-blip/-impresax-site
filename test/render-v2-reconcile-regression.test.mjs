@@ -587,6 +587,14 @@ test("R113 detail craftsmanship locks alignment imagery trust background and dem
   assert.match(compiler,/R113_PARTNER_DEMO_CAPACITY_REQUIRED/);
 });
 
+test("R116 partner facsimiles and repeated imagery receive distinct art direction",()=>{
+  assert.match(r116Flagship,/content:"SLOT DEMO"!important/);
+  assert.match(r116Flagship,/\.ixg-partner-card--demo \.ixg-demo-partner-lines\{display:none!important\}/);
+  assert.match(r116Flagship,/object-position:44% 58%!important/);
+  assert.match(r116Flagship,/object-position:82% 48%!important/);
+  assert.match(r116Flagship,/transform:scale\(1\.11\)!important/);
+});
+
 test("R116 final art direction removes legacy band and upgrades shell bridge",()=>{
   assert.match(r116Flagship,/\.ixm-graphic-band\{display:none!important\}/);
   assert.match(r116Flagship,/\.ix-v2-header\{[\s\S]*position:absolute!important/);
