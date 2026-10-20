@@ -1,0 +1,46 @@
+name: Gualtieri R112 parent trigger
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - ".github/workflows/gualtieri-r112-parent-trigger.yml"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      WORKFLOW_NAME: impresax-render-v2-prospect
+      INSTANCE_ID: rpv2-7ba0aa4c-5598-4ef8-a81e-6d9fd4e03ced-r112-direct-v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Deploy current R112 worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config wrangler.render-v2.jsonc
+      - name: Trigger Gualtieri R112 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          PARAMS='{"prospectId":"38a3796c-9c04-4b82-bcb4-e7bc3978769e","packId":"7ba0aa4c-5598-4ef8-a81e-6d9fd4e03ced","inputPackId":"7dfd4b2b-95f2-41ad-8ff9-1d47eb873d28"}'
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json
+      - name: Wait for completion
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..120}; do
+            npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --config wrangler.render-v2.jsonc --json > /tmp/status.json
+            cat /tmp/status.json
+            if grep -Eq '"status"[[:space:]]*:[[:space:]]*"complete"' /tmp/status.json; then exit 0; fi
+            if grep -Eq '"status"[[:space:]]*:[[:space:]]*"(errored|terminated)"' /tmp/status.json; then exit 1; fi
+            sleep 4
+          done
+          exit 1
