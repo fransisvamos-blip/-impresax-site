@@ -713,23 +713,25 @@ export function buildCopyManifest(content,inputPayload={}) {
       used.add(bodyKey);
     }
   });
+  const isPartnerTrust=value=>/\b(?:u[-\s]?power|rivenditor|dealer|partner|autorizzat)\b/i.test(String(value||""));
   let trustOutIndex=0;
+  let partnerOutIndex=0;
   trustPoints.forEach(s=>{
     const value=String(s?.text||"").replace(/\s+/g," ").trim();
     const key=norm(value);
     if(!value || used.has(key)) return;
-    trustOutIndex++;
-    out["TRUST_"+trustOutIndex]=value;
+    if(isPartnerTrust(value)) {
+      partnerOutIndex++;
+      out["PARTNER_"+partnerOutIndex]=value;
+    } else {
+      trustOutIndex++;
+      out["TRUST_"+trustOutIndex]=value;
+    }
     used.add(key);
   });
-
-  if(String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1") {
-    const trustJoined=rawTrustPoints.map(item=>String(item?.text||"").replace(/\s+/g," ").trim()).join(" | ");
-    const authorized=trustJoined.match(/Rivenditore\s+autorizzato\s+([^.|,]+)/i);
-    if(authorized?.[1]) {
-      out.TRUST_METRIC_1=authorized[1].trim();
-      out.TRUST_METRIC_LABEL_1="Rivenditore autorizzato";
-    }
+  if(partnerOutIndex>0) {
+    out.PARTNER_SECTION_TITLE="Marchi e partnership";
+    out.PARTNER_SECTION_INTRO="Partnership e autorizzazioni commerciali verificate.";
   }
   return out;
 }
