@@ -746,6 +746,7 @@ const renderSpecSchema={
     section_architecture_standard:{type:"string"},
     section_first_standard:{type:"string"},
     home_depth_standard:{type:"string"},
+    section_substance_standard:{type:"string"},
     section_blueprint:{type:"array",items:{type:"string"}},
     used_copy_tokens:{type:"array",minItems:6,items:{type:"string"}},
     used_asset_tokens:{type:"array",items:{type:"string"}},
@@ -758,7 +759,7 @@ const renderSpecSchema={
     implementation_notes:{type:"string"}
   },
   required:[
-    "main_html","custom_css","section_ids","home_depth_standard","used_copy_tokens","used_asset_tokens",
+    "main_html","custom_css","section_ids","home_depth_standard","section_substance_standard","used_copy_tokens","used_asset_tokens",
     "hero_visual_strategy","hero_subject","hero_scene_type","hero_copy_space",
     "hero_mobile_crop_strategy","hero_relevance_score","implementation_notes"
   ]
@@ -870,6 +871,13 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "- R111 HOME RICHNESS GATE: the hero cannot carry the value perception alone. The body of the homepage must contain enough authored commercial depth to feel like a complete commissioned project, with at least six meaningful scenes between hero and final CTA.",
     "- R111 EDITORIAL FEATURE GATE: include at least two bespoke middle-scroll feature scenes that elevate specific verified services, capabilities, process, locality or proof. They must have different composition logic from the services grid and from each other.",
     "- R111 NO-FILLER RULE: 8-12 sections is a structural range, not permission to duplicate copy. Every scene must have a different persuasive job and must advance the commercial story.",
+    "- R112 SECTION SUBSTANCE HARD GATE: length is irrelevant if the page is empty. Every middle-scroll scene must contain enough verified commercial substance to justify its footprint. Decorative-only or giant-empty sections fail.",
+    "- R112 WHY-US HARD GATE: the why-us scene must contain 4-6 distinct verified reasons/capabilities, visible graphic support and at least one proof/trust support device. Three tiny reasons floating in empty space is a FAIL.",
+    "- R112 EDITORIAL SUBSTANCE GATE: each editorial feature must use at least three meaningful verified copy tokens/ideas and a materially different composition. An oversized visual with two lines of copy is a FAIL.",
+    "- R112 COMMERCIAL SPECIFICITY GATE: at least three middle-scroll scenes must visibly express sector-specific products, services, operations, applications, logistics, locality or verified capability. Generic brand theatre is insufficient.",
+    "- R112 EMPTY-SPACE BALANCE GATE: premium whitespace must frame content, not replace it. Large blank zones, hollow decorative devices or oversized empty stages fail anti_empty_layout.",
+    "- R112 CTA DISTINCTION GATE: the bridge and final CTA must have different jobs. Bridge uses the secondary/contact-development action; the final close uses the primary conversion action. Do not repeat both actions in consecutive closing scenes.",
+    "- R112 MOBILE DENSITY GATE: at 390px, each substantial scene must retain commercial information, hierarchy and visual support without becoming a long empty scroll.",
     "- CUSTOM-MADE GATE: the composition must feel difficult to reuse unchanged for another prospect. Require at least three authored signature moments tied to this brand, sector, imagery and commercial story.",
     "- PREMIUM ART-DIRECTION GATE: judge the whole page as a commissioned brand experience, not a component library. Strong hero alone cannot compensate for ordinary middle sections.",
     "- BRAND SPECIFICITY GATE: logo, brand color, geometry, imagery, copy hierarchy and sector cues must create unmistakable ownership by the prospect.",
@@ -993,6 +1001,20 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     if(score<required) addGateIssue(key,score,required,"r111_home_depth_gate_below_floor");
   }
 
+  const r112SectionSubstanceFloor={
+    section_substance:9.7,
+    commercial_depth:9.7,
+    middle_scroll_value:9.6,
+    why_us_strength:9.7,
+    anti_empty_layout:9.8,
+    cta_distinction:9.5,
+    mobile_density_quality:9.6
+  };
+  for(const [key,required] of Object.entries(r112SectionSubstanceFloor)) {
+    const score=Number(scores?.[key]??0);
+    if(score<required) addGateIssue(key,score,required,"r112_section_substance_gate_below_floor");
+  }
+
   const elevatedGateFloor={
     fifteen_k_value_perception:9.7,
     irreproducible_brand_authorship:9.7,
@@ -1058,7 +1080,9 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
   "transition_art_direction","visual_memory_factor","cross_viewport_art_direction",
   "hero_text_on_image_integration","hero_overlay_legibility","sitewide_visual_refinement",
   "image_quality_perception","premium_typography_quality","anti_template_feel","anti_fake_ai_credibility",
-  "homepage_richness","section_depth","content_architecture","commercial_story_depth"
+  "homepage_richness","section_depth","content_architecture","commercial_story_depth",
+  "section_substance","commercial_depth","middle_scroll_value","why_us_strength",
+  "anti_empty_layout","cta_distinction","mobile_density_quality"
 ];
 
 export function visualQaGatePolicy(inputPayload={}) {
@@ -1084,6 +1108,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     "FULL-HOME HARD GATE: fail if the header is only logo + tiny link, if navigation looks missing/unfinished, if hero lacks readable headline/body and two designed actions, if sections feel repetitive or empty, if the final CTA is weak, or if the footer looks like a thin afterthought.",
     "Judge the whole scroll journey. A beautiful hero cannot compensate for a weak middle or weak footer.",
     "R111 HOME DEPTH HARD GATE: homepage_richness >=9.7, section_depth >=9.6, content_architecture >=9.7 and commercial_story_depth >=9.6 are blocking. Fail a short brochure-like homepage even when individual sections are attractive.",
+    "R112 SECTION SUBSTANCE HARD GATE: section_substance >=9.7, commercial_depth >=9.7, middle_scroll_value >=9.6, why_us_strength >=9.7, anti_empty_layout >=9.8, cta_distinction >=9.5 and mobile_density_quality >=9.6 are blocking.",
+    "R112 FAIL CONDITIONS: large dead zones, thin why-us content, oversized decorative feature stages, generic middle-scroll theatre, repeated bridge/final actions, or mobile scenes that become mostly empty space.",
     "R111 HOME DEPTH HARD GATE: require 8-12 purposeful substantial scenes, at least two bespoke editorial feature scenes in the middle scroll, and a clear progression from desire to understanding to proof to action. Repetition or filler is a FAIL.",
     "HERO HARD GATE: hero_strength, hero_relevance, hero_image_quality and hero_mobile_crop are independent blocking scores. Any of them below 8 means FAIL even if the rest of the page is strong.",
     "HERO HARD GATE: fail if the hero image is generic, irrelevant to the verified vertical/services, visually weak, obviously synthetic/cheap, subordinate to empty geometry, missing a clear focal subject, or badly cropped on mobile.",
