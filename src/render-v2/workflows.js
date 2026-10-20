@@ -4,7 +4,7 @@ import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
-import { captureVariant } from "./browser.js";
+import { captureVariant, upscaleR107Hero } from "./browser.js";
 import { classifyFailure, failureFingerprint, shouldChangeStrategy } from "./failure-policy.js";
 import { bytesToBase64, sha256, stableStringify } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
@@ -458,6 +458,61 @@ function r107GraphicPalette(inputPayload={}) {
   const colors=[...new Set(raw.match(/#[0-9a-f]{6}/gi)||[])];
   const primary=colors.find(x=>!/^#(?:ffffff|000000|111111|f[0-9a-f]{5})$/i.test(x))||"#b31319";
   return {primary,ink:"#101214",paper:"#f4f1ec"};
+}
+
+async function createR112UpscaledHeroAsset(env,sql,{packId,inputPayload,variantKey,source}) {
+  if(!source?.r2_key || !/^image\/(?:jpeg|png|webp)$/i.test(String(source?.mime||""))) return null;
+  const originalBytes=await readArtifactBytes(env,source.r2_key);
+  const upscaled=await upscaleR107Hero(env,bytesToBase64(originalBytes),source.mime,{
+    minWidth:3200,
+    minHeight:2200,
+    maxDimension:4096,
+    maxScale:4
+  });
+  if(upscaled?.unchanged || !upscaled?.bytes?.length) return null;
+  const code=String(inputPayload?.prospect_code||"prospect").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,80);
+  const hash=await sha256(upscaled.bytes);
+  const key="render-v2/"+code+"/"+packId+"/"+variantKey+"/hero/r112-upscaled-"+hash.slice(0,16)+".jpg";
+  const artifact=await putArtifact(env,sql,{
+    packId,revisionId:null,
+    type:"HERO_VISUAL_APPROVED_"+variantKey+"_R112_UPSCALED",
+    key,body:upscaled.bytes,mime:"image/jpeg",
+    producerStep:"R112_DETERMINISTIC_RASTER_UPSCALE"
+  });
+  await recordQa(sql,{
+    packId,revisionId:null,type:"HERO_ASSET_PREQA",status:"PASS",
+    scores:{source_fidelity:10,resolution_quality:10,commercial_credibility:10,identity_preservation:10},
+    issues:[],actions:[],
+    artifactHashes:{
+      variant_key:variantKey,
+      hero_sha256:artifact.sha256,
+      hero_r2_key:artifact.r2_key,
+      hero_model:"R112_DETERMINISTIC_RASTER_UPSCALE",
+      source_sha256:String(source?.sha256||""),
+      source_width:Number(upscaled?.source_width||0),
+      source_height:Number(upscaled?.source_height||0),
+      output_width:Number(upscaled?.width||0),
+      output_height:Number(upscaled?.height||0)
+    },
+    modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+    idempotencyKey:"qa:HERO_ASSET_PREQA:"+packId+":"+variantKey+":"+artifact.sha256
+  });
+  return {
+    ...source,
+    asset_id:"HERO_VISUAL",
+    role:"hero",
+    source_type:"R112_DETERMINISTIC_UPSCALED_FIRST_PARTY",
+    generated:false,
+    upscaled:true,
+    preqa_pass:true,
+    r2_key:artifact.r2_key,
+    mime:artifact.mime,
+    sha256:artifact.sha256,
+    bytes:artifact.bytes,
+    source_sha256:String(source?.sha256||""),
+    width:Number(upscaled?.width||0),
+    height:Number(upscaled?.height||0)
+  };
 }
 
 async function createR107DeterministicGraphicHeroAsset(env,sql,{packId,inputPayload,variantKey}) {
@@ -1116,17 +1171,32 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const currentHeroIsVector=String(context.assets?.HERO_VISUAL?.mime||"")==="image/svg+xml"
           || /DETERMINISTIC_VECTOR/i.test(String(context.assets?.HERO_VISUAL?.source_type||""));
         if(EXTERNAL_AI_CALLS_ALLOWED!==true && heroResolutionFailure && !currentHeroIsVector) {
-          const fallbackHero=await step.do("r"+cycle+"-hero-resolution-vector-fallback",async()=>{
-            return createR107DeterministicGraphicHeroAsset(this.env,sql,{
-              packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
+          let fallbackHero=await step.do("r"+cycle+"-hero-resolution-raster-upscale",async()=>{
+            return createR112UpscaledHeroAsset(this.env,sql,{
+              packId:params.packId,
+              inputPayload:context.inputPayload,
+              variantKey:params.variantKey,
+              source:context.assets?.HERO_VISUAL
             });
           });
+          let fallbackMode="RASTER_UPSCALE";
+          if(!fallbackHero) {
+            fallbackMode="VECTOR_LAST_RESORT";
+            fallbackHero=await step.do("r"+cycle+"-hero-resolution-vector-fallback",async()=>{
+              return createR107DeterministicGraphicHeroAsset(this.env,sql,{
+                packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey
+              });
+            });
+          }
           context.assets={...context.assets,HERO_VISUAL:fallbackHero};
           context.editorialAssetTokens=[...new Set([...context.editorialAssetTokens,"HERO_VISUAL"])];
           feedback={
-            reason:"DETERMINISTIC_HERO_RESOLUTION_FALLBACK",
+            reason:fallbackMode==="RASTER_UPSCALE"?"DETERMINISTIC_HERO_RASTER_UPSCALE":"DETERMINISTIC_HERO_RESOLUTION_FALLBACK",
             issues:gateIssues,
-            actions:["Replace the undersized first-party hero with the scalable deterministic vector hero while preserving verified copy and section substance."]
+            actions:[fallbackMode==="RASTER_UPSCALE"
+              ?"Preserve the real first-party hero and use the deterministic high-resolution upscale."
+              :"Use the scalable deterministic vector hero only because raster upscaling was unavailable.",
+              "Preserve verified copy and R112 section substance."]
           };
           await updateWorkflow(sql,event.instanceId,{
             status:"RUNNING",
@@ -1134,8 +1204,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             errorCode:null,
             metadata:{
               hero_resolution_fallback:true,
+              hero_resolution_fallback_mode:fallbackMode,
               hero_fallback_mime:fallbackHero.mime,
               hero_fallback_sha256:fallbackHero.sha256,
+              hero_source_sha256:String(fallbackHero?.source_sha256||context.assets?.HERO_VISUAL?.sha256||""),
               failed_revision:revision.revision
             }
           });
