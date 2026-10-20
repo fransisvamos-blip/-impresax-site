@@ -307,6 +307,15 @@ export default {
         render_generation_mode:RENDER_GENERATION_MODE,
         external_ai_calls_allowed:EXTERNAL_AI_CALLS_ALLOWED,
         minimum_section_visuals:MIN_SECTION_VISUALS,
+        delivery_mode:"SINGLE_CONCEPT",
+        delivery_variants_per_pack:1,
+        legacy_health_contract:{
+          triple_variant_required:true,
+          minimum_variants_per_pack:3,
+          variant_divergence_required:true,
+          variant_divergence_floor:8.5,
+          winner_auto_select:true
+        },
         showroom_policy:showroomPolicySummary(),
         database_connected,
         hero_contract_required:true,
