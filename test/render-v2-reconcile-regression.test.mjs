@@ -530,11 +530,11 @@ test("premium pilot requires iconography and graphic richness",()=>{
 });
 
 
-test("logo-first proof data becomes visual metrics and editorial ledgers",()=>{
-  assert.match(ai,/TRUST_METRIC_1/);
-  assert.match(ai,/TRUST_METRIC_LABEL_1/);
-  assert.match(grammar,/ixg-proof-metrics/);
-  assert.match(grammar,/ixg-proof-metric/);
+test("logo-first partner proof remains a separate branded section and editorial ledgers remain available",()=>{
+  assert.match(ai,/PARTNER_1/);
+  assert.match(ai,/PARTNER_SECTION_TITLE/);
+  assert.match(grammar,/ixg-partner-proof/);
+  assert.match(grammar,/ixg-partner-logo/);
   assert.match(grammar,/grid-template-columns:160px minmax\(0,1fr\)!important/);
   assert.match(grammar,/grid-template-columns:1fr!important;\n gap:0!important;\n border-top:1px solid rgba\(255,255,255,.18\)!important/);
   assert.doesNotMatch(grammar,/content:"01"/);
