@@ -1762,6 +1762,9 @@ body{font-family:var(--ix-body-font)}
 .ixg-service__body,.ixg-bridge__evidence-row p,.ixg-proof-metric p{color:rgba(24,26,28,.92)!important;opacity:1!important}
 .ixg-trust-section,.ix-v2-footer{color:#f7f6f2}
 .ixg-trust-section .ixg-section-intro,.ixg-trust-section p,.ix-v2-footer p,.ix-v2-footer a{color:rgba(255,255,255,.92)!important;opacity:1!important}
+.ixg-trust-section .ixg-section-head--light{color:#fff!important}
+.ixg-trust-section .ixg-section-head--light .ixg-section-intro{color:rgba(255,255,255,.92)!important;opacity:1!important}
+.ixg-trust-section .ixg-section-head--light .ixg-kicker{color:#fff!important;opacity:1!important}
 .ixg-trust-section .ixg-kicker,.ix-v2-footer .ixg-kicker,.ix-v2-footer strong{color:#fff!important;opacity:1!important}
 .ixg-trust-section .ixg-kicker,.ix-v2-footer strong{color:#fff!important}
 /* Section coherence system: one grid, one narrative, no random composition. */
