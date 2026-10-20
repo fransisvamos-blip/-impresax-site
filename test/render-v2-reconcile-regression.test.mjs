@@ -557,6 +557,14 @@ test("structural rework reuses certified hero and never requests a fresh AI hero
   assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,260}context\.packMetadata\?\.structural_divergence_rework_required!==true[\s\S]{0,180}context\.r107Retrofit!==true/);
 });
 
+test("R112 zero-AI hero resolution failures auto-fallback to scalable vector art",()=>{
+  assert.match(workflows,/HERO_SOURCE_RESOLUTION_TOO_LOW/);
+  assert.match(workflows,/hero-resolution-vector-fallback/);
+  assert.match(workflows,/createR107DeterministicGraphicHeroAsset\(this\.env,sql/);
+  assert.match(workflows,/reason:"DETERMINISTIC_HERO_RESOLUTION_FALLBACK"/);
+  assert.match(workflows,/hero_resolution_fallback:true/);
+});
+
 test("R112 zero-AI queue always stays on deterministic planning, generation and Cabina review",()=>{
   assert.match(workflows,/const deterministicPlanning=zeroAiDeterministicMode/);
   assert.match(workflows,/zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true[\s\S]{0,180}RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"/);
