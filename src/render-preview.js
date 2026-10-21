@@ -238,7 +238,7 @@ export function renderPreviewDocument(preview) {
     +'.mobile{display:flex;justify-content:center;padding:0 16px 80px;box-sizing:border-box}'
     +'.mobile img{display:block;width:390px;max-width:86vw;height:auto;box-shadow:0 18px 60px rgba(0,0,0,.12)}'
     +'.mark{position:fixed;right:12px;bottom:12px;z-index:10;padding:7px 10px;border-radius:999px;background:rgba(17,17,17,.82);color:#fff;font:500 10px/1.2 system-ui;letter-spacing:.02em;backdrop-filter:blur(8px)}'
-    +'@media(max-width:600px){.mobile-label{padding:36px 12px 18px;font-size:24px}.mobile{padding:0 12px 56px}.mobile img{max-width:88vw}.mark{font-size:9px}}</style></head>'
+    +'@media(max-width:600px){.mobile-label{padding:36px 12px 18px;font-size:24px}.mobile{width:100%;padding:0 0 56px}.mobile img{width:100%;max-width:100%;height:auto;box-shadow:none}.mark{font-size:9px}}</style></head>'
     +'<body><main><section class="desktop" aria-label="Anteprima desktop"><img src="/desktop.jpg" alt="Anteprima desktop '+name+'"></section>'
     +'<div class="mobile-label">Versione mobile</div><section class="mobile" aria-label="Anteprima mobile"><img src="/mobile.jpg" alt="Anteprima mobile '+name+'"></section></main>'
     +'<div class="mark">Anteprima · ImpresaX</div></body></html>';
