@@ -692,6 +692,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
       const r118PerceptualJury=packMetadata.r118_perceptual_jury===true
         || /R118_PERCEPTUAL/i.test(String(params.initialFeedback?.reason||""));
+      const r119Requested=r118PerceptualJury && (
+        packMetadata.r119_scene_composer===true
+        || packMetadata.r119_eight_scene_evidence===true
+        || /R119_/i.test(String(params.initialFeedback?.reason||""))
+      );
       const inputPayload=(renderProfile||logoFirstBrandProfile||pilotHeroLocked||r118PerceptualJury)
         ? {
             ...input.payload,
@@ -757,8 +762,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           copyManifest.PARTNER_SECTION_INTRO="Partnership e autorizzazioni commerciali verificate.";
         }
       }
-      const r119EvidenceNarrative=r118PerceptualJury
-        && /R119_SCENE_COMPOSER/i.test(String(params.initialFeedback?.reason||""));
+      const r119EvidenceNarrative=r119Requested;
       if(r119EvidenceNarrative) {
         for(const key of Object.keys(copyManifest)) {
           if(/^TRUST_\d+$/.test(key) || /^TRUST_METRIC_/.test(key)) delete copyManifest[key];
@@ -811,11 +815,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit,r118PerceptualJury};
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit,r118PerceptualJury,r119Requested};
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
-      const r119MaterialHero=/R119_SCENE_COMPOSER/i.test(String(params.initialFeedback?.reason||""))
+      const r119MaterialHero=context.r119Requested===true
         && context.assets?.SERVICE_REBAR_VISUAL?.r2_key;
       if(r119MaterialHero) {
         const source=context.assets.SERVICE_REBAR_VISUAL;
@@ -1000,20 +1004,21 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             || String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
             || String(feedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
           const r118Mode=context.r118PerceptualJury===true;
+          const r119Mode=context.r119Requested===true;
           const zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true
             && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"
             && !r118Mode;
-          const r118FirstPass=r118Mode && cycle===1;
-          const r119SceneRepair=r118Mode && (cycle>=2 || /R119_SCENE_COMPOSER/i.test(String(params.initialFeedback?.reason||"")));
+          const r119SeedPass=r119Mode && cycle===1;
+          const r118FirstPass=r118Mode && cycle===1 && !r119Mode;
           const legacyDeterministic=!r118Mode && (contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))));
-          if(r119SceneRepair) {
+          if(r119SeedPass) {
             const scene=buildR119SceneComposerSpec({
               copyManifest:context.copyManifest,
               assetTokens:context.editorialAssetTokens,
               hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
               inputPayload:context.inputPayload
             });
-            return {spec:scene.spec,model:scene.strategy,deterministic:true,r119_scene_composer:true};
+            return {spec:scene.spec,model:scene.strategy,deterministic:true,r119_scene_composer:true,r119_evidence_seed:true};
           }
           if(r118FirstPass || zeroAiQueueDeterministic || legacyDeterministic) {
             const deterministic=buildZeroPhotoPremiumSpec({
@@ -1569,7 +1574,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           limit 1`;
         return rows[0]||null;
       });
+      const r119ForceHardReset=context.r119Requested===true && cycle===1;
       const r118HardReset=context.r118PerceptualJury===true && (
+        r119ForceHardReset ||
         Number(qa.scores?.no_template_feel??10)<8.5 ||
         Number(qa.scores?.custom_made_feel??10)<8.5 ||
         Number(qa.scores?.irreproducible_brand_authorship??10)<8.5 ||
@@ -1604,7 +1611,14 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         actions:[
           ...(r118HardReset?[
             "Discard the prior page skeleton completely; preserve only verified content, immutable identity and approved assets.",
-            "Rebuild section order, proportions, spatial rhythm, typography hierarchy and CTA choreography from a new creative composition."
+            "Rebuild section order, proportions, spatial rhythm, typography hierarchy and CTA choreography from a new creative composition.",
+            ...(context.r119Requested===true?[
+              "R119 FAST HARD RESET: this second and final pass must be a genuinely new commissioned art direction, not a repair or reskin of the deterministic seed.",
+              "Keep the DEDIL evidence narrative: materials for construction, rebar processing, operational proof, Catanzaro presence and the verified U-Power relationship. Turn those facts into 4-5 unmistakable editorial acts across 8 substantial chapters.",
+              "Do not reuse the seed hero geometry, section order, split ratios, typographic scale pattern, CTA placement or dark/light cadence. No cards, no SaaS modules, no generic industrial template.",
+              "Author mobile natively at 390px with independent crops, sequence, scale and whitespace. Hero text must remain fully visible with intentional line breaks and no clipping.",
+              "Make steel, concrete, rebar, dust, machining precision and construction materiality feel photographed and commissioned; the page must look prospect-specific enough that it could not be reused for another company."
+            ]:[])
           ]:[]),
           ...(qa.actions||[])
         ],
