@@ -214,7 +214,8 @@ test("R118 fast flagship loop caps revisions and jury fanout",()=>{
   assert.match(workflows,/const visualRevisionLimit=context\.r118PerceptualJury===true/);
   assert.match(workflows,/for\(let cycle=1;cycle<=visualRevisionLimit;cycle\+\+\)/);
   assert.match(ai,/const fastR118Qa=qaRole && allowR118External===true/);
-  assert.match(ai,/const plan=fastR118Qa\s*\? \[\{fallback:false,retry:0\}\]/);
+  assert.match(ai,/const fastR118Generation=!qaRole && allowR118External===true/);
+  assert.match(ai,/const plan=\(fastR118Qa\|\|fastR118Generation\)\s*\? \[\{fallback:false,retry:0\}\]/);
   assert.match(browser,/qaDeviceScaleFactor:R118_QA_DEVICE_SCALE_FACTOR/);
   assert.match(browser,/qaJpegQuality:R118_QA_JPEG_QUALITY/);
 });
