@@ -837,9 +837,14 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const city=String(inputPayload.city||"").replace(/\s+/g," ").trim();
         const business=String(inputPayload.business_name||"").replace(/\s+/g," ").trim()
           .replace(/\s+(?:S\.?R\.?L\.?S?|S\.?P\.?A\.?)$/i,"").trim();
-        if(business) copyManifest.HERO_HEADLINE=business;
         const materialService=services.find(x=>/vendita\s+all.?ingrosso|materiali\s+per\s+ediliz/i.test(x))||services[0]||"";
         const rebarService=services.find(x=>/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(x))||services[1]||"";
+        copyManifest.HERO_HEADLINE=(materialService && rebarService)
+          ? "Materiali per l’edilizia. Tondo lavorato."
+          : (materialService ? "Materiali per l’edilizia." : (rebarService ? "Tondo lavorato per il cemento armato." : (business||copyManifest.HERO_HEADLINE)));
+        copyManifest.HERO_BODY=city
+          ? "Distribuzione all’ingrosso e lavorazione del tondo per cemento armato a "+city+"."
+          : "Distribuzione all’ingrosso e lavorazione del tondo per cemento armato.";
         copyManifest.TRUST_1=materialService
           ? "Distribuzione B2B di materiali per l’edilizia."
           : "Attività operativa verificata.";
