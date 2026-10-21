@@ -1,5 +1,5 @@
 import puppeteer from "@cloudflare/puppeteer";
-import { RENDER_DEVICE_SCALE_FACTOR, RENDER_JPEG_QUALITY, QA_JPEG_QUALITY, HERO_TEXT_OVER_IMAGE_REQUIRED, HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED } from "./constants.js";
+import { RENDER_DEVICE_SCALE_FACTOR, RENDER_JPEG_QUALITY, QA_JPEG_QUALITY, R118_QA_DEVICE_SCALE_FACTOR, R118_QA_JPEG_QUALITY, HERO_TEXT_OVER_IMAGE_REQUIRED, HIGH_RESOLUTION_VISUAL_PERCEPTION_REQUIRED } from "./constants.js";
 
 export async function upscaleR107Hero(env,sourceBase64,mime="image/jpeg",{
   minWidth=3200,
@@ -48,7 +48,7 @@ export async function upscaleR107Hero(env,sourceBase64,mime="image/jpeg",{
   }
 }
 
-async function renderPage(browser,html,width,height) {
+async function renderPage(browser,html,width,height,{qaDeviceScaleFactor=RENDER_DEVICE_SCALE_FACTOR,qaJpegQuality=QA_JPEG_QUALITY}={}) {
   const page=await browser.newPage();
   try {
     await page.setViewport({width,height,deviceScaleFactor:RENDER_DEVICE_SCALE_FACTOR});
@@ -167,7 +167,10 @@ async function renderPage(browser,html,width,height) {
       };
     },runtimeImageTreatment);
     const bytes=await page.screenshot({type:"jpeg",quality:RENDER_JPEG_QUALITY,fullPage:true});
-    const qaBytes=await page.screenshot({type:"jpeg",quality:QA_JPEG_QUALITY,fullPage:true});
+    if(Number(qaDeviceScaleFactor)!==Number(RENDER_DEVICE_SCALE_FACTOR)) {
+      await page.setViewport({width,height,deviceScaleFactor:qaDeviceScaleFactor});
+    }
+    const qaBytes=await page.screenshot({type:"jpeg",quality:qaJpegQuality,fullPage:true});
     return {bytes:new Uint8Array(bytes),qaBytes:new Uint8Array(qaBytes),diagnostics};
   } finally {
     await page.close();
@@ -207,9 +210,13 @@ export async function captureVariant(env,html,inputPayload) {
   if(!env.BROWSER) throw new Error("BROWSER_BINDING_NOT_CONFIGURED");
   const browser=await puppeteer.launch(env.BROWSER);
   try {
+    const r118FastQa=inputPayload?.r118_perceptual_jury===true;
+    const qaOptions=r118FastQa
+      ? {qaDeviceScaleFactor:R118_QA_DEVICE_SCALE_FACTOR,qaJpegQuality:R118_QA_JPEG_QUALITY}
+      : {};
     const [desktop,mobile]=await Promise.all([
-      renderPage(browser,html,1440,900),
-      renderPage(browser,html,390,844)
+      renderPage(browser,html,1440,900,qaOptions),
+      renderPage(browser,html,390,844,qaOptions)
     ]);
     const gate=deterministicBrowserGate(desktop,mobile,inputPayload);
     return {desktop,mobile,gate};
