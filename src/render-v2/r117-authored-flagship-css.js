@@ -101,7 +101,7 @@ export const R117_AUTHORED_FLAGSHIP_CSS = `
 .ixf-service-line__body{max-width:52ch!important;font-size:clamp(15px,1.05vw,18px)!important}
 
 /* SIGNATURE MID-PAGE MOMENTS */
-.ixg-feature--one,.ixg-feature--two{padding:clamp(150px,14vw,230px) 0!important}
+.ixg-feature--one,.ixg-feature--two{padding:clamp(150px,14vw,230px) 0!important;overflow:hidden!important}
 .ixg-feature--one .ixf-feature__grid{grid-template-columns:minmax(0,.48fr) minmax(650px,1.52fr)!important}
 .ixg-feature--one .ixg-feature__stage{
  min-height:clamp(760px,64vw,980px)!important;
