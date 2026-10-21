@@ -844,12 +844,16 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           ? "Distribuzione B2B di materiali per l’edilizia."
           : "Attività operativa verificata.";
         copyManifest.TRUST_1_LABEL="Forniture";
-        copyManifest.TRUST_1_BODY=materialService||copyManifest.TRUST_1;
+        copyManifest.TRUST_1_BODY=materialService
+          ? "Attività di distribuzione B2B nel comparto dei materiali per l’edilizia."
+          : "Operatività commerciale nel comparto edilizio.";
         copyManifest.TRUST_2=rebarService
           ? "Lavorazione del tondo per cemento armato."
           : "Competenza tecnica verificata.";
         copyManifest.TRUST_2_LABEL="Lavorazioni";
-        copyManifest.TRUST_2_BODY=rebarService||copyManifest.TRUST_2;
+        copyManifest.TRUST_2_BODY=rebarService
+          ? "Attività specializzata nella lavorazione e trasformazione del tondo destinato al cemento armato."
+          : "Competenza tecnica applicata alle lavorazioni per il cemento armato.";
         copyManifest.TRUST_3=city
           ? "Sede operativa a "+city+"."
           : "Presenza operativa verificata.";
@@ -1246,7 +1250,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         });
       });
 
-      if(!compiled.ok && context.r118PerceptualJury===true) {
+      if(!compiled.ok && context.r118PerceptualJury===true && context.r119Requested!==true) {
         const initialCompileIssues=[...(compiled.issues||[])];
         try {
           const repaired=await step.do("r"+cycle+"-compiler-repair-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
