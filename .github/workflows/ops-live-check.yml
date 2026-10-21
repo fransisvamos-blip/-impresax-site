@@ -109,6 +109,30 @@ jobs:
           grep -qi "WWW-Authenticate: Basic" /tmp/admin-headers
           grep -qi "X-Robots-Tag: noindex" /tmp/admin-headers
 
+      - name: Verify DEDIL client render preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://dedil-donato.impresax.org"
+          code=$(curl -L -sS -o /tmp/dedil-preview -D /tmp/dedil-preview-headers -w "%{http_code}" --connect-timeout 8 --max-time 30 "$base/")
+          echo "preview=$code"
+          test "$code" = "200"
+          grep -q 'src="/desktop.jpg"' /tmp/dedil-preview
+          grep -q 'src="/mobile.jpg"' /tmp/dedil-preview
+          grep -q 'width:1440px' /tmp/dedil-preview
+          grep -q 'width:390px' /tmp/dedil-preview
+          grep -qi 'X-Robots-Tag: noindex' /tmp/dedil-preview-headers
+
+          desktop=$(curl -L -sS -o /tmp/dedil-desktop.jpg -D /tmp/dedil-desktop-headers -w "%{http_code}" --connect-timeout 8 --max-time 45 "$base/desktop.jpg")
+          mobile=$(curl -L -sS -o /tmp/dedil-mobile.jpg -D /tmp/dedil-mobile-headers -w "%{http_code}" --connect-timeout 8 --max-time 45 "$base/mobile.jpg")
+          echo "desktop=$desktop mobile=$mobile"
+          test "$desktop" = "200"
+          test "$mobile" = "200"
+          grep -qi 'Content-Type: image/' /tmp/dedil-desktop-headers
+          grep -qi 'Content-Type: image/' /tmp/dedil-mobile-headers
+          test "$(wc -c < /tmp/dedil-desktop.jpg)" -gt 1000000
+          test "$(wc -c < /tmp/dedil-mobile.jpg)" -gt 500000
+
       - name: Verify public production has no regression
         shell: bash
         run: |
