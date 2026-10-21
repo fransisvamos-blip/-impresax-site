@@ -31,9 +31,106 @@ async function writeControlEvent(sql,row,action,payload={}) {
   } catch {}
 }
 
+async function runPilotManualParentKick(env,sql) {
+  const rows=await sql`
+    select phase,queue_enabled,max_concurrency,pilot_pack_id,metadata
+    from render_v2_rollout_state
+    where id=1
+    limit 1`;
+  const state=rows[0]||{};
+  const meta=state.metadata||{};
+  const kick=meta.pilot_manual_parent_kick;
+  if(!kick || typeof kick!=="object") return {skipped:true,reason:"NO_PILOT_MANUAL_PARENT_KICK"};
+  if(
+    state.phase!=="PILOT_SINGLE_PROSPECT" ||
+    state.queue_enabled===true ||
+    Number(state.max_concurrency||0)!==1 ||
+    meta.global_queue_must_remain_paused!==true ||
+    meta.pilot_single_prospect!==true
+  ) throw new Error("PILOT_MANUAL_PARENT_KICK_SAFETY_GUARD");
+
+  const packId=String(kick.pack_id||"").trim();
+  const runKey=String(kick.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
+  if(!packId || !runKey) throw new Error("PILOT_MANUAL_PARENT_KICK_INVALID");
+  if(packId!==String(state.pilot_pack_id||"")) throw new Error("PILOT_MANUAL_PARENT_KICK_PACK_MISMATCH");
+
+  const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
+  if(!packs.length) throw new Error("PILOT_MANUAL_PARENT_KICK_PACK_NOT_FOUND");
+  const pack=packs[0];
+  if(String(pack.prospect_id)!==String(meta.pilot_prospect_id||"")) throw new Error("PILOT_MANUAL_PARENT_KICK_PROSPECT_MISMATCH");
+  if(!["INPUT_BLOCKED","INPUT_READY","PLANNING","ESCALATION_REQUIRED"].includes(String(pack.status||""))) {
+    throw new Error("PILOT_MANUAL_PARENT_KICK_PACK_STATE_INVALID:"+String(pack.status||""));
+  }
+
+  const inputs=await sql`
+    select id,certification_status
+    from render_input_packs
+    where id=${pack.input_pack_id}::uuid and render_pack_id=${packId}::uuid
+    limit 1`;
+  const input=inputs[0]||null;
+  if(!input || input.certification_status!=="PASS") throw new Error("PILOT_MANUAL_PARENT_KICK_INPUT_NOT_CERTIFIED");
+
+  const active=await sql`
+    select count(*)::int n
+    from render_workflows_v2
+    where status in ('QUEUED','RUNNING','PAUSED')`;
+  if(Number(active[0]?.n||0)>0) throw new Error("PILOT_MANUAL_PARENT_KICK_ACTIVE_WORKFLOW_EXISTS");
+
+  const instanceId="rpv2-"+packId+"-"+runKey;
+  const existing=await sql`select 1 from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
+  if(existing.length) {
+    await sql`
+      update render_v2_rollout_state
+      set metadata=(coalesce(metadata,'{}'::jsonb)-'pilot_manual_parent_kick')
+        || jsonb_build_object(
+          'pilot_manual_parent_kick_last_result','ALREADY_APPLIED',
+          'pilot_manual_parent_kick_last_instance',${instanceId},
+          'pilot_manual_parent_kick_last_at',to_jsonb(now())
+        ),
+        updated_at=now()
+      where id=1`;
+    return {ok:true,already_applied:true,workflow_instance_id:instanceId};
+  }
+
+  await persistWorkflow(sql,{
+    prospectId:pack.prospect_id,
+    packId,
+    type:"PROSPECT",
+    instanceId,
+    status:"QUEUED",
+    metadata:{
+      input_pack_id:pack.input_pack_id,
+      pilot_manual_parent_kick:true,
+      plan_only:true,
+      run_key:runKey,
+      queue_enabled:false
+    }
+  });
+  const instance=await env.RENDER_PROSPECT_WORKFLOW.create({
+    id:instanceId,
+    params:{
+      prospectId:pack.prospect_id,
+      packId,
+      inputPackId:pack.input_pack_id,
+      planOnly:true
+    }
+  });
+  await sql`
+    update render_v2_rollout_state
+    set metadata=(coalesce(metadata,'{}'::jsonb)-'pilot_manual_parent_kick')
+      || jsonb_build_object(
+        'pilot_manual_parent_kick_last_result','STARTED',
+        'pilot_manual_parent_kick_last_instance',${instanceId},
+        'pilot_manual_parent_kick_last_at',to_jsonb(now())
+      ),
+      updated_at=now()
+    where id=1`;
+  return {ok:true,started:true,workflow_instance_id:instanceId,status:await instance.status()};
+}
+
 async function runPilotManualKick(env,sql) {
   const rows=await sql`
-    select phase,queue_enabled,metadata
+    select phase,queue_enabled,max_concurrency,pilot_pack_id,metadata
     from render_v2_rollout_state
     where id=1
     limit 1`;
@@ -41,7 +138,13 @@ async function runPilotManualKick(env,sql) {
   const meta=state.metadata||{};
   const kick=meta.pilot_manual_kick;
   if(!kick || typeof kick!=="object") return {skipped:true,reason:"NO_PILOT_MANUAL_KICK"};
-  if(state.queue_enabled===true || meta.global_queue_must_remain_paused!==true || meta.pilot_single_prospect!==true) {
+  if(
+    state.phase!=="PILOT_SINGLE_PROSPECT" ||
+    state.queue_enabled===true ||
+    Number(state.max_concurrency||0)!==1 ||
+    meta.global_queue_must_remain_paused!==true ||
+    meta.pilot_single_prospect!==true
+  ) {
     throw new Error("PILOT_MANUAL_KICK_SAFETY_GUARD");
   }
 
@@ -50,7 +153,7 @@ async function runPilotManualKick(env,sql) {
   const runKey=String(kick.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
   const reason=String(kick.reason||"CABINA_PRECOMPUTED_RENDER").trim();
   if(!packId || !["A","B","C"].includes(variantKey) || !runKey) throw new Error("PILOT_MANUAL_KICK_INVALID");
-  if(packId!==String(meta.pilot_pack_id||"")) throw new Error("PILOT_MANUAL_KICK_PACK_MISMATCH");
+  if(packId!==String(state.pilot_pack_id||"")) throw new Error("PILOT_MANUAL_KICK_PACK_MISMATCH");
 
   const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
   if(!packs.length) throw new Error("PILOT_MANUAL_KICK_PACK_NOT_FOUND");
@@ -87,6 +190,8 @@ async function runPilotManualKick(env,sql) {
   if(Number(active[0]?.n||0)>0) throw new Error("PILOT_MANUAL_KICK_ACTIVE_WORKFLOW_EXISTS");
 
   const structuralRedesign=/STRUCTURAL_DIVERGENCE_REWORK|FULL_FLAGSHIP_REDESIGN|FULL_REDESIGN/i.test(reason);
+  const r119Generative=/^R119_/i.test(reason);
+  const generativeRedesign=structuralRedesign || r119Generative;
   const params={
     prospectId:pack.prospect_id,
     packId,
@@ -97,19 +202,18 @@ async function runPilotManualKick(env,sql) {
     eventPrefix:String(kick.event_prefix||"r90"),
     initialFeedback:{
       reason,
-      issues:[structuralRedesign
-        ?"Cabina requested a full structural flagship redesign for the locked pilot only."
+      issues:[generativeRedesign
+        ?"Cabina requested a genuinely new flagship composition for the locked pilot only."
         :"Cabina requested a targeted launch-grade revision for the locked pilot only."],
-      actions:structuralRedesign
+      actions:generativeRedesign
         ?[
-          "Rebuild the page composition under the active flagship architecture standard; do not reuse the previous section structure.",
-          "Reuse only verified copy truth, real imagery and official identity.",
-          "Keep external AI disabled.",
+          "Generate a genuinely new flagship composition under the active R119/R118 architecture; do not reuse prior section geometry.",
+          "Preserve DEDIL verified truth, licensed editorial imagery, verified partner proof and official identity.",
+          "Treat desktop and mobile as separately art-directed compositions.",
           "Do not start or mutate any other prospect."
         ]
         :[
           "Use the Cabina precomputed RenderSpec exactly.",
-          "Keep external AI disabled.",
           "Preserve verified content, real imagery and official identity.",
           "Do not start or mutate any other prospect."
         ]
@@ -128,8 +232,9 @@ async function runPilotManualKick(env,sql) {
       event_prefix:params.eventPrefix,
       run_key:runKey,
       pilot_manual_kick:true,
-      cabina_precomputed:!structuralRedesign,
+      cabina_precomputed:!generativeRedesign,
       structural_redesign:structuralRedesign,
+      r119_generative:r119Generative,
       queue_enabled:false
     }
   });
@@ -214,6 +319,30 @@ export default {
                   true
                 ),
                 updated_at=now()
+            where id=1`;
+        } catch {}
+      }
+      try {
+        const parentKickResult=await runPilotManualParentKick(env,sql);
+        await sql`
+          update render_v2_rollout_state
+          set metadata=coalesce(metadata,'{}'::jsonb)
+            || jsonb_build_object(
+              'scheduled_pilot_parent_kick_last_result',${JSON.stringify(parentKickResult||{})}::jsonb,
+              'scheduled_pilot_parent_kick_last_at',to_jsonb(now())
+            ),
+            updated_at=now()
+          where id=1`;
+      } catch(error) {
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'scheduled_pilot_parent_kick_last_error',${String(error?.stack||error?.message||error).slice(0,5000)},
+                'scheduled_pilot_parent_kick_last_error_at',to_jsonb(now())
+              ),
+              updated_at=now()
             where id=1`;
         } catch {}
       }
