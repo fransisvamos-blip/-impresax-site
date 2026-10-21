@@ -689,7 +689,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const renderProfile=String(packMetadata.render_profile||"").trim();
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
-      const inputPayload=(renderProfile||logoFirstBrandProfile||pilotHeroLocked)
+      const r118PerceptualJury=packMetadata.r118_perceptual_jury===true
+        || /R118_PERCEPTUAL_JURY/i.test(String(params.initialFeedback?.reason||""));
+      const inputPayload=(renderProfile||logoFirstBrandProfile||pilotHeroLocked||r118PerceptualJury)
         ? {
             ...input.payload,
             ...(renderProfile?{render_profile:renderProfile}:{}),
@@ -700,6 +702,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             ...(pilotHeroLocked?{
               pilot_hero_locked:true,
               pilot_hero_source_revision:Number(packMetadata.pilot_reuse_hero_source_revision||0)||null
+            }:{}),
+            ...(r118PerceptualJury?{
+              r118_perceptual_jury:true,
+              perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"
             }:{})
           }
         : input.payload;
@@ -775,7 +781,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit};
+      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit,r118PerceptualJury};
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
@@ -941,9 +947,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             context.r107Retrofit===true
             || String(params.initialFeedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE"
             || String(feedback?.reason||"")==="ENGINE_CONTRACT_UPGRADE";
+          const r118Mode=context.r118PerceptualJury===true;
           const zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true
-            && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI";
-          if(zeroAiQueueDeterministic || contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||"")))))) {
+            && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"
+            && !r118Mode;
+          const r118FirstPass=r118Mode && cycle===1;
+          const legacyDeterministic=!r118Mode && (contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))));
+          if(r118FirstPass || zeroAiQueueDeterministic || legacyDeterministic) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
               copyManifest:context.copyManifest,
@@ -959,6 +969,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             copyManifest:context.copyManifest,
             assetTokens:context.editorialAssetTokens,
             qaFeedback:feedback,previousSpec,
+            allowR118External:context.r118PerceptualJury===true,
             beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_GENERATION:"+model,revision.id)
           });
         });
@@ -978,7 +989,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         // For zero-photo/home layouts, the deterministic spec is executable and still passes
         // through compiler, browser capture, HERO/VISUAL QA and SET QA before certification.
         const showroomHardReset=String(params.initialFeedback?.reason||"")==="SHOWROOM_HARD_RESET";
-        const deterministicFailover=!showroomHardReset && !budget && providerFailoverDomain &&
+        const deterministicFailover=context.r118PerceptualJury!==true && !showroomHardReset && !budget && providerFailoverDomain &&
           (context.heroOnly || deterministicRecovery);
 
         if(deterministicFailover) {
@@ -1231,7 +1242,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       previewEmitted=true;
 
       const structuralZeroAiReview=
-        EXTERNAL_AI_CALLS_ALLOWED!==true
+        context.r118PerceptualJury!==true
+        && EXTERNAL_AI_CALLS_ALLOWED!==true
         && (
           generated?.deterministic===true
           || context.packMetadata?.structural_divergence_rework_required===true
@@ -1397,6 +1409,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 (captured.diagnostics?.desktop?.official_logo_present??captured.desktop?.diagnostics?.official_logo_present??false)
                 && (captured.diagnostics?.mobile?.official_logo_present??captured.mobile?.diagnostics?.official_logo_present??false)
             },
+            allowR118External:context.r118PerceptualJury===true,
             beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_VISUAL_QA:"+model,revision.id)
           });
         });
