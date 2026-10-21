@@ -92,7 +92,7 @@ export function buildR119SceneComposerSpec({
       '<div class="r119-beam r119-beam--contact" aria-hidden="true"></div>'+
       '<div class="r119-contact__meta"><p class="r119-kicker">'+copyToken("BRIDGE_TITLE")+'</p><p>'+copyToken("BRIDGE_BODY")+'</p></div>'+
       '<div class="r119-contact__locality"><strong>'+copyToken("LOCALITY_LINE")+'</strong></div>'+
-      '<a class="r119-btn r119-btn--outline" data-premium-button="true" href="'+ctaToken("SECONDARY")+'">'+copyToken("SECONDARY_CTA_LABEL")+'</a>'+
+      '<a class="r119-contact__link" href="'+ctaToken("SECONDARY")+'"><span>'+copyToken("SECONDARY_CTA_LABEL")+'</span><span aria-hidden="true">→</span></a>'+
     '</section>',
 
     '<section id="final-cta" class="r119-scene r119-close'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
@@ -533,6 +533,50 @@ h1,h2,strong{text-wrap:balance}
   .r119-partner{display:flex!important;min-height:0!important;padding:48px 18px 28px!important;gap:30px!important}
   .r119-partner__label{width:auto!important;max-width:30ch!important}
   .r119-partner .r119-proof__partner{position:relative!important;inset:auto!important;min-height:260px!important;padding:34px 18px!important}
+}
+
+/* R119 V25 — authored specificity pass */
+.r119-hero__media img{object-position:54% 48%!important;filter:saturate(.42) contrast(1.42) brightness(.58)!important;transform:scale(1.04)!important}
+.r119-hero__veil{background:linear-gradient(90deg,rgba(2,3,4,.985) 0%,rgba(2,3,4,.92) 28%,rgba(2,3,4,.38) 60%,rgba(2,3,4,.08) 100%),linear-gradient(180deg,rgba(0,0,0,.08),transparent 48%,rgba(0,0,0,.78))!important}
+.r119-hero__copy{width:min(1060px,70vw)!important}
+.r119-hero__copy h1{font-size:clamp(76px,8.4vw,146px)!important;max-width:10.2ch!important}
+.r119-lede{max-width:42ch!important}
+
+.r119-materials{background:linear-gradient(120deg,#ece5da 0%,#e4dacb 55%,#d9cbbc 100%)!important}
+.r119-materials__structure{width:58vw!important;height:76vh!important;left:auto!important;right:-5vw!important;top:8vh!important;opacity:1!important;border:1px solid rgba(10,11,12,.18)!important;background:linear-gradient(90deg,transparent 0 71%,rgba(185,24,24,.92) 71% 72%,transparent 72%),linear-gradient(0deg,transparent 0 64%,rgba(10,11,12,.22) 64% 64.4%,transparent 64.4%),repeating-linear-gradient(90deg,transparent 0 78px,rgba(10,11,12,.07) 78px 80px),repeating-linear-gradient(0deg,transparent 0 78px,rgba(10,11,12,.07) 78px 80px)!important}
+.r119-materials__structure:before,.r119-materials__structure:after{content:"";position:absolute;display:block;background:#111315}
+.r119-materials__structure:before{width:72%;height:12px;right:0;top:18%;box-shadow:0 138px 0 rgba(17,19,21,.52),0 276px 0 rgba(17,19,21,.26)}
+.r119-materials__structure:after{width:12px;height:74%;right:18%;top:8%;background:var(--r119-red);box-shadow:-180px 0 0 rgba(17,19,21,.46)}
+.r119-materials__copy{width:min(700px,43vw)!important;position:relative!important;z-index:6!important}
+.r119-materials__copy h2{font-size:clamp(66px,6.5vw,112px)!important}
+
+.r119-partner{background:radial-gradient(circle at 82% 18%,rgba(185,24,24,.22),transparent 32%),repeating-linear-gradient(90deg,transparent 0 92px,rgba(255,255,255,.025) 92px 93px),linear-gradient(125deg,#090a0b 0%,#151719 72%,#240808 100%)!important;color:white!important}
+.r119-partner:before{content:"";position:absolute;left:5vw;top:0;width:10px;height:100%;background:var(--r119-red);opacity:.92}
+.r119-partner__label{padding-left:34px!important}
+.r119-partner .r119-proof__partner{background:#f2eee6!important;color:#0a0b0c!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 40px 100px rgba(0,0,0,.38)!important}
+.r119-partner .r119-proof__partner:after{content:"";position:absolute;right:0;top:0;width:12px;height:100%;background:var(--r119-red)}
+.r119-partner .r119-proof__partner img{filter:none!important}
+
+.r119-contact{background:linear-gradient(115deg,#a91313 0%,#c31d1d 54%,#7e0d0d 100%)!important}
+.r119-contact__link{position:absolute;right:5vw;top:9vh;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:26px;width:min(330px,25vw);padding:22px 0;border-top:1px solid rgba(255,255,255,.75);border-bottom:1px solid rgba(255,255,255,.28);color:white;text-decoration:none;font-family:var(--ix-display-font);font-size:clamp(15px,1.2vw,19px);letter-spacing:.02em}
+.r119-contact__link span:last-child{font-size:32px;line-height:1;color:#fff}
+
+.r119-close{background:radial-gradient(circle at 84% 38%,rgba(185,24,24,.34),transparent 30%),linear-gradient(90deg,#070809 0%,#101214 73%,#220707 100%)!important}
+.r119-close>.r119-btn{min-height:170px!important;width:min(330px,23vw)!important}
+.r119-close__copy h2{font-size:clamp(82px,8.8vw,150px)!important}
+
+@media(max-width:700px){
+  .r119-hero__media img{object-position:56% center!important;filter:saturate(.45) contrast(1.34) brightness(.58)!important}
+  .r119-hero__copy h1{font-size:clamp(43px,11vw,56px)!important;max-width:10ch!important}
+  .r119-materials{background:linear-gradient(160deg,#ece5da 0%,#ddd0c0 100%)!important}
+  .r119-materials__structure{display:block!important;position:absolute!important;width:116vw!important;height:58svh!important;right:-48vw!important;left:auto!important;top:48px!important;opacity:.52!important}
+  .r119-materials__copy{width:auto!important;max-width:92%!important}
+  .r119-partner{padding-left:28px!important;background:linear-gradient(150deg,#090a0b,#191a1c 70%,#310909)!important}
+  .r119-partner:before{left:18px;width:5px}
+  .r119-partner__label{padding-left:12px!important}
+  .r119-contact__link{position:absolute;left:18px;right:18px;top:auto;bottom:26px;width:auto;padding:18px 0}
+  .r119-contact{padding-bottom:112px!important}
+  .r119-close>.r119-btn{min-height:76px!important;width:100%!important}
 }
 
 `;
