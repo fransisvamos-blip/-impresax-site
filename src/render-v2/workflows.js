@@ -861,39 +861,34 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         copyManifest.CLOSING_BODY=city
           ? "Per materiali per l’edilizia e lavorazione del tondo, contatta DEDIL DONATO a "+city+"."
           : "Per materiali per l’edilizia e lavorazione del tondo, contatta DEDIL DONATO.";
+        const verifiedPartner=String(
+          copyManifest.PARTNER_1
+          || verifiedList(inputPayload.verified_trust||"").find(x=>/u[-\s]?power|rivenditor|partner/i.test(x))
+          || ""
+        ).replace(/\s+/g," ").trim();
         copyManifest.TRUST_1_LABEL="MATERIALI";
-        copyManifest.TRUST_2_LABEL="ACCIAIO";
-        copyManifest.TRUST_3_LABEL="TERRITORIO";
         copyManifest.TRUST_1=materialService
           ? "Distribuzione B2B di materiali per l’edilizia."
-          : "Attività operativa verificata.";
-        copyManifest.TRUST_1_LABEL="Forniture";
-        copyManifest.TRUST_1_BODY=materialService
-          ? "Attività di distribuzione B2B nel comparto dei materiali per l’edilizia."
-          : "Operatività commerciale nel comparto edilizio.";
-        copyManifest.TRUST_2=rebarService
-          ? "Lavorazione del tondo per cemento armato."
-          : "Competenza tecnica verificata.";
-        copyManifest.TRUST_2_LABEL="Lavorazioni";
-        copyManifest.TRUST_2_BODY=rebarService
-          ? "Attività specializzata nella lavorazione e trasformazione del tondo destinato al cemento armato."
-          : "Competenza tecnica applicata alle lavorazioni per il cemento armato.";
-        copyManifest.TRUST_3=city
+          : "Attività commerciale nel comparto edilizio.";
+        copyManifest.TRUST_1_BODY="Vendita all’ingrosso di materiali per l’edilizia.";
+        copyManifest.TRUST_2_LABEL="TERRITORIO";
+        copyManifest.TRUST_2=city
           ? "Sede operativa a "+city+"."
-          : "Presenza operativa verificata.";
-        copyManifest.TRUST_1_BODY="Attività di vendita all’ingrosso dedicata ai materiali per l’edilizia.";
-        copyManifest.TRUST_2_BODY="Servizio di lavorazione e trasformazione del tondo per cemento armato.";
-        copyManifest.TRUST_3_BODY=city
-          ? "Località Morello - Germaneto, "+city+"."
-          : "Presenza operativa verificata.";
-        copyManifest.TRUST_3_LABEL="Territorio";
-        copyManifest.TRUST_3_BODY=String(inputPayload.address||city||copyManifest.TRUST_3).replace(/\s+/g," ").trim();
-        copyManifest.TRUST_TITLE="Evidenze operative";
-        copyManifest.TRUST_INTRO=city
-          ? "Distribuzione, lavorazione del tondo e presenza operativa a "+city+"."
-          : "Distribuzione e lavorazione supportate da elementi verificati.";
+          : "Presenza operativa.";
+        copyManifest.TRUST_2_BODY=String(inputPayload.address||city||copyManifest.TRUST_2).replace(/\s+/g," ").trim();
+        copyManifest.TRUST_3_LABEL=verifiedPartner?"U-POWER":"ACCIAIO";
+        copyManifest.TRUST_3=verifiedPartner
+          ? verifiedPartner
+          : (rebarService ? "Lavorazione del tondo per cemento armato." : "Competenza tecnica.");
+        copyManifest.TRUST_3_BODY=verifiedPartner
+          ? "Rapporto commerciale U-Power."
+          : "Lavorazione e trasformazione del tondo per cemento armato.";
+        copyManifest.TRUST_TITLE="Materiali. Territorio. Partnership.";
+        copyManifest.TRUST_INTRO=verifiedPartner && city
+          ? "La presenza a "+city+" e il rapporto U-Power affiancano l’attività sui materiali per l’edilizia."
+          : (city ? "La presenza a "+city+" affianca l’attività sui materiali per l’edilizia." : "Elementi operativi che definiscono DEDIL DONATO.");
         copyManifest.PARTNER_SECTION_TITLE="U-Power";
-        copyManifest.PARTNER_SECTION_INTRO="Rivenditore autorizzato verificato.";
+        copyManifest.PARTNER_SECTION_INTRO=verifiedPartner?verifiedPartner:"Rivenditore U-Power.";
       }
       const structuralRework=packMetadata.structural_divergence_rework_required===true
         || params.initialFeedback?.reason==="STRUCTURAL_DIVERGENCE_REWORK";
