@@ -1379,7 +1379,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               issues:cached.issues||[],
               actions:cached.actions||[],
               logoFirstMaster:policy.logoFirstMaster,
-              masterGateKeys:policy.masterGateKeys
+              masterGateKeys:policy.masterGateKeys,
+              r118PerceptualJury:policy.r118PerceptualJury
             });
             return {
               pass:gated.pass,
