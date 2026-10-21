@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES } from "./constants.js";
+import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, R118_EXTERNAL_GENERATION_ALLOWED, R118_EXTERNAL_VISUAL_QA_ALLOWED, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES } from "./constants.js";
 import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
@@ -177,12 +177,15 @@ function collectRawText(result) {
   return out.join("\n").slice(0,20000);
 }
 
-async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null}) {
-  if(EXTERNAL_AI_CALLS_ALLOWED!==true) throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
-  if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true") throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
+async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null,allowR118External=false}) {
+  const qaRole=role==="visualQa"||role==="setQa";
+  const r118RoleAllowed=allowR118External===true
+    && String(env.V2_R118_EXTERNAL_AI_ENABLED||"false")==="true"
+    && ((qaRole && R118_EXTERNAL_VISUAL_QA_ALLOWED===true) || (!qaRole && R118_EXTERNAL_GENERATION_ALLOWED===true));
+  if(EXTERNAL_AI_CALLS_ALLOWED!==true && !r118RoleAllowed) throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
+  if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true" && !r118RoleAllowed) throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
-  const qaRole=role==="visualQa"||role==="setQa";
   const plan=qaRole
     ? [{fallback:false,retry:0},{fallback:true,retry:0}]
     : [{fallback:false,retry:0},{fallback:true,retry:0}];
@@ -776,7 +779,7 @@ const renderSpecSchema={
   ]
 };
 
-export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null}) {
+export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null,allowR118External=false}) {
   const allowedAssets=[...new Set((assetTokens||[]).filter(x=>x&&x!=="PRIMARY_LOGO"))];
   const safeDirection={
     ...(direction||{}),
@@ -795,6 +798,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   const prompt=[
     "Implement variant "+variantKey+" as a flagship premium full-home RenderSpec for the VERIFIED prospect.",
     "R117 AUTHORED FLAGSHIP TARGET: the page must plausibly feel like a €15,000+ commissioned digital design, not a polished template.",
+    "R118 PERCEPTUAL JURY TARGET: the actual screenshots will be judged by a hostile senior design jury. Technical compliance, clean CSS and premium-looking components do NOT count as success if the page still reads as a sequence of website sections.",
+    "R118 STRUCTURAL RESET: when reworking a previous spec, preserve verified content and assets but you MAY radically rebuild composition, proportions, section internals, spatial rhythm and image treatment. Do not make micro-fixes when the jury says the perceived value is low.",
+    "R118 STUDIO TEST: every major scene must feel designed as a spread, campaign frame or physical brand environment rather than a UI section inside a centered container.",
     "This is NOT a wireframe, starter template, generic agency page, SaaS layout or basic implementation.",
     "NO TEMPLATE TEST is blocking: the design must be difficult to reuse for another company after swapping logo/colors/copy.",
     "Build at least THREE portfolio-grade WOW moments: hero, signature mid-page set piece, and closing scene.",
@@ -959,7 +965,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
       {role:"user",content:prompt}
     ],
-    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.12:0.22,beforeAttempt:beforeModelAttempt
+    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.18:0.28,beforeAttempt:beforeModelAttempt,allowR118External
   });
   return {spec:r.data,model:r.model};
 }
@@ -1130,7 +1136,7 @@ export function visualQaGatePolicy(inputPayload={}) {
   return {logoFirstMaster,pilotHeroLocked,masterGateKeys};
 }
 
-export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null}) {
+export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null,allowR118External=false}) {
   const {logoFirstMaster,pilotHeroLocked,masterGateKeys}=visualQaGatePolicy(inputPayload);
   const text=[
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
@@ -1190,7 +1196,7 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
         {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+mobileB64}}
       ]}
     ],
-    schema:visualQaSchema,maxTokens:2600,temperature:0.05,vision:true,beforeAttempt:beforeModelAttempt
+    schema:visualQaSchema,maxTokens:2600,temperature:0.02,vision:true,beforeAttempt:beforeModelAttempt,allowR118External
   });
   let issues=Array.isArray(r.data.issues)?r.data.issues:[];
   const scores={...(r.data.scores||{})};
