@@ -45,10 +45,10 @@ test("R118 deterministic seed carries perceptual jury standard and studio spatia
   assert.match(built.spec.custom_css,/\.ixm-graphic-band\{display:none!important\}/);
   assert.match(built.spec.custom_css,/\.ixf-partner-feature\{/);
   assert.match(built.spec.custom_css,/@media\(max-width:700px\)/);
-  assert.doesNotMatch(built.spec.custom_css,/\bcontent\s*:/i);
+  assert.doesNotMatch(built.spec.custom_css,/(?:^|[;{]\s*)content\s*:/im);
 });
 
-test("R118 seed still compiles under all existing renderer safety contracts",()=>{
+test("R118 seed still compiles under all existing renderer safety contracts",async()=>{
   const built=buildZeroPhotoPremiumSpec({
     variantKey:"A",
     copyManifest:copy,
@@ -56,7 +56,7 @@ test("R118 seed still compiles under all existing renderer safety contracts",()=
     inputPayload:{render_profile:"IMPRESAX_MASTER_V1",verified_services:["Costruzioni","Lavorazioni tecniche"]},
     sectionAssetTokens:["POSITIONING_VISUAL","SERVICE_MATERIALS_VISUAL","SERVICE_REBAR_VISUAL","TRUST_VISUAL"]
   });
-  const compiled=compileRenderSpec(built.spec,{
+  const compiled=await compileRenderSpec(built.spec,{
     businessName:"DEDIL DONATO",
     logoToken:"identity://PRIMARY_LOGO",
     copyManifest:copy,
