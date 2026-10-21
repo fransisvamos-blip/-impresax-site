@@ -145,3 +145,14 @@ test("every R118 perceptual relaunch reason activates jury mode and full redesig
   assert.match(workflows,/\/R118_PERCEPTUAL\/i\.test\(String\(params\.initialFeedback\?\.reason\|\|""\)\)/);
   assert.match(workflows,/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP\|R118_PERCEPTUAL/);
 });
+
+
+test("all R118 perceptual relaunch reasons stay inside real jury mode",()=>{
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
+  assert.match(workflows,/\/R118_PERCEPTUAL\/i\.test/);
+  assert.match(workflows,/FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP\|R118_PERCEPTUAL/);
+  assert.match(index,/const r118Perceptual=\/\^R118_PERCEPTUAL\/i\.test\(relaunchReason\)/);
+  assert.match(index,/r118_perceptual_jury:true/);
+  assert.match(index,/perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"/);
+});
