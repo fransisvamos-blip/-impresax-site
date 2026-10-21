@@ -26,13 +26,15 @@ async function reserveCounter(sql,packId,key,limit) {
   return Number(rows[0].metrics?.[key]||0);
 }
 
-export async function reserveAiCall(sql,packId,env,route,revisionId=null) {
-  if(!EXTERNAL_AI_CALLS_ALLOWED) {
+export async function reserveAiCall(sql,packId,env,route,revisionId=null,{allowR118External=false}={}) {
+  const r118BudgetAllowed=allowR118External===true
+    && String(env?.V2_R118_EXTERNAL_AI_ENABLED||"false")==="true";
+  if(!EXTERNAL_AI_CALLS_ALLOWED && !r118BudgetAllowed) {
     throw new Error("EXTERNAL_AI_DISABLED:"+RENDER_GENERATION_MODE);
   }
   const limit=envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40);
   const used=await reserveCounter(sql,packId,"ai_calls",limit);
-  await recordMetric(sql,{packId,revisionId,name:"ai_call_reserved",value:1,dimensions:{route,used,limit}});
+  await recordMetric(sql,{packId,revisionId,name:"ai_call_reserved",value:1,dimensions:{route,used,limit,r118_external:r118BudgetAllowed}});
   return {used,limit};
 }
 
