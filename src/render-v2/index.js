@@ -674,12 +674,17 @@ export default {
         }
       }
 
+      const r118Perceptual=/^R118_PERCEPTUAL/i.test(relaunchReason);
       await setPackStatus(sql,packId,"GENERATING",{
         targeted_relaunch:{
           variant_key:variantKey,run_key:runKey,force,event_prefix:eventPrefix,
           parent_workflow_instance_id:parentWorkflowInstanceId,
           circuit_breaker_override:circuitOverridePending
-        }
+        },
+        ...(r118Perceptual?{
+          r118_perceptual_jury:true,
+          perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"
+        }:{})
       });
       return json({
         ok:true,pack_id:packId,variant_key:variantKey,workflow_instance_id:instanceId,
