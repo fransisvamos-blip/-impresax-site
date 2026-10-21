@@ -28,7 +28,7 @@ function previewUrl(slug) {
 
 async function eligibleRows(sql,pilotPackId=null) {
   const base=pilotPackId
-    ? await sql\`
+    ? await sql`
       select p.id as prospect_id,p.business_name,p.slug as prospect_slug,p.source_data,
              rp.id as render_pack_id,rp.status as pack_status,rp.metadata,
              v.id as variant_id,v.variant_key,r.id as revision_id,r.revision,
@@ -37,7 +37,7 @@ async function eligibleRows(sql,pilotPackId=null) {
       join prospects p on p.id=rp.prospect_id
       join render_v2_variants v on v.render_pack_id=rp.id
       join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
-      where rp.id=\${pilotPackId}::uuid
+      where rp.id=${pilotPackId}::uuid
         and v.status='RENDER_READY' and r.status='RENDER_READY'
         and r.desktop_r2_key is not null and r.mobile_r2_key is not null
         and (
@@ -59,8 +59,8 @@ async function eligibleRows(sql,pilotPackId=null) {
         case when rp.selected_variant_revision_id=r.id then 0
              when v.variant_key='A' then 1 else 2 end,
         r.revision desc
-      limit 1\`
-    : await sql\`
+      limit 1`
+    : await sql`
       with latest as (
         select distinct on (prospect_id) *
         from render_v2_packs
@@ -96,7 +96,7 @@ async function eligibleRows(sql,pilotPackId=null) {
         case when rp.selected_variant_revision_id=r.id then 0
              when v.variant_key=coalesce(rp.metadata->>'best_overall_variant',rp.metadata->>'winner_variant','A') then 1
              when v.variant_key='A' then 2 else 3 end,
-        r.revision desc\`;
+        r.revision desc`;
   const seen=new Set();
   return base.filter(row=>{
     if(seen.has(row.prospect_id)) return false;
@@ -109,14 +109,14 @@ async function uniquePreviewSlug(sql,row) {
   const existing=String(row.source_data?.render_preview?.slug || "").trim();
   if(existing) return existing;
   const base=previewSlugFromBusinessName(row.business_name);
-  const collision=await sql\`
+  const collision=await sql`
     select id from prospects
-    where id<>\${row.prospect_id}::uuid
+    where id<>${row.prospect_id}::uuid
       and (
-        slug=\${base}
-        or source_data->'render_preview'->>'slug'=\${base}
+        slug=${base}
+        or source_data->'render_preview'->>'slug'=${base}
       )
-    limit 1\`;
+    limit 1`;
   if(!collision.length) return base;
   return (base.slice(0,54)+"-"+String(row.prospect_id).slice(0,8)).replace(/-+$/,"");
 }
@@ -124,7 +124,7 @@ async function uniquePreviewSlug(sql,row) {
 export async function syncRenderPreviews(env) {
   if(!env.OPS_DATABASE_URL) return {ok:false,skipped:true,reason:"OPS_DATABASE_URL_NOT_CONFIGURED"};
   const sql=db(env);
-  const rolloutRows=await sql\`select phase,pilot_pack_id,queue_enabled,metadata from render_v2_rollout_state where id=1 limit 1\`;
+  const rolloutRows=await sql`select phase,pilot_pack_id,queue_enabled,metadata from render_v2_rollout_state where id=1 limit 1`;
   const rollout=rolloutRows[0] || {};
   const pilotOnly=String(rollout.phase || "")==="PILOT_SINGLE_PROSPECT"
     || rollout.metadata?.pilot_single_prospect===true
@@ -156,21 +156,21 @@ export async function syncRenderPreviews(env) {
       && String(old.status || "")==="READY";
     if(same) { unchanged++; continue; }
 
-    await sql\`
+    await sql`
       update prospects
-      set source_data=jsonb_set(coalesce(source_data,'{}'::jsonb),'{render_preview}',\${JSON.stringify(preview)}::jsonb,true),
+      set source_data=jsonb_set(coalesce(source_data,'{}'::jsonb),'{render_preview}',${JSON.stringify(preview)}::jsonb,true),
           updated_at=now()
-      where id=\${row.prospect_id}::uuid\`;
-    await sql\`
+      where id=${row.prospect_id}::uuid\`;
+    await sql`
       update render_v2_packs
-      set metadata=jsonb_set(coalesce(metadata,'{}'::jsonb),'{client_preview}',\${JSON.stringify(preview)}::jsonb,true),
+      set metadata=jsonb_set(coalesce(metadata,'{}'::jsonb),'{client_preview}',${JSON.stringify(preview)}::jsonb,true),
           updated_at=now()
-      where id=\${row.render_pack_id}::uuid\`;
-    await sql\`
+      where id=${row.render_pack_id}::uuid\`;
+    await sql`
       insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,payload)
       values(
-        \${row.prospect_id}::uuid,'RENDER_PREVIEW_PUBLISHED','render_variant_revision',
-        \${String(row.revision_id)},'render-preview-publisher',\${JSON.stringify({
+        ${row.prospect_id}::uuid,'RENDER_PREVIEW_PUBLISHED','render_variant_revision',
+        ${String(row.revision_id)},'render-preview-publisher',${JSON.stringify({
           version:PREVIEW_VERSION,url:preview.url,slug,render_pack_id:row.render_pack_id,
           variant_key:row.variant_key,revision_id:row.revision_id,revision:Number(row.revision)
         })}::jsonb
@@ -183,17 +183,17 @@ export async function syncRenderPreviews(env) {
 export async function resolveRenderPreviewTenant(env,slug) {
   if(!env.OPS_DATABASE_URL) return null;
   const sql=db(env);
-  const rows=await sql\`
+  const rows=await sql`
     select p.id as prospect_id,p.business_name,
            p.source_data->'render_preview' as preview,
            r.status as revision_status,r.desktop_r2_key,r.mobile_r2_key
     from prospects p
     join render_variant_revisions r
       on r.id=(p.source_data->'render_preview'->>'revision_id')::uuid
-    where p.source_data->'render_preview'->>'slug'=\${slug}
+    where p.source_data->'render_preview'->>'slug'=${slug}
       and p.source_data->'render_preview'->>'status'='READY'
       and r.status='RENDER_READY'
-    limit 1\`;
+    limit 1`;
   const row=rows[0];
   if(!row) return null;
   const preview=row.preview || {};
