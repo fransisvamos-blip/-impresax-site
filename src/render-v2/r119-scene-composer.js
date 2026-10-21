@@ -154,7 +154,7 @@ h1,h2,strong{text-wrap:balance}
 .r119-lede{max-width:40ch;font-size:clamp(16px,1.08vw,19px);line-height:1.55;margin:0 0 30px}
 
 /* 02 — positioning as a cinematic brand field, never a split card */
-.r119-positioning{min-height:800px;color:var(--r119-white);background:#0b0c0d;padding:0}
+.r119-positioning{min-height:800px;color:var(--r119-white);background:linear-gradient(118deg,#0b0c0d 0%,#17191a 62%,#260909 100%);padding:0}
 .r119-positioning__media{position:absolute;inset:0;margin:0;overflow:hidden}
 .r119-positioning__media img{width:100%;height:100%;object-fit:cover;object-position:68% 50%;filter:saturate(.38) contrast(1.24) brightness(.54);transform:scale(1.02)}
 .r119-positioning__veil{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(6,7,8,.97) 0%,rgba(6,7,8,.86) 38%,rgba(6,7,8,.35) 72%,rgba(6,7,8,.10) 100%),linear-gradient(180deg,transparent 40%,rgba(0,0,0,.58) 100%)}
