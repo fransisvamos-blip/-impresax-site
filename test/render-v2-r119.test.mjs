@@ -82,8 +82,9 @@ test("R119 scene composer compiles under renderer safety contract",async()=>{
 test("R119 fast loop uses evidence seed once then one generative hard reset",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
-  assert.match(workflows,/const r119Requested=r118PerceptualJury &&/);
-  assert.match(workflows,/\/R119_\/i\.test/);
+  assert.match(workflows,/const r119Requested=/);
+  assert.match(workflows,/\/R119_\/i\.test\(initialReason\)/);
+  assert.match(workflows,/const r118PerceptualJury=[\s\S]*\|\| r119Requested;/);
   assert.match(workflows,/const r119GenerativeFirstPass=r119Mode && cycle===1/);
   assert.match(workflows,/R119_\.\*GENERATIVE\|R119_GENERATIVE/);
   assert.match(workflows,/const r119SeedPass=r119Mode && cycle===1 && !r119GenerativeFirstPass/);
