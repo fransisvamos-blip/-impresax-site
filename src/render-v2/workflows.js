@@ -10,6 +10,7 @@ import { bytesToBase64, sha256, stableStringify } from "./utils.js";
 import { reserveAiCall, reserveBrowserCapture } from "./metrics.js";
 import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
+import { buildR119SceneComposerSpec } from "./r119-scene-composer.js";
 import { remediateBlockedPack } from "./remediation.js";
 import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
@@ -952,7 +953,17 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"
             && !r118Mode;
           const r118FirstPass=r118Mode && cycle===1;
+          const r119SceneRepair=r118Mode && cycle>=2;
           const legacyDeterministic=!r118Mode && (contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))));
+          if(r119SceneRepair) {
+            const scene=buildR119SceneComposerSpec({
+              copyManifest:context.copyManifest,
+              assetTokens:context.editorialAssetTokens,
+              hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
+              inputPayload:context.inputPayload
+            });
+            return {spec:scene.spec,model:scene.strategy,deterministic:true,r119_scene_composer:true};
+          }
           if(r118FirstPass || zeroAiQueueDeterministic || legacyDeterministic) {
             const deterministic=buildZeroPhotoPremiumSpec({
               variantKey:params.variantKey,
