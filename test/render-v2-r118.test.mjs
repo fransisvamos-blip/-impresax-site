@@ -173,3 +173,17 @@ test("R118 hard reset compacts jury feedback to fit provider context",()=>{
   assert.match(ai,/maxTokens:allowR118External\?7600:12000/);
   assert.match(ai,/JSON\.stringify\(compactR118Feedback\)/);
 });
+
+
+test("R118 compiler failures become bounded repair loops instead of terminal deterministic escalation",()=>{
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  assert.match(workflows,/context\.r118PerceptualJury!==true\s*&&\s*\(/);
+  assert.match(workflows,/reason:context\.r118PerceptualJury===true\?"R118_COMPILER_REPAIR":"COMPILER_CONTRACT"/);
+  assert.match(workflows,/R118 COMPILER REPAIR/);
+  assert.match(workflows,/Use 8-10 substantial section elements/);
+  assert.match(workflows,/if\(fail\.change_strategy && context\.r118PerceptualJury!==true\) break/);
+  assert.match(ai,/const r118CompilerRepair=allowR118External && feedbackReason==="R118_COMPILER_REPAIR"/);
+  assert.match(ai,/main_html:String\(previousSpec\.main_html\|\|""\)\.slice\(0,7000\)/);
+  assert.match(ai,/custom_css:String\(previousSpec\.custom_css\|\|""\)\.slice\(0,5000\)/);
+});
