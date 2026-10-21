@@ -246,3 +246,12 @@ test("R119 compiler failures stay deterministic and never open AI compiler repai
   assert.match(workflows,/copyManifest\.TRUST_2_BODY=String\(inputPayload\.address\|\|city\|\|copyManifest\.TRUST_2\)/);
   assert.match(workflows,/copyManifest\.TRUST_3_BODY=verifiedPartner/);
 });
+
+
+test("pilot human review hold stops after complete preview",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/pilot_human_review_after_preview===true/);
+  assert.match(workflows,/currentStep:"CABINA_VISUAL_REVIEW"/);
+  assert.match(workflows,/pilot_human_review_after_preview:true/);
+});
