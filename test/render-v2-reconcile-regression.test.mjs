@@ -636,7 +636,7 @@ test("R116 pilot kick cannot route full redesign through precomputed mode or leg
   assert.match(index,/cabina_precomputed:!structuralRedesign/);
   assert.match(index,/structural_redesign:structuralRedesign/);
   assert.match(index,/Rebuild the page composition under the active flagship architecture standard/);
-  assert.match(workflows,/const fullFlagshipRedesign=\/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP\/i/);
+  assert.match(workflows,/const fullFlagshipRedesign=\/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP\|R118_PERCEPTUAL\/i/);
   assert.match(workflows,/structuralRework && !fullFlagshipRedesign/);
 });
 
