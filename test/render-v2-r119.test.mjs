@@ -164,3 +164,30 @@ test("R119 workflow strips economic vanity metrics and binds a material hero",as
   assert.match(workflows,/R119_VERIFIED_REBAR_MATERIAL_HERO/);
   assert.match(workflows,/context\.assets\?\.SERVICE_REBAR_VISUAL/);
 });
+
+test("pilot pack upgrades reuse only same-prospect verified licensed section assets",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/prior\.prospect_id=current_pack\.prospect_id/);
+  assert.match(workflows,/section_visuals_provenance/);
+  assert.match(workflows,/provenance_license/);
+  assert.match(workflows,/LICENSED_EDITORIAL_REUSED/);
+  assert.match(workflows,/cross_pack_reused:true/);
+  assert.match(workflows,/verified_partner_logo_required/);
+});
+
+test("pilot planning can run without spawning a render and R119 kick stays generative",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  const index=fs.readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
+  assert.match(workflows,/if\(p\.planOnly===true\)/);
+  assert.match(workflows,/currentStep:"PILOT_PLAN_READY"/);
+  assert.match(index,/async function runPilotManualParentKick/);
+  assert.match(index,/planOnly:true/);
+  assert.match(index,/state\.phase!=="PILOT_SINGLE_PROSPECT"/);
+  assert.match(index,/packId!==String\(state\.pilot_pack_id\|\|""\)/);
+  assert.match(index,/const r119Generative=\/\^R119_\/i\.test\(reason\)/);
+  assert.match(index,/cabina_precomputed:!generativeRedesign/);
+  assert.match(index,/Generate a genuinely new flagship composition under the active R119\/R118 architecture/);
+});
+
