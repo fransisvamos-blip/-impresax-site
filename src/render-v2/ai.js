@@ -796,6 +796,34 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   };
   const hardResetReasons=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
   const safePrevious=hardResetReasons.includes(String(qaFeedback?.reason||"")) ? null : previousSpec;
+  const r118ScoreKeys=[
+    "first_impression","art_direction","page_architecture","composition",
+    "signature_visual_language","no_template_feel","anti_template_feel","custom_made_feel",
+    "fifteen_k_value_perception","fifteen_k_credibility","irreproducible_brand_authorship",
+    "commissioned_experience_quality","visual_memory_factor","middle_scroll_value",
+    "why_us_strength","anti_empty_layout","mobile_quality","mobile_premium_integrity",
+    "cross_viewport_art_direction","hero_wow_effect"
+  ];
+  const compactR118Feedback=allowR118External && qaFeedback ? {
+    reason:String(qaFeedback.reason||"R118_VISUAL_REWORK"),
+    summary:String(qaFeedback.summary||"").slice(0,1200),
+    scores:Object.fromEntries(r118ScoreKeys
+      .filter(k=>qaFeedback?.scores?.[k]!=null)
+      .map(k=>[k,qaFeedback.scores[k]])),
+    issues:(Array.isArray(qaFeedback.issues)?qaFeedback.issues:[])
+      .slice(0,14)
+      .map(x=>({
+        code:String(x?.code||"").slice(0,80),
+        severity:String(x?.severity||"").slice(0,16),
+        target:String(x?.target||"").slice(0,100),
+        message:String(x?.message||"").slice(0,260)
+      })),
+    actions:(Array.isArray(qaFeedback.actions)?qaFeedback.actions:[])
+      .slice(0,6)
+      .map(x=>String(x).slice(0,420)),
+    best_candidate_revision:qaFeedback.best_candidate_revision??null,
+    best_candidate_score:qaFeedback.best_candidate_score??null
+  } : qaFeedback;
   const prompt=[
     "Implement variant "+variantKey+" as a flagship premium full-home RenderSpec for the VERIFIED prospect.",
     "R117 AUTHORED FLAGSHIP TARGET: the page must plausibly feel like a €15,000+ commissioned digital design, not a polished template.",
@@ -959,7 +987,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     JSON.stringify(allowedAssets),
     "SANITIZED DIRECTION — visual instructions only; never render its words as copy:",
     JSON.stringify(safeDirection),
-    qaFeedback?"REWORK FEEDBACK — fix these exact failures without weakening the art direction:"+JSON.stringify(qaFeedback):"",
+    compactR118Feedback?"REWORK FEEDBACK — fix these exact failures without weakening the art direction:"+JSON.stringify(compactR118Feedback):"",
     safePrevious?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(safePrevious):""
   ].filter(Boolean).join("\n");
 
@@ -970,7 +998,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
       {role:"user",content:prompt}
     ],
-    schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.18:0.28,beforeAttempt:beforeModelAttempt,allowR118External
+    schema:renderSpecSchema,maxTokens:allowR118External?7600:12000,temperature:qaFeedback?0.18:0.28,beforeAttempt:beforeModelAttempt,allowR118External
   });
   const generatedSpec=allowR118External
     ? {
