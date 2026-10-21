@@ -782,7 +782,27 @@ const renderSpecSchema={
   ]
 };
 
-export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null,allowR118External=false}) {
+const r118FlagshipRenderSpecSchema={
+  ...renderSpecSchema,
+  properties:{
+    ...renderSpecSchema.properties,
+    main_html:{type:"string",minLength:5000},
+    custom_css:{type:"string",minLength:6500},
+    section_ids:{type:"array",minItems:8,maxItems:10,items:{type:"string"}},
+    home_depth_standard:{type:"string",enum:["R111_15K_HOME_DEPTH_ARCHITECTURE_V1"]},
+    section_substance_standard:{type:"string",enum:["R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1"]},
+    section_blueprint:{type:"array",minItems:8,maxItems:10,items:{type:"string"}}
+  },
+  required:[...new Set([...renderSpecSchema.required,"section_blueprint"])]
+};
+
+function actualTopLevelSectionIds(mainHtml="") {
+  return [...String(mainHtml||"").matchAll(/<section\b[^>]*\bid\s*=\s*["']([^"']+)["'][^>]*>/gi)]
+    .map(match=>String(match[1]||"").trim())
+    .filter(Boolean);
+}
+
+export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null,allowR118External=false,r119EvidenceMode=false}) {
   const allowedAssets=[...new Set((assetTokens||[]).filter(x=>x&&x!=="PRIMARY_LOGO"))];
   const safeDirection={
     ...(direction||{}),
@@ -799,8 +819,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   };
   const feedbackReason=String(qaFeedback?.reason||"");
   const hardResetReasons=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
-  const r119EvidenceMode=allowR118External && /^R119_/i.test(feedbackReason);
-  const dedilR119=r119EvidenceMode && /DEDIL\s+DONATO/i.test(String(inputPayload?.business_name||""));
+  const r119EvidenceActive=allowR118External && (r119EvidenceMode===true || /^R119_/i.test(feedbackReason));
+  const dedilR119=r119EvidenceActive && /DEDIL\s+DONATO/i.test(String(inputPayload?.business_name||""));
   const r118CompilerRepair=allowR118External && feedbackReason==="R118_COMPILER_REPAIR";
   const compactCompilerPrevious=r118CompilerRepair && previousSpec ? {
     section_ids:Array.isArray(previousSpec.section_ids)?previousSpec.section_ids.slice(0,12):[],
@@ -849,7 +869,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "R118 PERCEPTUAL JURY TARGET: the actual screenshots will be judged by a hostile senior design jury. Technical compliance, clean CSS and premium-looking components do NOT count as success if the page still reads as a sequence of website sections.",
     "R118 STRUCTURAL RESET: when reworking a previous spec, preserve verified content and assets but you MAY radically rebuild composition, proportions, section internals, spatial rhythm and image treatment. Do not make micro-fixes when the jury says the perceived value is low.",
     "R118 STUDIO TEST: every major scene must feel designed as a spread, campaign frame or physical brand environment rather than a UI section inside a centered container.",
-    r119EvidenceMode?"R119 EVIDENCE MODE: build the art direction from verified sector/material/service/territory/partner evidence. Do not fall back to generic industrial copy, testimonial patterns, trust badges, UI cards or stock-corporate modules.":"",
+    r119EvidenceActive?"R119 EVIDENCE MODE: build the art direction from verified sector/material/service/territory/partner evidence. Do not fall back to generic industrial copy, testimonial patterns, trust badges, UI cards or stock-corporate modules.":"",
     dedilR119?"DEDIL R119 NARRATIVE: make construction materials, rebar processing, Catanzaro operational presence and the verified U-Power relationship the authored story. Steel, concrete, rebar, dust, machining precision, engineered linework and DEDIL red/charcoal identity must form a singular visual language.":"",
     dedilR119?"DEDIL R119 TRUTH RULE: never invent testimonials, certifications, project counts, team size, revenue, customer quotes or generic trust badges. Use only supplied verified tokens and approved assets.":"",
     dedilR119?"DEDIL R119 ASSET RULE: use distinct approved photography across hero/materials/rebar/proof scenes. Never reuse HERO_VISUAL inside the rebar/service scene when a distinct SERVICE_REBAR_VISUAL or other approved section asset is available.":"",
@@ -881,6 +901,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     zeroPhoto?"- HERO CONTRACT VIOLATION: HERO_VISUAL is missing. A render without a real hero image is not certifiable; do not fake a placeholder.":"",
     "",
     "HTML CONTRACT:",
+    allowR118External?"- R118/R119 FLAGSHIP OUTPUT FLOOR: main_html must contain at least 5000 characters of real authored markup and custom_css at least 6500 characters of real art direction. Do not pad with comments, repeated selectors or filler.":"",
+    allowR118External?"- R118/R119 BLUEPRINT CONTRACT: section_blueprint MUST equal the actual top-level section id sequence exactly. home_depth_standard MUST be R111_15K_HOME_DEPTH_ARCHITECTURE_V1 and section_substance_standard MUST be R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1.":"",
     "- main_html is the CONTENT INSIDE <main>; NEVER output <main>, <html>, <head>, <body>, <header> or <footer> tags.",
     "- R111 HOME DEPTH: use 8-12 substantial <section> blocks and ALWAYS include these exact ids: hero, positioning, services, trust, bridge, final-cta.",
     "- SECTION_ID INTEGRITY: section_ids must match the ACTUAL top-level <section id=\"...\"> elements one-to-one. Inner service cards, trust items, articles or divs NEVER count as sections.",
@@ -1028,12 +1050,18 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
       {role:"user",content:prompt}
     ],
-    schema:renderSpecSchema,maxTokens:allowR118External?7600:12000,temperature:qaFeedback?0.18:0.28,beforeAttempt:beforeModelAttempt,allowR118External
+    schema:allowR118External?r118FlagshipRenderSpecSchema:renderSpecSchema,maxTokens:allowR118External?9000:12000,temperature:qaFeedback?0.18:0.28,beforeAttempt:beforeModelAttempt,allowR118External
   });
+  const actualSectionIds=actualTopLevelSectionIds(r.data?.main_html);
   const generatedSpec=allowR118External
     ? {
         ...r.data,
+        section_ids:actualSectionIds.length?actualSectionIds:r.data?.section_ids,
+        section_blueprint:actualSectionIds.length?actualSectionIds:r.data?.section_blueprint,
+        home_depth_standard:"R111_15K_HOME_DEPTH_ARCHITECTURE_V1",
+        section_substance_standard:"R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1",
         perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1",
+        r119_evidence_mode:r119EvidenceActive===true,
         implementation_notes:"R118 PERCEPTUAL REPAIR — generated from hostile screenshot jury feedback. "+String(r.data?.implementation_notes||"")
       }
     : r.data;
