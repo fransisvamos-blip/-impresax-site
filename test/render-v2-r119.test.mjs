@@ -236,3 +236,12 @@ test("R119 first provider failure falls through to deterministic scene composer 
   assert.match(workflows,/buildR119SceneComposerSpec\(\{/);
   assert.match(workflows,/mode:cycle===2 && r119JuryReset \? "jury-reset" : "base"/);
 });
+
+
+test("R119 compiler failures stay deterministic and never open AI compiler repair",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/context\.r118PerceptualJury===true && context\.r119Requested!==true/);
+  assert.match(workflows,/TRUST_1_BODY=materialService[\s\S]*Attività di distribuzione B2B nel comparto dei materiali per l’edilizia/);
+  assert.match(workflows,/TRUST_2_BODY=rebarService[\s\S]*Attività specializzata nella lavorazione e trasformazione del tondo destinato al cemento armato/);
+});
