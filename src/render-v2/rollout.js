@@ -637,7 +637,12 @@ export async function tickRollout(env) {
   await sql`
     update render_v2_rollout_state
     set pilot_pack_id=${pilot.pack.id}::uuid,
-        metadata=metadata||${JSON.stringify({pilot_gate_checked_at:new Date().toISOString()})}::jsonb,
+        metadata=coalesce(metadata,'{}'::jsonb)
+          || jsonb_build_object(
+            'pilot_gate_checked_at',${new Date().toISOString()}::text,
+            'pilot_pack_id',${String(pilot.pack.id)}::text,
+            'pilot_prospect_id',${String(pilot.pack.prospect_id)}::text
+          ),
         updated_at=now()
     where id=1`;
 
