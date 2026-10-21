@@ -199,9 +199,21 @@ test("R119 fast generation avoids duplicate full-page fallbacks and normalizes s
   const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(ai,/const fastR118Generation=!qaRole && allowR118External===true/);
+  assert.match(ai,/V2_R118_FAST_GENERATOR_MODEL\|\|DEFAULT_MODELS\.codeFallback/);
+  assert.match(ai,/V2_R118_FAST_GENERATOR_TIMEOUT_MS\|\|75000/);
   assert.match(ai,/const plan=\(fastR118Qa\|\|fastR118Generation\)/);
   assert.match(ai,/const canNormalize=schemaInvalid && \(qaRole \|\| fastR118Generation\)/);
   assert.match(ai,/Normalize the supplied generated homepage object/);
   assert.match(ai,/roughly within 5k-14k characters/);
   assert.match(workflows,/retries:\{limit:context\.r119Requested===true\?0:1/);
+});
+
+
+test("R119 first provider failure falls through to deterministic scene composer and jury path",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/const r119SceneFailover=context\.r119Requested===true && cycle===1/);
+  assert.match(workflows,/R119_PROVIDER_SCENE_FAILOVER/);
+  assert.match(workflows,/generation-provider-r119-scene-failover/);
+  assert.match(workflows,/buildR119SceneComposerSpec\(\{/);
 });
