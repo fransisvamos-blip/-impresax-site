@@ -193,6 +193,14 @@ test("R118 compiler failures become bounded repair loops instead of terminal det
 });
 
 
+test("QA idempotency compares JSONB payloads canonically instead of key order",()=>{
+  const db=fs.readFileSync(new URL("../src/render-v2/db.js",import.meta.url),"utf8");
+  assert.match(db,/function canonicalJson\(value\)/);
+  assert.match(db,/Object\.keys\(value\).*\.sort\(\)/);
+  assert.match(db,/canonicalJson\(existing\[0\]\.artifact_hashes\|\|\{\}\)!==canonicalJson\(artifactHashes\|\|\{\}\)/);
+  assert.doesNotMatch(db,/JSON\.stringify\(existing\[0\]\.artifact_hashes\|\|\{\}\)!==JSON\.stringify\(artifactHashes\|\|\{\}\)/);
+});
+
 test("R118 fast flagship loop caps revisions and jury fanout",()=>{
   const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
