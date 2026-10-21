@@ -986,7 +986,7 @@ const visualQaSchema={
   required:["pass","summary","issues","actions","scores"]
 };
 
-export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirstMaster=false,masterGateKeys=[]}={}) {
+export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirstMaster=false,masterGateKeys=[],r118PerceptualJury=false}={}) {
   const nextIssues=Array.isArray(issues)?[...issues]:[];
   const nextActions=Array.isArray(actions)?[...actions]:[];
   const already=new Set(nextIssues.map(x=>String(x?.target||x?.code||"")));
@@ -1077,6 +1077,35 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
     }
   }
 
+  const r118PerceptualFloor={
+    first_impression:9.7,
+    art_direction:9.8,
+    composition:9.8,
+    signature_visual_language:9.8,
+    no_template_feel:9.8,
+    anti_template_feel:9.8,
+    custom_made_feel:9.8,
+    premium_art_direction:9.8,
+    wow_effect:9.7,
+    client_wow_effect:9.7,
+    flagship_presence:9.8,
+    section_identity:9.8,
+    editorial_composition:9.8,
+    fifteen_k_value_perception:9.8,
+    fifteen_k_credibility:9.8,
+    irreproducible_brand_authorship:9.8,
+    commissioned_experience_quality:9.8,
+    visual_memory_factor:9.8,
+    cross_viewport_art_direction:9.8,
+    mobile_premium_integrity:9.7
+  };
+  if(r118PerceptualJury) {
+    for(const [key,required] of Object.entries(r118PerceptualFloor)) {
+      const score=Number(scores?.[key]??0);
+      if(score<required) addGateIssue(key,score,required,"r118_perceptual_jury_below_floor");
+    }
+  }
+
   const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(scores?.[k]??0)));
   const masterGateFloor=logoFirstMaster
     ? Math.min(...masterGateKeys.map(k=>Number(scores?.[k]??0)))
@@ -1132,13 +1161,23 @@ export const LOGO_FIRST_MASTER_GATE_KEYS=[
 export function visualQaGatePolicy(inputPayload={}) {
   const logoFirstMaster=String(inputPayload?.brand_gate_mode||"")==="LOGO_FIRST_V1";
   const pilotHeroLocked=inputPayload?.pilot_hero_locked===true;
+  const r118PerceptualJury=inputPayload?.r118_perceptual_jury===true
+    || String(inputPayload?.perceptual_flagship_standard||"")==="R118_PERCEPTUAL_JURY_V1";
   const masterGateKeys=LOGO_FIRST_MASTER_GATE_KEYS.filter(k=>!(pilotHeroLocked && k==="hero_desirability"));
-  return {logoFirstMaster,pilotHeroLocked,masterGateKeys};
+  return {logoFirstMaster,pilotHeroLocked,masterGateKeys,r118PerceptualJury};
 }
 
 export async function runVisualQa(env,{inputPayload,direction,variantKey,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null,allowR118External=false}) {
-  const {logoFirstMaster,pilotHeroLocked,masterGateKeys}=visualQaGatePolicy(inputPayload);
+  const {logoFirstMaster,pilotHeroLocked,masterGateKeys,r118PerceptualJury}=visualQaGatePolicy(inputPayload);
   const text=[
+    r118PerceptualJury?"R118 PERCEPTUAL JURY: the previous flagship render was explicitly rejected by the human Cabina as nowhere near a EUR 15,000 perceived-value standard. Do NOT reward technical cleanliness, compliance markers, complexity or effort. Judge only what is visibly present in the screenshots.":"",
+    r118PerceptualJury?"R118 BENCHMARK: compare against the strongest bespoke corporate/editorial digital work from elite international design studios, not against normal agency websites, themes or polished local-business sites. A very good premium corporate site is still a FAIL.":"",
+    r118PerceptualJury?"R118 SCORE CALIBRATION: 9.0 means excellent ordinary premium work and is NOT enough. 9.7 means genuinely exceptional. 9.8+ means the screenshot plausibly supports a EUR 15,000+ design commission with no obvious template cadence. Use 9.8+ sparingly.":"",
+    r118PerceptualJury?"R118 HARD FAIL: repeated centered containers, predictable section-after-section cadence, generic split layouts, card/module rhythm, standard website chrome, decorative geometry without a concept, safe typography, stock-photo placement, or desktop merely stacked on mobile.":"",
+    r118PerceptualJury?"R118 AUTHORSHIP TEST: if logo/colors/copy could be swapped and the page would still work for another industrial company, score no_template_feel, anti_template_feel, custom_made_feel, irreproducible_brand_authorship and fifteen_k_credibility below the R118 floor.":"",
+    r118PerceptualJury?"R118 PORTFOLIO TEST: hero, one mid-page signature scene, proof/trust scene, and closing scene must each be individually strong enough to appear in a top-tier studio case study. If fewer than four moments meet that bar, FAIL.":"",
+    r118PerceptualJury?"R118 MOBILE TEST: mobile must feel independently art-directed at 390px. If it reads as desktop columns simply stacked, cross_viewport_art_direction and mobile_premium_integrity must FAIL.":"",
+
     "Judge the ACTUAL desktop and mobile screenshots for ImpresaX.",
     logoFirstMaster
       ?"LOGO-FIRST MASTER PASS only when base master gates are >=9, fifteen_k_value_perception and irreproducible_brand_authorship are >=9.7, commissioned_experience_quality is >=9.8, the other R107 ultra-visual gates meet their elevated floors, every other score is >=8, and there are no critical/major unresolved issues."
@@ -1237,7 +1276,8 @@ export async function runVisualQa(env,{inputPayload,direction,variantKey,desktop
     issues,
     actions:r.data.actions,
     logoFirstMaster,
-    masterGateKeys
+    masterGateKeys,
+    r118PerceptualJury
   });
   return {
     ...r.data,
