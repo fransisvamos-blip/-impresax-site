@@ -758,7 +758,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         || String(packMetadata.master_reference_status||"")==="R107_RETROFIT_RUNNING"
         || String(packMetadata.quality_upgrade_to||"")===QUALITY_CONTRACT_VERSION
         || params.initialFeedback?.reason==="ENGINE_CONTRACT_UPGRADE";
-      const fullFlagshipRedesign=/FULL_FLAGSHIP_REDESIGN|FULL_REDESIGN/i.test(String(params.initialFeedback?.reason||""));
+      const fullFlagshipRedesign=/FULL_FLAGSHIP_REDESIGN|FULL_REDESIGN|R117_AUTHORED_FLAGSHIP|AUTHORED_FLAGSHIP/i.test(String(params.initialFeedback?.reason||""));
       const cabinaCopyManifest=(cabinaPrecomputed || (structuralRework && !fullFlagshipRedesign))
         && packMetadata.cabina_precomputed_copy_manifest
         && typeof packMetadata.cabina_precomputed_copy_manifest==="object"
