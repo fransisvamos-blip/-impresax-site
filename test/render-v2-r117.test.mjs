@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildZeroPhotoPremiumSpec } from "../src/render-v2/design-grammar.js";
@@ -85,4 +86,10 @@ test("verified partner badge can supply the third flagship proof without using c
   assert.match(built.spec.main_html,/data-proof-source="verified-partner"/);
   assert.match(built.spec.main_html,/\{\{copy:TRUST_BADGE\}\}/);
   assert.doesNotMatch(built.spec.main_html.match(/<section[^>]*id="trust"[\s\S]*?<\/section>/i)?.[0]||"",/\{\{copy:TRUST_2\}\}/);
+});
+
+
+test("R117 full redesign cannot reuse legacy Cabina copy manifest",()=>{
+  const source=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(source,/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP/);
 });
