@@ -1127,8 +1127,39 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const showroomHardReset=String(params.initialFeedback?.reason||"")==="SHOWROOM_HARD_RESET";
         const deterministicFailover=context.r118PerceptualJury!==true && !showroomHardReset && !budget && providerFailoverDomain &&
           (context.heroOnly || deterministicRecovery);
+        const r119SceneFailover=context.r119Requested===true && cycle===1 && !budget && providerFailoverDomain;
 
-        if(deterministicFailover) {
+        if(r119SceneFailover) {
+          const scene=buildR119SceneComposerSpec({
+            copyManifest:context.copyManifest,
+            assetTokens:context.editorialAssetTokens,
+            hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
+            inputPayload:context.inputPayload
+          });
+          generated={
+            spec:scene.spec,
+            model:scene.strategy,
+            deterministic:true,
+            r119_scene_composer:true,
+            provider_failover:true,
+            provider_failure_domain:domain
+          };
+          await step.do("r"+cycle+"-generation-provider-r119-scene-failover",async()=>{
+            await updateWorkflow(sql,event.instanceId,{
+              status:"RUNNING",
+              currentStep:"R119_PROVIDER_SCENE_FAILOVER",
+              errorCode:null,
+              metadata:{
+                provider_failover:true,
+                provider_failure_domain:domain,
+                deterministic_strategy:scene.strategy,
+                fallback_revision:revision.revision,
+                r119_scene_composer:true
+              }
+            });
+            return {ok:true};
+          });
+        } else if(deterministicFailover) {
           const deterministic=buildZeroPhotoPremiumSpec({
             variantKey:params.variantKey,
             copyManifest:context.copyManifest,
