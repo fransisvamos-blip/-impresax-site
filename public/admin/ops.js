@@ -525,12 +525,15 @@ async function selectProspect(id){
   try{
     const d=await api("/ops/api/prospects/"+encodeURIComponent(id));
     const p=d.prospect;
+    const previewUrl=p.source_data?.render_preview?.url || "";
+    const previewRevision=p.source_data?.render_preview?.revision || "";
     $("#detail").innerHTML=`
       <div class="detail-head"><span class="kicker">${esc(tStatus(p.pipeline_status))}</span><h3>${esc(p.business_name)}</h3>
-        <div class="id">${esc(p.id)}</div>${p.live_url?`<p><a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a></p>`:""}</div>
+        <div class="id">${esc(p.id)}</div>${previewUrl?`<p><a class="live" href="${esc(previewUrl)}" target="_blank" rel="noopener">Apri preview cliente ↗</a></p>`:""}${p.live_url?`<p><a href="${esc(p.live_url)}" target="_blank" rel="noopener">Apri demo ↗</a></p>`:""}</div>
       <section class="detail-section"><h4>Azienda</h4><dl class="kv">
         <dt>Posizione</dt><dd>${esc(p.rank??"—")}</dd><dt>Verticale</dt><dd>${esc(tVertical(p.vertical))}</dd>
         <dt>Sito attuale</dt><dd>${linkMaybe(p.website_url,p.website_url)}</dd>
+        <dt>Preview cliente</dt><dd>${linkMaybe(previewUrl,previewUrl)}${previewRevision?` <span class="id">· render r${esc(previewRevision)}</span>`:""}</dd>
         <dt>URL demo</dt><dd>${linkMaybe(p.live_url,p.live_url)}</dd>
         <dt>Fase attuale</dt><dd>${esc(tStatus(p.current_step))}</dd>
         <dt>Prossima azione</dt><dd>${esc(tAction(p.next_action))}</dd>
