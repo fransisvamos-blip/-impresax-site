@@ -78,6 +78,7 @@ export function buildR119SceneComposerSpec({
         '<article data-trust-reason="1"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("TRUST_1_LABEL")+'</span><strong>'+copyToken("TRUST_1")+'</strong></div><p>'+copyToken("TRUST_1_BODY")+'</p></article>'+
         '<article data-trust-reason="2"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("TRUST_2_LABEL")+'</span><strong>'+copyToken("TRUST_2")+'</strong></div><p>'+copyToken("TRUST_2_BODY")+'</p></article>'+
         '<article data-trust-reason="3"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("TRUST_3_LABEL")+'</span><strong>'+copyToken("TRUST_3")+'</strong></div><p>'+copyToken("TRUST_3_BODY")+'</p></article>'+
+        (hasCopy(copyManifest,"PARTNER_1") ? '<article data-trust-reason="4"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("PARTNER_SECTION_TITLE")+'</span><strong>'+copyToken("PARTNER_1")+'</strong></div><p>'+copyToken("PARTNER_SECTION_INTRO")+'</p></article>' : "")+
       '</div>'+
       '<div class="r119-proof__locality">'+copyToken("LOCALITY_LINE")+'</div>'+
     '</section>',
@@ -463,6 +464,54 @@ h1,h2,strong{text-wrap:balance}
   .r119-close__copy h2{font-size:clamp(54px,14vw,72px);max-width:8ch}
   .r119-close__copy>p:last-child{font-size:15px;max-width:31ch}
   .r119-close>.r119-btn{position:relative;right:auto;bottom:auto;margin-top:36px;width:100%;min-height:78px}
+}
+
+/* R119 V23 — jury stabilization and mobile precision */
+.r119-materials__media{inset:0!important}
+.r119-materials__veil{background:linear-gradient(90deg,rgba(236,229,218,.99) 0%,rgba(236,229,218,.97) 30%,rgba(236,229,218,.72) 43%,rgba(236,229,218,.12) 70%,rgba(236,229,218,0) 100%)!important}
+.r119-materials__copy{width:min(620px,38vw)!important}
+.r119-proof__facts article:nth-child(4){padding-left:21vw}
+.r119-proof__facts article:nth-child(4) .r119-proof__mark{background:#f4f1ea;box-shadow:18px 0 0 var(--r119-red)}
+
+/* The second jury pass is a controlled refinement, never a wholesale layout flip. */
+.r119-hero.r119-jury-reset .r119-hero__copy{left:5vw;right:auto;bottom:8vh;width:min(980px,66vw);padding:0 0 0 28px;border:0;border-left:6px solid var(--r119-red);text-align:left}
+.r119-hero.r119-jury-reset .r119-hero__veil{background:linear-gradient(90deg,rgba(3,4,5,.98) 0%,rgba(3,4,5,.90) 30%,rgba(3,4,5,.32) 64%,rgba(3,4,5,.08) 100%),linear-gradient(180deg,transparent 38%,rgba(0,0,0,.74))}
+.r119-positioning.r119-jury-reset .r119-positioning__media img{object-position:72% center;filter:saturate(.26) contrast(1.32) brightness(.50)}
+.r119-positioning.r119-jury-reset .r119-positioning__veil{background:linear-gradient(90deg,rgba(5,6,7,.98) 0%,rgba(5,6,7,.87) 34%,rgba(5,6,7,.30) 68%,rgba(5,6,7,.08) 100%)}
+.r119-positioning.r119-jury-reset .r119-positioning__copy{margin:0;padding:15vh 5vw 9vh;align-items:flex-start;text-align:left}
+.r119-positioning.r119-jury-reset .r119-positioning__identity{left:auto;right:-3vw}
+.r119-materials.r119-jury-reset{background:#ece5da;color:var(--r119-ink)}
+.r119-materials.r119-jury-reset .r119-materials__structure{left:4vw;right:auto;border-color:rgba(10,11,12,.14);background:repeating-linear-gradient(90deg,transparent 0 92px,rgba(10,11,12,.055) 92px 93px),repeating-linear-gradient(0deg,transparent 0 92px,rgba(10,11,12,.055) 92px 93px)}
+.r119-materials.r119-jury-reset .r119-materials__copy{margin-left:5vw;text-align:left}
+.r119-materials.r119-jury-reset .r119-materials__copy .r119-service__body{margin-left:0}
+.r119-proof.r119-jury-reset{background:#0b0c0d;color:var(--r119-white)}
+.r119-proof.r119-jury-reset .r119-proof__facts{border-color:rgba(255,255,255,.28)}
+.r119-proof.r119-jury-reset .r119-proof__facts article{border-color:rgba(255,255,255,.16)}
+.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(2){margin-left:0;padding-left:7vw}
+.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(3){margin-left:0;padding-left:14vw}
+.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(4){margin-left:0;padding-left:21vw}
+.r119-partner.r119-jury-reset{background:var(--r119-red);color:white}
+.r119-partner.r119-jury-reset .r119-proof__partner img{filter:none}
+.r119-contact.r119-jury-reset{background:var(--r119-red);color:white}
+.r119-contact.r119-jury-reset .r119-btn--outline{color:white}
+
+@media(max-width:700px){
+  .r119-scene h1,.r119-scene h2{overflow-wrap:anywhere;word-break:normal;hyphens:auto}
+  .r119-hero__copy h1{font-size:clamp(42px,11.2vw,54px)!important;line-height:.9!important;max-width:10.5ch!important}
+  .r119-positioning__copy h2,.r119-materials__copy h2,.r119-rebar__title h2,.r119-proof__head h2{font-size:clamp(42px,10.8vw,56px)!important;line-height:.92!important;max-width:10.8ch!important}
+  .r119-materials__media{position:relative!important;inset:auto!important;height:40svh!important}
+  .r119-materials__veil{display:none!important}
+  .r119-materials__copy{width:auto!important}
+  .r119-proof__facts article:nth-child(4){padding-left:0}
+  .r119-proof__facts article,.r119-proof__facts article:nth-child(2),.r119-proof__facts article:nth-child(3),.r119-proof__facts article:nth-child(4){grid-template-columns:38px 1fr!important;gap:12px!important}
+  .r119-proof__facts article>p{grid-column:2}
+  .r119-hero.r119-jury-reset .r119-hero__copy{left:18px;right:18px;bottom:24px;width:auto;padding:0 0 0 14px;border-left:4px solid var(--r119-red)}
+  .r119-positioning.r119-jury-reset .r119-positioning__media img{object-position:58% center}
+  .r119-positioning.r119-jury-reset .r119-positioning__veil{display:none}
+  .r119-positioning.r119-jury-reset .r119-positioning__copy{margin:0;padding:52px 18px 62px;text-align:left}
+  .r119-materials.r119-jury-reset .r119-materials__structure{left:-18vw;right:auto}
+  .r119-materials.r119-jury-reset .r119-materials__copy{margin:0;padding:52px 18px 74px;text-align:left}
+  .r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(2),.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(3),.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(4){margin-left:0;padding-left:0}
 }
 
 `;
