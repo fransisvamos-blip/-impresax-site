@@ -794,8 +794,20 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     trust_count:Object.keys(copyManifest||{}).filter(k=>/^TRUST_\d+$/.test(k)).length,
     copy_tokens:Object.keys(copyManifest||{})
   };
+  const feedbackReason=String(qaFeedback?.reason||"");
   const hardResetReasons=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
-  const safePrevious=hardResetReasons.includes(String(qaFeedback?.reason||"")) ? null : previousSpec;
+  const r118CompilerRepair=allowR118External && feedbackReason==="R118_COMPILER_REPAIR";
+  const compactCompilerPrevious=r118CompilerRepair && previousSpec ? {
+    section_ids:Array.isArray(previousSpec.section_ids)?previousSpec.section_ids.slice(0,12):[],
+    section_blueprint:Array.isArray(previousSpec.section_blueprint)?previousSpec.section_blueprint.slice(0,12):[],
+    implementation_notes:String(previousSpec.implementation_notes||"").slice(0,1400),
+    hero_visual_strategy:String(previousSpec.hero_visual_strategy||"").slice(0,700),
+    main_html:String(previousSpec.main_html||"").slice(0,7000),
+    custom_css:String(previousSpec.custom_css||"").slice(0,5000)
+  } : null;
+  const safePrevious=hardResetReasons.includes(feedbackReason)
+    ? null
+    : (r118CompilerRepair?compactCompilerPrevious:previousSpec);
   const r118ScoreKeys=[
     "first_impression","art_direction","page_architecture","composition",
     "signature_visual_language","no_template_feel","anti_template_feel","custom_made_feel",
