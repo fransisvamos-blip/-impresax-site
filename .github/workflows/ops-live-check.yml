@@ -114,17 +114,26 @@ jobs:
         run: |
           set -euo pipefail
           base="https://dedil-donato.impresax.org"
-          code=$(curl -L -sS -o /tmp/dedil-preview -D /tmp/dedil-preview-headers -w "%{http_code}" --connect-timeout 8 --max-time 30 "$base/")
-          echo "preview=$code"
-          test "$code" = "200"
-          grep -q 'src="/desktop.jpg"' /tmp/dedil-preview
-          grep -q 'src="/mobile.jpg"' /tmp/dedil-preview
-          grep -q 'width:1440px' /tmp/dedil-preview
-          grep -q 'width:390px' /tmp/dedil-preview
-          grep -qi 'X-Robots-Tag: noindex' /tmp/dedil-preview-headers
+          ok=0
+          for i in $(seq 1 24); do
+            code=$(curl -sS -o /tmp/dedil-preview -D /tmp/dedil-preview-headers -w "%{http_code}" --connect-timeout 8 --max-time 30 "$base/" || true)
+            echo "attempt=$i preview=$code"
+            if [ "$code" = "200" ] \
+              && grep -q 'src="/desktop.jpg"' /tmp/dedil-preview \
+              && grep -q 'src="/mobile.jpg"' /tmp/dedil-preview \
+              && grep -q 'width:1440px' /tmp/dedil-preview \
+              && grep -q 'width:390px' /tmp/dedil-preview \
+              && grep -qi 'X-ImpresaX-Render-Preview: RENDER_PREVIEW_V1' /tmp/dedil-preview-headers \
+              && grep -qi 'X-Robots-Tag: noindex' /tmp/dedil-preview-headers; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+          test "$ok" = "1"
 
-          desktop=$(curl -L -sS -o /tmp/dedil-desktop.jpg -D /tmp/dedil-desktop-headers -w "%{http_code}" --connect-timeout 8 --max-time 45 "$base/desktop.jpg")
-          mobile=$(curl -L -sS -o /tmp/dedil-mobile.jpg -D /tmp/dedil-mobile-headers -w "%{http_code}" --connect-timeout 8 --max-time 45 "$base/mobile.jpg")
+          desktop=$(curl -sS -o /tmp/dedil-desktop.jpg -D /tmp/dedil-desktop-headers -w "%{http_code}" --connect-timeout 8 --max-time 45 "$base/desktop.jpg")
+          mobile=$(curl -sS -o /tmp/dedil-mobile.jpg -D /tmp/dedil-mobile-headers -w "%{http_code}" --connect-timeout 8 --max-time 45 "$base/mobile.jpg")
           echo "desktop=$desktop mobile=$mobile"
           test "$desktop" = "200"
           test "$mobile" = "200"
