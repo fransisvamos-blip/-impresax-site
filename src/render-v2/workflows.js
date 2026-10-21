@@ -2046,6 +2046,29 @@ export class RenderProspectWorkflow extends WorkflowEntrypoint {
       return {variants:Object.fromEntries(Object.entries(variants).map(([k,v])=>[k,v.id]))};
     });
 
+    if(p.planOnly===true) {
+      await step.do("pilot-plan-only-complete",async()=>{
+        await setPackStatus(sql,p.packId,"PLANNING",{
+          pilot_plan_only:true,
+          pilot_plan_ready:true,
+          variant_spawn_pending:false,
+          plan_only_instance:event.instanceId
+        });
+        await updateWorkflow(sql,event.instanceId,{
+          status:"COMPLETED",
+          currentStep:"PILOT_PLAN_READY",
+          metadata:{
+            plan_only:true,
+            pilot_plan_ready:true,
+            variant_ids:persisted.variants,
+            queue_enabled:false
+          }
+        });
+        return {ok:true,variants:persisted.variants};
+      });
+      return {status:"PILOT_PLAN_READY",pack_id:p.packId,variants:persisted.variants};
+    }
+
     await step.do("spawn-initial-variants",async()=>{
       let {slots,limit,active}=await renderConcurrencyState(sql);
       const launched=[],deferred=[];
