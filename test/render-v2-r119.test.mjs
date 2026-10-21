@@ -79,12 +79,17 @@ test("R119 scene composer compiles under renderer safety contract",async()=>{
   assert.equal(compiled.ok,true,JSON.stringify(compiled.issues));
 });
 
-test("R118 repair cycles route to R119 instead of full-spec AI generation",async()=>{
+test("R119 fast loop uses evidence seed once then one generative hard reset",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
-  assert.match(workflows,/const r119SceneRepair=r118Mode && \(cycle>=2 \|\| \/R119_SCENE_COMPOSER\/i\.test/);
-  assert.match(workflows,/buildR119SceneComposerSpec/);
-  assert.match(workflows,/r119_scene_composer:true/);
+  assert.match(workflows,/const r119Requested=r118PerceptualJury &&/);
+  assert.match(workflows,/\/R119_\/i\.test/);
+  assert.match(workflows,/const r119SeedPass=r119Mode && cycle===1/);
+  assert.match(workflows,/if\(r119SeedPass\)/);
+  assert.match(workflows,/r119_scene_composer:true,r119_evidence_seed:true/);
+  assert.match(workflows,/const r119ForceHardReset=context\.r119Requested===true && cycle===1/);
+  assert.match(workflows,/R119 FAST HARD RESET/);
+  assert.doesNotMatch(workflows,/const r119SceneRepair=/);
 });
 
 
@@ -106,7 +111,7 @@ test("R119 perceptual fixes remove placeholder geometry and stock-scene dependen
   assert.doesNotMatch(html,/TRUST_VISUAL/);
   assert.equal((html.match(/\{\{copy:SERVICE_1_TITLE\}\}/g)||[]).length,1);
   assert.equal((html.match(/\{\{copy:SERVICE_2_TITLE\}\}/g)||[]).length,1);
-  assert.match(css,/font-size:clamp\(76px,8\.6vw,148px\)/);
+  assert.match(css,/font-size:clamp\(64px,7\.2vw,122px\)/);
   assert.match(css,/\.r119-rebar\{[^}]*display:grid/);
   assert.match(css,/\.r119-rebar__title\{position:relative/);
   assert.match(css,/\.r119-rebar__body\{position:relative/);
@@ -115,6 +120,15 @@ test("R119 perceptual fixes remove placeholder geometry and stock-scene dependen
   assert.match(css,/\.r119-partner\{min-height:680px/);
 });
 
+
+test("R119 evidence detection covers EIGHT_SCENE, EVIDENCE and FAST relaunch reasons",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/packMetadata\.r119_eight_scene_evidence===true/);
+  assert.match(workflows,/\/R119_\/i\.test/);
+  assert.match(workflows,/const r119EvidenceNarrative=r119Requested/);
+  assert.match(workflows,/const r119MaterialHero=context\.r119Requested===true/);
+});
 
 test("R119 workflow strips economic vanity metrics and binds a material hero",async()=>{
   const fs=(await import("node:fs")).default;
