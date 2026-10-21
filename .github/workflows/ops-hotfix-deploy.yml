@@ -5,8 +5,9 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/ops-hotfix-deploy.yml"
-      - "src/ops.js"
+      - "src/**"
       - "public/admin/**"
+      - "test/render-preview.test.mjs"
       - "wrangler.jsonc"
 
 jobs:
@@ -22,6 +23,8 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
+      - name: Render preview contract test
+        run: node --test test/render-preview.test.mjs
       - name: Deploy production worker
         run: npx wrangler deploy --config wrangler.jsonc
       - name: Verify Ops health
