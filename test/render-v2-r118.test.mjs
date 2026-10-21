@@ -77,6 +77,7 @@ test("R118 is the only route allowed to bypass zero-extra-AI mode for generation
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
   const wrangler=fs.readFileSync(new URL("../wrangler.render-v2.jsonc",import.meta.url),"utf8");
+  const metrics=fs.readFileSync(new URL("../src/render-v2/metrics.js",import.meta.url),"utf8");
 
   assert.match(workflows,/r118PerceptualJury/);
   assert.match(workflows,/const r118FirstPass=r118Mode && cycle===1/);
@@ -86,4 +87,8 @@ test("R118 is the only route allowed to bypass zero-extra-AI mode for generation
   assert.match(ai,/V2_R118_EXTERNAL_AI_ENABLED/);
   assert.match(wrangler,/"V2_EXTERNAL_AI_ENABLED": "false"/);
   assert.match(wrangler,/"V2_R118_EXTERNAL_AI_ENABLED": "true"/);
+  assert.match(metrics,/allowR118External=false/);
+  assert.match(metrics,/V2_R118_EXTERNAL_AI_ENABLED/);
+  assert.match(workflows,/reserveAiCall\(sql,params\.packId,this\.env,"VARIANT_GENERATION:"\+model,revision\.id,\{allowR118External:context\.r118PerceptualJury===true\}\)/);
+  assert.match(workflows,/reserveAiCall\(sql,params\.packId,this\.env,"VARIANT_VISUAL_QA:"\+model,revision\.id,\{allowR118External:context\.r118PerceptualJury===true\}\)/);
 });
