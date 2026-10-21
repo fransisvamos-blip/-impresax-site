@@ -138,3 +138,10 @@ test("R118 failures produce structural redesign feedback instead of micro-fix sp
   assert.match(ai,/perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"/);
   assert.match(ai,/R118 PERCEPTUAL REPAIR/);
 });
+
+
+test("every R118 perceptual relaunch reason activates jury mode and full redesign",()=>{
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/\/R118_PERCEPTUAL\/i\.test\(String\(params\.initialFeedback\?\.reason\|\|""\)\)/);
+  assert.match(workflows,/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP\|R118_PERCEPTUAL/);
+});
