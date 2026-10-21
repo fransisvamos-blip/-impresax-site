@@ -31,6 +31,9 @@ export function buildR119SceneComposerSpec({
   const identity=hasIdentity
     ? '<div class="r119-close__watermark" data-brand-watermark aria-hidden="true">{{identity:PRIMARY_LOGO}}</div>'
     : "";
+  const identityField=hasIdentity
+    ? '<div class="r119-positioning__identity" data-brand-watermark aria-hidden="true">{{identity:PRIMARY_LOGO}}</div>'
+    : "";
 
   const main=[
     '<section id="hero" class="r119-scene r119-hero" data-r119-scene="true" data-r118-perceptual-jury="true" data-launch-hero="true" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true" data-mobile-native="true">'+
@@ -40,12 +43,16 @@ export function buildR119SceneComposerSpec({
 
     '</section>',
 
-    '<section id="positioning" class="r119-scene r119-matter" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="material" data-wow-moment="true">'+
-      '<div class="r119-matter__statement"><p class="r119-kicker">'+copyToken("POSITIONING_TITLE")+'</p><h2>'+copyToken("SERVICE_1_TITLE")+'</h2><p class="r119-matter__body">'+copyToken("POSITIONING_BODY")+'</p></div>'+
-      picture(assets,"POSITIONING_VISUAL","r119-matter__portrait")+
-      picture(assets,"SERVICE_MATERIALS_VISUAL","r119-matter__material")+
-      '<div class="r119-matter__service">'+service1Body+'</div>'+
-      '<div class="r119-matter__rail" aria-hidden="true"><i></i><i></i></div>'+
+    '<section id="positioning" class="r119-scene r119-positioning" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="editorial" data-wow-moment="true">'+
+      identityField+
+      '<div class="r119-positioning__copy"><p class="r119-kicker">'+copyToken("POSITIONING_TITLE")+'</p><h2>'+copyToken("SERVICES_TITLE")+'</h2><p>'+copyToken("POSITIONING_BODY")+'</p></div>'+
+      '<div class="r119-positioning__intro">'+copyToken("SERVICES_INTRO")+'</div>'+
+    '</section>',
+
+    '<section id="materials" class="r119-scene r119-materials" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="material" data-wow-moment="true">'+
+      picture(assets,"SERVICE_MATERIALS_VISUAL","r119-materials__media")+
+      '<div class="r119-materials__copy"><p class="r119-kicker">'+copyToken("SERVICES_TITLE")+'</p><h2>'+copyToken("SERVICE_1_TITLE")+'</h2>'+service1Body+'</div>'+
+      '<div class="r119-materials__edge" aria-hidden="true"></div>'+
     '</section>',
 
     '<section id="services" class="r119-scene r119-rebar" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
@@ -57,10 +64,13 @@ export function buildR119SceneComposerSpec({
     '</section>',
 
     '<section id="trust" class="r119-scene r119-proof" data-r119-scene="true" data-surface="art-directed" data-brand-surface="primary" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="editorial" data-wow-moment="true">'+
-      picture(assets,"TRUST_VISUAL","r119-proof__media")+
-      '<div class="r119-proof__veil" aria-hidden="true"></div>'+
       '<div class="r119-proof__head"><p class="r119-kicker">'+copyToken("TRUST_TITLE")+'</p><h2>'+copyToken("TRUST_INTRO")+'</h2></div>'+
       '<div class="r119-proof__facts"><article data-trust-reason="1"><strong>'+copyToken("TRUST_1")+'</strong></article><article data-trust-reason="2"><strong>'+copyToken("TRUST_2")+'</strong></article><article data-trust-reason="3"><strong>'+copyToken("TRUST_3")+'</strong></article></div>'+
+      '<div class="r119-proof__locality">'+copyToken("LOCALITY_LINE")+'</div>'+
+    '</section>',
+
+    '<section id="partners" class="r119-scene r119-partner" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-stage-depth="gallery" data-wow-moment="true">'+
+      '<div class="r119-partner__label"><p class="r119-kicker">'+copyToken("PARTNER_SECTION_TITLE")+'</p><p>'+copyToken("PARTNER_SECTION_INTRO")+'</p></div>'+
       partnerMarkup+
     '</section>',
 
@@ -118,21 +128,25 @@ h1,h2,strong{text-wrap:balance}
 .r119-hero__copy h1{margin:14px 0 26px;font-family:var(--ix-display-font);font-size:clamp(76px,8.6vw,148px);line-height:.82;letter-spacing:-.068em;max-width:8.3ch}
 .r119-lede{max-width:40ch;font-size:clamp(16px,1.08vw,19px);line-height:1.55;margin:0 0 30px}
 
-/* 02 — material atlas: intentionally asymmetric, no centered shell */
-.r119-matter{min-height:980px;color:var(--r119-ink);background:linear-gradient(135deg,#f2efe8 0%,#ebe5da 72%,#e1d8ca 100%);display:grid;grid-template-columns:1.06fr .44fr .76fr;grid-template-rows:.62fr .38fr}
-.r119-matter__statement{grid-column:1/3;grid-row:1;padding:150px 5vw 80px;z-index:3}
-.r119-matter__statement h2{font-family:var(--ix-display-font);font-size:clamp(82px,9vw,150px);line-height:.78;letter-spacing:-.078em;max-width:7.4ch;margin:18px 0 34px}
-.r119-matter__body{font-size:clamp(17px,1.35vw,22px);max-width:37ch;line-height:1.5}
-.r119-matter__portrait{grid-column:3;grid-row:1/3;margin:0;min-height:980px}
-.r119-matter__portrait img{width:100%;height:100%;object-fit:cover;filter:saturate(.58) contrast(1.13)}
-.r119-matter__material{grid-column:1;grid-row:2;margin:0;min-height:430px}
-.r119-matter__material img{width:100%;height:100%;object-fit:cover;filter:saturate(.65) contrast(1.14)}
-.r119-matter__service{grid-column:2;grid-row:2;padding:52px 38px;display:flex;flex-direction:column;justify-content:flex-end;border-top:1px solid var(--r119-line);border-right:1px solid var(--r119-line)}
-.r119-service__body{font-size:clamp(15px,1.15vw,18px);line-height:1.55;margin:0;max-width:26ch}
-.r119-matter__rail{position:absolute;left:5vw;top:65px;width:36%;height:12px;display:grid;grid-template-columns:1fr .15fr;gap:8px}
-.r119-matter__rail i{background:var(--r119-red)}
+/* 02 — official identity as spatial architecture */
+.r119-positioning{min-height:820px;color:var(--r119-white);background:linear-gradient(118deg,#0a0b0c 0%,#151719 62%,#250808 100%);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.55fr);align-items:end;padding:120px 5vw 72px}
+.r119-positioning__identity{position:absolute;right:-3vw;top:9%;width:min(760px,58vw);opacity:.10;pointer-events:none}
+.r119-positioning__identity .ix-v2-identity-main{width:100%!important;height:auto!important;opacity:.10!important;filter:grayscale(1) brightness(2)!important}
+.r119-positioning__copy{position:relative;z-index:2;max-width:950px}
+.r119-positioning__copy h2{font-family:var(--ix-display-font);font-size:clamp(76px,8.4vw,142px);line-height:.80;letter-spacing:-.07em;max-width:8ch;margin:20px 0 32px}
+.r119-positioning__copy>p:last-child{font-size:clamp(17px,1.25vw,21px);line-height:1.55;max-width:42ch}
+.r119-positioning__intro{position:relative;z-index:2;border-left:1px solid rgba(255,255,255,.34);padding:34px 0 34px 34px;font-size:clamp(18px,1.5vw,24px);line-height:1.45;max-width:28ch;align-self:end}
 
-/* 03 — rebar: single giant photographic scene */
+/* 03 — materials: physical product landscape, not stock-showroom photography */
+.r119-materials{min-height:980px;color:var(--r119-ink);background:#ede8df;display:grid;grid-template-columns:minmax(0,1.38fr) minmax(390px,.62fr)}
+.r119-materials__media{grid-column:1;min-height:980px;margin:0;overflow:hidden}
+.r119-materials__media img{width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.68) contrast(1.17)}
+.r119-materials__copy{grid-column:2;padding:clamp(86px,8vw,138px) clamp(42px,5vw,82px);display:flex;flex-direction:column;justify-content:flex-end;border-left:1px solid var(--r119-line)}
+.r119-materials__copy h2{font-family:var(--ix-display-font);font-size:clamp(58px,5.8vw,96px);line-height:.84;letter-spacing:-.062em;margin:18px 0 34px;max-width:10ch}
+.r119-materials__copy .r119-service__body{font-size:17px;line-height:1.58;max-width:31ch}
+.r119-materials__edge{position:absolute;left:0;bottom:0;width:42%;height:8px;background:var(--r119-red)}
+
+/* 04 — rebar: single giant photographic scene */
 .r119-rebar{min-height:980px;color:white;background:linear-gradient(120deg,#070809,#180a0a);display:grid;grid-template-rows:1fr auto;padding:130px 5vw 78px}
 .r119-rebar__media{position:absolute;inset:0;margin:0}
 .r119-rebar__media img{width:100%;height:100%;object-fit:cover;filter:saturate(.40) contrast(1.3) brightness(.60)}
@@ -141,29 +155,32 @@ h1,h2,strong{text-wrap:balance}
 .r119-rebar__title h2{font-family:var(--ix-display-font);font-size:clamp(72px,7.8vw,128px);line-height:.82;letter-spacing:-.068em;max-width:8.2ch;margin:16px 0 0}
 .r119-rebar__body{position:relative;z-index:2;width:min(520px,38vw);font-size:17px;line-height:1.58;padding-top:34px;border-top:1px solid rgba(255,255,255,.34);align-self:end}
 
-/* 04 — proof wall + verified partner, one scene */
-.r119-proof{min-height:1120px;color:white;background:linear-gradient(135deg,#17191a,#0a0b0c 58%,#240707)}
-.r119-proof__media{position:absolute;inset:0;margin:0}
-.r119-proof__media img{width:100%;height:100%;object-fit:cover;filter:saturate(.28) contrast(1.26) brightness(.36)}
-.r119-proof__veil{position:absolute;inset:0;background:linear-gradient(110deg,rgba(4,5,6,.96),rgba(4,5,6,.68) 58%,rgba(45,4,4,.52))}
-.r119-proof__head{position:relative;z-index:2;padding:140px 5vw 74px;width:min(1100px,78vw)}
-.r119-proof__head h2{font-family:var(--ix-display-font);font-size:clamp(70px,7.5vw,126px);line-height:.8;letter-spacing:-.072em;margin:18px 0 0;max-width:10ch}
-.r119-proof__facts{position:relative;z-index:2;margin:0 5vw;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.28)}
-.r119-proof__facts article{min-height:330px;padding:40px 38px 44px 0;border-right:1px solid rgba(255,255,255,.18);display:flex;align-items:flex-end}
-.r119-proof__facts article:nth-child(2){padding-left:38px}
-.r119-proof__facts article:nth-child(3){padding-left:38px;border-right:0}
-.r119-proof__facts strong{font-family:var(--ix-display-font);font-size:clamp(28px,2.7vw,47px);line-height:.94;letter-spacing:-.035em;max-width:13ch}
-.r119-proof__partner{position:relative;z-index:2;margin:58px 5vw 0;padding:28px 0;border-top:1px solid rgba(255,255,255,.22);display:grid;grid-template-columns:220px 1fr;gap:44px;align-items:center}
-.r119-proof__partner img{width:190px;max-height:84px;object-fit:contain;filter:grayscale(1) brightness(2)}
-.r119-proof__partner strong{font-family:var(--ix-display-font);font-size:clamp(36px,4vw,66px);line-height:.86}
+/* 05 — operational proof, no economic vanity metrics */
+.r119-proof{min-height:760px;color:var(--r119-ink);background:linear-gradient(135deg,#f4f1ea 0%,#ece6da 72%,#ded3c3 100%);padding:120px 5vw 64px}
+.r119-proof__head{position:relative;z-index:2;width:min(1100px,80vw);padding:0 0 64px}
+.r119-proof__head h2{font-family:var(--ix-display-font);font-size:clamp(58px,6.4vw,108px);line-height:.82;letter-spacing:-.065em;margin:18px 0 0;max-width:11ch}
+.r119-proof__facts{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(14,15,16,.28);border-bottom:1px solid rgba(14,15,16,.20)}
+.r119-proof__facts article{min-height:280px;padding:38px 34px 38px 0;border-right:1px solid rgba(14,15,16,.17);display:flex;align-items:flex-end}
+.r119-proof__facts article:nth-child(2),.r119-proof__facts article:nth-child(3){padding-left:34px}
+.r119-proof__facts article:nth-child(3){border-right:0}
+.r119-proof__facts strong{font-family:var(--ix-display-font);font-size:clamp(27px,2.45vw,42px);line-height:.98;letter-spacing:-.032em;max-width:14ch}
+.r119-proof__locality{margin-top:42px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.10em;text-transform:uppercase}
 
-/* 05 — contact interlude */
+/* 06 — verified U-Power partnership as a gallery wall */
+.r119-partner{min-height:680px;background:#0b0c0d;color:white;display:grid;grid-template-columns:minmax(300px,.48fr) minmax(0,1.52fr);align-items:stretch}
+.r119-partner__label{padding:84px 5vw;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid rgba(255,255,255,.18)}
+.r119-partner__label>p:last-child{max-width:26ch;font-size:17px;line-height:1.55}
+.r119-partner .r119-proof__partner{margin:0;padding:84px clamp(54px,8vw,140px);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:48px;background:linear-gradient(125deg,#131516,#090a0b 64%,#280707)}
+.r119-partner .r119-proof__partner img{width:min(430px,72%);max-height:190px;object-fit:contain;filter:grayscale(1) brightness(2)}
+.r119-partner .r119-proof__partner strong{font-family:var(--ix-display-font);font-size:clamp(56px,6vw,104px);line-height:.82;letter-spacing:-.06em;max-width:9ch}
+
+/* 07 — contact interlude */
 .r119-contact{min-height:520px;color:var(--r119-ink);background:linear-gradient(110deg,#f4f1ea,#e9e3d8 65%,#f2ede5);display:grid;grid-template-columns:.7fr 1.1fr 340px;gap:5vw;align-items:center;padding:70px 5vw;border-top:1px solid var(--r119-line);border-bottom:1px solid var(--r119-line)}
 .r119-contact__meta p:last-child{font-size:16px;line-height:1.5;max-width:30ch}
 .r119-contact__locality strong{font-family:var(--ix-display-font);font-size:clamp(52px,6vw,98px);line-height:.8;letter-spacing:-.065em;max-width:9ch;display:block}
 .r119-contact .r119-btn{min-height:160px}
 
-/* 06 — close */
+/* 08 — close */
 .r119-close{min-height:100svh;color:white;background:linear-gradient(125deg,#070809 0%,#111314 52%,#330707 100%);display:flex;align-items:flex-end;padding:120px 5vw 64px}
 .r119-close__copy{position:relative;z-index:2;width:min(1040px,70vw)}
 .r119-close__copy h2{font-family:var(--ix-display-font);font-size:clamp(86px,9.4vw,158px);line-height:.80;letter-spacing:-.072em;max-width:7.1ch;margin:18px 0 30px}
@@ -184,29 +201,37 @@ h1,h2,strong{text-wrap:balance}
   .r119-lede{font-size:15px;max-width:30ch;margin-bottom:24px}
   .r119-actions{display:grid;grid-template-columns:1fr}
 
-  .r119-matter{min-height:0;display:flex;flex-direction:column}
-  .r119-matter__statement{order:1;padding:76px 18px 42px}
-  .r119-matter__statement h2{font-size:clamp(50px,14vw,68px);line-height:.82;max-width:7.8ch}
-  .r119-matter__body{font-size:16px;max-width:30ch}
-  .r119-matter__portrait{order:2;min-height:56svh;width:100%;margin:0}
-  .r119-matter__service{order:3;padding:36px 18px 44px;border-right:0}
-  .r119-matter__material{order:4;min-height:36svh;width:100%;margin:0}
-  .r119-matter__rail{left:18px;top:36px;width:55%}
+  .r119-positioning{min-height:0;display:block;padding:96px 18px 62px}
+  .r119-positioning__identity{right:-28vw;top:8%;width:118vw;opacity:.07}
+  .r119-positioning__identity .ix-v2-identity-main{opacity:.07!important}
+  .r119-positioning__copy h2{font-size:clamp(54px,15vw,76px);line-height:.82;max-width:7.5ch}
+  .r119-positioning__copy>p:last-child{font-size:16px;max-width:30ch}
+  .r119-positioning__intro{margin-top:52px;padding:24px 0 0;border-left:0;border-top:1px solid rgba(255,255,255,.32);font-size:18px;max-width:28ch}
+
+  .r119-materials{min-height:0;display:flex;flex-direction:column}
+  .r119-materials__media{order:1;min-height:62svh;width:100%}
+  .r119-materials__copy{order:2;padding:56px 18px 68px;border-left:0;border-top:1px solid var(--r119-line)}
+  .r119-materials__copy h2{font-size:clamp(48px,13.5vw,66px);line-height:.84;max-width:9ch}
+  .r119-materials__edge{width:70%;height:5px}
 
   .r119-rebar{min-height:82svh;padding:82px 18px 36px;grid-template-rows:1fr auto}
   .r119-rebar__title{width:auto}
   .r119-rebar__title h2{font-size:clamp(52px,15vw,72px);line-height:.82;max-width:7.8ch}
   .r119-rebar__body{width:100%;font-size:15px;padding-top:24px}
 
-  .r119-proof{min-height:0;padding-bottom:64px}
-  .r119-proof__head{padding:94px 18px 50px;width:auto}
-  .r119-proof__head h2{font-size:clamp(52px,15vw,74px);max-width:9ch}
-  .r119-proof__facts{margin:0 18px;display:block}
-  .r119-proof__facts article,.r119-proof__facts article:nth-child(2),.r119-proof__facts article:nth-child(3){min-height:210px;padding:28px 0;border-right:0;border-bottom:1px solid rgba(255,255,255,.18)}
-  .r119-proof__facts strong{font-size:clamp(30px,9vw,42px);max-width:12ch}
-  .r119-proof__partner{margin:46px 18px 0;grid-template-columns:110px 1fr;gap:22px}
-  .r119-proof__partner img{width:100px;max-height:52px}
-  .r119-proof__partner strong{font-size:clamp(30px,9vw,42px)}
+  .r119-proof{min-height:0;padding:86px 18px 54px}
+  .r119-proof__head{padding:0 0 46px;width:auto}
+  .r119-proof__head h2{font-size:clamp(46px,13vw,64px);max-width:10ch}
+  .r119-proof__facts{display:block}
+  .r119-proof__facts article,.r119-proof__facts article:nth-child(2),.r119-proof__facts article:nth-child(3){min-height:170px;padding:28px 0;border-right:0;border-bottom:1px solid rgba(14,15,16,.16)}
+  .r119-proof__facts strong{font-size:clamp(28px,8.5vw,40px);max-width:13ch}
+  .r119-proof__locality{margin-top:30px;font-size:10px}
+
+  .r119-partner{min-height:0;display:block}
+  .r119-partner__label{padding:64px 18px 42px;border-right:0;border-bottom:1px solid rgba(255,255,255,.18);gap:24px}
+  .r119-partner .r119-proof__partner{min-height:58svh;padding:62px 18px;gap:36px}
+  .r119-partner .r119-proof__partner img{width:min(300px,76%);max-height:130px}
+  .r119-partner .r119-proof__partner strong{font-size:clamp(46px,13vw,66px);max-width:8ch}
 
   .r119-contact{min-height:0;display:flex;flex-direction:column;align-items:stretch;gap:38px;padding:72px 18px}
   .r119-contact__locality strong{font-size:clamp(52px,16vw,76px);max-width:8ch}
@@ -225,8 +250,8 @@ h1,h2,strong{text-wrap:balance}
     spec:{
       main_html:main,
       custom_css:css,
-      section_ids:["hero","positioning","services","trust","bridge","final-cta"],
-      section_blueprint:["hero","positioning","services","trust","bridge","final-cta"],
+      section_ids:["hero","positioning","materials","services","trust","partners","bridge","final-cta"],
+      section_blueprint:["hero","positioning","materials","services","trust","partners","bridge","final-cta"],
       section_architecture_standard:R119_SCENE_COMPOSER_STANDARD,
       section_first_standard:R119_SCENE_COMPOSER_STANDARD,
       home_depth_standard:R119_SCENE_COMPOSER_STANDARD,
@@ -248,7 +273,7 @@ h1,h2,strong{text-wrap:balance}
       hero_copy_space:"Dark directional veil with oversized copy anchored to the lower-left field.",
       hero_mobile_crop_strategy:"Native 390px recut with bottom-anchored copy and independent scale.",
       hero_relevance_score:10,
-      implementation_notes:"R119 SIGNATURE SCENE COMPOSER: six top-level chapters rendered as campaign scenes rather than reusable website sections. R118 perceptual jury remains mandatory."
+      implementation_notes:"R119 SIGNATURE SCENE COMPOSER V2: eight evidence-led chapters. Generic people/stock positioning imagery is excluded; materials, rebar, operational proof, official identity and verified partnership drive the narrative. R118 perceptual jury remains mandatory."
     },
     strategy:R119_SCENE_COMPOSER_STANDARD
   };
@@ -259,17 +284,18 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
   const styles=String(css||"");
   const issues=[];
   const ids=[...main.matchAll(/<section\b[^>]*\bid=["']([^"']+)["'][^>]*>/gi)].map(m=>m[1]);
-  const expected=["hero","positioning","services","trust","bridge","final-cta"];
+  const expected=["hero","positioning","materials","services","trust","partners","bridge","final-cta"];
   if(JSON.stringify(ids)!==JSON.stringify(expected)) issues.push("R119_SCENE_ORDER_REQUIRED");
   const sceneCount=(main.match(/\bdata-r119-scene=["']true["']/gi)||[]).length;
-  if(sceneCount!==6) issues.push("R119_SIX_CAMPAIGN_SCENES_REQUIRED:"+sceneCount+"/6");
+  if(sceneCount!==8) issues.push("R119_EIGHT_CAMPAIGN_SCENES_REQUIRED:"+sceneCount+"/8");
   if((main.match(/\bixg-shell\b/gi)||[]).length>0) issues.push("R119_CENTERED_SHELL_CADENCE_FORBIDDEN");
   if((main.match(/\bixg-section-head\b/gi)||[]).length>0) issues.push("R119_GENERIC_SECTION_HEADER_FORBIDDEN");
   if((main.match(/\bdata-wow-moment=["']true["']/gi)||[]).length<4) issues.push("R119_FOUR_WOW_SCENES_REQUIRED");
-  if(!/\br119-matter__portrait\b/i.test(main) || !/\br119-rebar__media\b/i.test(main) || !/\br119-proof__media\b/i.test(main)) {
+  if(!/\br119-materials__media\b/i.test(main) || !/\br119-rebar__media\b/i.test(main) || !/\br119-positioning__identity\b/i.test(main)) {
     issues.push("R119_DISTINCT_IMAGE_ARCHITECTURES_REQUIRED");
   }
   const trust=main.match(/<section\b[^>]*\bid=["']trust["'][^>]*>[\s\S]*?<\/section>/i)?.[0]||"";
+  const partners=main.match(/<section\b[^>]*\bid=["']partners["'][^>]*>[\s\S]*?<\/section>/i)?.[0]||"";
   if((trust.match(/data-trust-reason=/gi)||[]).length<3) issues.push("R119_PROOF_WALL_THREE_FACTS_REQUIRED");
   if(Object.keys(manifests?.assets||{}).includes("PARTNER_UPOWER_LOGO") && !trust.includes("{{asset:PARTNER_UPOWER_LOGO}}")) {
     issues.push("R119_VERIFIED_PARTNER_IN_PROOF_SCENE_REQUIRED");
