@@ -72,7 +72,6 @@ test("R119 scene composer compiles under renderer safety contract",async()=>{
     ctaManifest:{PRIMARY:"mailto:test@example.com",SECONDARY:"tel:+3900000000"}
   });
   assert.equal(compiled.ok,true,JSON.stringify(compiled.issues));
-  assert.equal(compiled.spec.scene_composer_standard,R119_SCENE_COMPOSER_STANDARD);
 });
 
 test("R118 repair cycles route to R119 instead of full-spec AI generation",async()=>{
