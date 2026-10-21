@@ -19,3 +19,12 @@ test("client preview renders full desktop followed by narrow mobile",()=>{
   assert.ok(html.indexOf('/desktop.jpg') < html.indexOf('Versione mobile'));
   assert.ok(html.indexOf('Versione mobile') < html.indexOf('/mobile.jpg'));
 });
+
+
+test("R118 preview publishing requires real perceptual visual PASS",()=>{
+  const source=fs.readFileSync(new URL("../src/render-preview.js",import.meta.url),"utf8");
+  assert.match(source,/R118_PERCEPTUAL_JURY_V1/);
+  assert.match(source,/q\.qa_type='VARIANT_VISUAL'/);
+  assert.match(source,/q\.status='PASS'/);
+  assert.doesNotMatch(source,/r\.revision=v\.certified_revision/);
+});
