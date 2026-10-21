@@ -450,6 +450,8 @@ export default {
         delivery_mode:"SINGLE_CONCEPT",
         delivery_variants_per_pack:1,
         r119_fast_generative_reset:"R119_FAST_GENERATIVE_RESET_V3_CANONICAL_QA_IDEMPOTENCY",
+        pilot_parent_kick_contract:"PILOT_PARENT_KICK_V1",
+        verified_asset_pack_continuity:"VERIFIED_ASSET_PACK_CONTINUITY_V1",
         r106_policy_contract_ok:true,
         r116_verified_editorial_patch:"R116_VERIFIED_EDITORIAL_V1",
         master_auto_approve:false,
