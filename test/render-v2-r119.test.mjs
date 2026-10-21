@@ -88,3 +88,21 @@ test("R119 hero exposes canonical browser-gate hooks",()=>{
   assert.match(built.spec.main_html,/class="r119-lede ixg-lede"/);
   assert.match(built.spec.main_html,/class="r119-actions ixg-actions"/);
 });
+
+
+test("R119 perceptual fixes remove placeholder geometry and overlap risks",()=>{
+  const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
+  const html=built.spec.main_html;
+  const css=built.spec.custom_css;
+  assert.doesNotMatch(html,/r119-hero__rail/);
+  assert.doesNotMatch(html,/r119-rebar__engineering/);
+  assert.doesNotMatch(html,/r119-close__rail/);
+  assert.equal((html.match(/\{\{copy:SERVICE_1_TITLE\}\}/g)||[]).length,1);
+  assert.match(css,/font-size:clamp\(76px,8\.6vw,148px\)/);
+  assert.match(css,/\.r119-rebar\{[^}]*display:grid/);
+  assert.match(css,/\.r119-rebar__title\{position:relative/);
+  assert.match(css,/\.r119-rebar__body\{position:relative/);
+  assert.match(css,/\.r119-matter__portrait\{[^}]*min-height:980px/);
+  assert.match(css,/\.r119-matter__portrait\{order:2;min-height:56svh/);
+  assert.match(css,/\.r119-matter__material\{order:4;min-height:36svh/);
+});
