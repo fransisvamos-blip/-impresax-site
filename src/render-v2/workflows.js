@@ -751,13 +751,18 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const renderProfile=String(packMetadata.render_profile||"").trim();
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
-      const r118PerceptualJury=packMetadata.r118_perceptual_jury===true
-        || /R118_PERCEPTUAL/i.test(String(params.initialFeedback?.reason||""));
-      const r119Requested=r118PerceptualJury && (
+      const initialReason=String(params.initialFeedback?.reason||"");
+      const r119Requested=
         packMetadata.r119_scene_composer===true
         || packMetadata.r119_eight_scene_evidence===true
-        || /R119_/i.test(String(params.initialFeedback?.reason||""))
-      );
+        || /R119_/i.test(initialReason);
+      // R119 is a stricter flagship mode built on the R118 perceptual-jury pipeline.
+      // A direct R119 pilot kick must therefore inherit R118 generation, same-revision
+      // compiler repair and the two-pass visual jury even when the fresh pack metadata
+      // has not yet been stamped with r118_perceptual_jury.
+      const r118PerceptualJury=packMetadata.r118_perceptual_jury===true
+        || /R118_PERCEPTUAL/i.test(initialReason)
+        || r119Requested;
       const inputPayload=(renderProfile||logoFirstBrandProfile||pilotHeroLocked||r118PerceptualJury)
         ? {
             ...input.payload,
