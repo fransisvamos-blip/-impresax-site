@@ -972,7 +972,14 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     ],
     schema:renderSpecSchema,maxTokens:12000,temperature:qaFeedback?0.18:0.28,beforeAttempt:beforeModelAttempt,allowR118External
   });
-  return {spec:r.data,model:r.model};
+  const generatedSpec=allowR118External
+    ? {
+        ...r.data,
+        perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1",
+        implementation_notes:"R118 PERCEPTUAL REPAIR — generated from hostile screenshot jury feedback. "+String(r.data?.implementation_notes||"")
+      }
+    : r.data;
+  return {spec:generatedSpec,model:r.model};
 }
 
 const qaScores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,{type:"number",minimum:0,maximum:10}]));
@@ -1004,7 +1011,9 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
       message:`${key} scored ${score} below the required ${required} visual-quality gate.`,
       severity:"major"
     });
-    nextActions.push(`Raise ${key} from ${score} to at least ${required} with a targeted visual refinement; do not change already-passing sections.`);
+    if(!r118PerceptualJury) {
+      nextActions.push(`Raise ${key} from ${score} to at least ${required} with a targeted visual refinement; do not change already-passing sections.`);
+    }
     already.add(key);
   };
 
@@ -1109,6 +1118,16 @@ export function applyVisualQaScoreGates({scores={},issues=[],actions=[],logoFirs
       const score=Number(scores?.[key]??0);
       if(score<required) addGateIssue(key,score,required,"r118_perceptual_jury_below_floor");
     }
+  }
+  if(r118PerceptualJury && nextIssues.some(x=>x?.severity==="critical"||x?.severity==="major")) {
+    nextActions.length=0;
+    nextActions.push(
+      "R118 STRUCTURAL REBUILD: discard the current spatial composition as a layout reference. Preserve only verified copy, approved assets, official identity and working contact paths.",
+      "Recompose the page as 4-5 unmistakable portfolio scenes with different spatial logic, not a repeated sequence of centered sections or modules.",
+      "Create a singular DEDIL visual language from industrial material, scale, red/charcoal identity, engineered linework and construction imagery; it must not remain reusable for another industrial prospect.",
+      "Make typography, photography and negative space carry the composition. Remove decorative geometry, generic card/module behavior and safe corporate spacing.",
+      "Re-author mobile independently at 390px: recrop photography, change sequence/scale where needed and preserve the same authored moments rather than stacking desktop."
+    );
   }
 
   const min=Math.min(...QA_SCORE_KEYS.map(k=>Number(scores?.[k]??0)));
