@@ -633,7 +633,7 @@ test("R116 mobile flagship containment and overflow diagnostics stay enforced",(
 
 test("R116 pilot kick cannot route full redesign through precomputed mode or legacy Cabina copy",()=>{
   assert.match(index,/const structuralRedesign=\/STRUCTURAL_DIVERGENCE_REWORK\|FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\/i/);
-  assert.match(index,/cabina_precomputed:!structuralRedesign/);
+  assert.match(index,/cabina_precomputed:!generativeRedesign/);
   assert.match(index,/structural_redesign:structuralRedesign/);
   assert.match(index,/Rebuild the page composition under the active flagship architecture standard/);
   assert.match(workflows,/const fullFlagshipRedesign=\/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP\|R118_PERCEPTUAL\/i/);
