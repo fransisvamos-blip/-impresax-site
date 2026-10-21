@@ -28,9 +28,7 @@ export function buildR119SceneComposerSpec({
   const partnerMarkup=partner
     ? '<div class="r119-proof__partner" data-verified-partner="true"><img src="'+assetToken("PARTNER_UPOWER_LOGO")+'" alt=""><strong>'+copyToken("PARTNER_1")+'</strong></div>'
     : "";
-  const identity=hasIdentity
-    ? '<div class="r119-close__watermark" data-brand-watermark aria-hidden="true">{{identity:PRIMARY_LOGO}}</div>'
-    : "";
+  const identity="";
   const identityField=hasIdentity
     ? '<div class="r119-positioning__identity" data-brand-watermark aria-hidden="true">{{identity:PRIMARY_LOGO}}</div>'
     : "";
@@ -167,7 +165,7 @@ h1,h2,strong{text-wrap:balance}
 .r119-proof__locality{margin-top:42px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.10em;text-transform:uppercase}
 
 /* 06 — verified U-Power partnership as a gallery wall */
-.r119-partner{min-height:680px;background:#0b0c0d;color:white;display:grid;grid-template-columns:minmax(300px,.48fr) minmax(0,1.52fr);align-items:stretch}
+.r119-partner{min-height:680px;background:radial-gradient(circle at 78% 34%,rgba(185,24,24,.18),transparent 34%),linear-gradient(118deg,#0b0c0d 0%,#151719 58%,#210707 100%);color:white;display:grid;grid-template-columns:minmax(300px,.48fr) minmax(0,1.52fr);align-items:stretch}
 .r119-partner__label{padding:84px 5vw;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid rgba(255,255,255,.18)}
 .r119-partner__label>p:last-child{max-width:26ch;font-size:17px;line-height:1.55}
 .r119-partner .r119-proof__partner{margin:0;padding:84px clamp(54px,8vw,140px);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:48px;background:linear-gradient(125deg,#131516,#090a0b 64%,#280707)}
