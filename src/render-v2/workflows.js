@@ -1080,9 +1080,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         );
         await updateRevision(sql,revision.id,{status:"QA_FAILED",renderSpec:generated.spec});
         const deterministicCompileFailure=
-          context.r107Retrofit===true
-          || context.packMetadata?.structural_divergence_rework_required===true
-          || (EXTERNAL_AI_CALLS_ALLOWED!==true && generated?.deterministic===true);
+          context.r118PerceptualJury!==true
+          && (
+            context.r107Retrofit===true
+            || context.packMetadata?.structural_divergence_rework_required===true
+            || (EXTERNAL_AI_CALLS_ALLOWED!==true && generated?.deterministic===true)
+          );
         if(deterministicCompileFailure) {
           await step.do("r"+cycle+"-deterministic-compile-escalation",async()=>{
             await setVariantStatus(sql,params.variantId,{status:"ESCALATION_REQUIRED"});
@@ -1102,16 +1105,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         }
         feedback={
           issues:compiled.issues,
-          actions:[
-            "Preserve the approved visual direction but rebuild the failing markup/CSS to satisfy the RenderSpec contract.",
-            "Never reference PRIMARY_LOGO inside main_html; the deterministic compiler owns official identity.",
-            "Replace every literal visible string or decorative number with an allowed copy token or remove it.",
-            "Remove CSS content:, url(), @import and any external/network construct.",
-            "Return 6-10 substantial sections, complete desktop/mobile CSS, and only declared tokens."
-          ],
-          reason:"COMPILER_CONTRACT"
+          actions:context.r118PerceptualJury===true
+            ? [
+                "R118 COMPILER REPAIR: keep the new creative thesis, but rebuild the RenderSpec so every compiler issue is resolved before capture.",
+                "Use 8-10 substantial section elements while composing them visually as 4-5 larger portfolio scenes; hero first and final-cta last.",
+                "Include at least two data-section-role=\"editorial-feature\" scenes and distribute at least three distinct approved section image assets.",
+                "Mark every non-hero section data-surface=\"art-directed\" and art-direct .ix-v2-header, .ix-v2-nav and .ix-v2-footer in custom_css.",
+                "Never surface revenue/headcount registry facts as homepage trust proof. Use only permitted verified operational/partner/service proof.",
+                "Preserve token safety: no literal visible copy, no unapproved assets, no CSS url()/content:/@import."
+              ]
+            : [
+                "Preserve the approved visual direction but rebuild the failing markup/CSS to satisfy the RenderSpec contract.",
+                "Never reference PRIMARY_LOGO inside main_html; the deterministic compiler owns official identity.",
+                "Replace every literal visible string or decorative number with an allowed copy token or remove it.",
+                "Remove CSS content:, url(), @import and any external/network construct.",
+                "Return 6-10 substantial sections, complete desktop/mobile CSS, and only declared tokens."
+              ],
+          reason:context.r118PerceptualJury===true?"R118_COMPILER_REPAIR":"COMPILER_CONTRACT"
         };
-        if(fail.change_strategy) break;
+        if(fail.change_strategy && context.r118PerceptualJury!==true) break;
         continue;
       }
 
