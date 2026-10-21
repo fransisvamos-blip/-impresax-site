@@ -234,12 +234,13 @@ export function renderPreviewDocument(preview) {
     +'<style>html,body{margin:0;padding:0;background:#ecece8;color:#111;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}'
     +'main{width:100%;overflow:hidden}.desktop{width:100%;display:flex;justify-content:center;background:#fff}'
     +'.desktop img{display:block;width:1440px;max-width:100%;height:auto}'
-    +'.mobile{display:flex;justify-content:center;padding:56px 16px 80px;box-sizing:border-box}'
+    +'.mobile-label{padding:54px 16px 22px;text-align:center;font-size:clamp(22px,2.2vw,34px);font-weight:700;letter-spacing:-.02em;background:#ecece8}'
+    +'.mobile{display:flex;justify-content:center;padding:0 16px 80px;box-sizing:border-box}'
     +'.mobile img{display:block;width:390px;max-width:86vw;height:auto;box-shadow:0 18px 60px rgba(0,0,0,.12)}'
     +'.mark{position:fixed;right:12px;bottom:12px;z-index:10;padding:7px 10px;border-radius:999px;background:rgba(17,17,17,.82);color:#fff;font:500 10px/1.2 system-ui;letter-spacing:.02em;backdrop-filter:blur(8px)}'
-    +'@media(max-width:600px){.mobile{padding:36px 12px 56px}.mobile img{max-width:88vw}.mark{font-size:9px}}</style></head>'
+    +'@media(max-width:600px){.mobile-label{padding:36px 12px 18px;font-size:24px}.mobile{padding:0 12px 56px}.mobile img{max-width:88vw}.mark{font-size:9px}}</style></head>'
     +'<body><main><section class="desktop" aria-label="Anteprima desktop"><img src="/desktop.jpg" alt="Anteprima desktop '+name+'"></section>'
-    +'<section class="mobile" aria-label="Anteprima mobile"><img src="/mobile.jpg" alt="Anteprima mobile '+name+'"></section></main>'
+    +'<div class="mobile-label">Versione mobile</div><section class="mobile" aria-label="Anteprima mobile"><img src="/mobile.jpg" alt="Anteprima mobile '+name+'"></section></main>'
     +'<div class="mark">Anteprima · ImpresaX</div></body></html>';
 }
 
