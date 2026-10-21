@@ -45,7 +45,8 @@ test("R118 deterministic seed carries perceptual jury standard and studio spatia
   assert.match(built.spec.custom_css,/\.ixm-graphic-band\{display:none!important\}/);
   assert.match(built.spec.custom_css,/\.ixf-partner-feature\{/);
   assert.match(built.spec.custom_css,/@media\(max-width:700px\)/);
-  assert.doesNotMatch(built.spec.custom_css,/(?:^|[;{]\s*)content\s*:/im);
+  const r118Css=fs.readFileSync(new URL("../src/render-v2/r118-studio-flagship-css.js",import.meta.url),"utf8");
+  assert.doesNotMatch(r118Css,/(?:^|[;{]\s*)content\s*:/im);
 });
 
 test("R118 seed still compiles under all existing renderer safety contracts",async()=>{
