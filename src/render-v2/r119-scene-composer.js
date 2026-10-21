@@ -122,8 +122,8 @@ h1,h2,strong{text-wrap:balance}
 .r119-hero__media{position:absolute;inset:0;margin:0}
 .r119-hero__media img{width:100%;height:100%;object-fit:cover;object-position:64% 48%;filter:saturate(.48) contrast(1.24) brightness(.72);transform:scale(1.035)}
 .r119-hero__veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,5,6,.97) 0%,rgba(4,5,6,.88) 24%,rgba(4,5,6,.36) 58%,rgba(4,5,6,.04) 82%),linear-gradient(180deg,rgba(0,0,0,.06),transparent 54%,rgba(0,0,0,.72))}
-.r119-hero__copy{position:absolute;left:5vw;bottom:7vh;z-index:2;width:min(900px,66vw);padding-top:34px;border-top:1px solid rgba(255,255,255,.42)}
-.r119-hero__copy h1{margin:14px 0 26px;font-family:var(--ix-display-font);font-size:clamp(76px,8.6vw,148px);line-height:.82;letter-spacing:-.068em;max-width:8.3ch}
+.r119-hero__copy{position:absolute;left:5vw;bottom:5.5vh;z-index:2;width:min(1040px,72vw);padding-top:28px;border-top:1px solid rgba(255,255,255,.42)}
+.r119-hero__copy h1{margin:14px 0 24px;font-family:var(--ix-display-font);font-size:clamp(64px,7.2vw,122px);line-height:.88;letter-spacing:-.058em;max-width:10.5ch}
 .r119-lede{max-width:40ch;font-size:clamp(16px,1.08vw,19px);line-height:1.55;margin:0 0 30px}
 
 /* 02 — official identity as spatial architecture */
@@ -194,8 +194,8 @@ h1,h2,strong{text-wrap:balance}
   .ix-v2-footer-grid{grid-template-columns:1fr!important;gap:36px!important}
   .r119-btn{width:100%;min-height:54px;padding:0 18px}
   .r119-hero{min-height:94svh}
-  .r119-hero__copy{left:18px;right:18px;bottom:28px;width:auto}
-  .r119-hero__copy h1{font-size:clamp(50px,14.8vw,72px);line-height:.82;max-width:7.7ch;margin:12px 0 20px}
+  .r119-hero__copy{left:18px;right:18px;bottom:24px;width:auto;padding-top:20px}
+  .r119-hero__copy h1{font-size:clamp(44px,12.2vw,60px);line-height:.9;letter-spacing:-.046em;max-width:9.4ch;margin:10px 0 18px}
   .r119-lede{font-size:15px;max-width:30ch;margin-bottom:24px}
   .r119-actions{display:grid;grid-template-columns:1fr}
 
@@ -271,7 +271,7 @@ h1,h2,strong{text-wrap:balance}
       hero_copy_space:"Dark directional veil with oversized copy anchored to the lower-left field.",
       hero_mobile_crop_strategy:"Native 390px recut with bottom-anchored copy and independent scale.",
       hero_relevance_score:10,
-      implementation_notes:"R119 SIGNATURE SCENE COMPOSER V2: eight evidence-led chapters. Generic people/stock positioning imagery is excluded; materials, rebar, operational proof, official identity and verified partnership drive the narrative. R118 perceptual jury remains mandatory."
+      implementation_notes:"R119 SIGNATURE SCENE COMPOSER V3 FAST FLAGSHIP: eight evidence-led chapters with a clipping-safe campaign hero. Generic people/stock positioning imagery is excluded; materials, rebar, operational proof, official identity and verified partnership drive the narrative. If the perceptual jury fails, the workflow performs one generative hard reset rather than replaying this deterministic composition."
     },
     strategy:R119_SCENE_COMPOSER_STANDARD
   };
