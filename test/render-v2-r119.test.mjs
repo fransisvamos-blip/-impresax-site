@@ -148,9 +148,9 @@ test("R119 perceptual fixes remove placeholder geometry and stock-scene dependen
   assert.match(css,/\.r119-rebar\{[^}]*display:grid/);
   assert.match(css,/\.r119-rebar__title\{position:relative/);
   assert.match(css,/\.r119-rebar__body\{position:relative/);
-  assert.match(css,/\.r119-materials__media\{[^}]*min-height:980px/);
-  assert.match(css,/\.r119-materials__media\{order:1;min-height:62svh/);
-  assert.match(css,/\.r119-partner\{min-height:680px/);
+  assert.match(css,/\.r119-materials__media\{[^}]*min-height:820px/);
+  assert.match(css,/\.r119-materials__media\{order:1;min-height:52svh/);
+  assert.match(css,/\.r119-partner\{min-height:600px/);
 });
 
 
