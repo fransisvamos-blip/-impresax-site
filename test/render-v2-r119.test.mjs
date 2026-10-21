@@ -64,7 +64,7 @@ test("R119 jury-reset composer densifies proof, uses positioning media and chang
   assert.match(built.spec.main_html,/data-partner-verification="verified-only"/);
   assert.match(built.spec.custom_css,/\.r119-hero\.r119-jury-reset/);
   assert.match(built.spec.custom_css,/\.r119-materials\.r119-jury-reset/);
-  assert.match(built.spec.custom_css,/Scene mode: jury-reset/);
+  assert.match(built.spec.implementation_notes,/Scene mode: jury-reset/);
 });
 
 test("R119 scene composer contract has no deterministic violations",()=>{
