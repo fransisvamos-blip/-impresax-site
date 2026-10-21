@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          instance="rv2-$PACK_ID-A-dedil-r118-perceptual-v1"
+          instance="rv2-$PACK_ID-A-dedil-r118-perceptual-v2"
           for i in {1..36}; do
             body=$(curl -fsS "$V2_URL/shadow/workflow/$instance" || true)
             echo "poll=$i $body"
