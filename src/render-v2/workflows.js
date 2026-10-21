@@ -1534,6 +1534,41 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       });
       previewEmitted=true;
 
+      const pilotHumanReviewAfterPreview=context.packMetadata?.pilot_human_review_after_preview===true;
+      if(pilotHumanReviewAfterPreview) {
+        await step.do("r"+cycle+"-pilot-human-review-ready",async()=>{
+          if(VARIANT_KEYS.length===1) {
+            await setPackStatus(sql,params.packId,"PREVIEW_READY",{
+              cabina_visual_review_hold:true,
+              pilot_human_review_after_preview:true,
+              master_auto_approve:false
+            });
+          }
+          await updateWorkflow(sql,event.instanceId,{
+            status:"COMPLETED",
+            currentStep:"CABINA_VISUAL_REVIEW",
+            attempt:cycle,
+            errorCode:null,
+            metadata:{
+              pilot_human_review_after_preview:true,
+              cabina_visual_review_required:true,
+              revision:revision.revision,
+              desktop_r2_key:captured.desktop.r2_key,
+              mobile_r2_key:captured.mobile.r2_key
+            }
+          });
+          return {ok:true};
+        });
+        return {
+          status:"PREVIEW_READY",
+          variant:params.variantKey,
+          revision:revision.revision,
+          revision_id:revision.id,
+          pilot_human_review_after_preview:true,
+          cabina_visual_review_required:true
+        };
+      }
+
       const structuralZeroAiReview=
         context.r118PerceptualJury!==true
         && EXTERNAL_AI_CALLS_ALLOWED!==true
