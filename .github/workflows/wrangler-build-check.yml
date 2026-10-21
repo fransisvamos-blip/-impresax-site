@@ -9,6 +9,7 @@ on:
       - "public/tenants/**"
       - "wrangler.jsonc"
       - "package.json"
+      - "test/render-preview.test.mjs"
 
 jobs:
   build:
@@ -20,5 +21,7 @@ jobs:
         with:
           node-version: "22"
       - run: npm install
+      - name: Render preview tests
+        run: node --test test/render-preview.test.mjs
       - name: Wrangler dry run
         run: npx wrangler deploy --dry-run
