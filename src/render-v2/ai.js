@@ -187,7 +187,11 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
   const fastR118Qa=qaRole && allowR118External===true;
-  const plan=fastR118Qa
+  const fastR118Generation=!qaRole && allowR118External===true;
+  // R118/R119 generation gets one authored pass. If the provider returns useful
+  // content with a schema defect, normalize that SAME output instead of paying
+  // for a second full-page generation on another model.
+  const plan=(fastR118Qa||fastR118Generation)
     ? [{fallback:false,retry:0}]
     : [{fallback:false,retry:0},{fallback:true,retry:0}];
 
@@ -221,7 +225,9 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       try {
         return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
       } catch(parseError) {
-        if(!qaRole || String(parseError?.message||parseError)!=="AI_OUTPUT_SCHEMA_INVALID") throw parseError;
+        const schemaInvalid=String(parseError?.message||parseError)==="AI_OUTPUT_SCHEMA_INVALID";
+        const canNormalize=schemaInvalid && (qaRole || fastR118Generation);
+        if(!canNormalize) throw parseError;
         const raw=collectRawText(result);
         if(!raw) throw parseError;
 
@@ -232,22 +238,26 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
           fallback:true,
           retry:0
         });
+        const generationNormalizer=fastR118Generation && !qaRole;
         const fixerInference={
           messages:[
             {
               role:"system",
-              content:"Convert the supplied reviewer output into exactly one JSON object matching the provided JSON Schema. Preserve the reviewer's factual judgments, scores, issues and actions. Do NOT perform a new visual review. Do NOT add claims that are absent from the supplied reviewer output. Return JSON only."
+              content:generationNormalizer
+                ?"Normalize the supplied generated homepage object into exactly one JSON object matching the provided JSON Schema. Preserve the authored HTML, CSS, token usage, section order and factual content whenever they are valid. Fix schema shape/types/missing required fields only. Do NOT redesign, summarize, shorten into a draft, invent facts, add assets, or add prose outside JSON."
+                :"Convert the supplied reviewer output into exactly one JSON object matching the provided JSON Schema. Preserve the reviewer's factual judgments, scores, issues and actions. Do NOT perform a new visual review. Do NOT add claims that are absent from the supplied reviewer output. Return JSON only."
             },
             {
               role:"user",
-              content:"JSON SCHEMA:\n"+JSON.stringify(schema)+"\n\nRAW REVIEWER OUTPUT:\n"+raw
+              content:"JSON SCHEMA:\n"+JSON.stringify(schema)+"\n\nRAW OUTPUT:\n"+raw
             }
           ],
           response_format:{type:"json_schema",json_schema:schema},
           temperature:0
         };
-        if(/llama-3\.3-70b-instruct-fp8-fast/i.test(fixerModel)) fixerInference.max_tokens=Math.min(maxTokens,5000);
-        else fixerInference.max_completion_tokens=Math.min(maxTokens,5000);
+        const fixerTokenCap=generationNormalizer?Math.min(maxTokens,9000):Math.min(maxTokens,5000);
+        if(/llama-3\.3-70b-instruct-fp8-fast/i.test(fixerModel)) fixerInference.max_tokens=fixerTokenCap;
+        else fixerInference.max_completion_tokens=fixerTokenCap;
         const fixerTimeoutMs=Math.max(30000,Math.min(120000,Number(env.V2_AI_FIXER_TIMEOUT_MS||75000)));
         const fixed=await withAiDeadline(env.AI.run(fixerModel,fixerInference,runOptions),fixerTimeoutMs,role+"_schema_normalizer:"+fixerModel);
         return {
@@ -901,7 +911,7 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     zeroPhoto?"- HERO CONTRACT VIOLATION: HERO_VISUAL is missing. A render without a real hero image is not certifiable; do not fake a placeholder.":"",
     "",
     "HTML CONTRACT:",
-    allowR118External?"- R118/R119 FLAGSHIP OUTPUT FLOOR: main_html must contain at least 5000 characters of real authored markup and custom_css at least 6500 characters of real art direction. Do not pad with comments, repeated selectors or filler.":"",
+    allowR118External?"- R118/R119 FLAGSHIP OUTPUT FLOOR: main_html must contain at least 5000 characters of real authored markup and custom_css at least 6500 characters of real art direction. Do not pad with comments, repeated selectors or filler. Keep main_html concise enough to stay roughly within 5k-14k characters and custom_css roughly within 6.5k-22k characters; prefer precise reusable selectors over repetitive CSS.":"",
     allowR118External?"- R118/R119 BLUEPRINT CONTRACT: section_blueprint MUST equal the actual top-level section id sequence exactly. home_depth_standard MUST be R111_15K_HOME_DEPTH_ARCHITECTURE_V1 and section_substance_standard MUST be R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1.":"",
     "- main_html is the CONTENT INSIDE <main>; NEVER output <main>, <html>, <head>, <body>, <header> or <footer> tags.",
     "- R111 HOME DEPTH: use 8-12 substantial <section> blocks and ALWAYS include these exact ids: hero, positioning, services, trust, bridge, final-cta.",
