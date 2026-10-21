@@ -14,5 +14,7 @@ test("client preview renders full desktop followed by narrow mobile",()=>{
   assert.match(html,/src="\/mobile\.jpg"/);
   assert.match(html,/width:1440px/);
   assert.match(html,/width:390px/);
-  assert.ok(html.indexOf('/desktop.jpg') < html.indexOf('/mobile.jpg'));
+  assert.match(html,/Versione mobile/);
+  assert.ok(html.indexOf('/desktop.jpg') < html.indexOf('Versione mobile'));
+  assert.ok(html.indexOf('Versione mobile') < html.indexOf('/mobile.jpg'));
 });
