@@ -156,3 +156,10 @@ test("all R118 perceptual relaunch reasons stay inside real jury mode",()=>{
   assert.match(index,/r118_perceptual_jury:true/);
   assert.match(index,/perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"/);
 });
+
+
+test("cached visual QA remains under R118 perceptual gates",()=>{
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/r118PerceptualJury:policy\.r118PerceptualJury/);
+  assert.match(workflows,/Artifact-identical QA reused from the canonical first review/);
+});
