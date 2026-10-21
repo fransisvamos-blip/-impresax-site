@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, R118_EXTERNAL_GENERATION_ALLOWED, R118_EXTERNAL_VISUAL_QA_ALLOWED, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES } from "./constants.js";
+import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, R118_EXTERNAL_GENERATION_ALLOWED, R118_EXTERNAL_VISUAL_QA_ALLOWED, R118_FAST_JURY_MODEL, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES } from "./constants.js";
 import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
@@ -186,12 +186,15 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
   if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true" && !r118RoleAllowed) throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
-  const plan=qaRole
-    ? [{fallback:false,retry:0},{fallback:true,retry:0}]
+  const fastR118Qa=qaRole && allowR118External===true;
+  const plan=fastR118Qa
+    ? [{fallback:false,retry:0}]
     : [{fallback:false,retry:0},{fallback:true,retry:0}];
 
   for(const attempt of plan) {
-    const model=modelFor(env,role,attempt.fallback);
+    const model=fastR118Qa
+      ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
+      : modelFor(env,role,attempt.fallback);
     if(beforeAttempt) await beforeAttempt({role,model,fallback:attempt.fallback,retry:attempt.retry});
     try {
       const retrySuffix=attempt.retry
