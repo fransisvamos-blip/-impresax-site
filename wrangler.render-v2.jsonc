@@ -7,7 +7,7 @@
   "upload_source_maps": true,
   "keep_vars": true,
   "observability": { "enabled": true },
-  "triggers": { "crons": ["*/5 * * * *"] },
+  "triggers": { "crons": ["* * * * *"] },
   "ai": { "binding": "AI" },
   "browser": { "binding": "BROWSER" },
   "r2_buckets": [
