@@ -77,7 +77,7 @@ test("R119 scene composer compiles under renderer safety contract",async()=>{
 test("R118 repair cycles route to R119 instead of full-spec AI generation",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
-  assert.match(workflows,/const r119SceneRepair=r118Mode && cycle>=2/);
+  assert.match(workflows,/const r119SceneRepair=r118Mode && \(cycle>=2 \|\| \/R119_SCENE_COMPOSER\/i\.test/);
   assert.match(workflows,/buildR119SceneComposerSpec/);
   assert.match(workflows,/r119_scene_composer:true/);
 });
