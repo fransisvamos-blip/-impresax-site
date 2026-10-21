@@ -35,7 +35,7 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"A\",\"run_key\":\"dedil-r119-evidence-v9\",\"force\":true,\"reset_budget\":true,\"reason\":\"R119_EIGHT_SCENE_EVIDENCE_V9\"}" \
+              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"A\",\"run_key\":\"dedil-r119-fast-v10\",\"force\":true,\"reset_budget\":true,\"reason\":\"R119_FAST_FLAGSHIP_V10\"}" \
               "$V2_URL/shadow/relaunch-variant" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch.json 2>/dev/null || true)"
             if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          instance="rv2-$PACK_ID-A-dedil-r119-evidence-v9"
+          instance="rv2-$PACK_ID-A-dedil-r119-fast-v10"
           for i in {1..36}; do
             body=$(curl -fsS "$V2_URL/shadow/workflow/$instance" || true)
             echo "poll=$i $body"
