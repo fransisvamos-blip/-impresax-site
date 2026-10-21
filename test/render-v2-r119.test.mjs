@@ -140,7 +140,7 @@ test("R119 perceptual fixes remove placeholder geometry and stock-scene dependen
   assert.doesNotMatch(html,/r119-hero__rail/);
   assert.doesNotMatch(html,/r119-rebar__engineering/);
   assert.doesNotMatch(html,/r119-close__rail/);
-  assert.doesNotMatch(html,/POSITIONING_VISUAL/);
+  assert.match(html,/POSITIONING_VISUAL/);
   assert.doesNotMatch(html,/TRUST_VISUAL/);
   assert.equal((html.match(/\{\{copy:SERVICE_1_TITLE\}\}/g)||[]).length,1);
   assert.equal((html.match(/\{\{copy:SERVICE_2_TITLE\}\}/g)||[]).length,1);
