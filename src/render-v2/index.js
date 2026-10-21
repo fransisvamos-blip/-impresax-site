@@ -320,7 +320,7 @@ export default {
         minimum_section_visuals:MIN_SECTION_VISUALS,
         delivery_mode:"SINGLE_CONCEPT",
         delivery_variants_per_pack:1,
-        r119_fast_generative_reset:"R119_FAST_GENERATIVE_RESET_V2_SAME_REVISION_COMPILER_REPAIR",
+        r119_fast_generative_reset:"R119_FAST_GENERATIVE_RESET_V3_CANONICAL_QA_IDEMPOTENCY",
         r106_policy_contract_ok:true,
         r116_verified_editorial_patch:"R116_VERIFIED_EDITORIAL_V1",
         master_auto_approve:false,
