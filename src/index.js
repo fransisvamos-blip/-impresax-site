@@ -3,12 +3,13 @@ import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 import { handlePublicRequest } from "./requests.js";
 import { runCloudflareRenderEngine } from "./render-engine.js";
+import { resolveRenderPreviewTenant, serveRenderPreview, syncRenderPreviews } from "./render-preview.js";
 
 const ROOT_HOST = "impresax.org";
 const WWW_HOST = "www.impresax.org";
 const DOMAIN_SUFFIX = ".impresax.org";
 const VALID_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-const FACTORY_VERSION = "autonomous-site-factory-v1+pilot-001-reference-v4";
+const FACTORY_VERSION = "autonomous-site-factory-v1+pilot-001-reference-v4+render-preview-v1";
 
 export default {
   async fetch(request, env, ctx) {
@@ -82,17 +83,27 @@ export default {
 
     const tenant = await resolveTenant(env, slug);
 
-    // Unknown, archived or not-yet-approved tenants never expose internal data.
-    if (!tenant || !isPublicTenant(tenant)) {
-      return redirectToRoot("tenant-not-found");
+    // A real built/approved tenant always wins over the temporary render preview.
+    if (tenant && isPublicTenant(tenant)) {
+      return serveTenant(request, env, tenant);
     }
 
-    return serveTenant(request, env, tenant);
+    const renderPreview = await resolveRenderPreviewTenant(env, slug);
+    if (renderPreview) {
+      return serveRenderPreview(request, env, renderPreview);
+    }
+
+    return redirectToRoot("tenant-not-found");
   },
 
   async scheduled(_controller, env, ctx) {
     ctx.waitUntil((async () => {
       await runCloudflareRenderEngine(env);
+      try {
+        await syncRenderPreviews(env);
+      } catch (error) {
+        console.error("RENDER_PREVIEW_SYNC_FAILED", error?.message || String(error));
+      }
       await runOrchestrator(env, "cloudflare-cron");
     })());
   },
