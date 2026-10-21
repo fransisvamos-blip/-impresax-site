@@ -23,6 +23,8 @@ const copy={
   TRUST_2:"Presenza operativa a Catanzaro",
   TRUST_3:"Specializzazione B2B verificata",
   PARTNER_1:"Rivenditore autorizzato U-Power",
+  PARTNER_SECTION_TITLE:"U-Power",
+  PARTNER_SECTION_INTRO:"Rivenditore autorizzato verificato.",
   BRIDGE_TITLE:"Contatto diretto",
   BRIDGE_BODY:"Catanzaro",
   CLOSING_TITLE:"Costruiamo il prossimo progetto",
@@ -35,18 +37,21 @@ const assets=[
   "SERVICE_REBAR_VISUAL","TRUST_VISUAL","PARTNER_UPOWER_LOGO"
 ];
 
-test("R119 replaces repeated section-shell cadence with six campaign scenes",()=>{
+test("R119 replaces repeated section-shell cadence with eight evidence-led campaign scenes",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
   assert.equal(built.spec.scene_composer_standard,R119_SCENE_COMPOSER_STANDARD);
-  assert.deepEqual(built.spec.section_ids,["hero","positioning","services","trust","bridge","final-cta"]);
-  assert.equal((built.spec.main_html.match(/data-r119-scene="true"/g)||[]).length,6);
+  assert.deepEqual(built.spec.section_ids,["hero","positioning","materials","services","trust","partners","bridge","final-cta"]);
+  assert.equal((built.spec.main_html.match(/data-r119-scene="true"/g)||[]).length,8);
   assert.equal((built.spec.main_html.match(/\bixg-shell\b/g)||[]).length,0);
   assert.equal((built.spec.main_html.match(/\bixg-section-head\b/g)||[]).length,0);
   assert.ok((built.spec.main_html.match(/data-wow-moment="true"/g)||[]).length>=4);
-  assert.match(built.spec.main_html,/r119-matter__portrait/);
+  assert.match(built.spec.main_html,/r119-positioning__identity/);
+  assert.match(built.spec.main_html,/r119-materials__media/);
   assert.match(built.spec.main_html,/r119-rebar__media/);
+  assert.match(built.spec.main_html,/id="partners"/);
   assert.match(built.spec.main_html,/r119-proof__partner/);
-  assert.match(built.spec.custom_css,/\.r119-matter\{/);
+  assert.match(built.spec.custom_css,/\.r119-positioning\{/);
+  assert.match(built.spec.custom_css,/\.r119-materials\{/);
   assert.match(built.spec.custom_css,/\.r119-rebar\{/);
   assert.match(built.spec.custom_css,/@media\(max-width:700px\)/);
 });
@@ -90,19 +95,34 @@ test("R119 hero exposes canonical browser-gate hooks",()=>{
 });
 
 
-test("R119 perceptual fixes remove placeholder geometry and overlap risks",()=>{
+test("R119 perceptual fixes remove placeholder geometry and stock-scene dependence",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
   const html=built.spec.main_html;
   const css=built.spec.custom_css;
   assert.doesNotMatch(html,/r119-hero__rail/);
   assert.doesNotMatch(html,/r119-rebar__engineering/);
   assert.doesNotMatch(html,/r119-close__rail/);
+  assert.doesNotMatch(html,/POSITIONING_VISUAL/);
+  assert.doesNotMatch(html,/TRUST_VISUAL/);
   assert.equal((html.match(/\{\{copy:SERVICE_1_TITLE\}\}/g)||[]).length,1);
+  assert.equal((html.match(/\{\{copy:SERVICE_2_TITLE\}\}/g)||[]).length,1);
   assert.match(css,/font-size:clamp\(76px,8\.6vw,148px\)/);
   assert.match(css,/\.r119-rebar\{[^}]*display:grid/);
   assert.match(css,/\.r119-rebar__title\{position:relative/);
   assert.match(css,/\.r119-rebar__body\{position:relative/);
-  assert.match(css,/\.r119-matter__portrait\{[^}]*min-height:980px/);
-  assert.match(css,/\.r119-matter__portrait\{order:2;min-height:56svh/);
-  assert.match(css,/\.r119-matter__material\{order:4;min-height:36svh/);
+  assert.match(css,/\.r119-materials__media\{[^}]*min-height:980px/);
+  assert.match(css,/\.r119-materials__media\{order:1;min-height:62svh/);
+  assert.match(css,/\.r119-partner\{min-height:680px/);
+});
+
+
+test("R119 workflow strips economic vanity metrics and binds a material hero",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/const r119EvidenceNarrative=r118PerceptualJury/);
+  assert.match(workflows,/copyManifest\.TRUST_1=.*Distribuzione B2B/);
+  assert.match(workflows,/copyManifest\.TRUST_2=.*Lavorazione del tondo/);
+  assert.match(workflows,/copyManifest\.TRUST_3=city/);
+  assert.match(workflows,/R119_VERIFIED_REBAR_MATERIAL_HERO/);
+  assert.match(workflows,/context\.assets\?\.SERVICE_REBAR_VISUAL/);
 });
