@@ -1008,7 +1008,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           const zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true
             && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"
             && !r118Mode;
-          const r119SeedPass=r119Mode && cycle===1;
+          const r119GenerativeFirstPass=r119Mode && cycle===1
+            && /R119_.*GENERATIVE|R119_GENERATIVE/i.test(String(params.initialFeedback?.reason||""));
+          const r119SeedPass=r119Mode && cycle===1 && !r119GenerativeFirstPass;
           const r118FirstPass=r118Mode && cycle===1 && !r119Mode;
           const legacyDeterministic=!r118Mode && (contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))));
           if(r119SeedPass) {
@@ -1122,12 +1124,80 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         Object.keys(context.assets).filter(k=>k!=="PRIMARY_LOGO").map(k=>[k,"asset://"+k])
       );
       const logoToken=context.assets.PRIMARY_LOGO?"identity://PRIMARY_LOGO":null;
-      const compiled=await step.do("r"+cycle+"-compile",async()=>{
+      let compiled=await step.do("r"+cycle+"-compile",async()=>{
         return compileRenderSpec(generated.spec,{
           businessName:context.inputPayload.business_name,logoToken,
           copyManifest:context.copyManifest,assetManifest,ctaManifest:context.ctaManifest
         });
       });
+
+      if(!compiled.ok && context.r118PerceptualJury===true) {
+        const initialCompileIssues=[...(compiled.issues||[])];
+        try {
+          const repaired=await step.do("r"+cycle+"-compiler-repair-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+            return generateRenderSpec(this.env,{
+              inputPayload:context.inputPayload,
+              direction:context.direction,
+              variantKey:params.variantKey,
+              copyManifest:context.copyManifest,
+              assetTokens:context.editorialAssetTokens,
+              qaFeedback:{
+                reason:"R118_COMPILER_REPAIR",
+                summary:"The new creative thesis is valid but the RenderSpec failed the deterministic compiler. Repair contract compliance inside this SAME revision; do not revert to a prior layout.",
+                issues:initialCompileIssues.map((message,index)=>({
+                  code:"compiler_"+(index+1),
+                  severity:"major",
+                  target:"render_spec",
+                  message:String(message).slice(0,260)
+                })),
+                actions:[
+                  "Keep the authored visual thesis and prospect-specific narrative; repair only structural contract violations.",
+                  "Return 8-10 ACTUAL top-level <section> elements and make section_ids match those elements one-to-one.",
+                  "Use hero first and final-cta last; include positioning, services, trust and bridge as semantic anchors plus at least two editorial-feature scenes.",
+                  "Mark every non-hero top-level section data-surface=\"art-directed\" and include explicit art direction for .ix-v2-header, .ix-v2-nav and .ix-v2-footer.",
+                  "Distribute at least three distinct approved section image assets; never count inner service/trust modules as top-level sections.",
+                  "Do not invent testimonials, certifications, revenue, headcount or unverified trust claims."
+                ]
+              },
+              previousSpec:generated.spec,
+              allowR118External:true,
+              beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_COMPILER_REPAIR:"+model,revision.id,{allowR118External:true})
+            });
+          });
+          const repairedCompiled=await step.do("r"+cycle+"-compiler-repair-compile",async()=>{
+            return compileRenderSpec(repaired.spec,{
+              businessName:context.inputPayload.business_name,logoToken,
+              copyManifest:context.copyManifest,assetManifest,ctaManifest:context.ctaManifest
+            });
+          });
+          generated=repaired;
+          previousSpec=repaired.spec;
+          compiled=repairedCompiled;
+          await updateWorkflow(sql,event.instanceId,{
+            status:"RUNNING",
+            currentStep:compiled.ok?"COMPILER_REPAIR_PASS":"COMPILER_REPAIR_FAILED",
+            errorCode:null,
+            metadata:{
+              compiler_repair_same_revision:true,
+              compiler_repair_revision:revision.revision,
+              compiler_repair_ok:compiled.ok,
+              compiler_repair_initial_issue_count:initialCompileIssues.length,
+              compiler_repair_remaining_issue_count:(compiled.issues||[]).length
+            }
+          });
+        } catch(error) {
+          await updateWorkflow(sql,event.instanceId,{
+            status:"RUNNING",
+            currentStep:"COMPILER_REPAIR_PROVIDER_FAILED",
+            errorCode:null,
+            metadata:{
+              compiler_repair_same_revision:true,
+              compiler_repair_revision:revision.revision,
+              compiler_repair_error:String(error?.message||error).slice(0,1200)
+            }
+          });
+        }
+      }
 
       if(!compiled.ok) {
         const msg="RENDER_SPEC_COMPILE_FAILED:"+compiled.issues.join("|");
