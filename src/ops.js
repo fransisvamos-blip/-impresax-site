@@ -445,11 +445,13 @@ async function renderV2AssetResponse(sql, env, revisionId, mode) {
   const rows=await sql`select r.id,r.status,r.desktop_r2_key,r.mobile_r2_key,
       a.mime
     from render_variant_revisions r
+    join render_v2_variants v on v.id=r.variant_id
     left join render_artifacts_v2 a
       on a.variant_revision_id=r.id
      and a.r2_key=case when ${mode}='desktop' then r.desktop_r2_key else r.mobile_r2_key end
     where r.id=${revisionId}::uuid
-      and r.status='RENDER_READY'
+      and r.status in ('PREVIEW_READY','RENDER_READY')
+      and (v.certified_revision=r.revision or v.best_preview_revision=r.revision)
     limit 1`;
   const row=rows[0];
   if (!row) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
@@ -551,10 +553,11 @@ async function prospectDetail(sql, id) {
         from render_v2_variants v
         join render_v2_packs rp on rp.id=v.render_pack_id
         join render_variant_revisions r
-          on r.variant_id=v.id and r.revision=v.certified_revision
+          on r.variant_id=v.id and r.revision=coalesce(v.certified_revision,v.best_preview_revision)
         where rp.prospect_id=${id}::uuid
           and v.variant_key in ('A','B','C')
-          and v.certified_revision is not null
+          and coalesce(v.certified_revision,v.best_preview_revision) is not null
+          and r.status in ('PREVIEW_READY','RENDER_READY')
         order by rp.created_at desc,v.variant_key asc`,
     sql`select ra.* from render_assets ra join render_packs rp on rp.id=ra.render_pack_id
         where rp.prospect_id=${id}::uuid order by ra.created_at desc`,
