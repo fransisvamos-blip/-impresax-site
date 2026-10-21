@@ -35,13 +35,13 @@ jobs:
             code=$(curl -sS -o /tmp/relaunch.json -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H "Content-Type: application/json" \
-              --data "{\"pack_id\":\"$PACK_ID\",\"run_key\":\"grammar-v12\"}" \
-              "$V2_URL/shadow/relaunch-variants" || true)
+              --data "{\"pack_id\":\"$PACK_ID\",\"variant_key\":\"A\",\"run_key\":\"r117-authored-15k-v1\",\"force\":true,\"reset_budget\":true,\"reason\":\"R117_AUTHORED_FLAGSHIP_UPGRADE\"}" \\
+              "$V2_URL/shadow/relaunch-variant" || true)
             echo "attempt=$i code=$code body=$(cat /tmp/relaunch.json 2>/dev/null || true)"
             if [ "$code" = "202" ] || [ "$code" = "200" ]; then ok=1; break; fi
             sleep 4
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/relaunch.json >/dev/null
-          jq -e '.variant_key == "A" and (.launched // true)' /tmp/relaunch.json >/dev/null || true
+          jq -e '.ok == true and .variant_key == "A" and .workflow_instance_id != null' /tmp/relaunch.json >/dev/null
           echo "DEDIL A relaunched exclusively on R117_AUTHORED_FLAGSHIP_15K_V1. Global queue remains untouched." >> "$GITHUB_STEP_SUMMARY"
