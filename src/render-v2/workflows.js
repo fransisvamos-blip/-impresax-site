@@ -852,7 +852,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         copyManifest.SERVICE_1_BODY=city
           ? "Distribuzione all’ingrosso di materiali per l’edilizia dalla sede di "+city+"."
           : "Distribuzione all’ingrosso di materiali per l’edilizia.";
-        copyManifest.SERVICE_2_BODY="Lavorazione e trasformazione del tondo per cemento armato.";
+        copyManifest.SERVICE_2_BODY="Il servizio riguarda la lavorazione e trasformazione del tondo destinato al cemento armato.";
         copyManifest.BRIDGE_TITLE="Parliamo del prossimo cantiere.";
         copyManifest.BRIDGE_BODY=city
           ? "Materiali per l’edilizia e lavorazione del tondo: contatta il commerciale DEDIL DONATO a "+city+"."
