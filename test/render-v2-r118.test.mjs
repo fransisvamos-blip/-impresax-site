@@ -127,3 +127,14 @@ test("R118 low-authorship jury failure forces a structural hard reset",()=>{
   assert.match(ai,/R118 HARD RESET BEHAVIOR/);
   assert.match(ai,/generatorReasons=\["ENGINE_CONTRACT_UPGRADE","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"\]/);
 });
+
+
+test("R118 failures produce structural redesign feedback instead of micro-fix spam",()=>{
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  assert.match(ai,/R118 STRUCTURAL REBUILD: discard the current spatial composition/);
+  assert.match(ai,/nextActions\.length=0/);
+  assert.match(ai,/Recompose the page as 4-5 unmistakable portfolio scenes/);
+  assert.match(ai,/Re-author mobile independently at 390px/);
+  assert.match(ai,/perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"/);
+  assert.match(ai,/R118 PERCEPTUAL REPAIR/);
+});
