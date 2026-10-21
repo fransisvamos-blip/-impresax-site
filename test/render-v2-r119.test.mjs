@@ -20,8 +20,14 @@ const copy={
   TRUST_TITLE:"La prova è nel lavoro",
   TRUST_INTRO:"Struttura, presenza e competenza.",
   TRUST_1:"Impresa attiva",
+  TRUST_1_LABEL:"Forniture",
+  TRUST_1_BODY:"Distribuzione B2B specializzata nei materiali per l’edilizia.",
   TRUST_2:"Presenza operativa a Catanzaro",
+  TRUST_2_LABEL:"Lavorazioni",
+  TRUST_2_BODY:"Lavorazione e trasformazione del tondo per cemento armato.",
   TRUST_3:"Specializzazione B2B verificata",
+  TRUST_3_LABEL:"Territorio",
+  TRUST_3_BODY:"Catanzaro",
   PARTNER_1:"Rivenditore autorizzato U-Power",
   PARTNER_SECTION_TITLE:"U-Power",
   PARTNER_SECTION_INTRO:"Rivenditore autorizzato verificato.",
@@ -46,7 +52,7 @@ test("R119 replaces repeated section-shell cadence with eight evidence-led campa
   assert.equal((built.spec.main_html.match(/\bixg-section-head\b/g)||[]).length,0);
   assert.ok((built.spec.main_html.match(/data-wow-moment="true"/g)||[]).length>=4);
   assert.match(built.spec.main_html,/r119-positioning__identity/);
-  assert.match(built.spec.main_html,/r119-materials__media/);
+  assert.match(built.spec.main_html,/r119-materials__structure/);
   assert.match(built.spec.main_html,/r119-rebar__media/);
   assert.match(built.spec.main_html,/id="partners"/);
   assert.match(built.spec.main_html,/r119-proof__partner/);
@@ -90,20 +96,19 @@ test("R119 scene composer compiles under renderer safety contract",async()=>{
   assert.equal(compiled.ok,true,JSON.stringify(compiled.issues));
 });
 
-test("R119 fast loop uses evidence seed once then one generative hard reset",async()=>{
+test("R119 fast loop is authored-first and uses one jury-driven structural reset",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(workflows,/const r119Requested=/);
   assert.match(workflows,/\/R119_\/i\.test\(initialReason\)/);
   assert.match(workflows,/const r118PerceptualJury=[\s\S]*\|\| r119Requested;/);
-  assert.match(workflows,/const r119GenerativeFirstPass=r119Mode && cycle===1/);
-  assert.match(workflows,/R119_\.\*GENERATIVE\|R119_GENERATIVE/);
-  assert.match(workflows,/const r119SeedPass=r119Mode && cycle===1 && !r119GenerativeFirstPass/);
-  assert.match(workflows,/if\(r119SeedPass\)/);
-  assert.match(workflows,/r119_scene_composer:true,r119_evidence_seed:true/);
+  assert.match(workflows,/if\(r119Mode\)/);
+  assert.match(workflows,/r119_fast_authored:true/);
+  assert.match(workflows,/mode:cycle>1 && r119JuryReset \? "jury-reset" : "base"/);
   assert.match(workflows,/const r119ForceHardReset=context\.r119Requested===true && cycle===1/);
   assert.match(workflows,/R119 FAST HARD RESET/);
-  assert.doesNotMatch(workflows,/const r119SceneRepair=/);
+  assert.doesNotMatch(workflows,/const r119GenerativeFirstPass=/);
+  assert.doesNotMatch(workflows,/const r119SeedPass=/);
 });
 
 
@@ -148,8 +153,8 @@ test("R119 perceptual fixes remove placeholder geometry and stock-scene dependen
   assert.match(css,/\.r119-rebar\{[^}]*display:grid/);
   assert.match(css,/\.r119-rebar__title\{position:relative/);
   assert.match(css,/\.r119-rebar__body\{position:relative/);
-  assert.match(css,/\.r119-materials__media\{[^}]*min-height:820px/);
-  assert.match(css,/\.r119-materials__media\{order:1;min-height:52svh/);
+  assert.match(css,/\.r119-materials__structure\{[^}]*width:min\(620px,48vw\)/);
+  assert.match(css,/\.r119-materials__structure\{right:-20vw;top:80px/);
   assert.match(css,/\.r119-partner\{min-height:600px/);
 });
 
