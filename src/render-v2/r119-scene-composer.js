@@ -297,10 +297,10 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
   const trust=main.match(/<section\b[^>]*\bid=["']trust["'][^>]*>[\s\S]*?<\/section>/i)?.[0]||"";
   const partners=main.match(/<section\b[^>]*\bid=["']partners["'][^>]*>[\s\S]*?<\/section>/i)?.[0]||"";
   if((trust.match(/data-trust-reason=/gi)||[]).length<3) issues.push("R119_PROOF_WALL_THREE_FACTS_REQUIRED");
-  if(Object.keys(manifests?.assets||{}).includes("PARTNER_UPOWER_LOGO") && !trust.includes("{{asset:PARTNER_UPOWER_LOGO}}")) {
-    issues.push("R119_VERIFIED_PARTNER_IN_PROOF_SCENE_REQUIRED");
+  if(Object.keys(manifests?.assets||{}).includes("PARTNER_UPOWER_LOGO") && !partners.includes("{{asset:PARTNER_UPOWER_LOGO}}")) {
+    issues.push("R119_VERIFIED_PARTNER_GALLERY_REQUIRED");
   }
-  if(!/\.r119-matter\s*\{/i.test(styles) || !/\.r119-rebar\s*\{/i.test(styles) || !/\.r119-proof\s*\{/i.test(styles)) {
+  if(!/\.r119-positioning\s*\{/i.test(styles) || !/\.r119-materials\s*\{/i.test(styles) || !/\.r119-rebar\s*\{/i.test(styles) || !/\.r119-proof\s*\{/i.test(styles) || !/\.r119-partner\s*\{/i.test(styles)) {
     issues.push("R119_SCENE_CSS_REQUIRED");
   }
   if(!/@media\s*\([^)]*max-width\s*:\s*700px/i.test(styles)) issues.push("R119_NATIVE_MOBILE_RECUT_REQUIRED");
