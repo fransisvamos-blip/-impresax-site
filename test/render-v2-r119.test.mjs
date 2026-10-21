@@ -175,9 +175,9 @@ test("R119 workflow strips economic vanity metrics and binds a distinct industri
   assert.match(workflows,/const r119EvidenceNarrative=r119Requested/);
   assert.match(workflows,/copyManifest\.TRUST_1=materialService/);
   assert.match(workflows,/Distribuzione B2B di materiali per l’edilizia/);
-  assert.match(workflows,/copyManifest\.TRUST_2=rebarService/);
-  assert.match(workflows,/Lavorazione del tondo per cemento armato/);
-  assert.match(workflows,/copyManifest\.TRUST_3=city/);
+  assert.match(workflows,/copyManifest\.TRUST_2=city/);
+  assert.match(workflows,/copyManifest\.TRUST_3=verifiedPartner/);
+  assert.match(workflows,/Rapporto commerciale U-Power/);
   assert.match(workflows,/R119_DISTINCT_VERIFIED_INDUSTRIAL_HERO/);
   assert.match(workflows,/context\.assets\?\.TRUST_VISUAL/);
   assert.match(workflows,/context\.assets\.POSITIONING_VISUAL/);
@@ -242,6 +242,7 @@ test("R119 compiler failures stay deterministic and never open AI compiler repai
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(workflows,/context\.r118PerceptualJury===true && context\.r119Requested!==true/);
-  assert.match(workflows,/TRUST_1_BODY=materialService[\s\S]*Attività di distribuzione B2B nel comparto dei materiali per l’edilizia/);
-  assert.match(workflows,/TRUST_2_BODY=rebarService[\s\S]*Attività specializzata nella lavorazione e trasformazione del tondo destinato al cemento armato/);
+  assert.match(workflows,/copyManifest\.TRUST_1_BODY="Vendita all’ingrosso di materiali per l’edilizia\."/);
+  assert.match(workflows,/copyManifest\.TRUST_2_BODY=String\(inputPayload\.address\|\|city\|\|copyManifest\.TRUST_2\)/);
+  assert.match(workflows,/copyManifest\.TRUST_3_BODY=verifiedPartner/);
 });
