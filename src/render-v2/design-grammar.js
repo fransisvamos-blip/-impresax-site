@@ -1,6 +1,7 @@
 import { R115_SHELL_CSS } from "./r115-shell-css.js";
 import { R115_SECTIONS_CSS } from "./r115-sections-css.js";
 import { R116_FLAGSHIP_CSS } from "./r116-flagship-css.js";
+import { R117_AUTHORED_FLAGSHIP_CSS } from "./r117-authored-flagship-css.js";
 function copyToken(key){ return "{{copy:"+key+"}}"; }
 function ctaToken(key){ return "{{cta:"+key+"}}"; }
 
@@ -444,12 +445,12 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
 
   let main=(variantKey==="C" ? mainC : variantKey==="B" ? mainB : mainAB).split("<section ").map((part,i)=>i===0?part:(part.startsWith('id="hero"')?"<section "+part:'<section data-surface="art-directed" '+part)).join("");
   main=main
-    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-commissioned-experience="true" data-authorship="irreproducible" data-scroll-narrative="continuous" data-iconic-moment="true" data-hero-text-over-image="required" data-r107-ultra-visual="true"$2')
-    .replace(/(<section\b[^>]*\bid="positioning"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-authored-transition="true"$2')
-    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true" data-authored-transition="true"$2')
+    .replace(/(<section\b[^>]*\bid="hero"[^>]*)(>)/i,'$1 data-launch-hero="true" data-stage-depth="cinematic" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-commissioned-experience="true" data-authorship="irreproducible" data-scroll-narrative="continuous" data-iconic-moment="true" data-hero-text-over-image="required" data-r107-ultra-visual="true" data-r117-authored-flagship="true" data-creative-thesis="brand-specific" data-no-template-test="pass" data-portfolio-test="pass" data-mobile-native="true" data-wow-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="positioning"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-authored-transition="true" data-wow-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="services"[^>]*)(>)/i,'$1 data-brand-surface="secondary" data-spectacle-moment="true" data-stage-depth="editorial" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true" data-authored-transition="true" data-wow-moment="true" data-signature-section="true"$2')
     .replace(/(<section\b[^>]*\bid="trust"[^>]*)(>)/i,'$1 data-copy-density="controlled" data-iconic-moment="true"$2')
     .replace(/(<section\b[^>]*\bid="bridge"[^>]*)(>)/i,'$1 data-brand-surface="tint" data-spectacle-moment="true" data-stage-depth="material" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-authored-transition="true"$2')
-    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true"$2')
+    .replace(/(<section\b[^>]*\bid="final-cta"[^>]*)(>)/i,'$1 data-brand-surface="primary" data-spectacle-moment="true" data-stage-depth="cinematic" data-copy-density="controlled" data-custom-made="true" data-signature-moment="true" data-iconic-moment="true" data-wow-moment="true"$2')
     .replace(/(<section\b[^>]*\bid="final-cta"[^>]*>)/i,"$1"+brandWatermark+r89Lines+'<div class="ixr90-stage" aria-hidden="true"><i></i><i></i><i></i></div>');
 
   const base=`
@@ -2066,7 +2067,7 @@ body{font-family:var(--ix-body-font)}
  .ixg-feature__device{min-height:200px}
  .ixg-feature__stage.no-visual .ixg-feature__device{min-height:150px}
 }
-` : "")+(variantKey==="A" ? R115_SHELL_CSS+R115_SECTIONS_CSS : "")+(variantKey==="A" ? R116_FLAGSHIP_CSS : "")+(variantKey==="C" ? `
+` : "")+(variantKey==="A" ? R115_SHELL_CSS+R115_SECTIONS_CSS : "")+(variantKey==="A" ? R116_FLAGSHIP_CSS+R117_AUTHORED_FLAGSHIP_CSS : "")+(variantKey==="C" ? `
 /* Variant C bridge grid guard — 3-child desktop composition and 2-row mobile composition. */
 .ixc-bridge{min-height:0!important;display:block!important}
 .ixc-bridge__inner{grid-template-columns:10px minmax(0,.72fr) minmax(320px,1fr)!important;align-items:center!important}
@@ -2098,7 +2099,8 @@ body{font-family:var(--ix-body-font)}
       section_substance_standard:variantKey==="A"?"R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1":"R110_LEGACY_COMPAT",
       detail_craft_standard:variantKey==="A"?"R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1":"R110_LEGACY_COMPAT",
       premium_section_identity_standard:variantKey==="A"?"R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1":"R110_LEGACY_COMPAT",
-      flagship_architecture_standard:variantKey==="A"?"R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1":"R110_LEGACY_COMPAT",
+      flagship_architecture_standard:variantKey==="A"?"R117_AUTHORED_FLAGSHIP_15K_V1":"R110_LEGACY_COMPAT",
+      authored_flagship_standard:variantKey==="A"?"R117_AUTHORED_FLAGSHIP_15K_V1":"R110_LEGACY_COMPAT",
       section_blueprint:sectionBlueprint,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R107_PREMIUM_OVERLAY_HERO_ULTRA_VISUAL_V1",
       used_copy_tokens:commonUsedCopy(copyManifest),
@@ -2116,7 +2118,7 @@ body{font-family:var(--ix-body-font)}
       implementation_notes:(logoFirstMode
         ?"LOGO_FIRST_V1 pilot: official logo defines palette, industrial sans typography, geometry and signature rules; full-bleed overlay hero and two CTAs remain mandatory. "
         :(impresaxMasterProfile?"IMPRESAX_MASTER_V1 pilot: full-bleed overlay hero and premium conversion hierarchy. ":""))
-        +"Deterministic R112 SECTION_SUBSTANCE grammar v1 "+variantKey+": R111 depth plus rich middle-scroll substance, 4-6 why-us reasons, proof support, distinct bridge/final CTA roles, premium mobile density and no decorative-only sections, preserving all R107-R111 gates."
+        +"R117 AUTHORED FLAGSHIP "+variantKey+": one brand-specific creative thesis, strict no-template test, three portfolio-grade wow moments, one signature section, radical editorial hierarchy, premium restraint, proof-as-design, native mobile reinterpretation and a hard €15K perception target. Clean/modern/professional without distinctive authorship is a rejection state."
     },
     strategy:logoFirstMode?"LOGO_FIRST_MASTER_V1_R107":impresaxMasterProfile?"IMPRESAX_MASTER_V1_R107":"ICONIC_COMMISSIONED_FALLBACK_GRAMMAR_V8"
   };
