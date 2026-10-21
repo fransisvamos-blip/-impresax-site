@@ -192,3 +192,16 @@ test("pilot planning can run without spawning a render and R119 kick stays gener
   assert.match(index,/Generate a genuinely new flagship composition under the active R119\/R118 architecture/);
 });
 
+
+
+test("R119 fast generation avoids duplicate full-page fallbacks and normalizes schema in place",async()=>{
+  const fs=(await import("node:fs")).default;
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(ai,/const fastR118Generation=!qaRole && allowR118External===true/);
+  assert.match(ai,/const plan=\(fastR118Qa\|\|fastR118Generation\)/);
+  assert.match(ai,/const canNormalize=schemaInvalid && \(qaRole \|\| fastR118Generation\)/);
+  assert.match(ai,/Normalize the supplied generated homepage object/);
+  assert.match(ai,/roughly within 5k-14k characters/);
+  assert.match(workflows,/retries:\{limit:context\.r119Requested===true\?0:1/);
+});
