@@ -1494,17 +1494,50 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           limit 1`;
         return rows[0]||null;
       });
-      if(bestCandidate?.render_spec && Number(bestCandidate.score||0)>=Number(qa.min_score||0)) {
+      const r118HardReset=context.r118PerceptualJury===true && (
+        Number(qa.scores?.no_template_feel??10)<8.5 ||
+        Number(qa.scores?.custom_made_feel??10)<8.5 ||
+        Number(qa.scores?.irreproducible_brand_authorship??10)<8.5 ||
+        Number(qa.scores?.fifteen_k_value_perception??10)<8.5 ||
+        Number(qa.scores?.commissioned_experience_quality??10)<8.5 ||
+        Number(qa.scores?.visual_memory_factor??10)<8.5 ||
+        Number(qa.scores?.cross_viewport_art_direction??10)<8.5
+      );
+      if(r118HardReset) {
+        previousSpec=null;
+        await updateWorkflow(sql,event.instanceId,{
+          status:"RUNNING",
+          currentStep:"R118_PERCEPTUAL_HARD_RESET",
+          attempt:cycle,
+          errorCode:null,
+          metadata:{
+            r118_perceptual_hard_reset:true,
+            failed_revision:revision.revision,
+            no_template_feel:Number(qa.scores?.no_template_feel??0),
+            custom_made_feel:Number(qa.scores?.custom_made_feel??0),
+            fifteen_k_value_perception:Number(qa.scores?.fifteen_k_value_perception??0),
+            irreproducible_brand_authorship:Number(qa.scores?.irreproducible_brand_authorship??0)
+          }
+        });
+      } else if(bestCandidate?.render_spec && Number(bestCandidate.score||0)>=Number(qa.min_score||0)) {
         previousSpec=bestCandidate.render_spec;
       } else {
         previousSpec=compiled.normalized_spec||generated.spec;
       }
       feedback={
         issues:qa.issues,
-        actions:qa.actions,
+        actions:[
+          ...(r118HardReset?[
+            "Discard the prior page skeleton completely; preserve only verified content, immutable identity and approved assets.",
+            "Rebuild section order, proportions, spatial rhythm, typography hierarchy and CTA choreography from a new creative composition."
+          ]:[]),
+          ...(qa.actions||[])
+        ],
         summary:qa.summary,
         scores:qa.scores,
-        reason:!heroPass?"HERO_VISUAL_REPAIR":(visualFailure.change_strategy?"VISUAL_STRATEGY_SWITCH":"VISUAL_REPAIR"),
+        reason:r118HardReset
+          ?"R118_PERCEPTUAL_HARD_RESET"
+          :(!heroPass?"HERO_VISUAL_REPAIR":(visualFailure.change_strategy?"VISUAL_STRATEGY_SWITCH":"VISUAL_REPAIR")),
         best_candidate_revision:bestCandidate?.revision||revision.revision,
         best_candidate_score:Number(bestCandidate?.score??qa.min_score??0)
       };
