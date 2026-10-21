@@ -98,12 +98,19 @@ test("R119 fast loop uses evidence seed once then one generative hard reset",asy
 test("R119 generative mode enforces real section depth and DEDIL evidence",async()=>{
   const fs=(await import("node:fs")).default;
   const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
-  assert.match(ai,/const r119EvidenceMode=allowR118External/);
+  assert.match(ai,/const r119EvidenceActive=allowR118External/);
+  assert.match(ai,/r119EvidenceMode===true/);
   assert.match(ai,/DEDIL R119 NARRATIVE/);
   assert.match(ai,/SECTION_ID INTEGRITY/);
   assert.match(ai,/R111 ACTUAL DEPTH/);
   assert.match(ai,/ART-DIRECTED SURFACES/);
   assert.match(ai,/SECTION VISUAL DENSITY/);
+  assert.match(ai,/R118\/R119 FLAGSHIP OUTPUT FLOOR/);
+  assert.match(ai,/main_html:\{type:"string",minLength:5000\}/);
+  assert.match(ai,/custom_css:\{type:"string",minLength:6500\}/);
+  assert.match(ai,/R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1/);
+  assert.match(ai,/schema:allowR118External\?r118FlagshipRenderSpecSchema:renderSpecSchema/);
+  assert.match(ai,/section_blueprint:actualSectionIds\.length\?actualSectionIds/);
   assert.match(ai,/\^R119_\/i\.test/);
 });
 
@@ -142,6 +149,7 @@ test("R119 evidence detection covers EIGHT_SCENE, EVIDENCE and FAST relaunch rea
   assert.match(workflows,/\/R119_\/i\.test/);
   assert.match(workflows,/const r119EvidenceNarrative=r119Requested/);
   assert.match(workflows,/const r119MaterialHero=context\.r119Requested===true/);
+  assert.match(workflows,/r119EvidenceMode:context\.r119Requested===true/);
 });
 
 test("R119 workflow strips economic vanity metrics and binds a material hero",async()=>{
