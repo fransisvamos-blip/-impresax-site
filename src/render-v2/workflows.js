@@ -1056,7 +1056,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       let generated;
       try {
-        generated=await step.do("r"+cycle+"-generate",{retries:{limit:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+        generated=await step.do("r"+cycle+"-generate",{retries:{limit:context.r119Requested===true?0:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
           if(context.cabinaPrecomputed) {
             if(!context.cabinaRenderSpec) throw new Error("SYSTEM_INVARIANT:CABINA_RENDER_SPEC_REQUIRED");
             return {spec:context.cabinaRenderSpec,model:"CHATGPT_CABINA_PRECOMPUTED",cabina_precomputed:true};
