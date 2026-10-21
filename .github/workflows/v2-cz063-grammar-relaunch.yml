@@ -1,4 +1,4 @@
-name: V2 DEDIL R117 Authored Relaunch
+name: V2 DEDIL R118 Perceptual Jury Relaunch
 
 on:
   push:
@@ -44,4 +44,4 @@ jobs:
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/relaunch.json >/dev/null
           jq -e '.ok == true and .variant_key == "A" and .workflow_instance_id != null' /tmp/relaunch.json >/dev/null
-          echo "DEDIL A relaunched exclusively on R117_AUTHORED_FLAGSHIP_15K_V1. Global queue remains untouched." >> "$GITHUB_STEP_SUMMARY"
+          echo "DEDIL A relaunched exclusively on R118_PERCEPTUAL_JURY_V1. Global queue remains untouched." >> "$GITHUB_STEP_SUMMARY"
