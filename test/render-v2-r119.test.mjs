@@ -84,7 +84,9 @@ test("R119 fast loop uses evidence seed once then one generative hard reset",asy
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(workflows,/const r119Requested=r118PerceptualJury &&/);
   assert.match(workflows,/\/R119_\/i\.test/);
-  assert.match(workflows,/const r119SeedPass=r119Mode && cycle===1/);
+  assert.match(workflows,/const r119GenerativeFirstPass=r119Mode && cycle===1/);
+  assert.match(workflows,/R119_\.\*GENERATIVE\|R119_GENERATIVE/);
+  assert.match(workflows,/const r119SeedPass=r119Mode && cycle===1 && !r119GenerativeFirstPass/);
   assert.match(workflows,/if\(r119SeedPass\)/);
   assert.match(workflows,/r119_scene_composer:true,r119_evidence_seed:true/);
   assert.match(workflows,/const r119ForceHardReset=context\.r119Requested===true && cycle===1/);
@@ -92,6 +94,18 @@ test("R119 fast loop uses evidence seed once then one generative hard reset",asy
   assert.doesNotMatch(workflows,/const r119SceneRepair=/);
 });
 
+
+test("R119 generative mode enforces real section depth and DEDIL evidence",async()=>{
+  const fs=(await import("node:fs")).default;
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  assert.match(ai,/const r119EvidenceMode=allowR118External/);
+  assert.match(ai,/DEDIL R119 NARRATIVE/);
+  assert.match(ai,/SECTION_ID INTEGRITY/);
+  assert.match(ai,/R111 ACTUAL DEPTH/);
+  assert.match(ai,/ART-DIRECTED SURFACES/);
+  assert.match(ai,/SECTION VISUAL DENSITY/);
+  assert.match(ai,/\^R119_\/i\.test/);
+});
 
 test("R119 hero exposes canonical browser-gate hooks",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
