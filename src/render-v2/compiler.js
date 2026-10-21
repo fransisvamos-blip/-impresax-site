@@ -1,5 +1,5 @@
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
-import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations, sectionSubstanceViolations } from "./showroom-policy.js";
+import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, authoredFlagshipViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations, sectionSubstanceViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
@@ -176,7 +176,7 @@ export function validateRenderSpec(spec, manifests) {
   const identityKeys=new Set(Object.keys(manifests?.identity||{}));
   const usedCopyKeys=tokenSet(main,COPY_TOKEN);
   const usedAssetKeys=tokenSet(main,ASSET_TOKEN);
-  const isR116Flagship=String(spec?.flagship_architecture_standard||"")==="R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1";
+  const isR116Flagship=["R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1","R117_AUTHORED_FLAGSHIP_15K_V1"].includes(String(spec?.flagship_architecture_standard||""));
   for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys,{
     allow_verified_proof_metrics:isR116Flagship
   })) issues.push(issue);
@@ -212,6 +212,9 @@ export function validateRenderSpec(spec, manifests) {
   }
   if(r107UltraVisualPolicy) {
     for(const issue of r107UltraVisualViolations(main,css)) issues.push(issue);
+  }
+  if(String(spec?.authored_flagship_standard||"")==="R117_AUTHORED_FLAGSHIP_15K_V1") {
+    for(const issue of authoredFlagshipViolations(main,css,spec)) issues.push(issue);
   }
 
   if(String(spec?.home_depth_standard||"")==="R111_15K_HOME_DEPTH_ARCHITECTURE_V1") {
