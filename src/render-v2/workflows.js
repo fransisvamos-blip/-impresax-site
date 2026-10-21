@@ -855,12 +855,12 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         copyManifest.SERVICE_2_BODY="Il servizio riguarda la lavorazione e trasformazione del tondo destinato al cemento armato.";
         copyManifest.BRIDGE_TITLE="Parliamo del prossimo cantiere.";
         copyManifest.BRIDGE_BODY=city
-          ? "Materiali per l’edilizia e lavorazione del tondo: contatta il commerciale DEDIL DONATO a "+city+"."
-          : "Materiali per l’edilizia e lavorazione del tondo: contatta il commerciale DEDIL DONATO.";
+          ? "Località Morello - Germaneto, "+city+". Parla direttamente con il commerciale DEDIL DONATO."
+          : "Parla direttamente con il commerciale DEDIL DONATO.";
         copyManifest.CLOSING_TITLE="Costruiamo da qui.";
         copyManifest.CLOSING_BODY=city
-          ? "Per materiali per l’edilizia e lavorazione del tondo, contatta DEDIL DONATO a "+city+"."
-          : "Per materiali per l’edilizia e lavorazione del tondo, contatta DEDIL DONATO.";
+          ? "Forniture e lavorazioni partono da un contatto diretto con la sede di "+city+"."
+          : "Forniture e lavorazioni partono da un contatto diretto.";
         const verifiedPartner=String(
           copyManifest.PARTNER_1
           || verifiedList(inputPayload.verified_trust||"").find(x=>/u[-\s]?power|rivenditor|partner/i.test(x))
@@ -920,11 +920,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const r119MaterialHero=context.r119Requested===true
-        && (context.assets?.TRUST_VISUAL?.r2_key || context.assets?.POSITIONING_VISUAL?.r2_key || context.assets?.SERVICE_MATERIALS_VISUAL?.r2_key);
+        && (context.assets?.SERVICE_REBAR_VISUAL?.r2_key || context.assets?.TRUST_VISUAL?.r2_key || context.assets?.POSITIONING_VISUAL?.r2_key);
       if(r119MaterialHero) {
-        const source=context.assets.TRUST_VISUAL?.r2_key
-          ? context.assets.TRUST_VISUAL
-          : (context.assets.POSITIONING_VISUAL?.r2_key ? context.assets.POSITIONING_VISUAL : context.assets.SERVICE_MATERIALS_VISUAL);
+        const source=context.assets.SERVICE_REBAR_VISUAL?.r2_key
+          ? context.assets.SERVICE_REBAR_VISUAL
+          : (context.assets.TRUST_VISUAL?.r2_key ? context.assets.TRUST_VISUAL : context.assets.POSITIONING_VISUAL);
         const upscaled=await createR112UpscaledHeroAsset(this.env,sql,{
           packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey,source
         });
