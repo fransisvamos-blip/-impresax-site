@@ -182,6 +182,10 @@ test("R118 compiler failures become bounded repair loops instead of terminal det
   assert.match(workflows,/reason:context\.r118PerceptualJury===true\?"R118_COMPILER_REPAIR":"COMPILER_CONTRACT"/);
   assert.match(workflows,/R118 COMPILER REPAIR/);
   assert.match(workflows,/Use 8-10 substantial section elements/);
+  assert.match(workflows,/r\"\+cycle\+\"-compiler-repair-generate/);
+  assert.match(workflows,/compiler_repair_same_revision:true/);
+  assert.match(workflows,/VARIANT_COMPILER_REPAIR:/);
+  assert.match(workflows,/SECTION_ID INTEGRITY|section_ids must match/);
   assert.match(workflows,/if\(fail\.change_strategy && context\.r118PerceptualJury!==true\) break/);
   assert.match(ai,/const r118CompilerRepair=allowR118External && feedbackReason==="R118_COMPILER_REPAIR"/);
   assert.match(ai,/main_html:String\(previousSpec\.main_html\|\|""\)\.slice\(0,7000\)/);
