@@ -1039,6 +1039,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             assetTokens:context.editorialAssetTokens,
             qaFeedback:feedback,previousSpec,
             allowR118External:context.r118PerceptualJury===true,
+            r119EvidenceMode:context.r119Requested===true,
             beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_GENERATION:"+model,revision.id,{allowR118External:context.r118PerceptualJury===true})
           });
         });
@@ -1161,6 +1162,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               },
               previousSpec:generated.spec,
               allowR118External:true,
+              r119EvidenceMode:context.r119Requested===true,
               beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_COMPILER_REPAIR:"+model,revision.id,{allowR118External:true})
             });
           });
