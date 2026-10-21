@@ -92,3 +92,19 @@ test("R118 is the only route allowed to bypass zero-extra-AI mode for generation
   assert.match(workflows,/reserveAiCall\(sql,params\.packId,this\.env,"VARIANT_GENERATION:"\+model,revision\.id,\{allowR118External:context\.r118PerceptualJury===true\}\)/);
   assert.match(workflows,/reserveAiCall\(sql,params\.packId,this\.env,"VARIANT_VISUAL_QA:"\+model,revision\.id,\{allowR118External:context\.r118PerceptualJury===true\}\)/);
 });
+
+
+test("R118 jury calibration blocks merely excellent premium work",()=>{
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  assert.match(ai,/R118 PERCEPTUAL JURY: the previous flagship render was explicitly rejected/);
+  assert.match(ai,/R118 SCORE CALIBRATION: 9\.0 means excellent ordinary premium work and is NOT enough/);
+  assert.match(ai,/R118 HARD FAIL: repeated centered containers/);
+  assert.match(ai,/R118 AUTHORSHIP TEST/);
+  assert.match(ai,/R118 PORTFOLIO TEST/);
+  assert.match(ai,/R118 MOBILE TEST/);
+  assert.match(ai,/const r118PerceptualFloor=/);
+  assert.match(ai,/fifteen_k_value_perception:9\.8/);
+  assert.match(ai,/anti_template_feel:9\.8/);
+  assert.match(ai,/visual_memory_factor:9\.8/);
+  assert.match(ai,/cross_viewport_art_direction:9\.8/);
+});
