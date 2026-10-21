@@ -96,10 +96,6 @@ export const R118_STUDIO_FLAGSHIP_CSS = `
   width:calc(100% + 4vw)!important;min-height:1100px!important;
   margin-right:-4vw!important;position:relative!important;
 }
-.ixf-positioning__media:before{
-  content:""!important;position:absolute!important;left:-22px!important;top:0!important;bottom:0!important;
-  width:1px!important;background:rgba(17,17,17,.22)!important;z-index:2!important;
-}
 .ixf-positioning__media img{
   width:100%!important;height:100%!important;object-fit:cover!important;
   filter:saturate(.62) contrast(1.12)!important;
@@ -317,8 +313,7 @@ export const R118_STUDIO_FLAGSHIP_CSS = `
   .ixf-positioning__statement h2{font-size:clamp(58px,16vw,82px)!important;line-height:.80!important;max-width:7.4ch!important}
   .ixf-positioning__body{padding:36px 18px 72px!important;border-top:1px solid var(--ix-r118-hairline)!important}
   .ixf-positioning__media{width:100%!important;min-height:72svh!important;margin:0!important}
-  .ixf-positioning__media:before{display:none!important}
-  .ixf-positioning__media .ixg-section-visual{min-height:72svh!important}
+    .ixf-positioning__media .ixg-section-visual{min-height:72svh!important}
 
   .ixf-services{padding:96px 0 112px!important}
   .ixf-services .ixg-shell{width:calc(100% - 36px)!important}
