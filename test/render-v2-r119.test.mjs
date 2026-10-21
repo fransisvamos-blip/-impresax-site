@@ -133,7 +133,7 @@ test("R119 evidence detection covers EIGHT_SCENE, EVIDENCE and FAST relaunch rea
 test("R119 workflow strips economic vanity metrics and binds a material hero",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
-  assert.match(workflows,/const r119EvidenceNarrative=r118PerceptualJury/);
+  assert.match(workflows,/const r119EvidenceNarrative=r119Requested/);
   assert.match(workflows,/copyManifest\.TRUST_1=materialService/);
   assert.match(workflows,/Distribuzione B2B di materiali per l’edilizia/);
   assert.match(workflows,/copyManifest\.TRUST_2=rebarService/);
