@@ -970,7 +970,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             assetTokens:context.editorialAssetTokens,
             qaFeedback:feedback,previousSpec,
             allowR118External:context.r118PerceptualJury===true,
-            beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_GENERATION:"+model,revision.id)
+            beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_GENERATION:"+model,revision.id,{allowR118External:context.r118PerceptualJury===true})
           });
         });
       } catch(error) {
@@ -1410,7 +1410,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 && (captured.diagnostics?.mobile?.official_logo_present??captured.mobile?.diagnostics?.official_logo_present??false)
             },
             allowR118External:context.r118PerceptualJury===true,
-            beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_VISUAL_QA:"+model,revision.id)
+            beforeModelAttempt:({model})=>reserveAiCall(sql,params.packId,this.env,"VARIANT_VISUAL_QA:"+model,revision.id,{allowR118External:context.r118PerceptualJury===true})
           });
         });
       } catch(error) {
