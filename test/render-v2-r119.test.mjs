@@ -56,6 +56,17 @@ test("R119 replaces repeated section-shell cadence with eight evidence-led campa
   assert.match(built.spec.custom_css,/@media\(max-width:700px\)/);
 });
 
+test("R119 jury-reset composer densifies proof, uses positioning media and changes spatial composition",()=>{
+  const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true,mode:"jury-reset"});
+  assert.match(built.spec.main_html,/r119-jury-reset/);
+  assert.match(built.spec.main_html,/r119-positioning__media/);
+  assert.match(built.spec.main_html,/r119-proof__mark ixg-trust-reason__graphic/);
+  assert.match(built.spec.main_html,/data-partner-verification="verified-only"/);
+  assert.match(built.spec.custom_css,/\.r119-hero\.r119-jury-reset/);
+  assert.match(built.spec.custom_css,/\.r119-materials\.r119-jury-reset/);
+  assert.match(built.spec.custom_css,/Scene mode: jury-reset/);
+});
+
 test("R119 scene composer contract has no deterministic violations",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
   const manifests={
@@ -153,7 +164,7 @@ test("R119 evidence detection covers EIGHT_SCENE, EVIDENCE and FAST relaunch rea
   assert.match(workflows,/r119EvidenceMode:context\.r119Requested===true/);
 });
 
-test("R119 workflow strips economic vanity metrics and binds a material hero",async()=>{
+test("R119 workflow strips economic vanity metrics and binds a distinct industrial hero",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(workflows,/const r119EvidenceNarrative=r119Requested/);
@@ -162,8 +173,10 @@ test("R119 workflow strips economic vanity metrics and binds a material hero",as
   assert.match(workflows,/copyManifest\.TRUST_2=rebarService/);
   assert.match(workflows,/Lavorazione del tondo per cemento armato/);
   assert.match(workflows,/copyManifest\.TRUST_3=city/);
-  assert.match(workflows,/R119_VERIFIED_REBAR_MATERIAL_HERO/);
-  assert.match(workflows,/context\.assets\?\.SERVICE_REBAR_VISUAL/);
+  assert.match(workflows,/R119_DISTINCT_VERIFIED_INDUSTRIAL_HERO/);
+  assert.match(workflows,/context\.assets\?\.TRUST_VISUAL/);
+  assert.match(workflows,/context\.assets\.POSITIONING_VISUAL/);
+  assert.match(workflows,/context\.assets\.SERVICE_MATERIALS_VISUAL/);
 });
 
 test("pilot pack upgrades reuse only same-prospect verified licensed section assets",async()=>{
@@ -212,8 +225,9 @@ test("R119 fast generation avoids duplicate full-page fallbacks and normalizes s
 test("R119 first provider failure falls through to deterministic scene composer and jury path",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
-  assert.match(workflows,/const r119SceneFailover=context\.r119Requested===true && cycle===1/);
+  assert.match(workflows,/const r119SceneFailover=context\.r119Requested===true && !budget && providerFailoverDomain && \(cycle===1 \|\| \(cycle===2 && r119JuryReset\)\)/);
   assert.match(workflows,/R119_PROVIDER_SCENE_FAILOVER/);
   assert.match(workflows,/generation-provider-r119-scene-failover/);
   assert.match(workflows,/buildR119SceneComposerSpec\(\{/);
+  assert.match(workflows,/mode:cycle===2 && r119JuryReset \? "jury-reset" : "base"/);
 });
