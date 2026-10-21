@@ -41,7 +41,7 @@ function trustMarkup(copyManifest,klass) {
 
 function commonUsedCopy(copyManifest) {
   return Object.keys(copyManifest||{}).filter(k=>
-    /^(HERO_HEADLINE|HERO_BODY|LOCALITY_LINE|PRIMARY_CTA_LABEL|SECONDARY_CTA_LABEL|FOOTER_LINE|SERVICE_\d+_(?:TITLE|BODY)|TRUST_\d+|PARTNER_\d+|PARTNER_SECTION_(?:TITLE|INTRO))$/.test(k)
+    /^(HERO_HEADLINE|HERO_BODY|LOCALITY_LINE|PRIMARY_CTA_LABEL|SECONDARY_CTA_LABEL|FOOTER_LINE|SERVICE_\d+_(?:TITLE|BODY)|TRUST_(?:\d+|BADGE)|PARTNER_\d+|PARTNER_SECTION_(?:TITLE|INTRO))$/.test(k)
   );
 }
 
@@ -226,7 +226,7 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
   const coreTrustKeys=nonContactTrustKeys;
   const partnerTrustKeys=availableIndexed(copyManifest,"PARTNER_");
   const trustReasonSeen=new Set();
-  const verifiedTrustReasonKeys=coreTrustKeys.filter(key=>{
+  const coreVerifiedTrustReasonKeys=coreTrustKeys.filter(key=>{
     if(!Object.prototype.hasOwnProperty.call(copyManifest,key)) return false;
     if(trustIsContact(copyManifest,key)) return false;
     const value=String(copyManifest?.[key]||"").replace(/\s+/g," ").trim().toLowerCase();
@@ -234,8 +234,23 @@ export function buildZeroPhotoPremiumSpec({variantKey,copyManifest,hasIdentity=t
     trustReasonSeen.add(value);
     return true;
   });
+  const verifiedPartnerExists=partnerTrustKeys.some(key=>{
+    const value=String(copyManifest?.[key]||"").replace(/\s+/g," ").trim();
+    return Boolean(value) && !trustIsContact(copyManifest,key);
+  });
+  const verifiedTrustBadgeEligible=verifiedPartnerExists
+    && Object.prototype.hasOwnProperty.call(copyManifest,"TRUST_BADGE")
+    && !trustIsContact(copyManifest,"TRUST_BADGE");
+  const verifiedTrustReasonKeys=[...coreVerifiedTrustReasonKeys];
+  if(verifiedTrustReasonKeys.length<3 && verifiedTrustBadgeEligible) {
+    const badgeValue=String(copyManifest.TRUST_BADGE||"").replace(/\s+/g," ").trim().toLowerCase();
+    if(badgeValue && !trustReasonSeen.has(badgeValue)) {
+      trustReasonSeen.add(badgeValue);
+      verifiedTrustReasonKeys.push("TRUST_BADGE");
+    }
+  }
   const trustReasons=verifiedTrustReasonKeys
-    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\"><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong></article>")
+    .map((key,i)=>"<article class=\"ixg-trust-reason\" data-trust-reason=\""+(i+1)+"\""+(key==="TRUST_BADGE"?" data-proof-source=\"verified-partner\"":"")+"><div class=\"ixg-trust-reason__graphic ixg-trust-reason__graphic--"+((i%3)+1)+"\" aria-hidden=\"true\"><i></i><i></i><i></i></div><strong>"+copyToken(key)+"</strong></article>")
     .join("");
   const trustProofRail="";
   const partnerProof=partnerTrustKeys.length
