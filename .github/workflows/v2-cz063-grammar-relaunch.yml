@@ -44,4 +44,23 @@ jobs:
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/relaunch.json >/dev/null
           jq -e '.ok == true and .variant_key == "A" and .workflow_instance_id != null' /tmp/relaunch.json >/dev/null
+          cat /tmp/relaunch.json
           echo "DEDIL A relaunched exclusively on R118_PERCEPTUAL_JURY_V1. Global queue remains untouched." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Poll R118 perceptual jury status
+        shell: bash
+        run: |
+          set -euo pipefail
+          instance="rv2-$PACK_ID-A-dedil-r118-perceptual-v1"
+          for i in {1..36}; do
+            body=$(curl -fsS "$V2_URL/shadow/workflow/$instance" || true)
+            echo "poll=$i $body"
+            status=$(printf '%s' "$body" | jq -r '.status.status // .status // empty' 2>/dev/null || true)
+            if [ "$status" = "complete" ] || [ "$status" = "errored" ] || [ "$status" = "terminated" ]; then
+              break
+            fi
+            sleep 10
+          done
+          curl -fsS "$V2_URL/shadow/status/$PACK_ID" > /tmp/status.json
+          jq '{pack:.pack,variants:.variants,workflows:.workflows,qa:(.qa|map(select(.variant_revision_id != null))|.[0:8])}' /tmp/status.json || cat /tmp/status.json
+          echo "R118 jury status inspected; no selection or approval performed." >> "$GITHUB_STEP_SUMMARY"
