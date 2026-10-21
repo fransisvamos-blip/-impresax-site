@@ -886,9 +886,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const r119MaterialHero=context.r119Requested===true
-        && context.assets?.SERVICE_REBAR_VISUAL?.r2_key;
+        && (context.assets?.TRUST_VISUAL?.r2_key || context.assets?.POSITIONING_VISUAL?.r2_key || context.assets?.SERVICE_MATERIALS_VISUAL?.r2_key);
       if(r119MaterialHero) {
-        const source=context.assets.SERVICE_REBAR_VISUAL;
+        const source=context.assets.TRUST_VISUAL?.r2_key
+          ? context.assets.TRUST_VISUAL
+          : (context.assets.POSITIONING_VISUAL?.r2_key ? context.assets.POSITIONING_VISUAL : context.assets.SERVICE_MATERIALS_VISUAL);
         const upscaled=await createR112UpscaledHeroAsset(this.env,sql,{
           packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey,source
         });
@@ -897,7 +899,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           ...selected,
           asset_id:"HERO_VISUAL",
           role:"hero",
-          source_type:"R119_VERIFIED_REBAR_MATERIAL_HERO",
+          source_type:"R119_DISTINCT_VERIFIED_INDUSTRIAL_HERO",
           commercial_use_status:selected.commercial_use_status||"EDITORIAL_APPROVED",
           generated:Boolean(selected.generated),
           preqa_pass:true,
@@ -1127,14 +1129,16 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const showroomHardReset=String(params.initialFeedback?.reason||"")==="SHOWROOM_HARD_RESET";
         const deterministicFailover=context.r118PerceptualJury!==true && !showroomHardReset && !budget && providerFailoverDomain &&
           (context.heroOnly || deterministicRecovery);
-        const r119SceneFailover=context.r119Requested===true && cycle===1 && !budget && providerFailoverDomain;
+        const r119JuryReset=String(feedback?.reason||"")==="R118_PERCEPTUAL_HARD_RESET";
+        const r119SceneFailover=context.r119Requested===true && !budget && providerFailoverDomain && (cycle===1 || (cycle===2 && r119JuryReset));
 
         if(r119SceneFailover) {
           const scene=buildR119SceneComposerSpec({
             copyManifest:context.copyManifest,
             assetTokens:context.editorialAssetTokens,
             hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
-            inputPayload:context.inputPayload
+            inputPayload:context.inputPayload,
+            mode:cycle===2 && r119JuryReset ? "jury-reset" : "base"
           });
           generated={
             spec:scene.spec,
@@ -1154,7 +1158,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 provider_failure_domain:domain,
                 deterministic_strategy:scene.strategy,
                 fallback_revision:revision.revision,
-                r119_scene_composer:true
+                r119_scene_composer:true,
+                r119_scene_mode:cycle===2 && r119JuryReset ? "jury-reset" : "base"
               }
             });
             return {ok:true};
