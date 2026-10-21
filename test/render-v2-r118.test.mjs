@@ -108,3 +108,22 @@ test("R118 jury calibration blocks merely excellent premium work",()=>{
   assert.match(ai,/visual_memory_factor:9\.8/);
   assert.match(ai,/cross_viewport_art_direction:9\.8/);
 });
+
+
+test("R118 low-authorship jury failure forces a structural hard reset",()=>{
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+
+  assert.match(workflows,/const r118HardReset=context\.r118PerceptualJury===true/);
+  assert.match(workflows,/no_template_feel\?\?10\)<8\.5/);
+  assert.match(workflows,/custom_made_feel\?\?10\)<8\.5/);
+  assert.match(workflows,/irreproducible_brand_authorship\?\?10\)<8\.5/);
+  assert.match(workflows,/fifteen_k_value_perception\?\?10\)<8\.5/);
+  assert.match(workflows,/previousSpec=null/);
+  assert.match(workflows,/reason:r118HardReset\s*\?"R118_PERCEPTUAL_HARD_RESET"/);
+  assert.match(ai,/R118_PERCEPTUAL_HARD_RESET/);
+  assert.match(ai,/R118 REQUIRED-ID FLEXIBILITY/);
+  assert.match(ai,/R118 SPATIAL DIVERSITY/);
+  assert.match(ai,/R118 HARD RESET BEHAVIOR/);
+  assert.match(ai,/generatorReasons=\["ENGINE_CONTRACT_UPGRADE","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"\]/);
+});
