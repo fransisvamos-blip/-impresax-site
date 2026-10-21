@@ -36,9 +36,28 @@ async function eligibleRows(sql,pilotPackId=null) {
       from render_v2_packs rp
       join prospects p on p.id=rp.prospect_id
       join render_v2_variants v on v.render_pack_id=rp.id
-      join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+      join lateral (
+        select rr.*
+        from render_variant_revisions rr
+        where rr.variant_id=v.id
+          and rr.status='RENDER_READY'
+          and rr.desktop_r2_key is not null
+          and rr.mobile_r2_key is not null
+          and (
+            coalesce(rr.render_spec->>'perceptual_flagship_standard','')<>'R118_PERCEPTUAL_JURY_V1'
+            or exists (
+              select 1
+              from render_qa_results_v2 q
+              where q.variant_revision_id=rr.id
+                and q.qa_type='VARIANT_VISUAL'
+                and q.status='PASS'
+            )
+          )
+        order by rr.revision desc
+        limit 1
+      ) r on true
       where rp.id=${pilotPackId}::uuid
-        and v.status='RENDER_READY' and r.status='RENDER_READY'
+        and r.status='RENDER_READY'
         and r.desktop_r2_key is not null and r.mobile_r2_key is not null
         and (
           rp.selected_variant_revision_id=r.id
@@ -74,8 +93,27 @@ async function eligibleRows(sql,pilotPackId=null) {
       from latest rp
       join prospects p on p.id=rp.prospect_id
       join render_v2_variants v on v.render_pack_id=rp.id
-      join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
-      where v.status='RENDER_READY' and r.status='RENDER_READY'
+      join lateral (
+        select rr.*
+        from render_variant_revisions rr
+        where rr.variant_id=v.id
+          and rr.status='RENDER_READY'
+          and rr.desktop_r2_key is not null
+          and rr.mobile_r2_key is not null
+          and (
+            coalesce(rr.render_spec->>'perceptual_flagship_standard','')<>'R118_PERCEPTUAL_JURY_V1'
+            or exists (
+              select 1
+              from render_qa_results_v2 q
+              where q.variant_revision_id=rr.id
+                and q.qa_type='VARIANT_VISUAL'
+                and q.status='PASS'
+            )
+          )
+        order by rr.revision desc
+        limit 1
+      ) r on true
+      where r.status='RENDER_READY'
         and r.desktop_r2_key is not null and r.mobile_r2_key is not null
         and (
           rp.selected_variant_revision_id=r.id
