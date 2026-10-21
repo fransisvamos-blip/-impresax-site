@@ -187,3 +187,22 @@ test("R118 compiler failures become bounded repair loops instead of terminal det
   assert.match(ai,/main_html:String\(previousSpec\.main_html\|\|""\)\.slice\(0,7000\)/);
   assert.match(ai,/custom_css:String\(previousSpec\.custom_css\|\|""\)\.slice\(0,5000\)/);
 });
+
+
+test("R118 fast flagship loop caps revisions and jury fanout",()=>{
+  const constants=fs.readFileSync(new URL("../src/render-v2/constants.js",import.meta.url),"utf8");
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  const browser=fs.readFileSync(new URL("../src/render-v2/browser.js",import.meta.url),"utf8");
+
+  assert.match(constants,/R118_FAST_VISUAL_REVISIONS = 2/);
+  assert.match(constants,/R118_FAST_JURY_MODEL = "@cf\/zai-org\/glm-5\.3-flash"/);
+  assert.match(constants,/R118_QA_DEVICE_SCALE_FACTOR = 1/);
+  assert.match(constants,/R118_QA_JPEG_QUALITY = 58/);
+  assert.match(workflows,/const visualRevisionLimit=context\.r118PerceptualJury===true/);
+  assert.match(workflows,/for\(let cycle=1;cycle<=visualRevisionLimit;cycle\+\+\)/);
+  assert.match(ai,/const fastR118Qa=qaRole && allowR118External===true/);
+  assert.match(ai,/const plan=fastR118Qa\s*\? \[\{fallback:false,retry:0\}\]/);
+  assert.match(browser,/qaDeviceScaleFactor:R118_QA_DEVICE_SCALE_FACTOR/);
+  assert.match(browser,/qaJpegQuality:R118_QA_JPEG_QUALITY/);
+});
