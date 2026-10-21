@@ -716,7 +716,10 @@ test("R112 zero-AI hero resolution failures retain vector art as last-resort fal
 test("R112 zero-AI queue always stays on deterministic planning, generation and Cabina review",()=>{
   assert.match(workflows,/const deterministicPlanning=zeroAiDeterministicMode/);
   assert.match(workflows,/zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true[\s\S]{0,180}RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"/);
-  assert.match(workflows,/if\(zeroAiQueueDeterministic \|\| contractUpgradeDeterministic/);
+  assert.match(workflows,/const r118Mode=context\.r118PerceptualJury===true/);
+  assert.match(workflows,/zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true[\s\S]{0,220}!r118Mode/);
+  assert.match(workflows,/const legacyDeterministic=!r118Mode/);
+  assert.match(workflows,/if\(r118FirstPass \|\| zeroAiQueueDeterministic \|\| legacyDeterministic/);
   assert.match(workflows,/generated\?\.deterministic===true[\s\S]{0,180}context\.packMetadata\?\.structural_divergence_rework_required/);
   assert.match(workflows,/IMPRESAX_RENDER_STANDARD_R\(\?:107\|108\|109\|110\|111\|112\)_/);
 });
@@ -820,7 +823,9 @@ test("R107 contract upgrade is fully deterministic and reuses certified hero for
   assert.doesNotMatch(workflows,/ENGINE_CONTRACT_UPGRADE" && !masterProfile/);
   assert.match(workflows,/const contractUpgradeDeterministic=/);
   assert.match(workflows,/context\.r107Retrofit===true/);
-  assert.match(workflows,/if\(zeroAiQueueDeterministic \|\| contractUpgradeDeterministic \|\| \(cycle===1/);
+  assert.match(workflows,/const r118FirstPass=r118Mode && cycle===1/);
+  assert.match(workflows,/const legacyDeterministic=!r118Mode && \(contractUpgradeDeterministic/);
+  assert.match(workflows,/if\(r118FirstPass \|\| zeroAiQueueDeterministic \|\| legacyDeterministic/);
   assert.match(workflows,/feedback\?\.reason==="HERO_VISUAL_REPAIR"[\s\S]{0,320}context\.r107Retrofit!==true/);
   assert.match(reconcile,/R107 premium overlay-hero ultra-visual contract/);
   assert.match(reconcile,/2x device density and premium JPEG quality/);
