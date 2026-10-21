@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES, REMEDIATION_POLICY_VERSION } from "./constants.js";
+import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, R118_FAST_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES, REMEDIATION_POLICY_VERSION } from "./constants.js";
 import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
@@ -935,7 +935,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     }
 
     let previewEmitted=false;
-    for(let cycle=1;cycle<=MAX_VISUAL_REVISIONS;cycle++) {
+    const visualRevisionLimit=context.r118PerceptualJury===true
+      ? R118_FAST_VISUAL_REVISIONS
+      : MAX_VISUAL_REVISIONS;
+    for(let cycle=1;cycle<=visualRevisionLimit;cycle++) {
       const revision=await step.do("r"+cycle+"-allocate",async()=>{
         const r=await allocateRevision(sql,params.variantId,cycle===1?params.parentRevisionId:null,event.instanceId+":cycle:"+cycle);
         await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"GENERATE",attempt:cycle,metadata:{revision:r.revision}});
@@ -1082,7 +1085,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             return {ok:true};
           });
         } else {
-          const retryable=fail?.failure?.retryable===true && !budget && cycle<MAX_VISUAL_REVISIONS;
+          const retryable=fail?.failure?.retryable===true && !budget && cycle<visualRevisionLimit;
           if(retryable) {
             await step.do("r"+cycle+"-generation-provider-retry",async()=>{
               await updateRevision(sql,revision.id,{status:"QA_FAILED"});
