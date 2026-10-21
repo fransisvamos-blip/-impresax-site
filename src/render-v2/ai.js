@@ -794,13 +794,17 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     trust_count:Object.keys(copyManifest||{}).filter(k=>/^TRUST_\d+$/.test(k)).length,
     copy_tokens:Object.keys(copyManifest||{})
   };
-  const safePrevious=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET"].includes(String(qaFeedback?.reason||"")) ? null : previousSpec;
+  const hardResetReasons=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
+  const safePrevious=hardResetReasons.includes(String(qaFeedback?.reason||"")) ? null : previousSpec;
   const prompt=[
     "Implement variant "+variantKey+" as a flagship premium full-home RenderSpec for the VERIFIED prospect.",
     "R117 AUTHORED FLAGSHIP TARGET: the page must plausibly feel like a €15,000+ commissioned digital design, not a polished template.",
     "R118 PERCEPTUAL JURY TARGET: the actual screenshots will be judged by a hostile senior design jury. Technical compliance, clean CSS and premium-looking components do NOT count as success if the page still reads as a sequence of website sections.",
     "R118 STRUCTURAL RESET: when reworking a previous spec, preserve verified content and assets but you MAY radically rebuild composition, proportions, section internals, spatial rhythm and image treatment. Do not make micro-fixes when the jury says the perceived value is low.",
     "R118 STUDIO TEST: every major scene must feel designed as a spread, campaign frame or physical brand environment rather than a UI section inside a centered container.",
+    inputPayload?.r118_perceptual_jury===true?"R118 REQUIRED-ID FLEXIBILITY: hero, positioning, services, trust, bridge and final-cta are semantic anchors required by the compiler, NOT a prescribed page sequence. Hero stays first and final-cta stays last; between them, reorder, interleave and radically reshape the semantic anchors to serve the creative thesis.":"",
+    inputPayload?.r118_perceptual_jury===true?"R118 SPATIAL DIVERSITY: at least three major scenes must break the centered-shell pattern through full-bleed media, asymmetric edge anchoring, split fields, oversized type, offset composition or controlled overlap. No two adjacent major scenes may share the same grid logic.":"",
+    inputPayload?.r118_perceptual_jury===true?"R118 HARD RESET BEHAVIOR: when feedback reason is R118_PERCEPTUAL_HARD_RESET, do not preserve DOM order, component hierarchy, section proportions, typography scale or CTA composition from the previous attempt. Preserve only verified content, immutable identity and allowed assets.":"",
     "This is NOT a wireframe, starter template, generic agency page, SaaS layout or basic implementation.",
     "NO TEMPLATE TEST is blocking: the design must be difficult to reuse for another company after swapping logo/colors/copy.",
     "Build at least THREE portfolio-grade WOW moments: hero, signature mid-page set piece, and closing scene.",
@@ -959,7 +963,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     safePrevious?"PREVIOUS SPEC — preserve what is good and surgically improve only what failed:"+JSON.stringify(safePrevious):""
   ].filter(Boolean).join("\n");
 
-  const role=qaFeedback && !["ENGINE_CONTRACT_UPGRADE","SHOWROOM_HARD_RESET"].includes(String(qaFeedback.reason||"")) ? "repair" : "generator";
+  const generatorReasons=["ENGINE_CONTRACT_UPGRADE","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
+  const role=qaFeedback && !generatorReasons.includes(String(qaFeedback.reason||"")) ? "repair" : "generator";
   const r=await runStructured(env,role,{
     messages:[
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
