@@ -505,35 +505,49 @@ async function dashboard(sql) {
           (
             select count(*)::int
             from render_v2_variants v
-            join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+            join render_variant_revisions r
+              on r.variant_id=v.id
+             and r.revision=coalesce(v.certified_revision,v.best_preview_revision)
             where v.render_pack_id=p.id
-              and v.status='RENDER_READY'
-              and r.status='RENDER_READY'
               and r.desktop_r2_key is not null
               and r.mobile_r2_key is not null
               and (
                 (
-                  coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
-                  and v.variant_key='A'
-                )
-                or exists(
-                  select 1 from render_qa_results_v2 hq
-                  where hq.variant_revision_id=r.id
-                    and hq.qa_type='HERO_VISUAL'
-                    and hq.status='PASS'
+                  v.status='RENDER_READY'
+                  and r.status='RENDER_READY'
+                  and v.certified_revision=r.revision
+                  and (
+                    exists(
+                      select 1 from render_qa_results_v2 hq
+                      where hq.variant_revision_id=r.id
+                        and hq.qa_type='HERO_VISUAL'
+                        and hq.status='PASS'
+                    )
+                    or (
+                      exists(
+                        select 1 from render_qa_results_v2 dq
+                        where dq.variant_revision_id=r.id
+                          and dq.qa_type='CABINA_DETERMINISTIC'
+                          and dq.status='PASS'
+                      )
+                      and exists(
+                        select 1 from render_qa_results_v2 cq
+                        where cq.variant_revision_id=r.id
+                          and cq.qa_type='CABINA_VISUAL'
+                          and cq.status='PASS'
+                      )
+                    )
+                  )
                 )
                 or (
-                  exists(
-                    select 1 from render_qa_results_v2 dq
-                    where dq.variant_revision_id=r.id
-                      and dq.qa_type='CABINA_DETERMINISTIC'
-                      and dq.status='PASS'
-                  )
-                  and exists(
-                    select 1 from render_qa_results_v2 cq
-                    where cq.variant_revision_id=r.id
-                      and cq.qa_type='CABINA_VISUAL'
-                      and cq.status='PASS'
+                  p.status='PREVIEW_READY'
+                  and v.variant_key='A'
+                  and v.status='PREVIEW_READY'
+                  and r.status='PREVIEW_READY'
+                  and v.best_preview_revision=r.revision
+                  and (
+                    coalesce((p.metadata->>'pilot_human_review_after_preview')::boolean,false)=true
+                    or coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
                   )
                 )
               )
@@ -551,7 +565,7 @@ async function dashboard(sql) {
   const pilotReady=
     String(pilotControl.phase||"")==="PILOT_SINGLE_PROSPECT" &&
     Boolean(pilotMeta.pilot_candidate_revision) &&
-    ["READY_FOR_CABINA_APPROVAL","CABINA_RENDER_REVIEW"].includes(String(pilotMeta.pilot_candidate_status||""));
+    ["READY_FOR_CABINA_APPROVAL","CABINA_RENDER_REVIEW","PREVIEW_READY_FOR_HUMAN_REVIEW"].includes(String(pilotMeta.pilot_candidate_status||""));
   const enrichedBoard=board.map(row=>{
     const v2=v2ByProspect.get(String(row.id_prospect))||{};
     const isPilotCandidate=pilotReady && String(row.id_prospect)===pilotProspectId;
