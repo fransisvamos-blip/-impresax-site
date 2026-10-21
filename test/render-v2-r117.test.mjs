@@ -93,3 +93,14 @@ test("R117 full redesign cannot reuse legacy Cabina copy manifest",()=>{
   const source=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(source,/FULL_FLAGSHIP_REDESIGN\|FULL_REDESIGN\|R117_AUTHORED_FLAGSHIP\|AUTHORED_FLAGSHIP/);
 });
+
+
+test("R117 contains full-bleed scenes locally without global overflow hiding",()=>{
+  const built=buildZeroPhotoPremiumSpec({
+    variantKey:"A",copyManifest:copy,hasIdentity:true,
+    inputPayload:{render_profile:"IMPRESAX_MASTER_V1",verified_services:["Costruzioni","Lavorazioni tecniche"]},
+    sectionAssetTokens:["POSITIONING_VISUAL","FEATURE_1_VISUAL","FEATURE_2_VISUAL"]
+  });
+  assert.match(built.spec.custom_css,/\.ixg-feature--one,\.ixg-feature--two\{[^}]*overflow:hidden!important/);
+  assert.doesNotMatch(built.spec.custom_css,/html,body\{[^}]*overflow-x:hidden/i);
+});
