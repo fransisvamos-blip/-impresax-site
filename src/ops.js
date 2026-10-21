@@ -1862,6 +1862,8 @@ export async function handleOpsRequest(request, env) {
       const activePilotPackId=String(pilotState.pilot_pack_id||"");
       let pilotCertifiedVariants=0;
       let pilotCertifiedAssetObjects=0;
+      let pilotHumanPreviewReady=false;
+      let pilotHumanPreviewAssetObjects=0;
       if(String(pilotState.phase||"")==="PILOT_SINGLE_PROSPECT" && activePilotPackId) {
         const certifiedRows=await sql`select v.variant_key,r.id as revision_id,r.desktop_r2_key,r.mobile_r2_key
           from render_v2_variants v
@@ -1879,10 +1881,37 @@ export async function handleOpsRequest(request, env) {
           const heads=await Promise.all(keys.map(key=>env.RENDER_ARTIFACTS.head(key).catch(()=>null)));
           pilotCertifiedAssetObjects=heads.filter(Boolean).length;
         }
+
+        const previewRows=await sql`select v.variant_key,r.id as revision_id,r.desktop_r2_key,r.mobile_r2_key
+          from render_v2_packs p
+          join render_v2_variants v on v.render_pack_id=p.id
+          join render_variant_revisions r on r.variant_id=v.id and r.revision=v.best_preview_revision
+          where p.id=${activePilotPackId}::uuid
+            and p.status='PREVIEW_READY'
+            and v.variant_key='A'
+            and v.status='PREVIEW_READY'
+            and r.status='PREVIEW_READY'
+            and r.desktop_r2_key is not null
+            and r.mobile_r2_key is not null
+            and (
+              coalesce((p.metadata->>'pilot_human_review_after_preview')::boolean,false)=true
+              or coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
+            )
+          limit 1`;
+        if(renderV2ArtifactsBinding && previewRows.length===1) {
+          const previewKeys=[previewRows[0].desktop_r2_key,previewRows[0].mobile_r2_key].filter(Boolean);
+          const previewHeads=await Promise.all(previewKeys.map(key=>env.RENDER_ARTIFACTS.head(key).catch(()=>null)));
+          pilotHumanPreviewAssetObjects=previewHeads.filter(Boolean).length;
+          pilotHumanPreviewReady=pilotHumanPreviewAssetObjects===2;
+        }
       }
       const pilotTripleVariantReady=
         String(pilotState.phase||"")!=="PILOT_SINGLE_PROSPECT" ||
         (pilotCertifiedVariants===3 && pilotCertifiedAssetObjects===6);
+      const pilotDeliveryReady=
+        String(pilotState.phase||"")!=="PILOT_SINGLE_PROSPECT" ||
+        pilotTripleVariantReady ||
+        pilotHumanPreviewReady;
 
       const falseRenderReady=Number(rows[0]?.false_render_ready_count || 0);
       const legacyRenderQueueActive=Number(rows[0]?.legacy_render_queue_active || 0);
@@ -1896,7 +1925,7 @@ export async function handleOpsRequest(request, env) {
         renderUiPilotBridge &&
         renderUiTripleVariantContract &&
         renderV2ArtifactsBinding &&
-        pilotTripleVariantReady &&
+        pilotDeliveryReady &&
         frozenDbGuard &&
         frozenDbGuardCurrent &&
         falseRenderReady===0 &&
@@ -1972,7 +2001,10 @@ export async function handleOpsRequest(request, env) {
         render_v2_pilot_certified_variants: pilotCertifiedVariants,
         render_v2_pilot_certified_asset_objects: pilotCertifiedAssetObjects,
         render_v2_pilot_triple_variant_ready: pilotTripleVariantReady,
-        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_TRIPLE_VARIANT_20261018",
+        render_v2_pilot_human_preview_ready: pilotHumanPreviewReady,
+        render_v2_pilot_human_preview_asset_objects: pilotHumanPreviewAssetObjects,
+        render_v2_pilot_delivery_ready: pilotDeliveryReady,
+        render_v2_admin_bridge_version: "V2_CONTROL_ROOM_SINGLE_CONCEPT_HUMAN_REVIEW_20261021",
         legacy_render_transports: "DISABLED",
         render_ready_count: Number(rows[0]?.render_ready_count || 0),
         false_render_ready_count: falseRenderReady,
