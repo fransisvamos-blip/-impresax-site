@@ -845,6 +845,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         copyManifest.HERO_BODY=city
           ? "Distribuzione all’ingrosso e lavorazione del tondo per cemento armato a "+city+"."
           : "Distribuzione all’ingrosso e lavorazione del tondo per cemento armato.";
+        copyManifest.POSITIONING_TITLE="Dal materiale alla struttura.";
+        copyManifest.POSITIONING_BODY=city
+          ? "DEDIL DONATO opera a "+city+" nella vendita all’ingrosso di materiali per l’edilizia e nella lavorazione e trasformazione del tondo per cemento armato."
+          : "Vendita all’ingrosso di materiali per l’edilizia e lavorazione e trasformazione del tondo per cemento armato.";
+        copyManifest.SERVICE_1_BODY=city
+          ? "Distribuzione all’ingrosso di materiali per l’edilizia dalla sede di "+city+"."
+          : "Distribuzione all’ingrosso di materiali per l’edilizia.";
+        copyManifest.SERVICE_2_BODY="Lavorazione e trasformazione del tondo per cemento armato.";
+        copyManifest.BRIDGE_TITLE="Parliamo del prossimo cantiere.";
+        copyManifest.BRIDGE_BODY=city
+          ? "Materiali per l’edilizia e lavorazione del tondo: contatta il commerciale DEDIL DONATO a "+city+"."
+          : "Materiali per l’edilizia e lavorazione del tondo: contatta il commerciale DEDIL DONATO.";
+        copyManifest.CLOSING_TITLE="Costruiamo da qui.";
+        copyManifest.CLOSING_BODY=city
+          ? "Per materiali per l’edilizia e lavorazione del tondo, contatta DEDIL DONATO a "+city+"."
+          : "Per materiali per l’edilizia e lavorazione del tondo, contatta DEDIL DONATO.";
+        copyManifest.TRUST_1_LABEL="MATERIALI";
+        copyManifest.TRUST_2_LABEL="ACCIAIO";
+        copyManifest.TRUST_3_LABEL="TERRITORIO";
         copyManifest.TRUST_1=materialService
           ? "Distribuzione B2B di materiali per l’edilizia."
           : "Attività operativa verificata.";
@@ -861,6 +880,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           : "Competenza tecnica applicata alle lavorazioni per il cemento armato.";
         copyManifest.TRUST_3=city
           ? "Sede operativa a "+city+"."
+          : "Presenza operativa verificata.";
+        copyManifest.TRUST_1_BODY="Attività di vendita all’ingrosso dedicata ai materiali per l’edilizia.";
+        copyManifest.TRUST_2_BODY="Servizio di lavorazione e trasformazione del tondo per cemento armato.";
+        copyManifest.TRUST_3_BODY=city
+          ? "Località Morello - Germaneto, "+city+"."
           : "Presenza operativa verificata.";
         copyManifest.TRUST_3_LABEL="Territorio";
         copyManifest.TRUST_3_BODY=String(inputPayload.address||city||copyManifest.TRUST_3).replace(/\s+/g," ").trim();
