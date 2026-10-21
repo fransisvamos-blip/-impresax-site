@@ -843,12 +843,18 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         copyManifest.TRUST_1=materialService
           ? "Distribuzione B2B di materiali per l’edilizia."
           : "Attività operativa verificata.";
+        copyManifest.TRUST_1_LABEL="Forniture";
+        copyManifest.TRUST_1_BODY=materialService||copyManifest.TRUST_1;
         copyManifest.TRUST_2=rebarService
           ? "Lavorazione del tondo per cemento armato."
           : "Competenza tecnica verificata.";
+        copyManifest.TRUST_2_LABEL="Lavorazioni";
+        copyManifest.TRUST_2_BODY=rebarService||copyManifest.TRUST_2;
         copyManifest.TRUST_3=city
           ? "Sede operativa a "+city+"."
           : "Presenza operativa verificata.";
+        copyManifest.TRUST_3_LABEL="Territorio";
+        copyManifest.TRUST_3_BODY=String(inputPayload.address||city||copyManifest.TRUST_3).replace(/\s+/g," ").trim();
         copyManifest.TRUST_TITLE="Evidenze operative";
         copyManifest.TRUST_INTRO=city
           ? "Distribuzione, lavorazione del tondo e presenza operativa a "+city+"."
@@ -1076,19 +1082,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           const zeroAiQueueDeterministic=EXTERNAL_AI_CALLS_ALLOWED!==true
             && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"
             && !r118Mode;
-          const r119GenerativeFirstPass=r119Mode && cycle===1
-            && /R119_.*GENERATIVE|R119_GENERATIVE/i.test(String(params.initialFeedback?.reason||""));
-          const r119SeedPass=r119Mode && cycle===1 && !r119GenerativeFirstPass;
+          const r119JuryReset=String(feedback?.reason||"")==="R118_PERCEPTUAL_HARD_RESET";
           const r118FirstPass=r118Mode && cycle===1 && !r119Mode;
           const legacyDeterministic=!r118Mode && (contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))));
-          if(r119SeedPass) {
+          if(r119Mode) {
             const scene=buildR119SceneComposerSpec({
               copyManifest:context.copyManifest,
               assetTokens:context.editorialAssetTokens,
               hasIdentity:Boolean(context.assets.PRIMARY_LOGO),
-              inputPayload:context.inputPayload
+              inputPayload:context.inputPayload,
+              mode:cycle>1 && r119JuryReset ? "jury-reset" : "base"
             });
-            return {spec:scene.spec,model:scene.strategy,deterministic:true,r119_scene_composer:true,r119_evidence_seed:true};
+            return {
+              spec:scene.spec,
+              model:scene.strategy,
+              deterministic:true,
+              r119_scene_composer:true,
+              r119_fast_authored:true,
+              r119_scene_mode:cycle>1 && r119JuryReset ? "jury-reset" : "base"
+            };
           }
           if(r118FirstPass || zeroAiQueueDeterministic || legacyDeterministic) {
             const deterministic=buildZeroPhotoPremiumSpec({
