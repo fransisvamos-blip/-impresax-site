@@ -78,7 +78,6 @@ export function buildR119SceneComposerSpec({
         '<article data-trust-reason="1"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("TRUST_1_LABEL")+'</span><strong>'+copyToken("TRUST_1")+'</strong></div><p>'+copyToken("TRUST_1_BODY")+'</p></article>'+
         '<article data-trust-reason="2"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("TRUST_2_LABEL")+'</span><strong>'+copyToken("TRUST_2")+'</strong></div><p>'+copyToken("TRUST_2_BODY")+'</p></article>'+
         '<article data-trust-reason="3"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("TRUST_3_LABEL")+'</span><strong>'+copyToken("TRUST_3")+'</strong></div><p>'+copyToken("TRUST_3_BODY")+'</p></article>'+
-        (hasCopy(copyManifest,"PARTNER_1") ? '<article data-trust-reason="4"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><div><span class="r119-proof__label">'+copyToken("PARTNER_SECTION_TITLE")+'</span><strong>'+copyToken("PARTNER_1")+'</strong></div><p>'+copyToken("PARTNER_SECTION_INTRO")+'</p></article>' : "")+
       '</div>'+
       '<div class="r119-proof__locality">'+copyToken("LOCALITY_LINE")+'</div>'+
     '</section>',
@@ -512,6 +511,28 @@ h1,h2,strong{text-wrap:balance}
   .r119-materials.r119-jury-reset .r119-materials__structure{left:-18vw;right:auto}
   .r119-materials.r119-jury-reset .r119-materials__copy{margin:0;padding:52px 18px 74px;text-align:left}
   .r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(2),.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(3),.r119-proof.r119-jury-reset .r119-proof__facts article:nth-child(4){margin-left:0;padding-left:0}
+}
+
+/* R119 V24 — credibility cleanup */
+.r119-materials__media{position:absolute!important;inset:0 0 0 auto!important;width:14vw!important;height:100%!important;margin:0!important;opacity:.045!important;overflow:hidden!important;mix-blend-mode:multiply}
+.r119-materials__media img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:12% center!important;transform:scale(1.45)!important;filter:grayscale(1) contrast(1.8) brightness(.48) blur(2px)!important}
+.r119-materials__veil{display:none!important}
+.r119-materials__structure{width:48vw!important;height:72vh!important;opacity:.9}
+.r119-materials__copy{width:min(720px,46vw)!important}
+.r119-materials__copy h2{max-width:11.5ch!important}
+
+.r119-partner{display:flex!important;flex-direction:column!important;gap:5vh!important}
+.r119-partner__label{position:relative!important;z-index:5!important;width:min(520px,42vw)!important}
+.r119-partner .r119-proof__partner{position:relative!important;inset:auto!important;flex:1 1 auto!important;min-height:420px!important;width:100%!important;margin:0!important;padding:7vh 5vw!important;z-index:2!important}
+.r119-partner .r119-proof__partner strong{max-width:18ch!important}
+
+@media(max-width:700px){
+  .r119-materials__media{display:none!important}
+  .r119-materials__copy{width:auto!important}
+  .r119-materials__structure{width:112vw!important;height:52svh!important;left:-24vw!important;top:72px!important;opacity:.42!important}
+  .r119-partner{display:flex!important;min-height:0!important;padding:48px 18px 28px!important;gap:30px!important}
+  .r119-partner__label{width:auto!important;max-width:30ch!important}
+  .r119-partner .r119-proof__partner{position:relative!important;inset:auto!important;min-height:260px!important;padding:34px 18px!important}
 }
 
 `;
