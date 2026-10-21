@@ -799,6 +799,8 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   };
   const feedbackReason=String(qaFeedback?.reason||"");
   const hardResetReasons=["COMPILER_CONTRACT","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
+  const r119EvidenceMode=allowR118External && /^R119_/i.test(feedbackReason);
+  const dedilR119=r119EvidenceMode && /DEDIL\s+DONATO/i.test(String(inputPayload?.business_name||""));
   const r118CompilerRepair=allowR118External && feedbackReason==="R118_COMPILER_REPAIR";
   const compactCompilerPrevious=r118CompilerRepair && previousSpec ? {
     section_ids:Array.isArray(previousSpec.section_ids)?previousSpec.section_ids.slice(0,12):[],
@@ -808,7 +810,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     main_html:String(previousSpec.main_html||"").slice(0,7000),
     custom_css:String(previousSpec.custom_css||"").slice(0,5000)
   } : null;
-  const safePrevious=hardResetReasons.includes(feedbackReason)
+  const hardResetRequested=hardResetReasons.includes(feedbackReason)
+    || /^R119_.*GENERATIVE|R119_GENERATIVE/i.test(feedbackReason);
+  const safePrevious=hardResetRequested
     ? null
     : (r118CompilerRepair?compactCompilerPrevious:previousSpec);
   const r118ScoreKeys=[
@@ -845,9 +849,14 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "R118 PERCEPTUAL JURY TARGET: the actual screenshots will be judged by a hostile senior design jury. Technical compliance, clean CSS and premium-looking components do NOT count as success if the page still reads as a sequence of website sections.",
     "R118 STRUCTURAL RESET: when reworking a previous spec, preserve verified content and assets but you MAY radically rebuild composition, proportions, section internals, spatial rhythm and image treatment. Do not make micro-fixes when the jury says the perceived value is low.",
     "R118 STUDIO TEST: every major scene must feel designed as a spread, campaign frame or physical brand environment rather than a UI section inside a centered container.",
-    inputPayload?.r118_perceptual_jury===true?"R118 REQUIRED-ID FLEXIBILITY: hero, positioning, services, trust, bridge and final-cta are semantic anchors required by the compiler, NOT a prescribed page sequence. Hero stays first and final-cta stays last; between them, reorder, interleave and radically reshape the semantic anchors to serve the creative thesis.":"",
-    inputPayload?.r118_perceptual_jury===true?"R118 SPATIAL DIVERSITY: at least three major scenes must break the centered-shell pattern through full-bleed media, asymmetric edge anchoring, split fields, oversized type, offset composition or controlled overlap. No two adjacent major scenes may share the same grid logic.":"",
-    inputPayload?.r118_perceptual_jury===true?"R118 HARD RESET BEHAVIOR: when feedback reason is R118_PERCEPTUAL_HARD_RESET, do not preserve DOM order, component hierarchy, section proportions, typography scale or CTA composition from the previous attempt. Preserve only verified content, immutable identity and allowed assets.":"",
+    r119EvidenceMode?"R119 EVIDENCE MODE: build the art direction from verified sector/material/service/territory/partner evidence. Do not fall back to generic industrial copy, testimonial patterns, trust badges, UI cards or stock-corporate modules.":"",
+    dedilR119?"DEDIL R119 NARRATIVE: make construction materials, rebar processing, Catanzaro operational presence and the verified U-Power relationship the authored story. Steel, concrete, rebar, dust, machining precision, engineered linework and DEDIL red/charcoal identity must form a singular visual language.":"",
+    dedilR119?"DEDIL R119 TRUTH RULE: never invent testimonials, certifications, project counts, team size, revenue, customer quotes or generic trust badges. Use only supplied verified tokens and approved assets.":"",
+    dedilR119?"DEDIL R119 ASSET RULE: use distinct approved photography across hero/materials/rebar/proof scenes. Never reuse HERO_VISUAL inside the rebar/service scene when a distinct SERVICE_REBAR_VISUAL or other approved section asset is available.":"",
+    dedilR119?"DEDIL R119 SIGNATURE DEVICE: create one recognizable authored device from industrial geometry/materiality and, when official identity is available, use at most one restrained {{identity:PRIMARY_LOGO}} watermark as part of that scene.":"",
+    allowR118External?"R118 REQUIRED-ID FLEXIBILITY: hero, positioning, services, trust, bridge and final-cta are semantic anchors required by the compiler, NOT a prescribed page sequence. Hero stays first and final-cta stays last; between them, reorder, interleave and radically reshape the semantic anchors to serve the creative thesis.":"",
+    allowR118External?"R118 SPATIAL DIVERSITY: at least three major scenes must break the centered-shell pattern through full-bleed media, asymmetric edge anchoring, split fields, oversized type, offset composition or controlled overlap. No two adjacent major scenes may share the same grid logic.":"",
+    allowR118External?"R118 HARD RESET BEHAVIOR: when feedback reason is R118_PERCEPTUAL_HARD_RESET or an R119 generative reset, do not preserve DOM order, component hierarchy, section proportions, typography scale or CTA composition from the previous attempt. Preserve only verified content, immutable identity and allowed assets.":"",
     "This is NOT a wireframe, starter template, generic agency page, SaaS layout or basic implementation.",
     "NO TEMPLATE TEST is blocking: the design must be difficult to reuse for another company after swapping logo/colors/copy.",
     "Build at least THREE portfolio-grade WOW moments: hero, signature mid-page set piece, and closing scene.",
@@ -874,6 +883,10 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
     "HTML CONTRACT:",
     "- main_html is the CONTENT INSIDE <main>; NEVER output <main>, <html>, <head>, <body>, <header> or <footer> tags.",
     "- R111 HOME DEPTH: use 8-12 substantial <section> blocks and ALWAYS include these exact ids: hero, positioning, services, trust, bridge, final-cta.",
+    "- SECTION_ID INTEGRITY: section_ids must match the ACTUAL top-level <section id=\"...\"> elements one-to-one. Inner service cards, trust items, articles or divs NEVER count as sections.",
+    "- R111 ACTUAL DEPTH: include at least 8 ACTUAL top-level sections in main_html. At least 7 must be substantial, at least 2 must carry data-section-role=\"editorial-feature\", and there must be at least 6 scenes between hero and final-cta.",
+    "- ART-DIRECTED SURFACES: every non-hero top-level section must carry data-surface=\"art-directed\" and custom_css must visibly art-direct .ix-v2-header, .ix-v2-nav and .ix-v2-footer.",
+    "- SECTION VISUAL DENSITY: distribute at least three DISTINCT approved image asset tokens across different top-level scenes; do not satisfy density by repeating the same image.",
     "- The journey must read like a commissioned premium business homepage: hero -> positioning -> services -> at least TWO distinct editorial feature scenes -> trust/proof -> commercial bridge -> final CTA. Use 8-12 sections total; never pad with filler.",
     "- The hero MUST contain an <h1> using {{copy:HERO_HEADLINE}}, a visible {{copy:HERO_BODY}}, and TWO visible button-style anchors using {{cta:PRIMARY}} and {{cta:SECONDARY}}.",
     "- services MUST visibly use {{copy:SERVICES_TITLE}} and {{copy:SERVICES_INTRO}} before the service modules.",
@@ -1007,7 +1020,9 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   ].filter(Boolean).join("\n");
 
   const generatorReasons=["ENGINE_CONTRACT_UPGRADE","SHOWROOM_HARD_RESET","R118_PERCEPTUAL_HARD_RESET"];
-  const role=qaFeedback && !generatorReasons.includes(String(qaFeedback.reason||"")) ? "repair" : "generator";
+  const generatorReason=generatorReasons.includes(String(qaFeedback?.reason||""))
+    || /^R119_/i.test(String(qaFeedback?.reason||""));
+  const role=qaFeedback && !generatorReason ? "repair" : "generator";
   const r=await runStructured(env,role,{
     messages:[
       {role:"system",content:"You are the senior frontend art director for ImpresaX. Produce production-grade, token-safe structured output. Contract compliance is mandatory; premium art direction is mandatory; a premium prospect-relevant HERO_VISUAL is mandatory; invented facts or unapproved assets are forbidden."},
