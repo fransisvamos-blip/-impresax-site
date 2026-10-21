@@ -123,6 +123,7 @@ jobs:
               && grep -q 'src="/mobile.jpg"' /tmp/dedil-preview \
               && grep -q 'width:1440px' /tmp/dedil-preview \
               && grep -q 'width:390px' /tmp/dedil-preview \
+              && grep -q 'Versione mobile' /tmp/dedil-preview \
               && grep -qi 'X-ImpresaX-Render-Preview: RENDER_PREVIEW_V1' /tmp/dedil-preview-headers \
               && grep -qi 'X-Robots-Tag: noindex' /tmp/dedil-preview-headers; then
               ok=1
