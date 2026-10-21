@@ -380,6 +380,45 @@ export function fifteenKValueViolations(mainHtml="",css="") {
   return issues;
 }
 
+export function authoredFlagshipViolations(mainHtml="",css="",spec={}) {
+  const main=String(mainHtml||"");
+  const styles=String(css||"");
+  const issues=[];
+  const hero=main.match(/<section\b[^>]*\bid=["']hero["'][^>]*>/i)?.[0]||"";
+
+  if(!/\bdata-r117-authored-flagship=["']true["']/i.test(hero)) issues.push("R117_AUTHORED_FLAGSHIP_MARKER_REQUIRED");
+  if(!/\bdata-creative-thesis=["']brand-specific["']/i.test(hero)) issues.push("R117_BIG_CREATIVE_IDEA_REQUIRED");
+  if(!/\bdata-no-template-test=["']pass["']/i.test(hero)) issues.push("R117_NO_TEMPLATE_TEST_REQUIRED");
+  if(!/\bdata-portfolio-test=["']pass["']/i.test(hero)) issues.push("R117_PORTFOLIO_TEST_REQUIRED");
+  if(!/\bdata-mobile-native=["']true["']/i.test(hero)) issues.push("R117_NATIVE_MOBILE_REQUIRED");
+
+  const wow=(main.match(/\bdata-wow-moment=["']true["']/gi)||[]).length;
+  if(wow<3) issues.push("R117_THREE_WOW_MOMENTS_REQUIRED:"+wow+"/3");
+
+  const signature=(main.match(/\bdata-signature-section=["']true["']/gi)||[]).length;
+  if(signature<1) issues.push("R117_SIGNATURE_SECTION_REQUIRED");
+
+  const authoredServices=(main.match(/\bixf-service-line\b/gi)||[]).length;
+  if(authoredServices<2) issues.push("R117_EDITORIAL_SERVICE_LEDGER_REQUIRED:"+authoredServices+"/2");
+
+  const editorialScenes=(main.match(/\bdata-editorial-feature=["']true["']/gi)||[]).length;
+  if(editorialScenes<2) issues.push("R117_SIGNATURE_MIDPAGE_SCENES_REQUIRED:"+editorialScenes+"/2");
+
+  const genericCards=(main.match(/class=["'][^"']*\bixg-service\b[^"']*["']/gi)||[]).length;
+  if(genericCards>=3) issues.push("R117_CARD_SOUP_FORBIDDEN:"+genericCards);
+
+  if(!/--ix-r117-display\s*:/i.test(styles)) issues.push("R117_RADICAL_TYPE_SCALE_REQUIRED");
+  if(!/\.ixf-service-line[\s\S]*font-size\s*:\s*clamp\(/i.test(styles)) issues.push("R117_SERVICE_EDITORIAL_SCALE_REQUIRED");
+  if(!/\.ixg-contact h2[\s\S]*font-size\s*:\s*clamp\(/i.test(styles)) issues.push("R117_MONUMENTAL_CLOSING_REQUIRED");
+  if(!/@media\s*\([^)]*max-width\s*:\s*700px/i.test(styles)) issues.push("R117_NATIVE_MOBILE_CSS_REQUIRED");
+  if(!/\.ixf-positioning__media[\s\S]*100vw/i.test(styles)) issues.push("R117_MOBILE_FULL_BLEED_SCENE_REQUIRED");
+
+  if(String(spec?.authored_flagship_standard||"")!=="R117_AUTHORED_FLAGSHIP_15K_V1") {
+    issues.push("R117_SPEC_CONTRACT_REQUIRED");
+  }
+  return issues;
+}
+
 export function iconicCommissionedViolations(mainHtml="",css="") {
   const main=String(mainHtml||"");
   const styles=String(css||"");
