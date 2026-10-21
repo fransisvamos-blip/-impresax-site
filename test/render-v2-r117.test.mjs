@@ -61,3 +61,28 @@ test("R117 authored flagship gate passes deterministic concept A",()=>{
   });
   assert.deepEqual(authoredFlagshipViolations(built.spec.main_html,built.spec.custom_css,built.spec),[]);
 });
+
+
+test("verified partner badge can supply the third flagship proof without using contact data",()=>{
+  const sparseTrustCopy={
+    ...copy,
+    TRUST_1:"Presenza territoriale verificata",
+    TRUST_2:"Telefono ed email verificati per il contatto commerciale",
+    TRUST_3:"Specializzazione B2B verificata",
+    TRUST_BADGE:"RIVENDITORE U-POWER",
+    PARTNER_1:"U-POWER",
+    PARTNER_SECTION_TITLE:"PARTNER",
+    PARTNER_SECTION_INTRO:"Partnership verificata"
+  };
+  const built=buildZeroPhotoPremiumSpec({
+    variantKey:"A",
+    copyManifest:sparseTrustCopy,
+    hasIdentity:true,
+    inputPayload:{render_profile:"IMPRESAX_MASTER_V1",verified_services:["Costruzioni","Lavorazioni tecniche"]},
+    sectionAssetTokens:["POSITIONING_VISUAL","SERVICE_MATERIALS_VISUAL","SERVICE_REBAR_VISUAL","TRUST_VISUAL"]
+  });
+  assert.equal((built.spec.main_html.match(/data-trust-reason=/g)||[]).length,3);
+  assert.match(built.spec.main_html,/data-proof-source="verified-partner"/);
+  assert.match(built.spec.main_html,/\{\{copy:TRUST_BADGE\}\}/);
+  assert.doesNotMatch(built.spec.main_html.match(/<section[^>]*id="trust"[\s\S]*?<\/section>/i)?.[0]||"",/\{\{copy:TRUST_2\}\}/);
+});
