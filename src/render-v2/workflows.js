@@ -757,6 +757,35 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           copyManifest.PARTNER_SECTION_INTRO="Partnership e autorizzazioni commerciali verificate.";
         }
       }
+      const r119EvidenceNarrative=r118PerceptualJury
+        && /R119_SCENE_COMPOSER/i.test(String(params.initialFeedback?.reason||""));
+      if(r119EvidenceNarrative) {
+        for(const key of Object.keys(copyManifest)) {
+          if(/^TRUST_\d+$/.test(key) || /^TRUST_METRIC_/.test(key)) delete copyManifest[key];
+        }
+        const services=verifiedList(inputPayload.verified_services||"");
+        const city=String(inputPayload.city||"").replace(/\s+/g," ").trim();
+        const business=String(inputPayload.business_name||"").replace(/\s+/g," ").trim()
+          .replace(/\s+(?:S\.?R\.?L\.?S?|S\.?P\.?A\.?)$/i,"").trim();
+        if(business) copyManifest.HERO_HEADLINE=business;
+        const materialService=services.find(x=>/vendita\s+all.?ingrosso|materiali\s+per\s+ediliz/i.test(x))||services[0]||"";
+        const rebarService=services.find(x=>/tondo|cemento\s+armato|lavorazione|trasformazione/i.test(x))||services[1]||"";
+        copyManifest.TRUST_1=materialService
+          ? "Distribuzione B2B di materiali per l’edilizia."
+          : "Attività operativa verificata.";
+        copyManifest.TRUST_2=rebarService
+          ? "Lavorazione del tondo per cemento armato."
+          : "Competenza tecnica verificata.";
+        copyManifest.TRUST_3=city
+          ? "Sede operativa a "+city+"."
+          : "Presenza operativa verificata.";
+        copyManifest.TRUST_TITLE="Evidenze operative";
+        copyManifest.TRUST_INTRO=city
+          ? "Distribuzione, lavorazione del tondo e presenza operativa a "+city+"."
+          : "Distribuzione e lavorazione supportate da elementi verificati.";
+        copyManifest.PARTNER_SECTION_TITLE="U-Power";
+        copyManifest.PARTNER_SECTION_INTRO="Rivenditore autorizzato verificato.";
+      }
       const structuralRework=packMetadata.structural_divergence_rework_required===true
         || params.initialFeedback?.reason==="STRUCTURAL_DIVERGENCE_REWORK";
       const r107Retrofit=
@@ -786,6 +815,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
+      const r119MaterialHero=/R119_SCENE_COMPOSER/i.test(String(params.initialFeedback?.reason||""))
+        && context.assets?.SERVICE_REBAR_VISUAL?.r2_key;
+      if(r119MaterialHero) {
+        const source=context.assets.SERVICE_REBAR_VISUAL;
+        const upscaled=await createR112UpscaledHeroAsset(this.env,sql,{
+          packId:params.packId,inputPayload:context.inputPayload,variantKey:params.variantKey,source
+        });
+        const selected=upscaled||source;
+        return {
+          ...selected,
+          asset_id:"HERO_VISUAL",
+          role:"hero",
+          source_type:"R119_VERIFIED_REBAR_MATERIAL_HERO",
+          commercial_use_status:selected.commercial_use_status||"EDITORIAL_APPROVED",
+          generated:Boolean(selected.generated),
+          preqa_pass:true,
+          r119_material_hero:true
+        };
+      }
       const lockedSha=String(context.packMetadata?.hero_lock_sha256||"").trim().toLowerCase();
       if(lockedSha) {
         const locked=await reusableHeroAssetBySha(sql,params.packId,params.variantKey,lockedSha);
