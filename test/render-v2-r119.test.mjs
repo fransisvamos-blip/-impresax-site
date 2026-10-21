@@ -120,8 +120,10 @@ test("R119 workflow strips economic vanity metrics and binds a material hero",as
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(workflows,/const r119EvidenceNarrative=r118PerceptualJury/);
-  assert.match(workflows,/copyManifest\.TRUST_1=.*Distribuzione B2B/);
-  assert.match(workflows,/copyManifest\.TRUST_2=.*Lavorazione del tondo/);
+  assert.match(workflows,/copyManifest\.TRUST_1=materialService/);
+  assert.match(workflows,/Distribuzione B2B di materiali per l’edilizia/);
+  assert.match(workflows,/copyManifest\.TRUST_2=rebarService/);
+  assert.match(workflows,/Lavorazione del tondo per cemento armato/);
   assert.match(workflows,/copyManifest\.TRUST_3=city/);
   assert.match(workflows,/R119_VERIFIED_REBAR_MATERIAL_HERO/);
   assert.match(workflows,/context\.assets\?\.SERVICE_REBAR_VISUAL/);
