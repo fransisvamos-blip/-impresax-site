@@ -181,7 +181,7 @@ test("R119 workflow strips economic vanity metrics and binds a distinct industri
   assert.match(workflows,/R119_DISTINCT_VERIFIED_INDUSTRIAL_HERO/);
   assert.match(workflows,/context\.assets\?\.TRUST_VISUAL/);
   assert.match(workflows,/context\.assets\.POSITIONING_VISUAL/);
-  assert.match(workflows,/context\.assets\.SERVICE_MATERIALS_VISUAL/);
+  assert.match(workflows,/context\.assets\?\.SERVICE_REBAR_VISUAL/);
 });
 
 test("pilot pack upgrades reuse only same-prospect verified licensed section assets",async()=>{
