@@ -1,6 +1,16 @@
 import { neon } from "@neondatabase/serverless";
 import { EXECUTION_ENGINE_VERSION } from "./constants.js";
 
+function canonicalJson(value) {
+  if(value===null || value===undefined) return "null";
+  if(Array.isArray(value)) return "["+value.map(item=>canonicalJson(item)).join(",")+"]";
+  if(typeof value==="object") {
+    const keys=Object.keys(value).filter(key=>value[key]!==undefined).sort();
+    return "{"+keys.map(key=>JSON.stringify(key)+":"+canonicalJson(value[key])).join(",")+"}";
+  }
+  return JSON.stringify(value);
+}
+
 export function db(env) {
   if(!env.OPS_DATABASE_URL) throw new Error("OPS_DATABASE_URL_NOT_CONFIGURED");
   return neon(env.OPS_DATABASE_URL);
@@ -315,7 +325,7 @@ export async function recordQa(sql,{packId,revisionId=null,type,status,scores={}
   if(rows.length) return rows[0];
   const existing=await sql`select * from render_qa_results_v2 where idempotency_key=${key} limit 1`;
   if(!existing.length) throw new Error("SYSTEM_INVARIANT:QA_IDEMPOTENCY_RECOVERY_FAILED");
-  if(existing[0].status!==status || JSON.stringify(existing[0].artifact_hashes||{})!==JSON.stringify(artifactHashes||{})) {
+  if(existing[0].status!==status || canonicalJson(existing[0].artifact_hashes||{})!==canonicalJson(artifactHashes||{})) {
     throw new Error("SYSTEM_INVARIANT:QA_IDEMPOTENCY_MISMATCH");
   }
   return existing[0];
