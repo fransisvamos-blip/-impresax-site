@@ -60,7 +60,7 @@ export function buildR119SceneComposerSpec({
     '<section id="services" class="r119-scene r119-rebar'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
       picture(assets,"SERVICE_REBAR_VISUAL","r119-rebar__media")+
       '<div class="r119-rebar__veil" aria-hidden="true"></div>'+
-      '<div class="r119-rebar__title"><h2>'+copyToken("SERVICE_2_TITLE")+'</h2></div>'+
+      '<div class="r119-rebar__title"><p class="r119-kicker">'+copyToken("SERVICES_TITLE")+'</p><h2>'+copyToken("SERVICE_2_TITLE")+'</h2></div>'+
       '<div class="r119-rebar__body"><p>'+copyToken("SERVICES_INTRO")+'</p>'+service2Body+'</div>'+
 
     '</section>',
