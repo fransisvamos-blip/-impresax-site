@@ -124,6 +124,17 @@ h1,h2,strong{text-wrap:balance}
 .r119-btn--outline{color:var(--r119-ink)}
 .r119-btn--final{min-height:210px;width:min(390px,28vw);background:var(--r119-red);border-color:var(--r119-red);color:white}
 
+/* recurring DEDIL structural signature: an abstract red beam/rebar corner */
+.r119-beam{position:absolute;z-index:2;width:150px;height:150px;border-top:8px solid var(--r119-red);border-right:8px solid var(--r119-red);pointer-events:none;opacity:.92}
+.r119-beam--hero{right:6vw;top:18vh;transform:rotate(12deg)}
+.r119-beam--positioning{left:5vw;top:72px;width:220px;height:92px;border-right:0}
+.r119-beam--materials{right:10vw;bottom:70px;transform:rotate(90deg)}
+.r119-beam--rebar{right:7vw;top:9vh;transform:rotate(180deg)}
+.r119-beam--proof{right:5vw;top:70px;width:110px;height:110px}
+.r119-beam--partner{left:5vw;bottom:58px;transform:rotate(90deg)}
+.r119-beam--contact{right:5vw;top:54px;width:90px;height:90px;opacity:.7}
+.r119-beam--close{right:5vw;top:9vh;width:190px;height:190px;transform:rotate(180deg)}
+
 /* shell is intentionally quiet: the project should read as a campaign, not app chrome */
 .ix-v2-header{background:rgba(248,247,243,.96)!important;color:#0a0b0c!important;border-bottom:1px solid rgba(10,11,12,.12)!important}
 .ix-v2-header-inner{min-height:82px!important;box-shadow:none!important}
@@ -142,26 +153,27 @@ h1,h2,strong{text-wrap:balance}
 .r119-hero__copy h1{margin:14px 0 24px;font-family:var(--ix-display-font);font-size:clamp(64px,7.2vw,122px);line-height:.88;letter-spacing:-.058em;max-width:10.5ch}
 .r119-lede{max-width:40ch;font-size:clamp(16px,1.08vw,19px);line-height:1.55;margin:0 0 30px}
 
-/* 02 — official identity as spatial architecture */
-.r119-positioning{min-height:720px;color:var(--r119-white);background:linear-gradient(118deg,#0a0b0c 0%,#151719 62%,#250808 100%);display:grid;grid-template-columns:minmax(0,.9fr) minmax(260px,.42fr) minmax(360px,.68fr);align-items:stretch;padding:0 0 0 5vw}
-.r119-positioning__identity{position:absolute;right:26vw;top:7%;width:min(640px,46vw);opacity:.08;pointer-events:none}
+/* 02 — positioning as a cinematic brand field, never a split card */
+.r119-positioning{min-height:800px;color:var(--r119-white);background:#0b0c0d;padding:0}
+.r119-positioning__media{position:absolute;inset:0;margin:0;overflow:hidden}
+.r119-positioning__media img{width:100%;height:100%;object-fit:cover;object-position:68% 50%;filter:saturate(.38) contrast(1.24) brightness(.54);transform:scale(1.02)}
+.r119-positioning__veil{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(6,7,8,.97) 0%,rgba(6,7,8,.86) 38%,rgba(6,7,8,.35) 72%,rgba(6,7,8,.10) 100%),linear-gradient(180deg,transparent 40%,rgba(0,0,0,.58) 100%)}
+.r119-positioning__identity{position:absolute;right:4vw;top:8%;width:min(650px,46vw);opacity:.10;pointer-events:none;z-index:2}
 .r119-positioning__identity .ix-v2-identity-main{width:100%!important;height:auto!important;opacity:.10!important;filter:grayscale(1) brightness(2)!important}
-.r119-positioning__copy{position:relative;z-index:2;max-width:860px;padding:108px 3vw 72px 0;align-self:end}
-.r119-positioning__copy h2{font-family:var(--ix-display-font);font-size:clamp(64px,6.8vw,116px);line-height:.86;letter-spacing:-.055em;max-width:11ch;margin:18px 0 28px}
-.r119-positioning__copy>p:last-child{font-size:clamp(17px,1.25vw,21px);line-height:1.55;max-width:42ch}
-.r119-positioning__intro{position:relative;z-index:2;border-left:1px solid rgba(255,255,255,.34);padding:32px 28px;font-size:clamp(17px,1.2vw,21px);line-height:1.5;max-width:30ch;align-self:end;margin-bottom:72px}
-.r119-positioning__media{grid-column:3;margin:0;min-height:720px;overflow:hidden;border-left:1px solid rgba(255,255,255,.14)}
-.r119-positioning__media img{width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.42) contrast(1.18) brightness(.68)}
-
-/* 03 — materials: physical product landscape, not stock-showroom photography */
-.r119-materials{min-height:820px;color:var(--r119-ink);background:#ede8df;display:grid;grid-template-columns:minmax(0,1.28fr) minmax(390px,.72fr)}
-.r119-materials__media{grid-column:1;min-height:820px;margin:0;overflow:hidden}
-.r119-materials__media img{width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.68) contrast(1.17)}
-.r119-materials__copy{grid-column:2;padding:clamp(86px,8vw,138px) clamp(42px,5vw,82px);display:flex;flex-direction:column;justify-content:flex-end;border-left:1px solid var(--r119-line)}
-.r119-materials__copy h2{font-family:var(--ix-display-font);font-size:clamp(52px,5.1vw,84px);line-height:.9;letter-spacing:-.05em;margin:0 0 28px;max-width:13ch}
-.r119-materials__copy .r119-service__body{font-size:17px;line-height:1.58;max-width:31ch}
-.r119-materials__edge{position:absolute;left:0;bottom:0;width:42%;height:8px;background:var(--r119-red)}
-
+.r119-positioning__copy{position:relative;z-index:3;min-height:800px;width:min(820px,62vw);padding:120px 5vw 72px;display:flex;flex-direction:column;justify-content:flex-end}
+.r119-positioning__copy h2{font-family:var(--ix-display-font);font-size:clamp(64px,6.5vw,112px);line-height:.86;letter-spacing:-.055em;max-width:10ch;margin:18px 0 28px}
+.r119-positioning__copy>p:last-child{font-size:clamp(17px,1.25vw,21px);line-height:1.58;max-width:42ch}
+/* 03 — materials: a constructed material installation, no third-party showroom */
+.r119-materials{min-height:760px;color:var(--r119-ink);background:linear-gradient(135deg,#f3efe7 0%,#ebe4d8 72%,#ded3c3 100%);padding:100px 5vw 72px;display:flex;align-items:flex-end}
+.r119-materials__structure{position:absolute;right:5vw;top:74px;width:min(620px,48vw);height:560px;border:1px solid rgba(14,15,16,.18);background:repeating-linear-gradient(90deg,transparent 0 74px,rgba(14,15,16,.09) 74px 75px),repeating-linear-gradient(0deg,transparent 0 74px,rgba(14,15,16,.09) 74px 75px);transform:skewY(-3deg)}
+.r119-materials__structure span{position:absolute;display:block;background:var(--r119-red);box-shadow:0 14px 34px rgba(185,24,24,.18)}
+.r119-materials__structure span:nth-child(1){width:78%;height:14px;left:8%;top:18%;transform:rotate(-10deg)}
+.r119-materials__structure span:nth-child(2){width:14px;height:72%;right:18%;top:8%;transform:rotate(7deg)}
+.r119-materials__structure span:nth-child(3){width:56%;height:8px;right:4%;bottom:18%;transform:rotate(18deg);opacity:.72}
+.r119-materials__copy{position:relative;z-index:3;width:min(680px,52vw);padding:0 0 28px}
+.r119-materials__copy h2{font-family:var(--ix-display-font);font-size:clamp(58px,5.7vw,96px);line-height:.88;letter-spacing:-.052em;margin:18px 0 30px;max-width:11ch}
+.r119-materials__copy .r119-service__body{font-size:18px;line-height:1.6;max-width:34ch}
+.r119-materials__edge{position:absolute;left:0;bottom:0;width:58%;height:10px;background:var(--r119-red)}
 /* 04 — rebar: single giant photographic scene */
 .r119-rebar{min-height:860px;color:white;background:linear-gradient(120deg,#070809,#180a0a);display:grid;grid-template-rows:1fr auto;padding:104px 5vw 64px}
 .r119-rebar__media{position:absolute;inset:0;margin:0}
@@ -171,33 +183,34 @@ h1,h2,strong{text-wrap:balance}
 .r119-rebar__title h2{font-family:var(--ix-display-font);font-size:clamp(62px,6.5vw,108px);line-height:.88;letter-spacing:-.052em;max-width:11ch;margin:0}
 .r119-rebar__body{position:relative;z-index:2;width:min(520px,38vw);font-size:17px;line-height:1.58;padding-top:34px;border-top:1px solid rgba(255,255,255,.34);align-self:end}
 
-/* 05 — operational proof, no economic vanity metrics */
-.r119-proof{min-height:640px;color:var(--r119-ink);background:linear-gradient(135deg,#f4f1ea 0%,#ece6da 72%,#ded3c3 100%);padding:88px 5vw 52px}
-.r119-proof__head{position:relative;z-index:2;width:min(1180px,86vw);padding:0 0 44px}
-.r119-proof__head h2{font-family:var(--ix-display-font);font-size:clamp(48px,5.2vw,88px);line-height:.9;letter-spacing:-.052em;margin:16px 0 0;max-width:15ch}
-.r119-proof__facts{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(14,15,16,.28);border-bottom:1px solid rgba(14,15,16,.20)}
-.r119-proof__facts article{min-height:220px;padding:30px 34px 30px 0;border-right:1px solid rgba(14,15,16,.17);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:32px}
-.r119-proof__facts article:nth-child(2),.r119-proof__facts article:nth-child(3){padding-left:34px}
-.r119-proof__facts article:nth-child(3){border-right:0}
-.r119-proof__facts strong{font-family:var(--ix-display-font);font-size:clamp(25px,2.15vw,36px);line-height:1.03;letter-spacing:-.026em;max-width:18ch}
-.r119-proof__mark{width:56px;height:8px;background:var(--r119-red);display:block;box-shadow:18px 12px 0 rgba(185,24,24,.28)}
+/* 05 — stepped operational evidence ledger */
+.r119-proof{min-height:760px;color:var(--r119-ink);background:linear-gradient(135deg,#f5f2eb 0%,#ebe5da 72%,#ddd2c1 100%);padding:92px 5vw 58px}
+.r119-proof__head{position:relative;z-index:3;width:min(1040px,78vw);padding:0 0 46px}
+.r119-proof__head h2{font-family:var(--ix-display-font);font-size:clamp(50px,5.3vw,90px);line-height:.9;letter-spacing:-.052em;margin:16px 0 0;max-width:14ch}
+.r119-proof__facts{position:relative;z-index:3;border-top:1px solid rgba(14,15,16,.30)}
+.r119-proof__facts article{min-height:160px;border-bottom:1px solid rgba(14,15,16,.18);display:grid;grid-template-columns:72px minmax(260px,.9fr) minmax(260px,1.1fr);gap:32px;align-items:center;padding:24px 0}
+.r119-proof__facts article:nth-child(2){margin-left:8vw}
+.r119-proof__facts article:nth-child(3){margin-left:16vw}
+.r119-proof__facts strong{display:block;font-family:var(--ix-display-font);font-size:clamp(25px,2.1vw,36px);line-height:1.02;letter-spacing:-.028em;max-width:18ch;margin-top:8px}
+.r119-proof__facts p{margin:0;max-width:48ch;font-size:15px;line-height:1.6;opacity:.78}
+.r119-proof__label{font-size:10px;text-transform:uppercase;letter-spacing:.16em;font-weight:800;color:var(--r119-red)}
+.r119-proof__mark{width:48px;height:8px;background:var(--r119-red);display:block;box-shadow:14px 12px 0 rgba(185,24,24,.22)}
 .r119-proof__locality{margin-top:28px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;letter-spacing:.10em;text-transform:uppercase}
-
-/* 06 — verified U-Power partnership as a gallery wall */
-.r119-partner{min-height:600px;background:radial-gradient(circle at 78% 34%,rgba(185,24,24,.18),transparent 34%),linear-gradient(118deg,#0b0c0d 0%,#151719 58%,#210707 100%);color:white;display:grid;grid-template-columns:minmax(320px,.55fr) minmax(0,1.45fr);align-items:stretch}
-.r119-partner__label{padding:68px 5vw;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid rgba(255,255,255,.18);gap:42px}
-.r119-partner__label>p:last-child{max-width:26ch;font-size:17px;line-height:1.55}
-.r119-partner .r119-proof__partner{margin:0;padding:72px clamp(54px,8vw,140px);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:34px;background:linear-gradient(125deg,#131516,#090a0b 64%,#280707)}
-.r119-partner .r119-proof__partner img{width:min(430px,72%);max-height:190px;object-fit:contain;filter:grayscale(1) brightness(2)}
-.r119-partner .r119-proof__partner strong{font-family:var(--ix-display-font);font-size:clamp(46px,4.8vw,80px);line-height:.9;letter-spacing:-.046em;max-width:12ch}
-.r119-partner__frame{width:min(210px,80%);height:120px;border:1px solid rgba(255,255,255,.24);background:linear-gradient(135deg,transparent 0 47%,rgba(185,24,24,.88) 47% 53%,transparent 53% 100%);box-shadow:28px 28px 0 rgba(255,255,255,.04)}
-
-/* 07 — contact interlude */
-.r119-contact{min-height:440px;color:var(--r119-ink);background:linear-gradient(110deg,#f4f1ea,#e9e3d8 65%,#f2ede5);display:grid;grid-template-columns:.72fr 1.08fr 320px;gap:4vw;align-items:center;padding:56px 5vw;border-top:1px solid var(--r119-line);border-bottom:1px solid var(--r119-line)}
-.r119-contact__meta p:last-child{font-size:16px;line-height:1.5;max-width:30ch}
-.r119-contact__locality strong{font-family:var(--ix-display-font);font-size:clamp(52px,6vw,98px);line-height:.8;letter-spacing:-.065em;max-width:9ch;display:block}
-.r119-contact .r119-btn{min-height:160px}
-
+/* 06 — verified U-Power as a single museum-like brand stage */
+.r119-partner{min-height:640px;background:radial-gradient(circle at 58% 48%,rgba(185,24,24,.18),transparent 32%),linear-gradient(118deg,#0b0c0d 0%,#151719 62%,#250808 100%);color:white;padding:70px 5vw;display:block}
+.r119-partner__label{position:relative;z-index:3;width:min(340px,30vw);display:flex;flex-direction:column;gap:18px}
+.r119-partner__label>p:last-child{max-width:28ch;font-size:16px;line-height:1.55}
+.r119-partner .r119-proof__partner{position:absolute;inset:0;margin:0;padding:80px 8vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;text-align:center}
+.r119-partner .r119-proof__partner img{width:min(520px,42vw);max-height:210px;object-fit:contain;filter:grayscale(1) brightness(2)}
+.r119-partner .r119-proof__partner strong{font-family:var(--ix-display-font);font-size:clamp(40px,4vw,70px);line-height:.92;letter-spacing:-.042em;max-width:16ch}
+.r119-partner__frame{position:absolute;right:-58vw;top:42px;width:180px;height:180px;border:1px solid rgba(255,255,255,.24);background:linear-gradient(135deg,transparent 0 47%,rgba(185,24,24,.90) 47% 53%,transparent 53% 100%);box-shadow:28px 28px 0 rgba(255,255,255,.04)}
+/* 07 — contact as an oversized commercial interlude, not a three-column module */
+.r119-contact{min-height:470px;color:var(--r119-ink);background:linear-gradient(110deg,#f4f1ea,#e7dfd2 66%,#f1ebe2);padding:70px 5vw;display:flex;flex-direction:column;justify-content:space-between;border-top:1px solid var(--r119-line);border-bottom:1px solid var(--r119-line)}
+.r119-contact__meta{position:relative;z-index:3;width:min(520px,44vw)}
+.r119-contact__meta p:last-child{font-size:17px;line-height:1.55;max-width:32ch}
+.r119-contact__locality{position:absolute;left:38vw;bottom:46px;z-index:2;opacity:.10}
+.r119-contact__locality strong{font-family:var(--ix-display-font);font-size:clamp(110px,15vw,230px);line-height:.72;letter-spacing:-.075em;white-space:nowrap;display:block}
+.r119-contact .r119-btn{position:absolute;right:5vw;bottom:64px;z-index:4;min-height:120px;width:min(320px,25vw)}
 /* 08 — close */
 .r119-close{min-height:88svh;color:white;background:linear-gradient(125deg,#070809 0%,#111314 52%,#330707 100%);display:flex;align-items:flex-end;padding:94px 5vw 56px}
 .r119-close__copy{position:relative;z-index:2;width:min(1040px,70vw)}
@@ -340,7 +353,7 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
   if((main.match(/\bixg-shell\b/gi)||[]).length>0) issues.push("R119_CENTERED_SHELL_CADENCE_FORBIDDEN");
   if((main.match(/\bixg-section-head\b/gi)||[]).length>0) issues.push("R119_GENERIC_SECTION_HEADER_FORBIDDEN");
   if((main.match(/\bdata-wow-moment=["']true["']/gi)||[]).length<4) issues.push("R119_FOUR_WOW_SCENES_REQUIRED");
-  if(!/\br119-materials__media\b/i.test(main) || !/\br119-rebar__media\b/i.test(main) || !/\br119-positioning__identity\b/i.test(main)) {
+  if(!/\br119-materials__structure\b/i.test(main) || !/\br119-rebar__media\b/i.test(main) || !/\br119-positioning__media\b/i.test(main) || !/\br119-positioning__identity\b/i.test(main)) {
     issues.push("R119_DISTINCT_IMAGE_ARCHITECTURES_REQUIRED");
   }
   const trust=main.match(/<section\b[^>]*\bid=["']trust["'][^>]*>[\s\S]*?<\/section>/i)?.[0]||"";
