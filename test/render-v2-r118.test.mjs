@@ -170,7 +170,7 @@ test("R118 hard reset compacts jury feedback to fit provider context",()=>{
   assert.match(ai,/const compactR118Feedback=allowR118External && qaFeedback/);
   assert.match(ai,/slice\(0,14\)/);
   assert.match(ai,/slice\(0,6\)/);
-  assert.match(ai,/maxTokens:allowR118External\?7600:12000/);
+  assert.match(ai,/maxTokens:allowR118External\?9000:12000/);
   assert.match(ai,/JSON\.stringify\(compactR118Feedback\)/);
 });
 
