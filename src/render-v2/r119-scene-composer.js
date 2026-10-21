@@ -544,17 +544,16 @@ h1,h2,strong{text-wrap:balance}
 
 .r119-materials{background:linear-gradient(120deg,#ece5da 0%,#e4dacb 55%,#d9cbbc 100%)!important}
 .r119-materials__structure{width:58vw!important;height:76vh!important;left:auto!important;right:-5vw!important;top:8vh!important;opacity:1!important;border:1px solid rgba(10,11,12,.18)!important;background:linear-gradient(90deg,transparent 0 71%,rgba(185,24,24,.92) 71% 72%,transparent 72%),linear-gradient(0deg,transparent 0 64%,rgba(10,11,12,.22) 64% 64.4%,transparent 64.4%),repeating-linear-gradient(90deg,transparent 0 78px,rgba(10,11,12,.07) 78px 80px),repeating-linear-gradient(0deg,transparent 0 78px,rgba(10,11,12,.07) 78px 80px)!important}
-.r119-materials__structure:before,.r119-materials__structure:after{content:"";position:absolute;display:block;background:#111315}
-.r119-materials__structure:before{width:72%;height:12px;right:0;top:18%;box-shadow:0 138px 0 rgba(17,19,21,.52),0 276px 0 rgba(17,19,21,.26)}
-.r119-materials__structure:after{width:12px;height:74%;right:18%;top:8%;background:var(--r119-red);box-shadow:-180px 0 0 rgba(17,19,21,.46)}
+.r119-materials__structure span:nth-child(1){display:block!important;width:72%!important;height:12px!important;left:auto!important;right:0!important;top:18%!important;transform:none!important;background:#111315!important;box-shadow:0 138px 0 rgba(17,19,21,.52),0 276px 0 rgba(17,19,21,.26)!important}
+.r119-materials__structure span:nth-child(2){display:block!important;width:12px!important;height:74%!important;left:auto!important;right:18%!important;top:8%!important;transform:none!important;background:var(--r119-red)!important;box-shadow:-180px 0 0 rgba(17,19,21,.46)!important}
+.r119-materials__structure span:nth-child(3){display:block!important;width:42%!important;height:5px!important;left:8%!important;right:auto!important;bottom:12%!important;top:auto!important;transform:none!important;background:rgba(17,19,21,.38)!important}
 .r119-materials__copy{width:min(700px,43vw)!important;position:relative!important;z-index:6!important}
 .r119-materials__copy h2{font-size:clamp(66px,6.5vw,112px)!important}
 
 .r119-partner{background:radial-gradient(circle at 82% 18%,rgba(185,24,24,.22),transparent 32%),repeating-linear-gradient(90deg,transparent 0 92px,rgba(255,255,255,.025) 92px 93px),linear-gradient(125deg,#090a0b 0%,#151719 72%,#240808 100%)!important;color:white!important}
-.r119-partner:before{content:"";position:absolute;left:5vw;top:0;width:10px;height:100%;background:var(--r119-red);opacity:.92}
+.r119-partner .r119-beam--partner{display:block!important;position:absolute!important;left:5vw!important;top:0!important;width:10px!important;height:100%!important;background:var(--r119-red)!important;opacity:.92!important;transform:none!important;z-index:1!important}
 .r119-partner__label{padding-left:34px!important}
 .r119-partner .r119-proof__partner{background:#f2eee6!important;color:#0a0b0c!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 40px 100px rgba(0,0,0,.38)!important}
-.r119-partner .r119-proof__partner:after{content:"";position:absolute;right:0;top:0;width:12px;height:100%;background:var(--r119-red)}
 .r119-partner .r119-proof__partner img{filter:none!important}
 
 .r119-contact{background:linear-gradient(115deg,#a91313 0%,#c31d1d 54%,#7e0d0d 100%)!important}
@@ -572,7 +571,7 @@ h1,h2,strong{text-wrap:balance}
   .r119-materials__structure{display:block!important;position:absolute!important;width:116vw!important;height:58svh!important;right:-48vw!important;left:auto!important;top:48px!important;opacity:.52!important}
   .r119-materials__copy{width:auto!important;max-width:92%!important}
   .r119-partner{padding-left:28px!important;background:linear-gradient(150deg,#090a0b,#191a1c 70%,#310909)!important}
-  .r119-partner:before{left:18px;width:5px}
+  .r119-partner .r119-beam--partner{left:18px!important;width:5px!important}
   .r119-partner__label{padding-left:12px!important}
   .r119-contact__link{position:absolute;left:18px;right:18px;top:auto;bottom:26px;width:auto;padding:18px 0}
   .r119-contact{padding-bottom:112px!important}
