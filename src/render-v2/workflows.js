@@ -953,7 +953,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             && RENDER_GENERATION_MODE==="CHATGPT_CABINA_ZERO_EXTRA_AI"
             && !r118Mode;
           const r118FirstPass=r118Mode && cycle===1;
-          const r119SceneRepair=r118Mode && cycle>=2;
+          const r119SceneRepair=r118Mode && (cycle>=2 || /R119_SCENE_COMPOSER/i.test(String(params.initialFeedback?.reason||"")));
           const legacyDeterministic=!r118Mode && (contractUpgradeDeterministic || (cycle===1 && (structuralDeterministic || (context.heroOnly && ["QUEUE_AUTO_RECOVERY","PILOT_LAYOUT_MICROPOLISH_REUSE_HERO"].includes(String(feedback?.reason||""))))));
           if(r119SceneRepair) {
             const scene=buildR119SceneComposerSpec({
