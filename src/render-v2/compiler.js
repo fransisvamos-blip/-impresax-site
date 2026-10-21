@@ -1,3 +1,4 @@
+import { r119SceneComposerViolations, R119_SCENE_COMPOSER_STANDARD } from "./r119-scene-composer.js";
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
 import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, authoredFlagshipViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations, sectionSubstanceViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
@@ -178,7 +179,7 @@ export function validateRenderSpec(spec, manifests) {
   const usedAssetKeys=tokenSet(main,ASSET_TOKEN);
   const isR116Flagship=["R116_FLAGSHIP_PREMIUM_ARCHITECTURE_V1","R117_AUTHORED_FLAGSHIP_15K_V1"].includes(String(spec?.flagship_architecture_standard||""));
   for(const issue of copyPolicyViolations(manifests?.copy||{},usedCopyKeys,{
-    allow_verified_proof_metrics:isR116Flagship
+    allow_verified_proof_metrics:isR116Flagship || String(spec?.scene_composer_standard||"")===R119_SCENE_COMPOSER_STANDARD
   })) issues.push(issue);
   for(const issue of surfaceContractViolations(main)) issues.push(issue);
   for(const issue of flatStrongSectionBackgroundViolations(main,css)) issues.push(issue);
@@ -215,6 +216,9 @@ export function validateRenderSpec(spec, manifests) {
   }
   if(String(spec?.authored_flagship_standard||"")==="R117_AUTHORED_FLAGSHIP_15K_V1") {
     for(const issue of authoredFlagshipViolations(main,css,spec)) issues.push(issue);
+  }
+  if(String(spec?.scene_composer_standard||"")===R119_SCENE_COMPOSER_STANDARD) {
+    for(const issue of r119SceneComposerViolations(main,css,spec,manifests)) issues.push(issue);
   }
 
   if(String(spec?.home_depth_standard||"")==="R111_15K_HOME_DEPTH_ARCHITECTURE_V1") {
