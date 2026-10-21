@@ -81,3 +81,10 @@ test("R118 repair cycles route to R119 instead of full-spec AI generation",async
   assert.match(workflows,/buildR119SceneComposerSpec/);
   assert.match(workflows,/r119_scene_composer:true/);
 });
+
+
+test("R119 hero exposes canonical browser-gate hooks",()=>{
+  const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
+  assert.match(built.spec.main_html,/class="r119-lede ixg-lede"/);
+  assert.match(built.spec.main_html,/class="r119-actions ixg-actions"/);
+});
