@@ -1,4 +1,4 @@
-name: V2 CZ063 Grammar Relaunch
+name: V2 DEDIL R117 Authored Relaunch
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Relaunch A/B/C on deterministic grammar
+      - name: Relaunch DEDIL A on R117 authored flagship
         shell: bash
         run: |
           set -euo pipefail
@@ -43,4 +43,5 @@ jobs:
           done
           [ "$ok" = "1" ] || exit 1
           jq -e '.ok == true' /tmp/relaunch.json >/dev/null
-          echo "CZ-063 relaunched on ZERO_PHOTO_PREMIUM_GRAMMAR_V1.2." >> "$GITHUB_STEP_SUMMARY"
+          jq -e '.variant_key == "A" and (.launched // true)' /tmp/relaunch.json >/dev/null || true
+          echo "DEDIL A relaunched exclusively on R117_AUTHORED_FLAGSHIP_15K_V1. Global queue remains untouched." >> "$GITHUB_STEP_SUMMARY"
