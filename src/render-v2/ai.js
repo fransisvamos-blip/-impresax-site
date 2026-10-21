@@ -198,7 +198,9 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
   for(const attempt of plan) {
     const model=fastR118Qa
       ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
-      : modelFor(env,role,attempt.fallback);
+      : (fastR118Generation
+          ? (env.V2_R118_FAST_GENERATOR_MODEL||DEFAULT_MODELS.codeFallback)
+          : modelFor(env,role,attempt.fallback));
     if(beforeAttempt) await beforeAttempt({role,model,fallback:attempt.fallback,retry:attempt.retry});
     try {
       const retrySuffix=attempt.retry
@@ -220,7 +222,9 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
-      const aiTimeoutMs=Math.max(30000,Math.min(180000,Number(env.V2_AI_CALL_TIMEOUT_MS||105000)));
+      const aiTimeoutMs=fastR118Generation
+        ? Math.max(30000,Math.min(90000,Number(env.V2_R118_FAST_GENERATOR_TIMEOUT_MS||75000)))
+        : Math.max(30000,Math.min(180000,Number(env.V2_AI_CALL_TIMEOUT_MS||105000)));
       const result=await withAiDeadline(env.AI.run(model,inference,runOptions),aiTimeoutMs,role+":"+model);
       try {
         return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
