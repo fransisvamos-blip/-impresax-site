@@ -17,16 +17,19 @@ export function buildR119SceneComposerSpec({
   copyManifest={},
   assetTokens=[],
   hasIdentity=true,
-  inputPayload={}
+  inputPayload={},
+  mode="base"
 }={}) {
   const assets=[...new Set(assetTokens||[])];
+  const juryReset=mode==="jury-reset";
+  const sceneModeClass=juryReset?" r119-jury-reset":"";
   const partner=hasCopy(copyManifest,"PARTNER_1") && hasAsset(assets,"PARTNER_UPOWER_LOGO");
   const service1Body=hasCopy(copyManifest,"SERVICE_1_BODY")
     ? '<p class="r119-service__body">'+copyToken("SERVICE_1_BODY")+'</p>' : "";
   const service2Body=hasCopy(copyManifest,"SERVICE_2_BODY")
     ? '<p class="r119-service__body">'+copyToken("SERVICE_2_BODY")+'</p>' : "";
   const partnerMarkup=partner
-    ? '<div class="r119-proof__partner" data-verified-partner="true"><img src="'+assetToken("PARTNER_UPOWER_LOGO")+'" alt=""><strong>'+copyToken("PARTNER_1")+'</strong></div>'
+    ? '<div class="r119-proof__partner" data-verified-partner="true" data-partner-verification="verified-only" data-partner-stage="commissioned"><img src="'+assetToken("PARTNER_UPOWER_LOGO")+'" alt=""><strong>'+copyToken("PARTNER_1")+'</strong></div>'
     : "";
   const identity="";
   const identityField=hasIdentity
@@ -34,51 +37,52 @@ export function buildR119SceneComposerSpec({
     : "";
 
   const main=[
-    '<section id="hero" class="r119-scene r119-hero" data-r119-scene="true" data-r118-perceptual-jury="true" data-launch-hero="true" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true" data-mobile-native="true">'+
+    '<section id="hero" class="r119-scene r119-hero'+sceneModeClass+'" data-r119-scene="true" data-r118-perceptual-jury="true" data-launch-hero="true" data-hero-full-bleed="true" data-typography-system="responsive" data-copy-density="controlled" data-value-perception="15k" data-brand-specific="true" data-sales-architecture="true" data-custom-made="true" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true" data-mobile-native="true">'+
       picture(assets,"HERO_VISUAL","r119-hero__media")+
       '<div class="r119-hero__veil" aria-hidden="true"></div>'+
       '<div class="r119-hero__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h1>'+copyToken("HERO_HEADLINE")+'</h1><p class="r119-lede ixg-lede">'+copyToken("HERO_BODY")+'</p><div class="r119-actions ixg-actions"><a class="r119-btn r119-btn--solid" data-premium-button="true" href="'+ctaToken("PRIMARY")+'">'+copyToken("PRIMARY_CTA_LABEL")+'</a><a class="r119-btn r119-btn--ghost" data-premium-button="true" href="'+ctaToken("SECONDARY")+'">'+copyToken("SECONDARY_CTA_LABEL")+'</a></div></div>'+
 
     '</section>',
 
-    '<section id="positioning" class="r119-scene r119-positioning" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="editorial" data-wow-moment="true">'+
+    '<section id="positioning" class="r119-scene r119-positioning'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="editorial" data-wow-moment="true">'+
       identityField+
       '<div class="r119-positioning__copy"><p class="r119-kicker">'+copyToken("POSITIONING_TITLE")+'</p><h2>'+copyToken("SERVICES_TITLE")+'</h2><p>'+copyToken("POSITIONING_BODY")+'</p></div>'+
       '<div class="r119-positioning__intro">'+copyToken("SERVICES_INTRO")+'</div>'+
+      picture(assets,"POSITIONING_VISUAL","r119-positioning__media")+
     '</section>',
 
-    '<section id="materials" class="r119-scene r119-materials" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="material" data-wow-moment="true">'+
+    '<section id="materials" class="r119-scene r119-materials'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="material" data-wow-moment="true">'+
       picture(assets,"SERVICE_MATERIALS_VISUAL","r119-materials__media")+
-      '<div class="r119-materials__copy"><p class="r119-kicker">'+copyToken("SERVICES_TITLE")+'</p><h2>'+copyToken("SERVICE_1_TITLE")+'</h2>'+service1Body+'</div>'+
+      '<div class="r119-materials__copy"><h2>'+copyToken("SERVICE_1_TITLE")+'</h2>'+service1Body+'</div>'+
       '<div class="r119-materials__edge" aria-hidden="true"></div>'+
     '</section>',
 
-    '<section id="services" class="r119-scene r119-rebar" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
+    '<section id="services" class="r119-scene r119-rebar'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
       picture(assets,"SERVICE_REBAR_VISUAL","r119-rebar__media")+
       '<div class="r119-rebar__veil" aria-hidden="true"></div>'+
-      '<div class="r119-rebar__title"><p class="r119-kicker">'+copyToken("SERVICES_TITLE")+'</p><h2>'+copyToken("SERVICE_2_TITLE")+'</h2></div>'+
+      '<div class="r119-rebar__title"><h2>'+copyToken("SERVICE_2_TITLE")+'</h2></div>'+
       '<div class="r119-rebar__body"><p>'+copyToken("SERVICES_INTRO")+'</p>'+service2Body+'</div>'+
 
     '</section>',
 
-    '<section id="trust" class="r119-scene r119-proof" data-r119-scene="true" data-surface="art-directed" data-brand-surface="primary" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="editorial" data-wow-moment="true">'+
+    '<section id="trust" class="r119-scene r119-proof'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="primary" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="editorial" data-wow-moment="true">'+
       '<div class="r119-proof__head"><p class="r119-kicker">'+copyToken("TRUST_TITLE")+'</p><h2>'+copyToken("TRUST_INTRO")+'</h2></div>'+
-      '<div class="r119-proof__facts"><article data-trust-reason="1"><strong>'+copyToken("TRUST_1")+'</strong></article><article data-trust-reason="2"><strong>'+copyToken("TRUST_2")+'</strong></article><article data-trust-reason="3"><strong>'+copyToken("TRUST_3")+'</strong></article></div>'+
+      '<div class="r119-proof__facts"><article data-trust-reason="1"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><strong>'+copyToken("TRUST_1")+'</strong></article><article data-trust-reason="2"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><strong>'+copyToken("TRUST_2")+'</strong></article><article data-trust-reason="3"><span class="r119-proof__mark ixg-trust-reason__graphic" aria-hidden="true"></span><strong>'+copyToken("TRUST_3")+'</strong></article></div>'+
       '<div class="r119-proof__locality">'+copyToken("LOCALITY_LINE")+'</div>'+
     '</section>',
 
-    '<section id="partners" class="r119-scene r119-partner" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-stage-depth="gallery" data-wow-moment="true">'+
-      '<div class="r119-partner__label"><p class="r119-kicker">'+copyToken("PARTNER_SECTION_TITLE")+'</p><p>'+copyToken("PARTNER_SECTION_INTRO")+'</p></div>'+
+    '<section id="partners" class="r119-scene r119-partner'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-signature-moment="true" data-stage-depth="gallery" data-wow-moment="true">'+
+      '<div class="r119-partner__label"><p class="r119-kicker">'+copyToken("PARTNER_SECTION_TITLE")+'</p><p>'+copyToken("PARTNER_SECTION_INTRO")+'</p><div class="r119-partner__frame" aria-hidden="true"></div></div>'+
       partnerMarkup+
     '</section>',
 
-    '<section id="bridge" class="r119-scene r119-contact" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-stage-depth="material">'+
+    '<section id="bridge" class="r119-scene r119-contact'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="tint" data-copy-density="controlled" data-stage-depth="material">'+
       '<div class="r119-contact__meta"><p class="r119-kicker">'+copyToken("BRIDGE_TITLE")+'</p><p>'+copyToken("BRIDGE_BODY")+'</p></div>'+
       '<div class="r119-contact__locality"><strong>'+copyToken("LOCALITY_LINE")+'</strong></div>'+
       '<a class="r119-btn r119-btn--outline" data-premium-button="true" href="'+ctaToken("SECONDARY")+'">'+copyToken("SECONDARY_CTA_LABEL")+'</a>'+
     '</section>',
 
-    '<section id="final-cta" class="r119-scene r119-close" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
+    '<section id="final-cta" class="r119-scene r119-close'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="controlled" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
       identity+
       '<div class="r119-close__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h2>'+copyToken("CLOSING_TITLE")+'</h2><p>'+copyToken("CLOSING_BODY")+'</p></div>'+
       '<a class="r119-btn r119-btn--final" data-premium-button="true" href="'+ctaToken("PRIMARY")+'">'+copyToken("PRIMARY_CTA_LABEL")+'</a>'+
