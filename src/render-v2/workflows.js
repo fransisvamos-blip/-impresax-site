@@ -251,6 +251,67 @@ async function inputAssetsFromDb(sql,packId,inputPayload) {
     const source=(inputPayload.assets||[]).find(x=>x.asset_id===token)||{};
     byToken[token]={...source,r2_key:row.r2_key,sha256:row.sha256,mime:row.mime,bytes:row.bytes};
   }
+
+  // Contract upgrades create a fresh V2 pack. Preserve only previously verified,
+  // same-prospect licensed editorial assets (and verified partner identity) so
+  // a pack rotation does not silently discard approved visual evidence.
+  const reusable=await sql`
+    select distinct on (a.artifact_type)
+      a.artifact_type,a.r2_key,a.sha256,a.mime,a.bytes,
+      prior.id as prior_pack_id,
+      provenance.item->>'source' as provenance_source,
+      provenance.item->>'license' as provenance_license,
+      prior.metadata->>'partner_logo_asset' as partner_logo_asset,
+      coalesce((prior.metadata->>'verified_partner_logo_required')::boolean,false) as verified_partner_logo_required
+    from render_v2_packs current_pack
+    join render_v2_packs prior
+      on prior.prospect_id=current_pack.prospect_id
+     and prior.id<>current_pack.id
+     and prior.status in ('SUPERSEDED','CANCELLED','ESCALATION_REQUIRED','PREVIEW_READY','RENDER_READY')
+    join render_artifacts_v2 a
+      on a.render_pack_id=prior.id
+     and a.artifact_type like 'INPUT_ASSET_%'
+    left join lateral (
+      select item
+      from jsonb_array_elements(coalesce(prior.metadata->'section_visuals_provenance','[]'::jsonb)) item
+      where item->>'token'=replace(a.artifact_type,'INPUT_ASSET_','')
+      limit 1
+    ) provenance on true
+    where current_pack.id=${packId}::uuid
+      and (
+        (
+          provenance.item is not null
+          and coalesce(provenance.item->>'source','')<>''
+          and coalesce(provenance.item->>'license','')<>''
+        )
+        or (
+          replace(a.artifact_type,'INPUT_ASSET_','')=coalesce(prior.metadata->>'partner_logo_asset','')
+          and coalesce((prior.metadata->>'verified_partner_logo_required')::boolean,false)=true
+        )
+      )
+    order by a.artifact_type,prior.created_at desc,a.created_at desc`;
+
+  for(const row of reusable) {
+    const token=String(row.artifact_type).replace(/^INPUT_ASSET_/,"");
+    if(byToken[token]) continue;
+    const partnerVerified=token===String(row.partner_logo_asset||"") && row.verified_partner_logo_required===true;
+    const provenanceSource=String(row.provenance_source||"").trim();
+    const provenanceLicense=String(row.provenance_license||"").trim();
+    byToken[token]={
+      asset_id:token,
+      role:partnerVerified?"partner":"editorial",
+      source_url:provenanceSource||undefined,
+      source_type:partnerVerified?"VERIFIED_PARTNER_ASSET_REUSED":"LICENSED_EDITORIAL_REUSED",
+      commercial_use_status:partnerVerified?"VERIFIED_PARTNER_IDENTITY":"LICENSED_COMMERCIAL",
+      license:provenanceLicense||undefined,
+      cross_pack_reused:true,
+      source_pack_id:String(row.prior_pack_id),
+      r2_key:row.r2_key,
+      sha256:row.sha256,
+      mime:row.mime,
+      bytes:row.bytes
+    };
+  }
   return byToken;
 }
 
