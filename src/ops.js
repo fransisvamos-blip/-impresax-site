@@ -443,13 +443,29 @@ async function renderV2AssetResponse(sql, env, revisionId, mode) {
     return new Response("Render storage unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
   }
   const rows=await sql`select r.id,r.status,r.desktop_r2_key,r.mobile_r2_key,
-      v.status as variant_status,v.certified_revision
+      v.status as variant_status,v.certified_revision,v.best_preview_revision,
+      p.status as pack_status,p.metadata as pack_metadata
     from render_variant_revisions r
     join render_v2_variants v on v.id=r.variant_id
+    join render_v2_packs p on p.id=v.render_pack_id
     where r.id=${revisionId}::uuid
-      and r.status='RENDER_READY'
-      and v.status='RENDER_READY'
-      and r.revision=v.certified_revision
+      and (
+        (
+          r.status='RENDER_READY'
+          and v.status='RENDER_READY'
+          and r.revision=v.certified_revision
+        )
+        or (
+          r.status='PREVIEW_READY'
+          and v.status='PREVIEW_READY'
+          and r.revision=v.best_preview_revision
+          and p.status='PREVIEW_READY'
+          and (
+            coalesce((p.metadata->>'pilot_human_review_after_preview')::boolean,false)=true
+            or coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
+          )
+        )
+      )
     limit 1`;
   const row=rows[0];
   if (!row) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
@@ -611,7 +627,9 @@ async function prospectDetail(sql, id) {
           ) as visual_preview_passed
         from render_v2_variants v
         join render_v2_packs p on p.id=v.render_pack_id
-        left join render_variant_revisions r on r.variant_id=v.id and r.revision=v.certified_revision
+        left join render_variant_revisions r
+          on r.variant_id=v.id
+         and r.revision=coalesce(v.certified_revision,v.best_preview_revision)
         where p.prospect_id=${id}::uuid
         order by p.created_at desc,v.variant_key asc`,
     sql`select phase,pilot_pack_id,metadata from render_v2_rollout_state where id=1 limit 1`
@@ -633,21 +651,37 @@ async function prospectDetail(sql, id) {
       packMeta.single_concept_mode===true &&
       packMeta.cabina_visual_review_hold===true &&
       String(v.variant_key||"")==="A";
+    const humanPreviewReady=
+      String(v.pack_status||"")==="PREVIEW_READY" &&
+      String(v.status||"")==="PREVIEW_READY" &&
+      String(v.revision_status||"")==="PREVIEW_READY" &&
+      Number(v.revision||0)===Number(v.best_preview_revision||0) &&
+      Boolean(v.certified_revision_id) &&
+      (
+        packMeta.pilot_human_review_after_preview===true ||
+        packMeta.cabina_visual_review_hold===true
+      );
     const normalPackReady=["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) || singleConceptReady;
     const pilotCandidate=
       pilotMode &&
       String(v.render_pack_id||"")===pilotPackId &&
       String(v.variant_key||"")===pilotVariantKey &&
       Number(v.revision||0)===pilotRevision &&
-      v.status==="RENDER_READY" &&
-      v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
-      Boolean(v.visual_preview_passed);
-    const previewAllowed=(normalPackReady||pilotCandidate) &&
+      (
+        (
+          v.status==="RENDER_READY" &&
+          v.revision_status==="RENDER_READY" &&
+          Boolean(v.visual_preview_passed)
+        )
+        || humanPreviewReady
+      );
+    const certifiedPreviewAllowed=(normalPackReady||pilotCandidate) &&
       v.status==="RENDER_READY" &&
       v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
       (Boolean(v.visual_preview_passed) || singleConceptReady);
+    const previewAllowed=certifiedPreviewAllowed || humanPreviewReady;
     const directionKey=v.variant_key==="A" ? "variant_A_direction" : (v.variant_key==="B" ? "variant_B_direction" : "variant_C_direction");
     const creativeDirection=String(packMeta[directionKey] || (
       v.variant_key==="A" ? "ICONIC_EDITORIAL" :
