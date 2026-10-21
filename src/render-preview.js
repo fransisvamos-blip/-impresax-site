@@ -160,12 +160,12 @@ export async function syncRenderPreviews(env) {
       update prospects
       set source_data=jsonb_set(coalesce(source_data,'{}'::jsonb),'{render_preview}',${JSON.stringify(preview)}::jsonb,true),
           updated_at=now()
-      where id=${row.prospect_id}::uuid\`;
+      where id=${row.prospect_id}::uuid`;
     await sql`
       update render_v2_packs
       set metadata=jsonb_set(coalesce(metadata,'{}'::jsonb),'{client_preview}',${JSON.stringify(preview)}::jsonb,true),
           updated_at=now()
-      where id=${row.render_pack_id}::uuid\`;
+      where id=${row.render_pack_id}::uuid`;
     await sql`
       insert into site_events(prospect_id,event_type,entity_type,entity_id,actor,payload)
       values(
@@ -174,7 +174,7 @@ export async function syncRenderPreviews(env) {
           version:PREVIEW_VERSION,url:preview.url,slug,render_pack_id:row.render_pack_id,
           variant_key:row.variant_key,revision_id:row.revision_id,revision:Number(row.revision)
         })}::jsonb
-      )\`;
+      )`;
     published++;
   }
   return {ok:true,pilot_only:pilotOnly,pilot_pack_id:pilotPackId || null,published,unchanged};
