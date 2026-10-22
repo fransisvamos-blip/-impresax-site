@@ -42,7 +42,7 @@ export function buildR119SceneComposerSpec({
       '<div class="r119-hero__veil" aria-hidden="true"></div>'+
       '<div class="r119-beam r119-beam--hero" aria-hidden="true"></div>'+
       '<div class="r119-hero__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h1>'+copyToken("HERO_HEADLINE")+'</h1><p class="r119-lede ixg-lede">'+copyToken("HERO_BODY")+'</p><div class="r119-actions ixg-actions"><a class="r119-btn r119-btn--solid" data-premium-button="true" href="'+ctaToken("PRIMARY")+'"><span>'+copyToken("PRIMARY_CTA_LABEL")+'</span><span aria-hidden="true">↗</span></a><a class="r119-btn r119-btn--ghost" data-premium-button="true" href="'+ctaToken("SECONDARY")+'"><span>'+copyToken("SECONDARY_CTA_LABEL")+'</span><span aria-hidden="true">→</span></a></div></div>'+
-      '<div class="r119-hero__rail" aria-hidden="true"><span>DEDIL / CATANZARO</span><span>BUILDING MATERIALS</span><span>REBAR PROCESSING</span></div>'+
+      '<div class="r119-hero__edge-index" aria-hidden="true"><span></span><span></span><span></span></div>'+
 
     '</section>',
 
@@ -930,17 +930,21 @@ h1,h2,strong{text-wrap:balance}
 .r119-hero{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important}
 .r119-hero__media{clip-path:polygon(0 0,100% 0,100% 100%,7% 100%)!important}
 .r119-hero__copy{z-index:8!important}
-.r119-hero__rail{
+.r119-hero__edge-index{
   position:absolute;z-index:9;right:0;top:50%;transform:translateY(-50%);
   display:flex;flex-direction:column;gap:0;width:44px;
   border-left:1px solid rgba(255,255,255,.18);background:rgba(2,3,4,.26);
   backdrop-filter:blur(8px)
 }
-.r119-hero__rail span{
-  writing-mode:vertical-rl;transform:rotate(180deg);padding:22px 13px;
-  font:700 8px/1 var(--ix-body-font);letter-spacing:.18em;color:rgba(255,255,255,.58);
-  border-bottom:1px solid rgba(255,255,255,.12)
+.r119-hero__edge-index span{
+  display:block;height:88px;position:relative;border-bottom:1px solid rgba(255,255,255,.12)
 }
+.r119-hero__edge-index span::before{
+  content:"";position:absolute;left:50%;top:18px;bottom:18px;width:1px;background:rgba(255,255,255,.42)
+}
+.r119-hero__edge-index span:nth-child(2)::before{background:var(--r119-red);top:10px;bottom:10px}
+.r119-hero__edge-index span:nth-child(3)::before{left:40%;right:40%;width:auto;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.62))}
+
 .r119-hero__copy::after{
   content:"";position:absolute;left:-34px;bottom:-28px;width:min(56vw,760px);height:1px;
   background:linear-gradient(90deg,var(--r119-red),rgba(255,255,255,.55),transparent)
@@ -1068,7 +1072,7 @@ h1,h2,strong{text-wrap:balance}
 /* mobile: interaction and depth survive, without horizontal overflow */
 @media(max-width:700px){
   .r119-scene{contain:layout paint!important}
-  .r119-hero__rail{display:none!important}
+  .r119-hero__edge-index{display:none!important}
   .r119-btn{gap:12px!important}
   .r119-hero__media{clip-path:none!important}
   .r119-hero__copy::after{left:0!important;bottom:-18px!important;width:58vw!important}
