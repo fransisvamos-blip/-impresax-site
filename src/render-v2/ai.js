@@ -696,7 +696,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
       {role:"system",content:"You are the final ImpresaX Creative Director. Lock the campaign idea before any web layout is allowed. Strategy, art direction, narrative and sellability matter more than UI conventions."},
       {role:"user",content:prompt}
     ],
-    schema:r121ConceptLockSchema,maxTokens:6200,temperature:0.24,beforeAttempt:beforeModelAttempt
+    schema:r121ConceptLockSchema,maxTokens:6200,temperature:0.24,beforeAttempt:beforeModelAttempt,allowR118External:true
   });
   const concept={...r.data,standard:R121_CONCEPT_LOCK_STANDARD};
   return {concept,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
@@ -726,7 +726,7 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
       {role:"system",content:"You are a hostile senior creative-review board. Your job is to stop generic premium concepts before they become expensive code."},
       {role:"user",content:prompt}
     ],
-    schema:r121ConceptJurySchema,maxTokens:2200,temperature:0.02,beforeAttempt:beforeModelAttempt
+    schema:r121ConceptJurySchema,maxTokens:2200,temperature:0.02,beforeAttempt:beforeModelAttempt,allowR118External:true
   });
   const scores=r.data.scores||{};
   const min=Math.min(...R121_SELLABILITY_AXES.map(k=>Number(scores[k]||0)));
