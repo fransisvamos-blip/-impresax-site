@@ -683,6 +683,112 @@ export async function createCreativeDirections(env,inputPayload,assetTokens,{bef
 }
 
 
+
+function r121Normalize(value) {
+  return String(value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9€%]+/g," ").replace(/\s+/g," ").trim();
+}
+
+function r121SplitFacts(value) {
+  return String(value||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean);
+}
+
+function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
+  const truth=contentTruth?.content_truth||contentTruth||{};
+  const services=[
+    ...r121SplitFacts(inputPayload?.verified_services),
+    ...(Array.isArray(truth?.services)?truth.services.map(x=>String(x?.title||"").trim()).filter(Boolean):[])
+  ];
+  const proofs=[
+    ...r121SplitFacts(inputPayload?.verified_trust),
+    ...(Array.isArray(truth?.trust_points)?truth.trust_points.map(x=>String(x?.text||"").trim()).filter(Boolean):[])
+  ];
+  return {
+    business_name:String(inputPayload?.business_name||"").trim(),
+    vertical:String(inputPayload?.vertical||"").trim(),
+    distinctive_operations:[...new Set(services)].slice(0,6),
+    verified_proof_anchors:[...new Set(proofs)].slice(0,8),
+    locality:{
+      city:String(inputPayload?.city||"").trim(),
+      address:String(inputPayload?.address||"").trim()
+    },
+    commercial_goal:String(inputPayload?.commercial_goal||"").trim(),
+    verified_contacts:String(inputPayload?.verified_contacts||"").trim(),
+    official_identity_locked:Boolean(inputPayload?.official_logo?.lock==="IMMUTABLE"||inputPayload?.identity_mode==="OFFICIAL_LOGO"),
+    source_references:Array.isArray(inputPayload?.source_references)?inputPayload.source_references:[]
+  };
+}
+
+function r121TextOverlap(a,b) {
+  const A=new Set(r121Normalize(a).split(" ").filter(x=>x.length>3));
+  const B=new Set(r121Normalize(b).split(" ").filter(x=>x.length>3));
+  if(!A.size||!B.size) return 0;
+  let inter=0;
+  for(const x of A) if(B.has(x)) inter++;
+  return inter/Math.max(1,Math.min(A.size,B.size));
+}
+
+function r121ConceptIntegrityPrecheck(concept,brief) {
+  const issues=[];
+  const campaign=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
+  const tokens=campaign.map(x=>String(x?.token||""));
+  const uniqueTokens=new Set(tokens);
+  if(campaign.length!==R121_CAMPAIGN_ASSET_TOKENS.length || uniqueTokens.size!==R121_CAMPAIGN_ASSET_TOKENS.length) {
+    issues.push("ASSET_CAMPAIGN_MUST_USE_EACH_R121_TOKEN_EXACTLY_ONCE");
+  }
+  for(const token of R121_CAMPAIGN_ASSET_TOKENS) if(!uniqueTokens.has(token)) issues.push("ASSET_TOKEN_MISSING:"+token);
+
+  for(let i=0;i<campaign.length;i++) {
+    for(let j=i+1;j<campaign.length;j++) {
+      const A=[campaign[i]?.narrative_role,campaign[i]?.subject,campaign[i]?.visual_function].join(" ");
+      const B=[campaign[j]?.narrative_role,campaign[j]?.subject,campaign[j]?.visual_function].join(" ");
+      if(r121TextOverlap(A,B)>=0.62) issues.push("ASSET_ROLES_TOO_SIMILAR:"+tokens[i]+":"+tokens[j]);
+    }
+  }
+
+  const desktop=Array.isArray(concept?.desktop_storyboard)?concept.desktop_storyboard:[];
+  const mobile=Array.isArray(concept?.mobile_storyboard)?concept.mobile_storyboard:[];
+  const desktopAssets=new Set(desktop.map(x=>String(x?.dominant_asset||"")).filter(Boolean));
+  const mobileAssets=new Set(mobile.map(x=>String(x?.dominant_asset||"")).filter(Boolean));
+  if(desktopAssets.size<4) issues.push("DESKTOP_STORYBOARD_NEEDS_4_DISTINCT_ASSET_ROLES");
+  if(mobileAssets.size<4) issues.push("MOBILE_STORYBOARD_NEEDS_4_DISTINCT_ASSET_ROLES");
+  const allStoryboardAssets=new Set([...desktopAssets,...mobileAssets]);
+  for(const token of R121_CAMPAIGN_ASSET_TOKENS) if(!allStoryboardAssets.has(token)) issues.push("STORYBOARD_NEVER_USES:"+token);
+
+  const sameLength=desktop.length===mobile.length && desktop.length>0;
+  let sameBeats=0;
+  const max=Math.min(desktop.length,mobile.length);
+  for(let i=0;i<max;i++) {
+    const d=desktop[i],m=mobile[i];
+    const sameAsset=String(d?.dominant_asset||"")===String(m?.dominant_asset||"");
+    const comp=r121TextOverlap(d?.composition,m?.composition);
+    const interaction=r121TextOverlap(d?.interaction_role,m?.interaction_role);
+    if(sameAsset && comp>=0.58 && interaction>=0.58) sameBeats++;
+  }
+  if(sameLength && sameBeats>=Math.ceil(max*0.6)) issues.push("MOBILE_STORYBOARD_TOO_CLOSE_TO_DESKTOP:"+sameBeats+"/"+max);
+  if((concept?.mobile_divergence||[]).length<2) issues.push("MOBILE_DIVERGENCE_NEEDS_TWO_MATERIAL_REINTERPRETATIONS");
+
+  const proofPlan=(concept?.verified_proof_plan||[]).map(r121Normalize);
+  const proofAnchors=(brief?.verified_proof_anchors||[]).map(x=>({raw:x,norm:r121Normalize(x)}));
+  const strongProofMatches=proofAnchors.filter(anchor=>proofPlan.some(p=>p.includes(anchor.norm)||anchor.norm.includes(p))).length;
+  if(proofAnchors.length>=3 && strongProofMatches<3) issues.push("VERIFIED_PROOF_PLAN_IGNORES_STRONG_INPUT_PROOF:"+strongProofMatches+"/"+Math.min(3,proofAnchors.length));
+
+  const ownability=r121Normalize((concept?.ownability_anchors||[]).join(" "));
+  const serviceHit=(brief?.distinctive_operations||[]).some(x=>r121TextOverlap(ownability,x)>=0.35);
+  const localityHit=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).some(x=>r121TextOverlap(ownability,x)>=0.25);
+  const proofHit=(brief?.verified_proof_anchors||[]).some(x=>r121TextOverlap(ownability,x)>=0.25);
+  if(!serviceHit) issues.push("OWNABILITY_MISSING_DISTINCTIVE_OPERATION");
+  if(!localityHit) issues.push("OWNABILITY_MISSING_LOCALITY");
+  if(!proofHit) issues.push("OWNABILITY_MISSING_VERIFIED_PROOF");
+
+  const thesis=r121Normalize(concept?.campaign_thesis);
+  const mechanism=r121Normalize(concept?.organizing_mechanism);
+  const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional"];
+  if(generic.some(x=>thesis.includes(x)||mechanism.includes(x))) issues.push("ORGANIZING_IDEA_IS_STYLE_DESCRIPTION");
+  if(String(concept?.transplant_test||"").trim().length<120) issues.push("TRANSPLANT_TEST_NOT_DEMONSTRATED");
+
+  return {pass:issues.length===0,issues,brief};
+}
+
 export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
   const directionMap=directions?.directions||directions||{};
   const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
@@ -695,14 +801,15 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     r121_generated_imagery_truth_rule:"ILLUSTRATIVE_NOT_DOCUMENTARY",
     r121_legacy_zero_photo_superseded:true
   };
+  const brief=r121CreativeIntelligenceBrief(inputPayload,contentTruth);
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
     "ORGANIZING-MECHANISM RULE: the concept must be a VERB, transformation, physical mechanism, operational sequence or proprietary metaphor derived from verified business reality. 'Premium', 'industrial', 'editorial', 'precise', 'trusted', 'bold', 'dark', 'technical' and similar adjectives are styling, never the concept.",
-    "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the supplied input and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive service/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
-    "PROOF INVENTORY RULE: list 3-6 verified facts you will actually stage. Do not omit strong verified evidence present in the input merely because the content-truth summary is thinner.",
+    "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the CREATIVE INTELLIGENCE BRIEF and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive operation/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
+    "PROOF INVENTORY RULE: copy 3-6 exact factual anchors from CREATIVE INTELLIGENCE BRIEF.verified_proof_anchors into verified_proof_plan and explain through the storyboard how they become visual evidence. Do not weaken or paraphrase away revenue, employee count, verified partner/reseller status, locality or other strong proof when present.",
     "The concept must be impossible to transplant unchanged to another company after swapping logo/copy.",
     "Build one coherent brand world: campaign thesis, signature motif, visual bible, typography thesis, proof mechanism, motion signature and conversion climax.",
     "Asset planning is mandatory. Assign exactly six distinct campaign asset roles using these fixed tokens: "+JSON.stringify(R121_CAMPAIGN_ASSET_TOKENS)+". Each asset must have a DIFFERENT narrative function AND a materially different visual mode.",
@@ -718,6 +825,10 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "AVAILABLE DIRECTION KEYS: "+JSON.stringify(availableDirectionKeys.length?availableDirectionKeys:["A"])+". Select ONLY from these keys; never invent a missing route.",
     "Select the strongest AVAILABLE route based on the campaign idea, not on implementation convenience.",
     juryFeedback?"PRIOR CONCEPT JURY REJECTION. Rebuild the concept, do not patch wording: "+JSON.stringify(juryFeedback):"",
+    "CREATIVE INTELLIGENCE BRIEF — authoritative distilled facts for the concept:",
+    JSON.stringify(brief),
+    "CREATIVE INTELLIGENCE BRIEF:",
+    JSON.stringify(brief),
     "VERIFIED INPUT:",
     JSON.stringify(r121Input),
     "VERIFIED CONTENT TRUTH:",
@@ -735,10 +846,13 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     schema:conceptSchema,maxTokens:6200,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
   });
   const concept={...r.data,standard:R121_CONCEPT_LOCK_STANDARD};
-  return {concept,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
+  const integrity=r121ConceptIntegrityPrecheck(concept,brief);
+  return {concept,integrity,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
 }
 
 export async function reviewR121ConceptLock(env,inputPayload,contentTruth,directions,concept,{beforeModelAttempt=null}={}) {
+  const brief=r121CreativeIntelligenceBrief(inputPayload,contentTruth);
+  const integrity=r121ConceptIntegrityPrecheck(concept,brief);
   const directionMap=directions?.directions||directions||{};
   const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
   const r121Input={
@@ -748,6 +862,14 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     r121_generated_imagery_truth_rule:"ILLUSTRATIVE_NOT_DOCUMENTARY",
     r121_legacy_zero_photo_superseded:true
   };
+  if(!integrity.pass) {
+    return {
+      pass:false,selected_direction_key:String(concept?.selected_direction_key||"A"),summary:"Deterministic R121 concept-integrity precheck failed.",
+      scores:Object.fromEntries(R121_SELLABILITY_AXES.map(k=>[k,0])),
+      rejection_reasons:integrity.issues,
+      must_preserve:[],min_score:0,critical_floor:0,model:"R121_DETERMINISTIC_PRECHECK",integrity
+    };
+  }
   const prompt=[
     "R121 CONCEPT JURY. Judge the campaign concept BEFORE code exists.",
     "Do not reward completeness, number of sections, number of assets or compliance language.",
