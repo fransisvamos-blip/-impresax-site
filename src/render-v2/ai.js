@@ -1592,7 +1592,7 @@ const heroAssetQaSchema={
   required:["pass","summary","scores","issues","regeneration_guidance"]
 };
 
-export async function runHeroAssetQa(env,{imageB64,inputPayload,direction,variantKey,beforeModelAttempt=null}) {
+export async function runHeroAssetQa(env,{imageB64,inputPayload,direction,variantKey,beforeModelAttempt=null,allowR121External=false}) {
   const masterProfile=String(inputPayload?.render_profile||"")==="IMPRESAX_MASTER_V1";
   const compositionRule=masterProfile
     ? "IMPRESAX MASTER FULL-BLEED QA: do NOT require blank or clean negative space for HTML copy. The entire frame SHOULD remain a continuous photograph with useful real material/environment detail edge-to-edge. Dense photographic texture is valid and desirable when focal hierarchy remains clear. HTML copy readability is handled later by a CSS gradient overlay. HARD FAIL blank gray/flat copy panels, dead half-frames, split-layout geometry baked into the image, or large non-photographic voids. Judge composition by premium photographic balance, full-frame continuity, focal hierarchy and 390px crop survival."
@@ -1628,7 +1628,7 @@ export async function runHeroAssetQa(env,{imageB64,inputPayload,direction,varian
         {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+imageB64}}
       ]}
     ],
-    schema:heroAssetQaSchema,maxTokens:1800,temperature:0.02,vision:true,beforeAttempt:beforeModelAttempt
+    schema:heroAssetQaSchema,maxTokens:1800,temperature:0.02,vision:true,beforeAttempt:beforeModelAttempt,allowR118External:allowR121External===true
   });
   const scores={...(r.data?.scores||{})};
   const numeric=Object.fromEntries(Object.entries(scores).map(([k,v])=>[k,Number(v)]));
