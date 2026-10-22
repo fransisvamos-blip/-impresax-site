@@ -26,15 +26,22 @@ async function reserveCounter(sql,packId,key,limit) {
   return Number(rows[0].metrics?.[key]||0);
 }
 
+async function aiCallLimit(sql,packId,env) {
+  const rows=await sql`select metadata from render_v2_packs where id=${packId}::uuid limit 1`;
+  const override=Number(rows[0]?.metadata?.ai_call_limit_override);
+  if(Number.isFinite(override) && override>0) return Math.floor(override);
+  return envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40);
+}
+
 export async function reserveAiCall(sql,packId,env,route,revisionId=null,{allowR118External=false}={}) {
   const r118BudgetAllowed=allowR118External===true
     && String(env?.V2_R118_EXTERNAL_AI_ENABLED||"false")==="true";
   if(!EXTERNAL_AI_CALLS_ALLOWED && !r118BudgetAllowed) {
     throw new Error("EXTERNAL_AI_DISABLED:"+RENDER_GENERATION_MODE);
   }
-  const limit=envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40);
+  const limit=await aiCallLimit(sql,packId,env);
   const used=await reserveCounter(sql,packId,"ai_calls",limit);
-  await recordMetric(sql,{packId,revisionId,name:"ai_call_reserved",value:1,dimensions:{route,used,limit,r118_external:r118BudgetAllowed}});
+  await recordMetric(sql,{packId,revisionId,name:"ai_call_reserved",value:1,dimensions:{route,used,limit,r118_external:r118BudgetAllowed,pack_override:limit!==envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40)}});
   return {used,limit};
 }
 
@@ -63,7 +70,7 @@ export async function budgetSnapshot(sql,packId,env) {
   const metrics=rows[0]?.metrics||{};
   return {
     ai_calls:Number(metrics.ai_calls||0),
-    ai_limit:envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40),
+    ai_limit:await aiCallLimit(sql,packId,env),
     browser_captures:Number(metrics.browser_captures||0),
     browser_limit:await browserCaptureLimit(sql,packId,env)
   };
