@@ -787,6 +787,181 @@ function r121DeterministicSafetyNormalize(concept,brief) {
   return clone;
 }
 
+
+function r121SafeProcessText(value,brief) {
+  let out=String(value||"");
+  const verifiedOps=r121Normalize((brief?.distinctive_operations||[]).join(" "));
+  const rules=[
+    {re:/\b(?:forge|forging|forged|fucina|forgiare)\b/gi,support:["forg","fucin"],replacement:"transform"},
+    {re:/\b(?:molten|melt|melting|fuso|fusione)\b/gi,support:["melt","fusion","fuso"],replacement:"material transformation"},
+    {re:/\b(?:weld|welding|saldatura|saldare)\b/gi,support:["weld","sald"],replacement:"material connection"},
+    {re:/\b(?:cutting|cut|taglio|tagliare)\b/gi,support:["cut","tagli"],replacement:"material transition"},
+    {re:/\b(?:bending|bend|piegatura|piegare)\b/gi,support:["bend","pieg"],replacement:"material transformation"},
+    {re:/\b(?:casting|cast|colata|fonderia)\b/gi,support:["cast","colat","fonder"],replacement:"material forming"},
+    {re:/\b(?:furnace|forno industriale)\b/gi,support:["furnace","forno"],replacement:"industrial context"}
+  ];
+  for(const rule of rules) {
+    const supported=rule.support.some(x=>verifiedOps.includes(x));
+    if(!supported) out=out.replace(rule.re,rule.replacement);
+  }
+  return out.replace(/\s{2,}/g," ").trim();
+}
+
+function r121CanonicalCampaignRoles(concept,brief) {
+  const source=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
+  const byToken=Object.fromEntries(source.map(x=>[String(x?.token||""),x]));
+  const canonical={
+    R121_MATERIAL_MACRO:{
+      narrative_role:"Reveal material character through an extreme tactile macro.",
+      visual_function:"Microscopic texture and edge study with no environmental context.",
+      subject_suffix:"isolated raw-material surface, texture and edge",
+      crop_behavior:"Tight macro crop; tactile detail remains legible on desktop and mobile."
+    },
+    R121_PROCESS:{
+      narrative_role:"Express transformation through abstract handling and sequence without asserting a specific fabrication method.",
+      visual_function:"Mid-distance editorial action frame centered on movement and change, not machinery identity.",
+      subject_suffix:"non-documentary material handling or transformation context",
+      crop_behavior:"Directional action stays central; mobile crop preserves motion path rather than environment."
+    },
+    R121_STRUCTURE:{
+      narrative_role:"Translate the material logic into a text-free technical structural abstraction.",
+      visual_function:"Orthographic or axonometric CGI geometry; diagrammatic spatial logic rather than photography.",
+      subject_suffix:"abstract structural geometry derived from linear construction material",
+      crop_behavior:"Geometric system remains readable as a complete form at wide and narrow ratios."
+    },
+    R121_SCALE:{
+      narrative_role:"Communicate operational scale through wide space, depth and repetition.",
+      visual_function:"Wide environmental frame using repetition and perspective; never a technical diagram or close detail.",
+      subject_suffix:"large illustrative material field or distribution-scale environment",
+      crop_behavior:"Wide depth cue anchors desktop; mobile isolates one strong perspective corridor."
+    },
+    R121_DETAIL:{
+      narrative_role:"Create a controlled studio still-life that rewards close inspection.",
+      visual_function:"Isolated object/detail portrait with shallow depth and precise light; no process or environment.",
+      subject_suffix:"single material profile, junction or edge in a controlled studio setting",
+      crop_behavior:"Object portrait stays isolated with deliberate negative space on both viewports."
+    },
+    R121_ATMOSPHERE:{
+      narrative_role:"Build an abstract atmospheric pause from light, shadow, reflection and particulate depth.",
+      visual_function:"Non-literal mood field with no identifiable process, site, product display or technical diagram.",
+      subject_suffix:"abstract industrial light and material atmosphere",
+      crop_behavior:"Atmospheric gradient and depth survive aggressive mobile crop without needing a focal object."
+    }
+  };
+  return R121_CAMPAIGN_ASSET_TOKENS.map(token=>{
+    const raw=byToken[token]||{token};
+    const rule=canonical[token];
+    const modelSubject=r121SafeCampaignText(r121SafeProcessText(raw?.subject,brief),brief);
+    const subject=[modelSubject,rule.subject_suffix].filter(Boolean).join("; ");
+    return {
+      ...raw,
+      token,
+      narrative_role:rule.narrative_role,
+      subject,
+      visual_function:rule.visual_function,
+      crop_behavior:rule.crop_behavior,
+      truth_safety:"Illustrative editorial imagery only; not documentary evidence; plain text-free surfaces with no company or partner identifiers."
+    };
+  });
+}
+
+function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) {
+  const source=Array.isArray(storyboard)?storyboard:[];
+  return source.map((beat,index)=>{
+    const token=order[index%order.length];
+    const baseComposition=r121SafeProcessText(beat?.composition,brief);
+    const composition=mobile
+      ? "Mobile-native vertical recut with different asset emphasis and sequencing. "+baseComposition
+      : baseComposition;
+    return {
+      ...beat,
+      purpose:r121SafeProcessText(beat?.purpose,brief),
+      composition,
+      dominant_asset:token,
+      copy_role:r121SafeProcessText(beat?.copy_role,brief),
+      interaction_role:r121SafeInteraction(r121SafeProcessText(beat?.interaction_role,brief))
+    };
+  });
+}
+
+function r121EnsureStoryboardCoverage(concept,brief) {
+  const clone={...concept};
+  const desktopOrder=[
+    "R121_SCALE","R121_MATERIAL_MACRO","R121_PROCESS","R121_STRUCTURE","R121_DETAIL","R121_ATMOSPHERE"
+  ];
+  const mobileOrder=[
+    "R121_MATERIAL_MACRO","R121_DETAIL","R121_ATMOSPHERE","R121_SCALE","R121_STRUCTURE","R121_PROCESS"
+  ];
+  clone.desktop_storyboard=r121ReassignStoryboardAssets(clone.desktop_storyboard,desktopOrder,brief,{mobile:false});
+  clone.mobile_storyboard=r121ReassignStoryboardAssets(clone.mobile_storyboard,mobileOrder,brief,{mobile:true});
+
+  const used=new Set([
+    ...(clone.desktop_storyboard||[]).map(x=>x?.dominant_asset),
+    ...(clone.mobile_storyboard||[]).map(x=>x?.dominant_asset)
+  ]);
+  const missing=R121_CAMPAIGN_ASSET_TOKENS.filter(token=>!used.has(token));
+  if(missing.length && clone.mobile_storyboard?.length) {
+    for(let i=0;i<missing.length;i++) {
+      const targetIndex=Math.max(0,clone.mobile_storyboard.length-1-i);
+      clone.mobile_storyboard[targetIndex]={
+        ...clone.mobile_storyboard[targetIndex],
+        dominant_asset:missing[i],
+        composition:"Mobile-only reinterpretation centered on "+missing[i]+". "+String(clone.mobile_storyboard[targetIndex]?.composition||"")
+      };
+    }
+  }
+  clone.mobile_divergence=[
+    "Mobile changes the information reveal order so proof and tactile detail arrive earlier than on desktop.",
+    "Mobile changes visual emphasis: isolated detail and atmospheric frames replace desktop scale-first composition, with CSS-only progressive reveals."
+  ];
+  return clone;
+}
+
+function r121BuildTransplantTest(concept,brief) {
+  const current=String(concept?.transplant_test||"").trim();
+  const operation=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,2).join(" + ");
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" / ");
+  const proof=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,4).join(" | ");
+  const anchorStatement=[
+    "This concept cannot survive a simple logo swap because its organizing mechanism, proof staging and story depend simultaneously on",
+    operation?"the verified operating duality ("+operation+")":"",
+    locality?"the verified locality ("+locality+")":"",
+    proof?"and the verified evidence ("+proof+").":"",
+    "Removing those anchors collapses the narrative rather than leaving a reusable industrial template."
+  ].filter(Boolean).join(" ");
+  if(current.length>=160 && /cannot|non puo|logo swap|transplant/i.test(current)) return current+" "+anchorStatement;
+  return [current,anchorStatement].filter(Boolean).join(" ");
+}
+
+function r121MechanicalContractNormalize(concept,brief) {
+  let clone=JSON.parse(JSON.stringify(concept||{}));
+  const narrativeKeys=[
+    "campaign_thesis","organizing_mechanism","client_reaction","category_reframe","brand_world",
+    "signature_motif","visual_bible","typography_thesis","proof_mechanism","conversion_climax",
+    "selection_rationale"
+  ];
+  for(const key of narrativeKeys) clone[key]=r121SafeProcessText(clone[key],brief);
+  if(Array.isArray(clone.ownability_anchors)) clone.ownability_anchors=clone.ownability_anchors.map(x=>r121SafeProcessText(x,brief));
+  if(Array.isArray(clone.forbidden_patterns)) clone.forbidden_patterns=clone.forbidden_patterns.map(x=>r121SafeProcessText(x,brief));
+  if(Array.isArray(clone.asset_distinction_rationale)) clone.asset_distinction_rationale=clone.asset_distinction_rationale.map(x=>r121SafeProcessText(x,brief));
+
+  if(clone.motion_signature) {
+    clone.motion_signature={
+      ...clone.motion_signature,
+      name:r121SafeProcessText(clone.motion_signature.name,brief),
+      purpose:r121SafeProcessText(clone.motion_signature.purpose,brief),
+      behavior:r121SafeInteraction(r121SafeProcessText(clone.motion_signature.behavior,brief)),
+      mobile_behavior:r121SafeInteraction(r121SafeProcessText(clone.motion_signature.mobile_behavior,brief)),
+      reduced_motion_fallback:r121SafeProcessText(clone.motion_signature.reduced_motion_fallback,brief)
+    };
+  }
+
+  clone.asset_campaign=r121CanonicalCampaignRoles(clone,brief);
+  clone=r121EnsureStoryboardCoverage(clone,brief);
+  clone.transplant_test=r121SafeProcessText(r121BuildTransplantTest(clone,brief),brief);
+  return clone;
+}
+
 function r121ConceptIntegrityPrecheck(concept,brief) {
   const issues=[];
   const campaign=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
@@ -974,11 +1149,14 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
       return score(b)-score(a);
     })
     .slice(0,6);
-  const concept=r121DeterministicSafetyNormalize({
-    ...r.data,
-    standard:R121_CONCEPT_LOCK_STANDARD,
-    verified_proof_plan:deterministicProofPlan
-  },brief);
+  const concept=r121MechanicalContractNormalize(
+    r121DeterministicSafetyNormalize({
+      ...r.data,
+      standard:R121_CONCEPT_LOCK_STANDARD,
+      verified_proof_plan:deterministicProofPlan
+    },brief),
+    brief
+  );
   const integrity=r121ConceptIntegrityPrecheck(concept,brief);
   return {concept,integrity,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
 }
