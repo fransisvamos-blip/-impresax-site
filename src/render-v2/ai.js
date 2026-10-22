@@ -727,6 +727,66 @@ function r121TextOverlap(a,b) {
   return inter/Math.max(1,Math.min(A.size,B.size));
 }
 
+function r121EscapeRegex(value) {
+  return String(value||"").replace(/[.*+?^$(){}|[\]\\]/g,"\\$&");
+}
+
+function r121SafeCampaignText(value,brief) {
+  let out=String(value||"");
+  const business=String(brief?.business_name||"").trim();
+  if(business) {
+    out=out.replace(new RegExp(r121EscapeRegex(business),"gi"),"the subject");
+    for(const token of business.split(/\s+/).filter(x=>x.length>=5)) {
+      out=out.replace(new RegExp("\\b"+r121EscapeRegex(token)+"\\b","gi"),"");
+    }
+  }
+  out=out
+    .replace(/\bU[-\s]?Power\b/gi,"")
+    .replace(/\b(?:logo|logos|branding|branded|signage|sticker|stickers|wall sign|uniform|uniforms|packaging label|partner mark|company identifier)\b/gi,"")
+    .replace(/\s{2,}/g," ")
+    .replace(/\s+([,.;:])/g,"$1")
+    .trim();
+  return out;
+}
+
+function r121SafeInteraction(value) {
+  let out=String(value||"");
+  const forbidden=/\b(accordion|carousel|slider|webgl|canvas|javascript|scripted|custom cursor|drag|swipe|form submit|tabs|video controls?)\b/i;
+  if(forbidden.test(out)) {
+    out="CSS-only structural reveal tied to viewport progress; static composition remains complete without motion.";
+  }
+  return out.replace(/\b(?:hover-only|click-to-open|tap-to-open)\b/gi,"progressive CSS emphasis").trim();
+}
+
+function r121DeterministicSafetyNormalize(concept,brief) {
+  const clone=JSON.parse(JSON.stringify(concept||{}));
+  if(Array.isArray(clone.asset_campaign)) {
+    clone.asset_campaign=clone.asset_campaign.map(role=>({
+      ...role,
+      narrative_role:r121SafeCampaignText(role?.narrative_role,brief),
+      subject:r121SafeCampaignText(role?.subject,brief),
+      visual_function:r121SafeCampaignText(role?.visual_function,brief),
+      crop_behavior:r121SafeCampaignText(role?.crop_behavior,brief),
+      truth_safety:"Illustrative editorial imagery only; not documentary evidence; plain text-free surfaces with no company or partner identifiers."
+    }));
+  }
+  if(clone.motion_signature) {
+    clone.motion_signature={
+      ...clone.motion_signature,
+      behavior:r121SafeInteraction(clone.motion_signature.behavior),
+      mobile_behavior:r121SafeInteraction(clone.motion_signature.mobile_behavior),
+      reduced_motion_fallback:String(clone.motion_signature.reduced_motion_fallback||"Static composition preserves the complete narrative.")
+    };
+  }
+  for(const key of ["desktop_storyboard","mobile_storyboard"]) {
+    if(Array.isArray(clone[key])) clone[key]=clone[key].map(beat=>({
+      ...beat,
+      interaction_role:r121SafeInteraction(beat?.interaction_role)
+    }));
+  }
+  return clone;
+}
+
 function r121ConceptIntegrityPrecheck(concept,brief) {
   const issues=[];
   const campaign=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
@@ -914,11 +974,11 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
       return score(b)-score(a);
     })
     .slice(0,6);
-  const concept={
+  const concept=r121DeterministicSafetyNormalize({
     ...r.data,
     standard:R121_CONCEPT_LOCK_STANDARD,
     verified_proof_plan:deterministicProofPlan
-  };
+  },brief);
   const integrity=r121ConceptIntegrityPrecheck(concept,brief);
   return {concept,integrity,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
 }
