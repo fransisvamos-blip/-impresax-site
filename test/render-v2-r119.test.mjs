@@ -70,7 +70,7 @@ test("R119 jury-reset preserves the productized architecture without CSS duplica
   assert.match(reset.spec.main_html,/r119-proof__mark ixg-trust-reason__graphic/);
   assert.match(reset.spec.main_html,/data-partner-verification="verified-only"/);
   assert.equal(reset.spec.custom_css,base.spec.custom_css);
-  assert.match(reset.spec.implementation_notes,/V29\.1 PRODUCTIZED EXPERIENCE HERO-OVERLAY FIX/);
+  assert.match(reset.spec.implementation_notes,/R120 VISUAL DENSITY \/ COMMISSIONED VALUE/);
 });
 
 test("R119 scene composer contract has no deterministic violations",()=>{
@@ -134,7 +134,8 @@ test("R119 generative mode enforces real section depth and DEDIL evidence",async
 test("R120 hero is image-led and keeps canonical CTA hooks",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
   assert.match(built.spec.main_html,/class="r119-actions ixg-actions"/);
-  assert.doesNotMatch(built.spec.main_html,/\{\{copy:HERO_BODY\}\}/);
+  assert.match(built.spec.main_html,/r120-microcopy r120-microcopy--hero/);
+  assert.match(built.spec.main_html,/\{\{copy:HERO_BODY\}\}/);
   assert.match(built.spec.main_html,/r120-hero__detail/);
 });
 
