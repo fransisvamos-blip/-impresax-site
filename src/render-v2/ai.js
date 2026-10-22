@@ -769,7 +769,19 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
 
   const proofPlan=(concept?.verified_proof_plan||[]).map(r121Normalize);
   const proofAnchors=(brief?.verified_proof_anchors||[]).map(x=>({raw:x,norm:r121Normalize(x)}));
-  const strongProofMatches=proofAnchors.filter(anchor=>proofPlan.some(p=>p.includes(anchor.norm)||anchor.norm.includes(p))).length;
+  const proofMatch=(plan,anchor)=>{
+    if(!plan||!anchor) return false;
+    if(plan.includes(anchor)||anchor.includes(plan)) return true;
+    const tokens=value=>value.split(" ").filter(Boolean).filter(t=>/\d/.test(t)||t.length>=4);
+    const A=tokens(anchor),P=new Set(tokens(plan));
+    if(!A.length) return false;
+    const numeric=A.filter(t=>/\d/.test(t));
+    if(numeric.length && !numeric.every(t=>P.has(t))) return false;
+    let hit=0;
+    for(const t of A) if(P.has(t)) hit++;
+    return hit/A.length>=0.55;
+  };
+  const strongProofMatches=proofAnchors.filter(anchor=>proofPlan.some(p=>proofMatch(p,anchor.norm))).length;
   if(proofAnchors.length>=3 && strongProofMatches<3) issues.push("VERIFIED_PROOF_PLAN_IGNORES_STRONG_INPUT_PROOF:"+strongProofMatches+"/"+Math.min(3,proofAnchors.length));
 
   const ownability=r121Normalize((concept?.ownability_anchors||[]).join(" "));
