@@ -857,7 +857,24 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     ],
     schema:conceptSchema,maxTokens:6200,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
   });
-  const concept={...r.data,standard:R121_CONCEPT_LOCK_STANDARD};
+  const deterministicProofPlan=[...(brief?.verified_proof_anchors||[])]
+    .sort((a,b)=>{
+      const score=value=>{
+        const s=String(value||"");
+        let n=0;
+        if(/\d/.test(s)) n+=4;
+        if(/u-power|rivenditore|partner|reseller/i.test(s)) n+=3;
+        if(/attiv/i.test(s)) n+=1;
+        return n;
+      };
+      return score(b)-score(a);
+    })
+    .slice(0,6);
+  const concept={
+    ...r.data,
+    standard:R121_CONCEPT_LOCK_STANDARD,
+    verified_proof_plan:deterministicProofPlan
+  };
   const integrity=r121ConceptIntegrityPrecheck(concept,brief);
   return {concept,integrity,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
 }
