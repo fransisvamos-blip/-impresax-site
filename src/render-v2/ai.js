@@ -199,11 +199,11 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
     const model=r121ConceptRoute===true
       ? (qaRole
           ? (attempt.fallback
-              ? (env.V2_MODEL_R121_CONCEPT_JURY_FALLBACK||DEFAULT_MODELS.visionFallback)
-              : (env.V2_MODEL_R121_CONCEPT_JURY||"@cf/openai/gpt-oss-120b"))
+              ? (env.V2_MODEL_R121_CONCEPT_JURY_FALLBACK||"@cf/openai/gpt-oss-120b")
+              : (env.V2_MODEL_R121_CONCEPT_JURY||"@cf/deepseek-ai/deepseek-v4.1-flash-1017"))
           : (attempt.fallback
-              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||DEFAULT_MODELS.textFallback)
-              : (env.V2_MODEL_R121_CONCEPT||"@cf/openai/gpt-oss-120b")))
+              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||"@cf/openai/gpt-oss-120b")
+              : (env.V2_MODEL_R121_CONCEPT||"@cf/deepseek-ai/deepseek-v4.1-flash-1017")))
       : (fastR118Qa
           ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
           : (fastR118Generation
@@ -227,7 +227,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="low";
-      if(r121ConceptRoute===true && /gpt-oss-120b/i.test(model)) inference.reasoning_effort="high";
+      if(r121ConceptRoute===true && /deepseek-v4\.1-flash-1017/i.test(model)) inference.reasoning_effort="max";
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
