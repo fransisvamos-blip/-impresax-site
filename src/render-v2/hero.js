@@ -330,7 +330,9 @@ export function buildR121CampaignAssetPrompt({inputPayload,concept,role}) {
 }
 
 export async function generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt=1}) {
-  if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true") throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
+  const r121ExternalEnabled=String(env.V2_R118_EXTERNAL_AI_ENABLED||"false")==="true"
+    || String(env.V2_EXTERNAL_AI_ENABLED||"false")==="true";
+  if(!r121ExternalEnabled) throw new Error("R121_EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("R121_IMAGE_AI_BINDING_REQUIRED");
   const primary=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-dev";
   const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
