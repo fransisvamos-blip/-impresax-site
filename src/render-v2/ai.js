@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, R118_EXTERNAL_GENERATION_ALLOWED, R118_EXTERNAL_VISUAL_QA_ALLOWED, R118_FAST_JURY_MODEL, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES } from "./constants.js";
+import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, R118_EXTERNAL_GENERATION_ALLOWED, R118_EXTERNAL_VISUAL_QA_ALLOWED, R118_FAST_JURY_MODEL, VARIANT_DIVERGENCE_FLOOR, VARIANT_CREATIVE_ROLES, R121_CREATIVE_DIRECTOR_STANDARD, R121_CONCEPT_LOCK_STANDARD, R121_CAMPAIGN_ASSET_TOKENS, R121_SELLABILITY_AXES } from "./constants.js";
 import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
@@ -302,6 +302,79 @@ const directionSchema={
 };
 
 
+
+const r121AssetRoleSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    token:{type:"string",enum:R121_CAMPAIGN_ASSET_TOKENS},
+    narrative_role:{type:"string"},
+    subject:{type:"string"},
+    visual_function:{type:"string"},
+    crop_behavior:{type:"string"},
+    truth_safety:{type:"string"}
+  },
+  required:["token","narrative_role","subject","visual_function","crop_behavior","truth_safety"]
+};
+
+const r121StoryboardBeatSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    beat:{type:"string"},purpose:{type:"string"},composition:{type:"string"},
+    dominant_asset:{type:"string"},copy_role:{type:"string"},interaction_role:{type:"string"}
+  },
+  required:["beat","purpose","composition","dominant_asset","copy_role","interaction_role"]
+};
+
+const r121ConceptLockSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    standard:{type:"string",enum:[R121_CONCEPT_LOCK_STANDARD]},
+    selected_direction_key:{type:"string",enum:["A","B","C"]},
+    campaign_thesis:{type:"string"},
+    client_reaction:{type:"string"},
+    category_reframe:{type:"string"},
+    brand_world:{type:"string"},
+    signature_motif:{type:"string"},
+    visual_bible:{type:"string"},
+    typography_thesis:{type:"string"},
+    motion_signature:{
+      type:"object",additionalProperties:false,
+      properties:{
+        name:{type:"string"},purpose:{type:"string"},behavior:{type:"string"},
+        mobile_behavior:{type:"string"},reduced_motion_fallback:{type:"string"}
+      },
+      required:["name","purpose","behavior","mobile_behavior","reduced_motion_fallback"]
+    },
+    proof_mechanism:{type:"string"},
+    conversion_climax:{type:"string"},
+    asset_campaign:{type:"array",minItems:6,maxItems:6,items:r121AssetRoleSchema},
+    desktop_storyboard:{type:"array",minItems:5,maxItems:7,items:r121StoryboardBeatSchema},
+    mobile_storyboard:{type:"array",minItems:5,maxItems:7,items:r121StoryboardBeatSchema},
+    forbidden_patterns:{type:"array",minItems:5,items:{type:"string"}},
+    transplant_test:{type:"string"},
+    selection_rationale:{type:"string"}
+  },
+  required:[
+    "standard","selected_direction_key","campaign_thesis","client_reaction","category_reframe","brand_world",
+    "signature_motif","visual_bible","typography_thesis","motion_signature","proof_mechanism","conversion_climax",
+    "asset_campaign","desktop_storyboard","mobile_storyboard","forbidden_patterns","transplant_test","selection_rationale"
+  ]
+};
+
+const r121ConceptJuryScores=Object.fromEntries(R121_SELLABILITY_AXES.map(k=>[k,{type:"number",minimum:0,maximum:10}]));
+const r121ConceptJurySchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    pass:{type:"boolean"},
+    selected_direction_key:{type:"string",enum:["A","B","C"]},
+    summary:{type:"string"},
+    scores:{type:"object",additionalProperties:false,properties:r121ConceptJuryScores,required:R121_SELLABILITY_AXES},
+    rejection_reasons:{type:"array",items:{type:"string"}},
+    must_preserve:{type:"array",items:{type:"string"}}
+  },
+  required:["pass","selected_direction_key","summary","scores","rejection_reasons","must_preserve"]
+};
+
 const contentTruthSchema={
   type:"object",additionalProperties:false,
   properties:{
@@ -589,6 +662,76 @@ export async function createCreativeDirections(env,inputPayload,assetTokens,{bef
     model:r.model,
     hash:await sha256(stableStringify(r.data))
   };
+}
+
+
+export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null}={}) {
+  const prompt=[
+    "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
+    "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
+    "Think like a global brand-experience creative director, not a UI designer.",
+    "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
+    "The concept must be impossible to transplant unchanged to another company after swapping logo/copy.",
+    "Build one coherent brand world: campaign thesis, signature motif, visual bible, typography thesis, proof mechanism, motion signature and conversion climax.",
+    "Asset planning is mandatory. Assign exactly six distinct campaign asset roles using these fixed tokens: "+JSON.stringify(R121_CAMPAIGN_ASSET_TOKENS)+". Each asset must have a DIFFERENT narrative function; do not describe six crops of the same scene.",
+    "Generated campaign imagery is illustrative editorial imagery. Never imply it is the prospect's real premises, employees, clients, machinery, certifications, projects or completed works unless verified input explicitly supports that claim.",
+    "Storyboards must describe the emotional/commercial progression, not a list of generic website sections.",
+    "Desktop and mobile must share the concept but may differ materially in sequencing, crop, scale and interaction.",
+    "Motion must communicate the concept. Ban gratuitous parallax, constant floating, generic fade-up spam and decorative cursor gimmicks.",
+    "Proof must be staged as evidence, not a card wall.",
+    "Conversion climax must be a designed final decision moment, not merely a button under a paragraph.",
+    "Select the strongest route A/B/C based on the campaign idea, not on implementation convenience.",
+    "VERIFIED INPUT:",
+    JSON.stringify(inputPayload),
+    "VERIFIED CONTENT TRUTH:",
+    JSON.stringify(contentTruth?.content_truth||contentTruth||{}),
+    "COMPETING CREATIVE DIRECTIONS:",
+    JSON.stringify(directions?.directions||directions||{}),
+    "CURRENT APPROVED/AVAILABLE ASSET TOKENS:",
+    JSON.stringify(assetTokens||[])
+  ].join("\n");
+  const r=await runStructured(env,"creative",{
+    messages:[
+      {role:"system",content:"You are the final ImpresaX Creative Director. Lock the campaign idea before any web layout is allowed. Strategy, art direction, narrative and sellability matter more than UI conventions."},
+      {role:"user",content:prompt}
+    ],
+    schema:r121ConceptLockSchema,maxTokens:6200,temperature:0.24,beforeAttempt:beforeModelAttempt
+  });
+  const concept={...r.data,standard:R121_CONCEPT_LOCK_STANDARD};
+  return {concept,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
+}
+
+export async function reviewR121ConceptLock(env,inputPayload,contentTruth,directions,concept,{beforeModelAttempt=null}={}) {
+  const prompt=[
+    "R121 CONCEPT JURY. Judge the campaign concept BEFORE code exists.",
+    "Do not reward completeness, number of sections, number of assets or compliance language.",
+    "A pass means the concept itself could plausibly anchor a top-tier studio case study and make the business owner want the finished redesign.",
+    "Score only the six supplied axes. 9 means strong professional work; 9.7+ means exceptional commissioned work. Pass requires every axis >=9.5, concept_strength/desire_to_buy/brand_authorship >=9.7, and no fundamental transplantability problem.",
+    "Reject if the idea is basically 'industrial but premium', 'dark/red steel', 'editorial grid', 'lots of imagery', or any other style description without a memorable organizing idea.",
+    "Reject if the asset campaign is six variations of the same warehouse/construction scene.",
+    "Reject if motion is decorative instead of concept-driven.",
+    "Reject if mobile is merely a condensed desktop storyboard.",
+    "VERIFIED INPUT:",
+    JSON.stringify(inputPayload),
+    "CONTENT TRUTH:",
+    JSON.stringify(contentTruth?.content_truth||contentTruth||{}),
+    "DIRECTIONS:",
+    JSON.stringify(directions?.directions||directions||{}),
+    "PROPOSED CONCEPT LOCK:",
+    JSON.stringify(concept)
+  ].join("\n");
+  const r=await runStructured(env,"visualQa",{
+    messages:[
+      {role:"system",content:"You are a hostile senior creative-review board. Your job is to stop generic premium concepts before they become expensive code."},
+      {role:"user",content:prompt}
+    ],
+    schema:r121ConceptJurySchema,maxTokens:2200,temperature:0.02,beforeAttempt:beforeModelAttempt
+  });
+  const scores=r.data.scores||{};
+  const min=Math.min(...R121_SELLABILITY_AXES.map(k=>Number(scores[k]||0)));
+  const critical=Math.min(Number(scores.concept_strength||0),Number(scores.desire_to_buy||0),Number(scores.brand_authorship||0));
+  const pass=r.data.pass===true && min>=9.5 && critical>=9.7;
+  return {...r.data,pass,min_score:min,critical_floor:critical,model:r.model};
 }
 
 export async function combineCreativePlan(contentTruth,directions) {
