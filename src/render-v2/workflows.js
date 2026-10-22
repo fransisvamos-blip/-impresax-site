@@ -1051,8 +1051,18 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           };
         }
 
-        let feedback=null;
-        const feedbackHistory=[];
+        const persistedHistory=Array.isArray(latestMeta.r121_concept_rejection_history)
+          ? latestMeta.r121_concept_rejection_history.slice(-8)
+          : [];
+        const feedbackHistory=[...persistedHistory];
+        let feedback=feedbackHistory.length
+          ? {
+              latest:feedbackHistory[feedbackHistory.length-1],
+              prior_rejection_reasons:feedbackHistory
+                .flatMap(x=>x?.rejection_reasons||[])
+                .slice(-24)
+            }
+          : null;
         for(let attempt=1;attempt<=3;attempt++) {
           const created=await createR121ConceptLock(
             this.env,
@@ -1107,17 +1117,32 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               where id=${params.packId}::uuid`;
             return {concept:created.concept,review,hash:created.hash,reused:false};
           }
-          feedbackHistory.push({
+          const learning={
+            run_key:String(params.runKey||""),
+            attempt,
+            concept_hash:created.hash,
             summary:review.summary||"",
             scores:review.scores||{},
-            rejection_reasons:review.rejection_reasons||[],
-            must_preserve:review.must_preserve||[]
-          });
+            rejection_reasons:(review.rejection_reasons||[]).slice(0,12),
+            must_preserve:(review.must_preserve||[]).slice(0,10)
+          };
+          feedbackHistory.push(learning);
+          const compactHistory=feedbackHistory.slice(-10);
+          await sql`
+            update render_v2_packs
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'r121_concept_rejection_history',${JSON.stringify(compactHistory)}::jsonb,
+                'r121_last_rejected_concept_hash',${created.hash},
+                'r121_last_rejected_at',now()::text
+              ),
+                updated_at=now()
+            where id=${params.packId}::uuid`;
           feedback={
-            latest:feedbackHistory[feedbackHistory.length-1],
-            prior_rejection_reasons:feedbackHistory
+            latest:learning,
+            prior_rejection_reasons:compactHistory
               .flatMap(x=>x.rejection_reasons||[])
-              .slice(-16)
+              .slice(-24)
           };
         }
         return {rejected:true,lastReview:feedback?.latest||feedback,feedbackHistory};
