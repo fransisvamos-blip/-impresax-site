@@ -1023,11 +1023,20 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   }
   for(const token of R121_CAMPAIGN_ASSET_TOKENS) if(!uniqueTokens.has(token)) issues.push("ASSET_TOKEN_MISSING:"+token);
 
+  const distinctiveAssetText=asset=>{
+    const subject=String(asset?.subject||"").split(";")[0];
+    return [
+      asset?.narrative_role,
+      subject,
+      asset?.visual_function,
+      asset?.crop_behavior
+    ].filter(Boolean).join(" ");
+  };
   for(let i=0;i<campaign.length;i++) {
     for(let j=i+1;j<campaign.length;j++) {
-      const A=[campaign[i]?.narrative_role,campaign[i]?.subject,campaign[i]?.visual_function].join(" ");
-      const B=[campaign[j]?.narrative_role,campaign[j]?.subject,campaign[j]?.visual_function].join(" ");
-      if(r121TextOverlap(A,B)>=0.62) issues.push("ASSET_ROLES_TOO_SIMILAR:"+tokens[i]+":"+tokens[j]);
+      const A=distinctiveAssetText(campaign[i]);
+      const B=distinctiveAssetText(campaign[j]);
+      if(r121TextOverlap(A,B)>=0.68) issues.push("ASSET_ROLES_TOO_SIMILAR:"+tokens[i]+":"+tokens[j]);
     }
   }
 
@@ -1106,13 +1115,19 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
     if(used && !supported) issues.push("UNVERIFIED_PROCESS_METAPHOR:"+risk.code);
   }
 
-  const campaignText=r121Normalize((concept?.asset_campaign||[]).flatMap(x=>[
-    x?.narrative_role,x?.subject,x?.visual_function,x?.crop_behavior,x?.truth_safety
+  // Inspect only POSITIVE creative instructions. Safety clauses deliberately contain
+  // words like "no logos / no signage / no branded vehicles" and must never trigger
+  // the forbidden-branding detector themselves.
+  const campaignCreativeText=r121Normalize((concept?.asset_campaign||[]).flatMap(x=>[
+    x?.narrative_role,
+    String(x?.subject||"").split(";")[0],
+    x?.visual_function,
+    x?.crop_behavior
   ]).join(" "));
   const businessTokens=r121Normalize(brief?.business_name).split(" ").filter(x=>x.length>=5);
-  if(businessTokens.some(x=>campaignText.includes(x))) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PROSPECT_BRANDING");
-  if(campaignText.includes("u power")||campaignText.includes("upower")) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PARTNER_BRANDING");
-  if(/\b(logo|sticker|signage|branded|branding|wall sign|uniform|packaging label)\b/i.test(campaignText)) issues.push("CAMPAIGN_ASSET_BRANDING_OR_SIGNAGE_FORBIDDEN");
+  if(businessTokens.some(x=>campaignCreativeText.includes(x))) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PROSPECT_BRANDING");
+  if(campaignCreativeText.includes("u power")||campaignCreativeText.includes("upower")) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PARTNER_BRANDING");
+  if(/\b(logo|sticker|signage|branded|branding|wall sign|uniform|packaging label)\b/i.test(campaignCreativeText)) issues.push("CAMPAIGN_ASSET_BRANDING_OR_SIGNAGE_FORBIDDEN");
 
   const interactionText=r121Normalize([
     concept?.motion_signature?.behavior,concept?.motion_signature?.mobile_behavior,
