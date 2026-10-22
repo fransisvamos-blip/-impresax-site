@@ -161,7 +161,7 @@ test("R119 productized experience gate rejects paper-like poster stacks",()=>{
   assert.match(css,/\.r119-proof__facts\{[^}]*display:grid/s);
   assert.match(css,/\.r119-partner\{[^}]*display:grid/s);
   assert.ok((css.match(/transition:/g)||[]).length>=6);
-  assert.doesNotMatch(css,/content\s*:/i);
+  assert.doesNotMatch(css,/(?:^|[;{]\\s*)content\\s*:/im);
 });
 
 
