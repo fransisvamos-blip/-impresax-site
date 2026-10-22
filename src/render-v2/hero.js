@@ -295,22 +295,22 @@ export async function generatePremiumHeroVisual(env,{inputPayload,direction,vari
 function r121RolePrompt(role={}) {
   const token=String(role?.token||"");
   const defaults={
-    R121_MATERIAL_MACRO:"Extreme tactile macro study of the prospect-relevant raw material. No people. Make texture, mass, edge detail and light the subject.",
-    R121_PROCESS:"Editorial industrial process scene showing believable transformation or handling of the material. No readable controls, labels or signage.",
-    R121_STRUCTURE:"Architectural/structural scene showing how the material becomes part of a larger system. No claim of a specific completed company project.",
-    R121_SCALE:"Wide environmental scene communicating operational scale through space, repetition, inventory depth or structural rhythm. Human presence, if any, is tiny and anonymous.",
-    R121_DETAIL:"Precise close detail of material, tooling contact, geometry or engineered junction. No text, labels, screens or branded equipment.",
-    R121_ATMOSPHERE:"Abstract but photoreal industrial atmosphere derived from the same materials: shadow, dust, repetition, reflected light and depth. No fake typography or signage."
+    R121_MATERIAL_MACRO:"MEDIUM: tactile macro photography. Extreme close material study. No people, no environment. Texture, mass, edge detail and directional light are the subject.",
+    R121_PROCESS:"MEDIUM: cinematic editorial process photography. Show believable transformation, handling, bending, cutting or movement of material without readable controls, labels, uniforms, signage or branded machinery.",
+    R121_STRUCTURE:"MEDIUM: high-end text-free technical CGI / structural abstraction. Build an engineered spatial system from rebar/steel/construction geometry, exploded layers, junctions and load-bearing logic. It must feel like commissioned motion-design key art, not a photograph and not a fake completed company project.",
+    R121_SCALE:"MEDIUM: wide illustrative environmental photography. Communicate scale through space, repetition, inventory depth, structure and tiny anonymous human scale only when useful. Never imply this is the real DEDIL facility.",
+    R121_DETAIL:"MEDIUM: controlled studio still-life. Isolate material/tool/engineered junction on a deliberately lit studio field with precise shadow and texture. No warehouse background, no signage, no screens, no catalogue text.",
+    R121_ATMOSPHERE:"MEDIUM: abstract material-and-light campaign image. Use shadow, dust, reflected red light, steel/concrete texture, repetition and negative space without depicting a literal facility, product catalogue or readable object."
   };
-  return defaults[token]||"Distinct commissioned editorial industrial photograph with a unique narrative purpose.";
+  return defaults[token]||"Distinct commissioned campaign visual with a unique narrative purpose and clearly differentiated visual medium.";
 }
 
 export function buildR121CampaignAssetPrompt({inputPayload,concept,role}) {
   return [
-    "R121 CAMPAIGN ASSET SYSTEM. Create ONE photorealistic commissioned editorial photograph that belongs to a coherent six-image brand campaign.",
+    "R121 CAMPAIGN ASSET SYSTEM. Create ONE premium commissioned campaign visual asset that belongs to a coherent six-asset brand world. Follow the ROLE-SPECIFIC MEDIUM exactly; some roles are photography, one is technical CGI/abstraction, one is studio still-life and one is abstract material/light art.",
     "This is illustrative commercial imagery, not documentary proof of actual company premises, employees, clients, machinery, projects or completed works.",
     "ABSOLUTE NO-TEXT RULE: zero visible letters, words, numbers, logos, signage, labels, UI, watermarks, plates, packaging copy or pseudo-text.",
-    "Avoid generic stock-photo poses, generic corporate photography, glossy fake advertising, impossible machinery, obvious CGI, AI artifacts and repeated warehouse clichés.",
+    "Avoid generic stock-photo poses, generic corporate photography, glossy fake advertising, impossible machinery, cheap CGI, AI artifacts and repeated warehouse clichés. High-end technical CGI is allowed ONLY for R121_STRUCTURE when the role explicitly calls for it.",
     "The six campaign images must share one visual bible while serving different narrative functions. This image must NOT look like a crop or variation of another role.",
     "CAMPAIGN THESIS: "+clean(concept?.campaign_thesis,700),
     "BRAND WORLD: "+clean(concept?.brand_world,900),
@@ -324,8 +324,8 @@ export function buildR121CampaignAssetPrompt({inputPayload,concept,role}) {
     "ROLE TRUTH SAFETY: "+clean(role?.truth_safety,500),
     "ROLE-SPECIFIC DIRECTION: "+r121RolePrompt(role),
     sectorDirection(inputPayload),
-    "Use sophisticated naturalistic lighting, restrained color, tactile surfaces, deliberate depth and a memorable asymmetric composition. Keep the focal system crop-safe for both 1440 desktop and 390 mobile.",
-    "Return a full-frame photograph only. Never render a website, poster, moodboard, collage, text panel or UI."
+    "Use sophisticated role-appropriate lighting, restrained color, tactile surfaces, deliberate depth and a memorable asymmetric composition. Keep the focal system crop-safe for both 1440 desktop and 390 mobile.",
+    "Return ONE full-frame visual asset only. Never render a website, poster, moodboard, collage, text panel or UI."
   ].join("\n");
 }
 
