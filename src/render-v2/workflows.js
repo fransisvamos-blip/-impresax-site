@@ -1128,16 +1128,33 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           };
           feedbackHistory.push(learning);
           const compactHistory=feedbackHistory.slice(-10);
-          await sql`
-            update render_v2_packs
-            set metadata=coalesce(metadata,'{}'::jsonb)
-              || jsonb_build_object(
-                'r121_concept_rejection_history',${JSON.stringify(compactHistory)}::jsonb,
-                'r121_last_rejected_concept_hash',${created.hash},
-                'r121_last_rejected_at',now()::text
-              ),
-                updated_at=now()
-            where id=${params.packId}::uuid`;
+          try {
+            await sql`
+              update render_v2_packs
+              set metadata=coalesce(metadata,'{}'::jsonb)
+                || jsonb_build_object(
+                  'r121_concept_rejection_history',${JSON.stringify(compactHistory)}::jsonb,
+                  'r121_last_rejected_concept_hash',${created.hash},
+                  'r121_last_rejected_at',now()::text
+                ),
+                  updated_at=now()
+              where id=${params.packId}::uuid`;
+          } catch(learningPersistError) {
+            // Learning persistence is observability, never a reason to restart the
+            // expensive concept step. The in-memory feedback below remains authoritative
+            // for A2/A3 in the current workflow run.
+            try {
+              await sql`
+                update render_v2_rollout_state
+                set metadata=coalesce(metadata,'{}'::jsonb)
+                  || jsonb_build_object(
+                    'r121_learning_persist_last_error',${String(learningPersistError?.message||learningPersistError).slice(0,900)},
+                    'r121_learning_persist_last_error_at',now()::text
+                  ),
+                    updated_at=now()
+                where id=1`;
+            } catch {}
+          }
           feedback={
             latest:learning,
             prior_rejection_reasons:compactHistory
