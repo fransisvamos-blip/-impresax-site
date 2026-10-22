@@ -874,7 +874,13 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
   if(!/\.ix-v2-header\s*\{[^}]*position\s*:\s*sticky/i.test(styles)) issues.push("R119_LIVE_SITE_CHROME_REQUIRED");
   if(!/\.r119-proof__facts\s*\{[^}]*display\s*:\s*grid/i.test(styles)) issues.push("R119_COMMERCIAL_PROOF_GRID_REQUIRED");
   if(!/\.r119-partner\s*\{[^}]*display\s*:\s*grid/i.test(styles)) issues.push("R119_PARTNER_MODULE_REQUIRED");
-  if(!/\.r119-hero\s*\{[^}]*grid-template-columns/i.test(styles) || !/\.r119-positioning\s*\{[^}]*grid-template-columns/i.test(styles) || !/\.r119-materials\s*\{[^}]*grid-template-columns/i.test(styles)) {
+  if(!/\.r119-hero__media\s*\{[^}]*position\s*:\s*absolute[^}]*inset\s*:\s*0/i.test(styles) ||
+     !/\.r119-hero__copy\s*\{[^}]*position\s*:\s*relative[^}]*z-index\s*:\s*6/i.test(styles)) {
+    issues.push("R119_HERO_OVER_IMAGE_REQUIRED");
+  }
+  if(!/\.r119-positioning\s*\{[^}]*grid-template-columns/i.test(styles) ||
+     !/\.r119-materials\s*\{[^}]*grid-template-columns/i.test(styles) ||
+     !/\.r119-rebar\s*\{[^}]*grid-template-columns/i.test(styles)) {
     issues.push("R119_THREE_DISTINCT_LAYOUT_GRAMMARS_REQUIRED");
   }
   if(String(spec?.scene_composer_standard||"")!==R119_SCENE_COMPOSER_STANDARD) issues.push("R119_SCENE_COMPOSER_STANDARD_REQUIRED");
