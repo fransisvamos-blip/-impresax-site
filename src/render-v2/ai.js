@@ -197,7 +197,13 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
 
   for(const attempt of plan) {
     const model=r121ConceptRoute===true
-      ? modelFor(env,"creative",attempt.fallback)
+      ? (qaRole
+          ? (attempt.fallback
+              ? (env.V2_MODEL_R121_CONCEPT_JURY_FALLBACK||DEFAULT_MODELS.visionFallback)
+              : (env.V2_MODEL_R121_CONCEPT_JURY||"@cf/openai/gpt-oss-120b"))
+          : (attempt.fallback
+              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||DEFAULT_MODELS.textFallback)
+              : (env.V2_MODEL_R121_CONCEPT||"@cf/openai/gpt-oss-120b")))
       : (fastR118Qa
           ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
           : (fastR118Generation
@@ -221,6 +227,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="low";
+      if(r121ConceptRoute===true && /gpt-oss-120b/i.test(model)) inference.reasoning_effort="high";
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
@@ -232,7 +239,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
       } catch(parseError) {
         const schemaInvalid=String(parseError?.message||parseError)==="AI_OUTPUT_SCHEMA_INVALID";
-        const canNormalize=schemaInvalid && (qaRole || fastR118Generation);
+        const canNormalize=schemaInvalid && (qaRole || fastR118Generation || r121ConceptRoute);
         if(!canNormalize) throw parseError;
         const raw=collectRawText(result);
         if(!raw) throw parseError;
@@ -244,7 +251,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
           fallback:true,
           retry:0
         });
-        const generationNormalizer=fastR118Generation && !qaRole;
+        const generationNormalizer=(fastR118Generation || r121ConceptRoute) && !qaRole;
         const fixerInference={
           messages:[
             {
