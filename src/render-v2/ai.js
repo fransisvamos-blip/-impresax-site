@@ -202,8 +202,8 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
               ? (env.V2_MODEL_R121_CONCEPT_JURY_FALLBACK||"@cf/openai/gpt-oss-120b")
               : (env.V2_MODEL_R121_CONCEPT_JURY||"@cf/deepseek-ai/deepseek-v4.1-flash-1017"))
           : (attempt.fallback
-              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||"@cf/deepseek-ai/deepseek-v4.1-flash-1017")
-              : (env.V2_MODEL_R121_CONCEPT||"@cf/openai/gpt-oss-120b")))
+              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||"@cf/openai/gpt-oss-120b")
+              : (env.V2_MODEL_R121_CONCEPT||"@cf/deepseek-ai/deepseek-v4.1-flash-1017")))
       : (fastR118Qa
           ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
           : (fastR118Generation
