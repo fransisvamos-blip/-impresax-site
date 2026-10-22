@@ -62,15 +62,15 @@ test("R119 replaces repeated section-shell cadence with eight evidence-led campa
   assert.match(built.spec.custom_css,/@media\(max-width:700px\)/);
 });
 
-test("R119 jury-reset composer densifies proof, uses positioning media and changes spatial composition",()=>{
-  const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true,mode:"jury-reset"});
-  assert.match(built.spec.main_html,/r119-jury-reset/);
-  assert.match(built.spec.main_html,/r119-positioning__media/);
-  assert.match(built.spec.main_html,/r119-proof__mark ixg-trust-reason__graphic/);
-  assert.match(built.spec.main_html,/data-partner-verification="verified-only"/);
-  assert.match(built.spec.custom_css,/\.r119-hero\.r119-jury-reset/);
-  assert.match(built.spec.custom_css,/\.r119-materials\.r119-jury-reset/);
-  assert.match(built.spec.implementation_notes,/Scene mode: jury-reset/);
+test("R119 jury-reset preserves the productized architecture without CSS duplication",()=>{
+  const base=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
+  const reset=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true,mode:"jury-reset"});
+  assert.match(reset.spec.main_html,/r119-jury-reset/);
+  assert.match(reset.spec.main_html,/r119-positioning__media/);
+  assert.match(reset.spec.main_html,/r119-proof__mark ixg-trust-reason__graphic/);
+  assert.match(reset.spec.main_html,/data-partner-verification="verified-only"/);
+  assert.equal(reset.spec.custom_css,base.spec.custom_css);
+  assert.match(reset.spec.implementation_notes,/PRODUCTIZED EXPERIENCE HARD RESET/);
 });
 
 test("R119 scene composer contract has no deterministic violations",()=>{
