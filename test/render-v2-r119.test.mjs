@@ -138,7 +138,7 @@ test("R119 hero exposes canonical browser-gate hooks",()=>{
 });
 
 
-test("R119 perceptual fixes remove placeholder geometry and stock-scene dependence",()=>{
+test("R119 productized experience gate rejects paper-like poster stacks",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
   const html=built.spec.main_html;
   const css=built.spec.custom_css;
@@ -146,16 +146,22 @@ test("R119 perceptual fixes remove placeholder geometry and stock-scene dependen
   assert.doesNotMatch(html,/r119-rebar__engineering/);
   assert.doesNotMatch(html,/r119-close__rail/);
   assert.match(html,/POSITIONING_VISUAL/);
+  assert.match(html,/SERVICE_REBAR_VISUAL/);
   assert.doesNotMatch(html,/TRUST_VISUAL/);
   assert.equal((html.match(/\{\{copy:SERVICE_1_TITLE\}\}/g)||[]).length,1);
   assert.equal((html.match(/\{\{copy:SERVICE_2_TITLE\}\}/g)||[]).length,1);
-  assert.match(css,/font-size:clamp\(64px,7\.2vw,122px\)/);
-  assert.match(css,/\.r119-rebar\{[^}]*display:grid/);
-  assert.match(css,/\.r119-rebar__title\{position:relative/);
-  assert.match(css,/\.r119-rebar__body\{position:relative/);
-  assert.match(css,/\.r119-materials__structure\{[^}]*width:min\(620px,48vw\)/);
-  assert.match(css,/\.r119-materials__structure\{right:-20vw;top:80px/);
-  assert.match(css,/\.r119-partner\{min-height:640px/);
+  assert.ok(css.length<32000,`R119 CSS must stay productized, got ${css.length}`);
+  assert.ok((css.match(/100svh/g)||[]).length<=2);
+  assert.match(css,/@media\(min-width:701px\) and \(max-width:1180px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/\.ix-v2-header\{[^}]*position:sticky/s);
+  assert.match(css,/\.r119-hero\{[^}]*grid-template-columns/s);
+  assert.match(css,/\.r119-positioning\{[^}]*grid-template-columns/s);
+  assert.match(css,/\.r119-materials\{[^}]*grid-template-columns/s);
+  assert.match(css,/\.r119-proof__facts\{[^}]*display:grid/s);
+  assert.match(css,/\.r119-partner\{[^}]*display:grid/s);
+  assert.ok((css.match(/transition:/g)||[]).length>=6);
+  assert.doesNotMatch(css,/content\s*:/i);
 });
 
 
