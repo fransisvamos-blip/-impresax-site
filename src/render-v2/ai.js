@@ -214,16 +214,17 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       const retrySuffix=attempt.retry
         ? [{role:"system",content:"Return ONLY one complete valid JSON object matching the requested schema. No prose, markdown, analysis, comments or code fences."}]
         : [];
-      const qaJsonInstruction=qaRole
+      const schemaJsonInstruction=(qaRole || r121ConceptRoute===true)
         ? [{role:"system",content:"Return ONLY one valid JSON object and no other text. It MUST match this JSON Schema exactly: "+JSON.stringify(schema)}]
         : [];
       const inference={
-        messages:[...messages,...qaJsonInstruction,...retrySuffix],
+        messages:[...messages,...schemaJsonInstruction,...retrySuffix],
         temperature:attempt.retry?0:temperature
       };
-      // Multimodal QA uses plain JSON text plus our deterministic extractor/validator.
-      // This avoids provider-specific structured-output failures on vision routes.
-      if(!qaRole) inference.response_format={type:"json_schema",json_schema:schema};
+      // R121 is deliberately provider-agnostic: schema is carried in the prompt and
+      // our deterministic parser extracts JSON. Some Workers AI providers degrade or
+      // emit empty text when forced through response_format/json_schema.
+      if(!qaRole && r121ConceptRoute!==true) inference.response_format={type:"json_schema",json_schema:schema};
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="low";
@@ -269,9 +270,9 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
               content:"JSON SCHEMA:\n"+JSON.stringify(schema)+"\n\nRAW OUTPUT:\n"+raw
             }
           ],
-          response_format:{type:"json_schema",json_schema:schema},
           temperature:0
         };
+        if(r121ConceptRoute!==true) fixerInference.response_format={type:"json_schema",json_schema:schema};
         const fixerTokenCap=generationNormalizer?Math.min(maxTokens,9000):Math.min(maxTokens,5000);
         if(/llama-3\.3-70b-instruct-fp8-fast/i.test(fixerModel)) fixerInference.max_tokens=fixerTokenCap;
         else fixerInference.max_completion_tokens=fixerTokenCap;
