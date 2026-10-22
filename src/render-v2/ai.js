@@ -234,9 +234,11 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
-      const aiTimeoutMs=fastR118Generation
-        ? Math.max(30000,Math.min(90000,Number(env.V2_R118_FAST_GENERATOR_TIMEOUT_MS||75000)))
-        : Math.max(30000,Math.min(180000,Number(env.V2_AI_CALL_TIMEOUT_MS||105000)));
+      const aiTimeoutMs=r121ConceptRoute===true
+        ? Math.max(90000,Math.min(240000,Number(env.V2_R121_CONCEPT_TIMEOUT_MS||165000)))
+        : (fastR118Generation
+          ? Math.max(30000,Math.min(90000,Number(env.V2_R118_FAST_GENERATOR_TIMEOUT_MS||75000)))
+          : Math.max(30000,Math.min(180000,Number(env.V2_AI_CALL_TIMEOUT_MS||105000))));
       const result=await withAiDeadline(env.AI.run(model,inference,runOptions),aiTimeoutMs,role+":"+model);
       try {
         return {data:extractStructured(result,schema),model,fallback:attempt.fallback,retry:attempt.retry};
