@@ -665,7 +665,7 @@ export async function createCreativeDirections(env,inputPayload,assetTokens,{bef
 }
 
 
-export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null}={}) {
+export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
@@ -681,6 +681,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "Proof must be staged as evidence, not a card wall.",
     "Conversion climax must be a designed final decision moment, not merely a button under a paragraph.",
     "Select the strongest route A/B/C based on the campaign idea, not on implementation convenience.",
+    juryFeedback?"PRIOR CONCEPT JURY REJECTION. Rebuild the concept, do not patch wording: "+JSON.stringify(juryFeedback):"",
     "VERIFIED INPUT:",
     JSON.stringify(inputPayload),
     "VERIFIED CONTENT TRUTH:",
