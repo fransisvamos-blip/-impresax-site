@@ -250,9 +250,17 @@ test("R119 fast generation avoids duplicate full-page fallbacks and normalizes s
   assert.match(ai,/const canNormalize=schemaInvalid && \(qaRole \|\| fastR118Generation \|\| r121ConceptRoute\)/);
   assert.match(ai,/Normalize the supplied generated homepage object/);
   assert.match(ai,/roughly within 5k-14k characters/);
-  assert.match(workflows,/retries:\{limit:context\.r119Requested===true\?0:1/);
+  assert.match(workflows,/retries:\{limit:context\.r121CreativeDirector===true\?0:\(context\.r119Requested===true\?0:1\)/);
 });
 
+
+test("R121 costly steps disable hidden Cloudflare retries",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/r121-concept-lock",\{retries:\{limit:0,delay:"1 second",backoff:"constant"\},timeout:"16 minutes"\}/);
+  assert.match(workflows,/r121-campaign-assets",\{retries:\{limit:0,delay:"1 second",backoff:"constant"\},timeout:"28 minutes"\}/);
+  assert.match(workflows,/r"\+cycle\+"-visual-qa",\{retries:\{limit:context\.r121CreativeDirector===true\?0:5/);
+});
 
 test("R119 first provider failure falls through to deterministic scene composer and jury path",async()=>{
   const fs=(await import("node:fs")).default;
