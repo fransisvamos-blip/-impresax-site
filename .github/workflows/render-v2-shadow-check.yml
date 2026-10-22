@@ -65,11 +65,3 @@ jobs:
           exit 1
 
 
-
-      - name: One-shot terminate superseded DEDIL R121 v8
-        shell: bash
-        run: |
-          set -euo pipefail
-          npx wrangler workflows instances terminate impresax-render-v2-variant \
-            rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-r121-creative-director-v8 \
-            --config wrangler.render-v2.jsonc
