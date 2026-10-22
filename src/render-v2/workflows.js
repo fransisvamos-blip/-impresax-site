@@ -1052,7 +1052,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         }
 
         let feedback=null;
-        for(let attempt=1;attempt<=2;attempt++) {
+        const feedbackHistory=[];
+        for(let attempt=1;attempt<=3;attempt++) {
           const created=await createR121ConceptLock(
             this.env,
             context.inputPayload,
@@ -1106,9 +1107,20 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               where id=${params.packId}::uuid`;
             return {concept:created.concept,review,hash:created.hash,reused:false};
           }
-          feedback=review;
+          feedbackHistory.push({
+            summary:review.summary||"",
+            scores:review.scores||{},
+            rejection_reasons:review.rejection_reasons||[],
+            must_preserve:review.must_preserve||[]
+          });
+          feedback={
+            latest:feedbackHistory[feedbackHistory.length-1],
+            prior_rejection_reasons:feedbackHistory
+              .flatMap(x=>x.rejection_reasons||[])
+              .slice(-16)
+          };
         }
-        return {rejected:true,lastReview:feedback};
+        return {rejected:true,lastReview:feedback?.latest||feedback,feedbackHistory};
       });
 
       if(conceptBundle?.rejected===true) {
