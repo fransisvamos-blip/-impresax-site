@@ -205,45 +205,50 @@ img{display:block;max-width:100%}
 /* 01 — HERO: commercial interface + immersive media */
 .r119-hero{
   min-height:88svh;
-  display:grid;
-  grid-template-columns:minmax(0,46%) minmax(0,54%);
+  display:flex;
+  align-items:flex-end;
+  padding:0 5vw 7vh;
   background:var(--ix-carbon);
   color:white;
 }
 .r119-hero__media{
-  position:relative;
-  grid-column:2;
-  grid-row:1;
+  position:absolute;
+  inset:0;
   margin:0;
   min-height:88svh;
   overflow:hidden;
-  box-shadow:-28px 0 80px rgba(0,0,0,.22);
+  box-shadow:none;
 }
 .r119-hero__media img{
   width:100%;
   height:100%;
   object-fit:cover;
-  object-position:58% 48%;
-  filter:saturate(.46) contrast(1.18) brightness(.76);
-  transform:scale(1.025);
+  object-position:61% 48%;
+  filter:saturate(.48) contrast(1.2) brightness(.70);
+  transform:scale(1.02);
   transition:transform 1s var(--ix-ease),filter .8s var(--ix-ease);
 }
-.r119-hero:hover .r119-hero__media img{transform:scale(1.045);filter:saturate(.56) contrast(1.2) brightness(.79)}
+.r119-hero:hover .r119-hero__media img{transform:scale(1.04);filter:saturate(.58) contrast(1.22) brightness(.74)}
 .r119-hero__veil{
   position:absolute;
   z-index:2;
-  inset:0 0 0 44%;
-  background:linear-gradient(90deg,rgba(17,19,21,.98),rgba(17,19,21,.42) 24%,transparent 62%);
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(8,9,10,.92) 0%,rgba(8,9,10,.72) 32%,rgba(8,9,10,.16) 72%,rgba(8,9,10,.06) 100%),
+    linear-gradient(180deg,rgba(0,0,0,.04),transparent 48%,rgba(0,0,0,.52));
   pointer-events:none;
 }
 .r119-hero__copy{
   position:relative;
   z-index:6;
-  grid-column:1;
-  grid-row:1;
-  align-self:end;
-  padding:clamp(70px,9vh,120px) 5vw 7vh;
-  max-width:860px;
+  width:min(780px,62vw);
+  max-width:780px;
+  padding:30px 32px 28px;
+  background:rgba(9,10,11,.44);
+  border:1px solid rgba(255,255,255,.16);
+  border-left:3px solid var(--ix-red);
+  backdrop-filter:blur(12px);
+  box-shadow:0 30px 80px rgba(0,0,0,.20);
 }
 .r119-hero__copy h1{
   margin:16px 0 24px;
@@ -698,8 +703,8 @@ img{display:block;max-width:100%}
 
 /* intermediate viewport is a first-class layout */
 @media(min-width:701px) and (max-width:1180px){
-  .r119-hero{grid-template-columns:minmax(0,51%) minmax(0,49%)}
-  .r119-hero__copy{padding-left:32px;padding-right:32px}
+  .r119-hero{padding-left:32px;padding-right:32px}
+  .r119-hero__copy{width:min(760px,70vw);padding:26px 28px}
   .r119-hero__copy h1{font-size:clamp(52px,6.8vw,78px)}
   .r119-positioning{grid-template-columns:minmax(0,48%) minmax(0,52%);padding:64px 0}
   .r119-positioning__media{height:500px;width:calc(100% + 26px)}
@@ -729,15 +734,15 @@ img{display:block;max-width:100%}
   .ix-v2-nav{display:none!important}
   .ix-v2-header-cta{min-height:40px!important;padding:0 12px!important;font-size:10px!important}
 
-  .r119-hero{min-height:0;display:flex;flex-direction:column;background:var(--ix-carbon)}
-  .r119-hero__media{order:1;min-height:54svh;height:54svh;width:100%;box-shadow:none}
-  .r119-hero__media img{object-position:60% center;transform:none}
-  .r119-hero__veil{display:none}
-  .r119-hero__copy{order:2;padding:42px 18px 38px;max-width:none}
-  .r119-hero__copy h1{font-size:clamp(46px,12vw,60px);line-height:.9;max-width:9.2ch}
-  .r119-lede{font-size:15px;max-width:31ch}
+  .r119-hero{min-height:82svh;display:flex;align-items:flex-end;padding:0 18px 22px;background:var(--ix-carbon)}
+  .r119-hero__media{position:absolute;inset:0;min-height:82svh;height:82svh;width:100%;box-shadow:none}
+  .r119-hero__media img{object-position:62% center;transform:none;filter:saturate(.5) contrast(1.18) brightness(.68)}
+  .r119-hero__veil{display:block;inset:0;background:linear-gradient(180deg,rgba(5,6,7,.04) 0%,rgba(5,6,7,.18) 36%,rgba(5,6,7,.82) 72%,rgba(5,6,7,.96) 100%)}
+  .r119-hero__copy{position:relative;z-index:6;width:100%;max-width:none;padding:20px 18px 18px;background:rgba(8,9,10,.52);border:1px solid rgba(255,255,255,.14);border-left:3px solid var(--ix-red);backdrop-filter:blur(10px)}
+  .r119-hero__copy h1{font-size:clamp(42px,11.2vw,56px);line-height:.9;max-width:9.2ch}
+  .r119-lede{font-size:14px;max-width:30ch}
   .r119-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .r119-btn{min-height:50px;padding:0 12px;font-size:10px;gap:10px}
+  .r119-btn{min-height:48px;padding:0 10px;font-size:9px;gap:8px}
   .r119-hero__edge-index{display:none}
 
   .r119-positioning{min-height:0;display:flex;flex-direction:column;padding:0}
@@ -829,7 +834,7 @@ img{display:block;max-width:100%}
       hero_copy_space:"Dark directional veil with oversized copy anchored to the lower-left field.",
       hero_mobile_crop_strategy:"Native 390px recut with bottom-anchored copy and independent scale.",
       hero_relevance_score:10,
-      implementation_notes:"R119 V29 PRODUCTIZED EXPERIENCE HARD RESET: clean CSS architecture, commercial pacing, layered media, three distinct section grammars, tablet/laptop breakpoint, micro-interactions, responsive mobile recomposition and strict anti-poster rules."+mode+". A jury-reset mode radically flips hero alignment, positioning/media order, materials balance, proof surface and commercial bridge rather than replaying the same composition."
+      implementation_notes:"R119 V29.1 PRODUCTIZED EXPERIENCE HERO-OVERLAY FIX: clean CSS architecture, commercial pacing, layered media, three distinct section grammars, tablet/laptop breakpoint, micro-interactions, responsive mobile recomposition and strict anti-poster rules."+mode+". A jury-reset mode radically flips hero alignment, positioning/media order, materials balance, proof surface and commercial bridge rather than replaying the same composition."
     },
     strategy:R119_SCENE_COMPOSER_STANDARD
   };
