@@ -1152,6 +1152,23 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     }
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
+      if(context.r121CreativeDirector===true && context.r121Concept) {
+        const requestedToken=String(context.r121Concept?.desktop_storyboard?.[0]?.dominant_asset||"");
+        const heroToken=R121_CAMPAIGN_ASSET_TOKENS.includes(requestedToken) && context.assets?.[requestedToken]?.r2_key
+          ? requestedToken
+          : (context.assets?.R121_SCALE?.r2_key?"R121_SCALE":R121_CAMPAIGN_ASSET_TOKENS.find(token=>context.assets?.[token]?.r2_key));
+        const source=heroToken?context.assets?.[heroToken]:null;
+        if(!source?.r2_key) throw new Error("R121_CAMPAIGN_HERO_REQUIRED");
+        return {
+          ...source,
+          asset_id:"HERO_VISUAL",
+          role:"hero",
+          source_type:"R121_CAMPAIGN_HERO",
+          hero_source_token:heroToken,
+          generated:true,
+          preqa_pass:true
+        };
+      }
       const r119MaterialHero=context.r119Requested===true
         && (context.assets?.SERVICE_REBAR_VISUAL?.r2_key || context.assets?.TRUST_VISUAL?.r2_key || context.assets?.POSITIONING_VISUAL?.r2_key);
       if(r119MaterialHero) {
