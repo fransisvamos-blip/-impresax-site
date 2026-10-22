@@ -1029,7 +1029,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     });
 
     if(context.r121CreativeDirector===true) {
-      const conceptBundle=await step.do("r121-concept-lock",{retries:{limit:0},timeout:"16 minutes"},async()=>{
+      const conceptBundle=await step.do("r121-concept-lock",{timeout:"16 minutes"},async()=>{
         const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
         const latestMeta=packRows[0]?.metadata||{};
         const existing=latestMeta.r121_concept_lock;
@@ -1109,7 +1109,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const selectedDirection=context.allDirections?.[selectedKey]||context.direction;
       context.direction=sanitizeDirectionForExecution(selectedDirection,{hasEditorialAssets:true});
 
-      const campaign=await step.do("r121-campaign-assets",{retries:{limit:0},timeout:"28 minutes"},async()=>{
+      const campaign=await step.do("r121-campaign-assets",{timeout:"28 minutes"},async()=>{
         const result=await ensureR121CampaignAssets(this.env,sql,{
           packId:params.packId,
           inputPayload:context.inputPayload,
