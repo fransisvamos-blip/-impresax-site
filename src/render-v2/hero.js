@@ -290,3 +290,108 @@ export async function generatePremiumHeroVisual(env,{inputPayload,direction,vari
   }
   throw lastError||new Error("HERO_IMAGE_PROVIDER_FAILURE");
 }
+
+
+function r121RolePrompt(role={}) {
+  const token=String(role?.token||"");
+  const defaults={
+    R121_MATERIAL_MACRO:"Extreme tactile macro study of the prospect-relevant raw material. No people. Make texture, mass, edge detail and light the subject.",
+    R121_PROCESS:"Editorial industrial process scene showing believable transformation or handling of the material. No readable controls, labels or signage.",
+    R121_STRUCTURE:"Architectural/structural scene showing how the material becomes part of a larger system. No claim of a specific completed company project.",
+    R121_SCALE:"Wide environmental scene communicating operational scale through space, repetition, inventory depth or structural rhythm. Human presence, if any, is tiny and anonymous.",
+    R121_DETAIL:"Precise close detail of material, tooling contact, geometry or engineered junction. No text, labels, screens or branded equipment.",
+    R121_ATMOSPHERE:"Abstract but photoreal industrial atmosphere derived from the same materials: shadow, dust, repetition, reflected light and depth. No fake typography or signage."
+  };
+  return defaults[token]||"Distinct commissioned editorial industrial photograph with a unique narrative purpose.";
+}
+
+export function buildR121CampaignAssetPrompt({inputPayload,concept,role}) {
+  return [
+    "R121 CAMPAIGN ASSET SYSTEM. Create ONE photorealistic commissioned editorial photograph that belongs to a coherent six-image brand campaign.",
+    "This is illustrative commercial imagery, not documentary proof of actual company premises, employees, clients, machinery, projects or completed works.",
+    "ABSOLUTE NO-TEXT RULE: zero visible letters, words, numbers, logos, signage, labels, UI, watermarks, plates, packaging copy or pseudo-text.",
+    "Avoid generic stock-photo poses, generic corporate photography, glossy fake advertising, impossible machinery, obvious CGI, AI artifacts and repeated warehouse clichés.",
+    "The six campaign images must share one visual bible while serving different narrative functions. This image must NOT look like a crop or variation of another role.",
+    "CAMPAIGN THESIS: "+clean(concept?.campaign_thesis,700),
+    "BRAND WORLD: "+clean(concept?.brand_world,900),
+    "VISUAL BIBLE: "+clean(concept?.visual_bible,1200),
+    "SIGNATURE MOTIF: "+clean(concept?.signature_motif,700),
+    "ROLE TOKEN: "+clean(role?.token,120),
+    "ROLE NARRATIVE: "+clean(role?.narrative_role,500),
+    "ROLE SUBJECT: "+clean(role?.subject,700),
+    "ROLE VISUAL FUNCTION: "+clean(role?.visual_function,700),
+    "ROLE CROP BEHAVIOR: "+clean(role?.crop_behavior,500),
+    "ROLE TRUTH SAFETY: "+clean(role?.truth_safety,500),
+    "ROLE-SPECIFIC DIRECTION: "+r121RolePrompt(role),
+    sectorDirection(inputPayload),
+    "Use sophisticated naturalistic lighting, restrained color, tactile surfaces, deliberate depth and a memorable asymmetric composition. Keep the focal system crop-safe for both 1440 desktop and 390 mobile.",
+    "Return a full-frame photograph only. Never render a website, poster, moodboard, collage, text panel or UI."
+  ].join("\n");
+}
+
+export async function generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt=1}) {
+  if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true") throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
+  if(!env.AI) throw new Error("R121_IMAGE_AI_BINDING_REQUIRED");
+  const primary=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-dev";
+  const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
+  const prompt=buildR121CampaignAssetPrompt({inputPayload,concept,role});
+  const token=String(role?.token||"R121_ASSET");
+  const tokenSeed=[...token].reduce((n,ch)=>n+ch.charCodeAt(0)*17,0);
+  const attempt=Math.max(1,Number(generationAttempt)||1);
+  const deterministicSeed=Math.abs(17011+tokenSeed+(attempt*7919));
+  let lastError=null;
+
+  for(const model of [primary,fallback]) {
+    try {
+      let bytes;
+      let mime="image/jpeg";
+      if(String(model).startsWith("@cf/")) {
+        const form=new FormData();
+        form.append("prompt",prompt);
+        form.append("width","1536");
+        form.append("height","1024");
+        form.append("guidance","6.0");
+        if(String(model).includes("flux-2-dev")) form.append("steps","25");
+        form.append("seed",String(deterministicSeed));
+        const encoded=new Response(form);
+        const contentType=encoded.headers.get("content-type")||"multipart/form-data";
+        const response=await env.AI.run(model,{multipart:{body:encoded.body,contentType}});
+        const image=String(response?.image||"").trim();
+        if(!image) throw new Error("R121_IMAGE_EMPTY_RESPONSE");
+        bytes=base64ToBytes(image);
+        mime=detectImageMime(bytes);
+      } else {
+        const response=await env.AI.run(model,{
+          prompt,width:1536,height:1024,output_format:"jpeg",seed:deterministicSeed
+        });
+        const imageUrl=String(response?.result?.image||response?.image||"").trim();
+        if(!imageUrl) throw new Error("R121_IMAGE_EMPTY_RESPONSE");
+        if(imageUrl.startsWith("data:")) {
+          const comma=imageUrl.indexOf(",");
+          if(comma<0) throw new Error("R121_IMAGE_INVALID_DATA_URI");
+          const header=imageUrl.slice(0,comma);
+          const payload=imageUrl.slice(comma+1);
+          bytes=header.includes(";base64")?base64ToBytes(payload):new TextEncoder().encode(decodeURIComponent(payload));
+          mime=header.match(/^data:([^;,]+)/)?.[1]||detectImageMime(bytes);
+        } else {
+          const fetched=await fetch(imageUrl,{cf:{cacheTtl:0,cacheEverything:false}});
+          if(!fetched.ok) throw new Error("R121_IMAGE_FETCH_FAILED:"+fetched.status);
+          bytes=new Uint8Array(await fetched.arrayBuffer());
+          mime=fetched.headers.get("content-type")||detectImageMime(bytes);
+        }
+      }
+      if(!bytes || bytes.byteLength<50000) throw new Error("R121_IMAGE_TOO_SMALL");
+      return {
+        bytes,
+        mime:mime.startsWith("image/")?mime:detectImageMime(bytes),
+        model,prompt,width:1536,height:1024,generated:true,
+        asset_id:token,
+        source_type:"R121_GENERATED_EDITORIAL",
+        role:"editorial"
+      };
+    } catch(error) {
+      lastError=error;
+    }
+  }
+  throw lastError||new Error("R121_IMAGE_PROVIDER_FAILURE");
+}
