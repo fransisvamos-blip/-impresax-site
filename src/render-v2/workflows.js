@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
 import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, R118_FAST_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES, REMEDIATION_POLICY_VERSION, R121_CREATIVE_DIRECTOR_STANDARD, R121_CONCEPT_LOCK_STANDARD, R121_CAMPAIGN_ASSET_TOKENS } from "./constants.js";
-import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, generateR121RenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy, createR121ConceptLock, reviewR121ConceptLock } from "./ai.js";
+import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, generateR121RenderSpec, runVisualQa, runR121SellabilityQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy, createR121ConceptLock, reviewR121ConceptLock } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant, upscaleR107Hero } from "./browser.js";
@@ -1983,6 +1983,47 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       let qa;
       try {
         qa=await step.do("r"+cycle+"-visual-qa",{timeout:"8 minutes"},async()=>{
+          if(context.r121CreativeDirector===true) {
+            const r121Cached=await sql`
+              select q.scores,q.issues,q.actions,q.created_at,q.variant_revision_id
+              from render_qa_results_v2 q
+              where q.render_pack_id=${params.packId}::uuid
+                and q.qa_type='R121_SELLABILITY'
+                and q.artifact_hashes->>'desktop'=${captured.desktop.sha256}
+                and q.artifact_hashes->>'mobile'=${captured.mobile.sha256}
+              order by q.created_at asc
+              limit 1`;
+            if(r121Cached.length) {
+              const cached=r121Cached[0];
+              const scores=cached.scores||{};
+              const keys=["concept_strength","desire_to_buy","brand_authorship","narrative_clarity","execution_quality","mobile_equivalence"];
+              const min=Math.min(...keys.map(k=>Number(scores[k]||0)));
+              const critical=Math.min(Number(scores.concept_strength||0),Number(scores.desire_to_buy||0),Number(scores.brand_authorship||0),Number(scores.execution_quality||0));
+              const hard=(cached.issues||[]).filter(x=>x?.severity==="critical"||x?.severity==="major");
+              return {
+                pass:min>=9.5 && critical>=9.7 && hard.length===0,
+                summary:"Artifact-identical R121 sellability review reused.",
+                scores,issues:cached.issues||[],actions:cached.actions||[],
+                model:"R121_SELLABILITY_CACHE",min_score:min,critical_floor:critical,cache_hit:true
+              };
+            }
+            const desktopBytes=await readArtifactBytes(this.env,captured.qaDesktop.r2_key);
+            const mobileBytes=await readArtifactBytes(this.env,captured.qaMobile.r2_key);
+            return runR121SellabilityQa(this.env,{
+              inputPayload:context.inputPayload,
+              concept:context.r121Concept,
+              desktopB64:bytesToBase64(desktopBytes),
+              mobileB64:bytesToBase64(mobileBytes),
+              browserEvidence:{
+                deterministic_gate_pass:captured.gate?.pass===true,
+                deterministic_gate_issues:captured.gate?.issues||[],
+                desktop:captured.diagnostics?.desktop||captured.desktop?.diagnostics||{},
+                mobile:captured.diagnostics?.mobile||captured.mobile?.diagnostics||{}
+              },
+              beforeModelAttempt:({model})=>
+                reserveAiCall(sql,params.packId,this.env,"R121_SELLABILITY_QA:"+model,revision.id,{allowR118External:true})
+            });
+          }
           const cachedRows=await sql`
             select q.scores,q.issues,q.actions,q.created_at,q.variant_revision_id
             from render_qa_results_v2 q
@@ -2066,7 +2107,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       await step.do("r"+cycle+"-persist-qa",async()=>{
         await recordQa(sql,{
-          packId:params.packId,revisionId:revision.id,type:"VARIANT_VISUAL",status:qa.pass?"PASS":"FAIL",
+          packId:params.packId,revisionId:revision.id,type:context.r121CreativeDirector===true?"R121_SELLABILITY":"VARIANT_VISUAL",status:qa.pass?"PASS":"FAIL",
           scores:qa.scores,issues:qa.issues,actions:qa.actions,
           artifactHashes:{desktop:captured.desktop.sha256,mobile:captured.mobile.sha256},
           modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION
