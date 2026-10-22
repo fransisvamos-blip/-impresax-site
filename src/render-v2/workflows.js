@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { db, getInputPack, getV2Pack, setPackStatus, persistWorkflow, updateWorkflow, getContentTruth, persistContentTruth, getDirectionPlan, persistDirectionPlan, persistCreativePlan, createVariants, allocateRevision, updateRevision, setVariantStatus, ensureBestPreview, recordQa, recordFailure, countFailureFingerprint } from "./db.js";
-import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, R118_FAST_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES, REMEDIATION_POLICY_VERSION } from "./constants.js";
-import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy } from "./ai.js";
+import { EXECUTION_ENGINE_VERSION, QUALITY_CONTRACT_VERSION, MODEL_ROUTE_VERSION, PROMPT_VERSION, MAX_VISUAL_REVISIONS, R118_FAST_VISUAL_REVISIONS, COMPILER_VERSION, MIN_SECTION_VISUALS, EXTERNAL_AI_CALLS_ALLOWED, RENDER_GENERATION_MODE, SHOWROOM_RULES_VERSION, VARIANT_KEYS, TRIPLE_VARIANT_REQUIRED, MINIMUM_VARIANTS_PER_PACK, VARIANT_DIVERGENCE_REQUIRED, VARIANT_DIVERGENCE_FLOOR, STRUCTURAL_DIVERGENCE_REQUIRED, STRUCTURAL_DOM_SIMILARITY_CEILING, STRUCTURAL_HERO_SIMILARITY_CEILING, STRUCTURAL_SECTION_POSITION_SIMILARITY_CEILING, STRUCTURAL_DISTINCT_SECTION_ORDER_REQUIRED, AUTO_SELECT_VARIANT_WINNER, MASTER_AUTO_APPROVE, VARIANT_CREATIVE_ROLES, REMEDIATION_POLICY_VERSION, R121_CREATIVE_DIRECTOR_STANDARD, R121_CONCEPT_LOCK_STANDARD, R121_CAMPAIGN_ASSET_TOKENS } from "./constants.js";
+import { generateContentTruthDraft, reviewContentTruthDraft, createCreativeDirections, combineCreativePlan, buildCopyManifest, generateRenderSpec, runVisualQa, runSetQa, runHeroAssetQa, applyVisualQaScoreGates, visualQaGatePolicy, createR121ConceptLock, reviewR121ConceptLock } from "./ai.js";
 import { ingestInputAssets, putArtifact, materializeAssetDataUrls, readArtifactBytes } from "./artifacts.js";
 import { compileRenderSpec, buildCaptureHtml } from "./compiler.js";
 import { captureVariant, upscaleR107Hero } from "./browser.js";
@@ -12,7 +12,7 @@ import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
 import { buildR119SceneComposerSpec } from "./r119-scene-composer.js";
 import { remediateBlockedPack } from "./remediation.js";
-import { explicitHeroAsset, generatePremiumHeroVisual } from "./hero.js";
+import { explicitHeroAsset, generatePremiumHeroVisual, generateR121CampaignVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { sectionVisualTokens, sectionVisualPlan } from "./showroom-policy.js";
 
