@@ -796,6 +796,47 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   const mechanism=r121Normalize(concept?.organizing_mechanism);
   const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional"];
   if(generic.some(x=>thesis.includes(x)||mechanism.includes(x))) issues.push("ORGANIZING_IDEA_IS_STYLE_DESCRIPTION");
+
+  const conceptText=r121Normalize([
+    concept?.campaign_thesis,concept?.organizing_mechanism,concept?.signature_motif,
+    concept?.visual_bible,concept?.motion_signature?.name,concept?.motion_signature?.purpose,
+    concept?.motion_signature?.behavior,concept?.motion_signature?.mobile_behavior,
+    ...(concept?.desktop_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.interaction_role]),
+    ...(concept?.mobile_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.interaction_role])
+  ].join(" "));
+  const verifiedOps=r121Normalize((brief?.distinctive_operations||[]).join(" "));
+  const riskyProcesses=[
+    {code:"FORGE",needles:["forge","forging","forged","fucina","forgiare"],support:["forg","fucin"]},
+    {code:"MELT",needles:["molten","melt","melting","fuso","fusione"],support:["melt","fusion","fuso"]},
+    {code:"WELD",needles:["weld","welding","saldatura","saldare"],support:["weld","sald"]},
+    {code:"CUT",needles:["cutting"," cut ","taglio","tagliare"],support:["cut","tagli"]},
+    {code:"BEND",needles:["bending"," bend ","piegatura","piegare"],support:["bend","pieg"]},
+    {code:"CAST",needles:["casting"," cast ","colata","fonderia"],support:["cast","colat","fonder"]},
+    {code:"FURNACE",needles:["furnace","forno industriale"],support:["furnace","forno"]}
+  ];
+  for(const risk of riskyProcesses) {
+    const used=risk.needles.some(x=>(" "+conceptText+" ").includes(x));
+    const supported=risk.support.some(x=>verifiedOps.includes(x));
+    if(used && !supported) issues.push("UNVERIFIED_PROCESS_METAPHOR:"+risk.code);
+  }
+
+  const campaignText=r121Normalize((concept?.asset_campaign||[]).flatMap(x=>[
+    x?.narrative_role,x?.subject,x?.visual_function,x?.crop_behavior,x?.truth_safety
+  ]).join(" "));
+  const businessTokens=r121Normalize(brief?.business_name).split(" ").filter(x=>x.length>=5);
+  if(businessTokens.some(x=>campaignText.includes(x))) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PROSPECT_BRANDING");
+  if(campaignText.includes("u power")||campaignText.includes("upower")) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PARTNER_BRANDING");
+  if(/\b(logo|sticker|signage|branded|branding|wall sign|uniform|packaging label)\b/i.test(campaignText)) issues.push("CAMPAIGN_ASSET_BRANDING_OR_SIGNAGE_FORBIDDEN");
+
+  const interactionText=r121Normalize([
+    concept?.motion_signature?.behavior,concept?.motion_signature?.mobile_behavior,
+    ...(concept?.desktop_storyboard||[]).map(x=>x?.interaction_role),
+    ...(concept?.mobile_storyboard||[]).map(x=>x?.interaction_role)
+  ].join(" "));
+  if(/\b(accordion|carousel|slider|webgl|canvas|javascript|scripted|custom cursor|drag|swipe|form submit|tabs)\b/i.test(interactionText)) {
+    issues.push("R121_SCRIPT_DEPENDENT_INTERACTION_FORBIDDEN");
+  }
+
   if(String(concept?.transplant_test||"").trim().length<120) issues.push("TRANSPLANT_TEST_NOT_DEMONSTRATED");
 
   return {pass:issues.length===0,issues,brief};
@@ -832,6 +873,9 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "Desktop and mobile must share the concept but MUST differ materially in sequencing, crop, scale and interaction.",
     "MOBILE DIVERGENCE CONTRACT: explicitly state at least two mobile-only reinterpretations. At least one must change beat order or information reveal; at least one must change composition/interaction. Phrases such as 'same but stacked', 'adapted for mobile', 'optimized for mobile', or merely replacing hover with tap are automatic rejection.",
     "Motion must communicate the concept through a concrete transformation metaphor tied to the verified business. Generic fades, 'subtle transitions', parallax, pulse, floating and cursor gimmicks are NOT a motion concept. Describe exactly what transforms into what and why.",
+    "PROCESS LITERALITY RULE: never infer a manufacturing process that is not literally present in CREATIVE INTELLIGENCE BRIEF.distinctive_operations. Generic words such as lavorazione/trasformazione do NOT authorize forging, melting, welding, cutting, bending, casting, furnace/foundry or any other specific technique.",
+    "CAMPAIGN-ASSET BRAND SAFETY: all six generated campaign visuals are illustrative and UNBRANDED. Never place the prospect name/logo, U-Power name/logo, partner marks, branded trucks, stickers, labels, wall signs, packaging, uniforms or documentary-looking company identifiers inside generated imagery. Verified partner logos belong only to separate official proof modules.",
+    "EXECUTION REALITY: R121 render previews prohibit arbitrary scripts and forms. Motion must be implementable with CSS transitions / scroll-driven animation hooks plus a reduced-motion fallback. Do not propose accordion, tabs, carousel, sliders, drag/swipe UI, WebGL, canvas, video controls or custom cursors.",
     "Proof must be staged as evidence, not a card wall. NEVER invent testimonials, certifications, production capacity, logistics figures, clients, projects, mission statements or brand values. Use only facts present in VERIFIED CONTENT TRUTH.",
     "Conversion climax must be a designed final decision moment, not merely a button under a paragraph.",
     "AVAILABLE DIRECTION KEYS: "+JSON.stringify(availableDirectionKeys.length?availableDirectionKeys:["A"])+". Select ONLY from these keys; never invent a missing route.",
@@ -907,6 +951,9 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     "Reject if the idea is basically 'industrial but premium', 'dark/red steel', 'editorial grid', 'lots of imagery', or any other style description without a memorable organizing idea.",
     "Reject if the asset campaign is six variations of the same warehouse/construction scene. Require the six visual modes defined by R121: macro photo, process image, technical CGI/abstraction, environmental scale, studio detail/still-life, abstract atmosphere.",
     "Reject if motion is decorative instead of concept-driven.",
+    "Reject any inferred process not literally supported by CREATIVE INTELLIGENCE BRIEF.distinctive_operations. 'Lavorazione/trasformazione' alone never proves forging, melting, welding, cutting, bending or casting.",
+    "Reject any campaign asset that depicts prospect/partner branding, logos, signage, branded vehicles/packaging/uniforms or documentary company evidence. R121 campaign imagery must remain unbranded illustrative art direction.",
+    "R121 supports CSS-only motion hooks in the live preview but still prohibits arbitrary scripts and forms. Reject concepts that require accordion/tabs/carousel/slider/drag/swipe/WebGL/canvas/video/custom-cursor behavior.",
     "Reject if mobile is merely a condensed desktop storyboard. mobile_divergence must describe at least two concrete differences and the actual mobile storyboard must demonstrate them.",
     "Reject unless ownability_anchors contains 3-5 verified, load-bearing anchors and the storyboard visibly depends on them.",
     "Reject if verified_proof_plan ignores strong verified evidence available in VERIFIED INPUT or introduces any unverified proof.",
