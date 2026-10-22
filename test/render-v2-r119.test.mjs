@@ -262,6 +262,18 @@ test("R121 costly steps disable hidden Cloudflare retries",async()=>{
   assert.match(workflows,/r"\+cycle\+"-visual-qa",\{retries:\{limit:context\.r121CreativeDirector===true\?0:5/);
 });
 
+test("R121 concept loop survives transient provider/schema attempt failures without outer retries",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  assert.match(workflows,/const providerAttemptFailures=\[\]/);
+  assert.match(workflows,/AI_PROVIDER_CALL_TIMEOUT\|AI_OUTPUT_SCHEMA_FAILURE\|AI_OUTPUT_SCHEMA_INVALID\|AI_PROVIDER_FAILURE/);
+  assert.match(workflows,/if\(!transient \|\| attempt>=3\) throw error/);
+  assert.match(workflows,/providerAttemptFailures\.push/);
+  assert.match(workflows,/continue;\s*\}\s*\n\s*await recordQa/);
+  assert.match(workflows,/const machineReason=\/\^\[A-Z0-9_\]\+\(\?:\:\|\$\)\//);
+  assert.match(workflows,/scores\.some\(x=>x>0\)/);
+});
+
 test("R119 first provider failure falls through to deterministic scene composer and jury path",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
