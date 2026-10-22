@@ -70,7 +70,7 @@ test("R119 jury-reset preserves the productized architecture without CSS duplica
   assert.match(reset.spec.main_html,/r119-proof__mark ixg-trust-reason__graphic/);
   assert.match(reset.spec.main_html,/data-partner-verification="verified-only"/);
   assert.equal(reset.spec.custom_css,base.spec.custom_css);
-  assert.match(reset.spec.implementation_notes,/PRODUCTIZED EXPERIENCE HARD RESET/);
+  assert.match(reset.spec.implementation_notes,/V29\.1 PRODUCTIZED EXPERIENCE HERO-OVERLAY FIX/);
 });
 
 test("R119 scene composer contract has no deterministic violations",()=>{
