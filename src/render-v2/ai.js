@@ -228,7 +228,9 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
       if(/llama-3\.3-70b-instruct-fp8-fast/i.test(model)) inference.max_tokens=maxTokens;
       else inference.max_completion_tokens=maxTokens;
       if(vision && /qwen\/qwen3\.8-27b/i.test(model)) inference.reasoning_effort="low";
-      if(r121ConceptRoute===true && /deepseek-v4\.1-flash-1017/i.test(model)) inference.reasoning_effort="max";
+      if(r121ConceptRoute===true && /deepseek-v4\.1-flash-1017/i.test(model)) {
+        inference.reasoning_effort=qaRole?"high":"medium";
+      }
       const runOptions=env.AI_GATEWAY_ID
         ? {gateway:{id:env.AI_GATEWAY_ID,skipCache:true}}
         : undefined;
@@ -1140,6 +1142,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
+    "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 5 desktop beats and exactly 5 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
     "ORGANIZING-MECHANISM RULE: the concept must be a VERB, transformation, physical mechanism, operational sequence or proprietary metaphor derived from verified business reality. 'Premium', 'industrial', 'editorial', 'precise', 'trusted', 'bold', 'dark', 'technical' and similar adjectives are styling, never the concept.",
@@ -1181,7 +1184,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
       {role:"system",content:"You are the final ImpresaX Creative Director. Lock the campaign idea before any web layout is allowed. Strategy, art direction, narrative and sellability matter more than UI conventions."},
       {role:"user",content:prompt}
     ],
-    schema:conceptSchema,maxTokens:6200,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
+    schema:conceptSchema,maxTokens:7800,temperature:0.24,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
   });
   const deterministicProofPlan=[...(brief?.verified_proof_anchors||[])]
     .sort((a,b)=>{
