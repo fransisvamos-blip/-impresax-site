@@ -68,6 +68,14 @@ function renderVariantCardV2(variant, pack, prospectId) {
     html += '<div class="full-home-note">Home completa obbligatoria · Desktop 1440 + Mobile 390 · ' + renderSyncStateLabel(variant) + '</div>';
   }
 
+  if (variant.live_preview_url) {
+    html += '<div class="render-live-shell">';
+    html += '<div class="render-live-head"><div><span class="render-label">Preview LIVE · interattiva</span><small>Scorri il sito come lo vedrà il cliente. I capture QA restano sotto.</small></div>';
+    html += '<a href="' + esc(variant.live_preview_url) + '" target="_blank" rel="noopener">Apri a schermo intero ↗</a></div>';
+    html += '<div class="render-live-frame-wrap"><iframe class="render-live-frame" src="' + esc(variant.live_preview_url) + '" title="Preview LIVE Variant ' + esc(variant.variant_key) + '" loading="lazy" sandbox=""></iframe></div>';
+    html += '</div>';
+  }
+
   html += '<div class="render-pair">';
   html += '<div><div class="render-label">Desktop · 1440</div>';
   if (variant.desktop_render_url) {
@@ -88,6 +96,7 @@ function renderVariantCardV2(variant, pack, prospectId) {
   html += '</div></div>';
 
   html += '<div class="variant-preview-actions">';
+  if (variant.live_preview_url) html += '<a class="live-preview-action" href="' + esc(variant.live_preview_url) + '" target="_blank" rel="noopener">Apri preview LIVE ↗</a>';
   if (variant.desktop_render_url) html += '<a href="' + esc(variant.desktop_render_url) + '" target="_blank" rel="noopener">Apri desktop 1440 ↗</a>';
   if (variant.mobile_render_url) html += '<a href="' + esc(variant.mobile_render_url) + '" target="_blank" rel="noopener">Apri mobile 390 ↗</a>';
   html += '</div>';
