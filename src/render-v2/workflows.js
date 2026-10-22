@@ -515,6 +515,98 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
   throw new Error("HERO_ASSET_PREQA_FAILED:"+String(lastQa?.summary||"NO_CLEAN_HERO_AFTER_3_ATTEMPTS"));
 }
 
+
+async function ensureR121CampaignAssets(env,sql,{packId,inputPayload,concept,existingAssets={},variantKey="A"}) {
+  const assets={...existingAssets};
+  const provenance=[];
+  const direction={
+    core_idea:String(concept?.campaign_thesis||""),
+    hero_logic:String(concept?.visual_bible||""),
+    signature_device:String(concept?.signature_motif||"")
+  };
+  const roles=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
+  const roleByToken=Object.fromEntries(roles.map(x=>[String(x?.token||""),x]));
+  const code=String(inputPayload?.prospect_code||"prospect").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,80);
+
+  for(const token of R121_CAMPAIGN_ASSET_TOKENS) {
+    if(assets[token]?.r2_key) {
+      provenance.push({token,source:"R121_GENERATED_EDITORIAL_REUSED",license:"INTERNAL_GENERATION",truth_safety:"ILLUSTRATIVE_NOT_DOCUMENTARY"});
+      continue;
+    }
+    const role=roleByToken[token]||{token,narrative_role:token,subject:token,visual_function:"campaign visual",crop_behavior:"desktop/mobile safe",truth_safety:"illustrative only"};
+    let accepted=null;
+    let lastQa=null;
+
+    for(let attempt=1;attempt<=2;attempt++) {
+      await reserveAiCall(sql,packId,env,"R121_CAMPAIGN_IMAGE:"+token+":A"+attempt,null,{allowR118External:true});
+      const generated=await generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt:attempt});
+      const imageB64=bytesToBase64(generated.bytes);
+      const qa=await runHeroAssetQa(env,{
+        imageB64,inputPayload,direction,variantKey,
+        allowR121External:true,
+        beforeModelAttempt:({model:qaModel,role:qaRole})=>
+          reserveAiCall(sql,packId,env,"R121_CAMPAIGN_PREQA:"+token+":"+qaRole+":"+qaModel+":A"+attempt,null,{allowR118External:true})
+      });
+      lastQa=qa;
+
+      const ext=generated.mime==="image/png"?"png":generated.mime==="image/webp"?"webp":"jpg";
+      const imageHash=await sha256(generated.bytes);
+      const approved=qa.pass===true;
+      const key="render-v2/"+code+"/"+packId+"/r121-campaign/"+token.toLowerCase()+"-a"+attempt+"-"+imageHash.slice(0,16)+"."+ext;
+      const artifact=await putArtifact(env,sql,{
+        packId,revisionId:null,
+        type:approved?"INPUT_ASSET_"+token:"R121_REJECTED_"+token+"_A"+attempt,
+        key,body:generated.bytes,mime:generated.mime,
+        producerStep:approved?"R121_CAMPAIGN_PREQA_PASS":"R121_CAMPAIGN_PREQA_REJECT"
+      });
+
+      await recordQa(sql,{
+        packId,revisionId:null,type:"R121_CAMPAIGN_ASSET",status:approved?"PASS":"FAIL",
+        scores:qa.scores||{},
+        issues:qa.issues||[],
+        actions:qa.regeneration_guidance||[],
+        artifactHashes:{
+          token,attempt,
+          asset_sha256:artifact.sha256,
+          asset_r2_key:artifact.r2_key,
+          generator_model:generated.model,
+          reviewer_model:qa.model
+        },
+        modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+        idempotencyKey:"qa:R121_CAMPAIGN_ASSET:"+packId+":"+token+":"+artifact.sha256
+      });
+
+      if(approved) {
+        accepted={
+          asset_id:token,
+          role:"editorial",
+          source_type:"R121_GENERATED_EDITORIAL_PREQA_PASS",
+          commercial_use_status:"AI_GENERATED_EDITORIAL",
+          generated:true,
+          illustrative_not_documentary:true,
+          preqa_pass:true,
+          model:generated.model,
+          r2_key:artifact.r2_key,
+          mime:artifact.mime,
+          sha256:artifact.sha256,
+          bytes:artifact.bytes,
+          campaign_role:role.narrative_role,
+          truth_safety:role.truth_safety,
+          preqa_scores:qa.scores
+        };
+        break;
+      }
+    }
+
+    if(!accepted) throw new Error("R121_CAMPAIGN_ASSET_PREQA_FAILED:"+token+":"+String(lastQa?.summary||"NO_CLEAN_ASSET"));
+    assets[token]=accepted;
+    provenance.push({token,source:"R121_GENERATED_EDITORIAL",license:"INTERNAL_GENERATION",truth_safety:"ILLUSTRATIVE_NOT_DOCUMENTARY"});
+  }
+
+  return {assets,provenance};
+}
+
+
 function r107GraphicPalette(inputPayload={}) {
   const raw=JSON.stringify(inputPayload?.brand_dna?.existing_colors||"");
   const colors=[...new Set(raw.match(/#[0-9a-f]{6}/gi)||[])];
