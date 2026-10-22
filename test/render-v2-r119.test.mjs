@@ -247,7 +247,7 @@ test("R119 fast generation avoids duplicate full-page fallbacks and normalizes s
   assert.match(ai,/V2_R118_FAST_GENERATOR_MODEL\|\|DEFAULT_MODELS\.codeFallback/);
   assert.match(ai,/V2_R118_FAST_GENERATOR_TIMEOUT_MS\|\|75000/);
   assert.match(ai,/const plan=\(fastR118Qa\|\|fastR118Generation\)/);
-  assert.match(ai,/const canNormalize=schemaInvalid && \(qaRole \|\| fastR118Generation\)/);
+  assert.match(ai,/const canNormalize=schemaInvalid && \(qaRole \|\| fastR118Generation \|\| r121ConceptRoute\)/);
   assert.match(ai,/Normalize the supplied generated homepage object/);
   assert.match(ai,/roughly within 5k-14k characters/);
   assert.match(workflows,/retries:\{limit:context\.r119Requested===true\?0:1/);
