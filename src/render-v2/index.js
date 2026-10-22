@@ -277,9 +277,36 @@ export default {
     ctx.waitUntil((async()=>{
       const sql=db(env);
 
-      // Cabina priority: consume explicit pilot kicks before the heavier reconcile pass.
-      // Reconcile can be expensive; a manual single-prospect command must never starve
-      // behind autonomous maintenance work.
+      // Absolute Cabina priority: consume the explicit VARIANT kick first.
+      // Neither parent maintenance nor reconcile may starve a human single-prospect command.
+      try {
+        const kickResult=await runPilotManualKick(env,sql);
+        await sql`
+          update render_v2_rollout_state
+          set metadata=coalesce(metadata,'{}'::jsonb)
+            || jsonb_build_object(
+              'scheduled_pilot_kick_last_result',${JSON.stringify(kickResult||{})}::jsonb,
+              'scheduled_pilot_kick_last_at',to_jsonb(now()),
+              'scheduled_pilot_kick_priority_order','VARIANT_BEFORE_PARENT_AND_RECONCILE'
+            ),
+            updated_at=now()
+          where id=1`;
+      } catch(error) {
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'scheduled_pilot_kick_last_error',${String(error?.stack||error?.message||error).slice(0,5000)},
+                'scheduled_pilot_kick_last_error_at',to_jsonb(now()),
+                'scheduled_pilot_kick_priority_order','VARIANT_BEFORE_PARENT_AND_RECONCILE'
+              ),
+              updated_at=now()
+            where id=1`;
+        } catch {}
+      }
+
+      // Parent kick remains second priority.
       try {
         const parentKickResult=await runPilotManualParentKick(env,sql);
         await sql`
