@@ -63,3 +63,13 @@ jobs:
           done
           cat /tmp/health.json || true
           exit 1
+
+      - name: One-shot DEDIL R121 direct trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          INSTANCE_ID='rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-r121-direct-v4'
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"r121","initialFeedback":{"reason":"R121_CREATIVE_DIRECTOR_ENGINE_V1","issues":["Cabina requested the final Creative Director Engine pass for DEDIL only."],"actions":["Run concept lock before code.","Generate the coherent six-role campaign asset system.","Preserve verified truth, verified partner proof and official identity.","Treat generated campaign imagery as illustrative, never documentary proof.","Use concept-driven implementation and the R121 sellability jury.","Do not start or mutate any other prospect."]}}'
+          npx wrangler workflows trigger impresax-render-v2-variant "$PARAMS" \
+            --id "$INSTANCE_ID" \
+            --config wrangler.render-v2.jsonc
