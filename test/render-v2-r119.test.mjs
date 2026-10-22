@@ -101,7 +101,7 @@ test("R119 fast loop is authored-first and uses one jury-driven structural reset
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
   assert.match(workflows,/const r119Requested=/);
   assert.match(workflows,/\/R119_\/i\.test\(initialReason\)/);
-  assert.match(workflows,/const r118PerceptualJury=[\s\S]*\|\| r119Requested;/);
+  assert.match(workflows,/const r118PerceptualJury=[\s\S]*\|\| r119Requested[\s\S]*\|\| r121CreativeDirector;/);
   assert.match(workflows,/if\(r119Mode\)/);
   assert.match(workflows,/r119_fast_authored:true/);
   assert.match(workflows,/mode:cycle>1 && r119JuryReset \? "jury-reset" : "base"/);
@@ -257,13 +257,43 @@ test("R119 fast generation avoids duplicate full-page fallbacks and normalizes s
 test("R119 first provider failure falls through to deterministic scene composer and jury path",async()=>{
   const fs=(await import("node:fs")).default;
   const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
-  assert.match(workflows,/const r119SceneFailover=context\.r119Requested===true && !budget && providerFailoverDomain && \(cycle===1 \|\| \(cycle===2 && r119JuryReset\)\)/);
+  assert.match(workflows,/const r119SceneFailover=context\.r121CreativeDirector!==true && context\.r119Requested===true && !budget && providerFailoverDomain && \(cycle===1 \|\| \(cycle===2 && r119JuryReset\)\)/);
   assert.match(workflows,/R119_PROVIDER_SCENE_FAILOVER/);
   assert.match(workflows,/generation-provider-r119-scene-failover/);
   assert.match(workflows,/buildR119SceneComposerSpec\(\{/);
   assert.match(workflows,/mode:cycle===2 && r119JuryReset \? "jury-reset" : "base"/);
 });
 
+
+
+test("R121 locks concept, builds campaign assets and takes precedence over R119",async()=>{
+  const fs=(await import("node:fs")).default;
+  const workflows=fs.readFileSync(new URL("../src/render-v2/workflows.js",import.meta.url),"utf8");
+  const ai=fs.readFileSync(new URL("../src/render-v2/ai.js",import.meta.url),"utf8");
+  const hero=fs.readFileSync(new URL("../src/render-v2/hero.js",import.meta.url),"utf8");
+  assert.match(workflows,/const r121CreativeDirector=/);
+  assert.match(workflows,/r121-concept-lock/);
+  assert.match(workflows,/r121-campaign-assets/);
+  assert.match(workflows,/const r121Mode=context\.r121CreativeDirector===true/);
+  assert.match(workflows,/const r119Mode=context\.r119Requested===true && !r121Mode/);
+  assert.match(workflows,/generateR121RenderSpec/);
+  assert.match(workflows,/LIVE_PREVIEW_HTML/);
+  assert.match(ai,/R121 CREATIVE DIRECTOR ENGINE\. Do not design a website yet\./);
+  assert.match(ai,/R121 SELLABILITY JURY/);
+  assert.match(hero,/generateR121CampaignVisual/);
+  assert.match(hero,/illustrative commercial imagery, not documentary proof/i);
+});
+
+test("R121 live preview adds progressive motion without scripts",async()=>{
+  const {buildR121LivePreviewHtml}=await import("../src/render-v2/live-preview.js");
+  const source='<!doctype html><html><head><title>Demo</title></head><body><main><section data-r121-motion="material-reveal"></section></main></body></html>';
+  const live=buildR121LivePreviewHtml(source,{motion_signature:{name:"Steel becomes structure"}});
+  assert.match(live,/r121-live-preview/);
+  assert.match(live,/animation-timeline:view\(\)/);
+  assert.match(live,/prefers-reduced-motion:reduce/);
+  assert.match(live,/data-r121-motion-signature="Steel becomes structure"/);
+  assert.doesNotMatch(live,/<script/i);
+});
 
 test("R119 compiler failures stay deterministic and never open AI compiler repair",async()=>{
   const fs=(await import("node:fs")).default;
