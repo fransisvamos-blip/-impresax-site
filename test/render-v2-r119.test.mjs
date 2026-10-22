@@ -131,10 +131,11 @@ test("R119 generative mode enforces real section depth and DEDIL evidence",async
   assert.match(ai,/\^R119_\/i\.test/);
 });
 
-test("R119 hero exposes canonical browser-gate hooks",()=>{
+test("R120 hero is image-led and keeps canonical CTA hooks",()=>{
   const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
-  assert.match(built.spec.main_html,/class="r119-lede ixg-lede"/);
   assert.match(built.spec.main_html,/class="r119-actions ixg-actions"/);
+  assert.doesNotMatch(built.spec.main_html,/\{\{copy:HERO_BODY\}\}/);
+  assert.match(built.spec.main_html,/r120-hero__detail/);
 });
 
 
@@ -165,6 +166,24 @@ test("R119 productized experience gate rejects paper-like poster stacks",()=>{
   assert.doesNotMatch(css,/(?:^|[;{]\\s*)content\\s*:/im);
 });
 
+
+test("R120 commissioned-value system enforces visual density and low copy",()=>{
+  const built=buildR119SceneComposerSpec({copyManifest:copy,assetTokens:assets,hasIdentity:true});
+  const html=built.spec.main_html;
+  const css=built.spec.custom_css;
+  assert.equal(built.spec.visual_density_standard,"R120_VISUAL_DENSITY_COMMISSIONED_VALUE_V1");
+  assert.equal(built.spec.copy_density_standard,"R120_LOW_COPY_IMAGE_LED_V1");
+  assert.ok((html.match(/<img\b/g)||[]).length>=12);
+  assert.ok((html.match(/<p\b/g)||[]).length<=10);
+  assert.equal((html.match(/data-copy-density="low"/g)||[]).length,8);
+  assert.match(html,/r120-positioning__mosaic/);
+  assert.match(html,/r120-materials__gallery/);
+  assert.match(html,/r120-proof__visual/);
+  assert.match(html,/r120-contact__strip/);
+  assert.ok((html.match(/r120-[^"'\s>]*(?:graphic|process|spec|index)/g)||[]).length>=6);
+  assert.match(css,/\.r120-positioning__mosaic/);
+  assert.match(css,/\.r120-contact__strip/);
+});
 
 test("R119 evidence detection covers EIGHT_SCENE, EVIDENCE and FAST relaunch reasons",async()=>{
   const fs=(await import("node:fs")).default;
