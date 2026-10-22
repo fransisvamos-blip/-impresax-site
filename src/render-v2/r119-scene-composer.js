@@ -860,6 +860,18 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
     issues.push("R119_SCENE_CSS_REQUIRED");
   }
   if(!/@media\s*\([^)]*max-width\s*:\s*700px/i.test(styles)) issues.push("R119_NATIVE_MOBILE_RECUT_REQUIRED");
+  if(!/@media\s*\(min-width\s*:\s*701px\)\s*and\s*\(max-width\s*:\s*1180px\)/i.test(styles)) issues.push("R119_INTERMEDIATE_VIEWPORT_REQUIRED");
+  if(!/@media\s*\(prefers-reduced-motion\s*:\s*reduce\)/i.test(styles)) issues.push("R119_REDUCED_MOTION_REQUIRED");
+  if(styles.length>32000) issues.push("R119_CSS_OVERRIDE_STACK_FORBIDDEN:"+styles.length);
+  const viewportPosterCount=(styles.match(/100svh/gi)||[]).length;
+  if(viewportPosterCount>2) issues.push("R119_POSTER_STACK_FORBIDDEN:"+viewportPosterCount);
+  if((styles.match(/transition\s*:/gi)||[]).length<6) issues.push("R119_MICRO_INTERACTION_SYSTEM_REQUIRED");
+  if(!/\.ix-v2-header\s*\{[^}]*position\s*:\s*sticky/i.test(styles)) issues.push("R119_LIVE_SITE_CHROME_REQUIRED");
+  if(!/\.r119-proof__facts\s*\{[^}]*display\s*:\s*grid/i.test(styles)) issues.push("R119_COMMERCIAL_PROOF_GRID_REQUIRED");
+  if(!/\.r119-partner\s*\{[^}]*display\s*:\s*grid/i.test(styles)) issues.push("R119_PARTNER_MODULE_REQUIRED");
+  if(!/\.r119-hero\s*\{[^}]*grid-template-columns/i.test(styles) || !/\.r119-positioning\s*\{[^}]*grid-template-columns/i.test(styles) || !/\.r119-materials\s*\{[^}]*grid-template-columns/i.test(styles)) {
+    issues.push("R119_THREE_DISTINCT_LAYOUT_GRAMMARS_REQUIRED");
+  }
   if(String(spec?.scene_composer_standard||"")!==R119_SCENE_COMPOSER_STANDARD) issues.push("R119_SCENE_COMPOSER_STANDARD_REQUIRED");
   if(String(spec?.perceptual_flagship_standard||"")!=="R118_PERCEPTUAL_JURY_V1") issues.push("R119_R118_JURY_REQUIRED");
   return issues;
