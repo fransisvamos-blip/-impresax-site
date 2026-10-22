@@ -277,6 +277,62 @@ export default {
     ctx.waitUntil((async()=>{
       const sql=db(env);
 
+      // Cabina single-instance termination: stop an obsolete pilot workflow cleanly
+      // through the Cloudflare Workflows binding before starting a replacement run.
+      try {
+        const rows=await sql`
+          select metadata->>'pilot_terminate_workflow_instance' as instance_id
+          from render_v2_rollout_state
+          where id=1
+          limit 1`;
+        const terminateId=String(rows[0]?.instance_id||"").trim();
+        if(terminateId && env.RENDER_VARIANT_WORKFLOW) {
+          let terminationError="";
+          try {
+            const instance=await env.RENDER_VARIANT_WORKFLOW.get(terminateId);
+            await instance.terminate();
+          } catch(error) {
+            terminationError=String(error?.message||error).slice(0,1200);
+          }
+          await sql`
+            update render_workflows_v2
+            set status='FAILED',
+                current_step='SUPERSEDED_TERMINATED',
+                error_code='SUPERSEDED_BY_CABINA',
+                completed_at=coalesce(completed_at,now()),
+                metadata=coalesce(metadata,'{}'::jsonb)
+                  || jsonb_build_object(
+                    'terminated_externally',true,
+                    'termination_source','CABINA',
+                    'termination_error',${terminationError}
+                  )
+            where workflow_instance_id=${terminateId}
+              and status in ('QUEUED','RUNNING','PAUSED')`;
+          await sql`
+            update render_v2_rollout_state
+            set metadata=(coalesce(metadata,'{}'::jsonb)-'pilot_terminate_workflow_instance')
+              || jsonb_build_object(
+                'pilot_terminate_last_instance',${terminateId},
+                'pilot_terminate_last_at',now()::text,
+                'pilot_terminate_last_error',${terminationError}
+              ),
+                updated_at=now()
+            where id=1`;
+        }
+      } catch(error) {
+        try {
+          await sql`
+            update render_v2_rollout_state
+            set metadata=coalesce(metadata,'{}'::jsonb)
+              || jsonb_build_object(
+                'pilot_terminate_control_error',${String(error?.message||error).slice(0,1200)},
+                'pilot_terminate_control_error_at',now()::text
+              ),
+                updated_at=now()
+            where id=1`;
+        } catch {}
+      }
+
       // Absolute Cabina priority: consume the explicit VARIANT kick first.
       // Neither parent maintenance nor reconcile may starve a human single-prospect command.
       try {
