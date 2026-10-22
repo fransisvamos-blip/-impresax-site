@@ -1108,8 +1108,25 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           }
           feedback=review;
         }
-        throw new Error("R121_CONCEPT_JURY_REJECTED");
+        return {rejected:true,lastReview:feedback};
       });
+
+      if(conceptBundle?.rejected===true) {
+        await step.do("r121-concept-rejected-terminal",async()=>{
+          await updateWorkflow(sql,event.instanceId,{
+            status:"FAILED",
+            currentStep:"R121_CONCEPT_REJECTED",
+            errorCode:"R121_CONCEPT_JURY_REJECTED",
+            metadata:{
+              r121_concept_rejected:true,
+              r121_last_concept_review:conceptBundle.lastReview||null,
+              automatic_step_retry_forbidden:true
+            }
+          });
+          return {ok:true};
+        });
+        return {status:"R121_CONCEPT_REJECTED"};
+      }
 
       context.r121Concept=conceptBundle.concept;
       context.r121ConceptReview=conceptBundle.review;
