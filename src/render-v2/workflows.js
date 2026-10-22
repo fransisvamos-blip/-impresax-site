@@ -1027,6 +1027,130 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       };
     });
 
+    if(context.r121CreativeDirector===true) {
+      const conceptBundle=await step.do("r121-concept-lock",{retries:{limit:0},timeout:"16 minutes"},async()=>{
+        const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
+        const latestMeta=packRows[0]?.metadata||{};
+        const existing=latestMeta.r121_concept_lock;
+        const existingJury=latestMeta.r121_concept_jury;
+        if(existing && existing.standard===R121_CONCEPT_LOCK_STANDARD && existingJury?.pass===true) {
+          return {
+            concept:existing,
+            review:existingJury,
+            hash:String(latestMeta.r121_concept_hash||""),
+            reused:true
+          };
+        }
+
+        let feedback=null;
+        for(let attempt=1;attempt<=2;attempt++) {
+          const created=await createR121ConceptLock(
+            this.env,
+            context.inputPayload,
+            {content_truth:context.contentTruthPack},
+            {directions:context.allDirections},
+            context.editorialAssetTokens,
+            {
+              juryFeedback:feedback,
+              beforeModelAttempt:({role,model})=>
+                reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
+            }
+          );
+          const review=await reviewR121ConceptLock(
+            this.env,
+            context.inputPayload,
+            {content_truth:context.contentTruthPack},
+            {directions:context.allDirections},
+            created.concept,
+            {
+              beforeModelAttempt:({role,model})=>
+                reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT_JURY:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
+            }
+          );
+
+          await recordQa(sql,{
+            packId:params.packId,revisionId:null,type:"R121_CONCEPT_JURY",status:review.pass?"PASS":"FAIL",
+            scores:review.scores||{},
+            issues:(review.rejection_reasons||[]).map(message=>({code:"R121_CONCEPT_REJECTION",severity:"major",target:"concept",message})),
+            actions:review.must_preserve||[],
+            artifactHashes:{concept_hash:created.hash,attempt,selected_direction_key:created.concept.selected_direction_key},
+            modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+            idempotencyKey:"qa:R121_CONCEPT:"+params.packId+":"+created.hash
+          });
+
+          if(review.pass) {
+            await sql`
+              update render_v2_packs
+              set metadata=coalesce(metadata,'{}'::jsonb) || ${JSON.stringify({
+                r121_creative_director_engine:true,
+                r121_standard:R121_CREATIVE_DIRECTOR_STANDARD,
+                r121_concept_locked:true
+              })}::jsonb
+                || jsonb_build_object(
+                  'r121_concept_lock',${JSON.stringify(created.concept)}::jsonb,
+                  'r121_concept_jury',${JSON.stringify(review)}::jsonb,
+                  'r121_concept_hash',${created.hash},
+                  'r121_concept_locked_at',now()::text,
+                  'r121_selected_direction_key',${created.concept.selected_direction_key}
+                ),
+                  updated_at=now()
+              where id=${params.packId}::uuid`;
+            return {concept:created.concept,review,hash:created.hash,reused:false};
+          }
+          feedback=review;
+        }
+        throw new Error("R121_CONCEPT_JURY_REJECTED");
+      });
+
+      context.r121Concept=conceptBundle.concept;
+      context.r121ConceptReview=conceptBundle.review;
+      const selectedKey=String(conceptBundle.concept?.selected_direction_key||params.variantKey);
+      const selectedDirection=context.allDirections?.[selectedKey]||context.direction;
+      context.direction=sanitizeDirectionForExecution(selectedDirection,{hasEditorialAssets:true});
+
+      const campaign=await step.do("r121-campaign-assets",{retries:{limit:0},timeout:"28 minutes"},async()=>{
+        const result=await ensureR121CampaignAssets(this.env,sql,{
+          packId:params.packId,
+          inputPayload:context.inputPayload,
+          concept:conceptBundle.concept,
+          existingAssets:context.assets,
+          variantKey:params.variantKey
+        });
+        const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
+        const meta=packRows[0]?.metadata||{};
+        const prior=Array.isArray(meta.section_visuals_provenance)?meta.section_visuals_provenance:[];
+        const byToken=new Map(prior.map(item=>[String(item?.token||""),item]));
+        for(const item of result.provenance||[]) byToken.set(String(item.token||""),item);
+        const provenance=[...byToken.values()].filter(x=>x?.token);
+        await sql`
+          update render_v2_packs
+          set metadata=coalesce(metadata,'{}'::jsonb)
+            || jsonb_build_object(
+              'r121_campaign_assets_ready',true,
+              'r121_campaign_asset_tokens',${JSON.stringify(R121_CAMPAIGN_ASSET_TOKENS)}::jsonb,
+              'r121_campaign_assets_ready_at',now()::text,
+              'section_visuals_provenance',${JSON.stringify(provenance)}::jsonb
+            ),
+            updated_at=now()
+          where id=${params.packId}::uuid`;
+        return result;
+      });
+
+      context.assets=campaign.assets;
+      context.editorialAssetTokens=[...new Set([
+        ...context.editorialAssetTokens,
+        ...R121_CAMPAIGN_ASSET_TOKENS.filter(token=>context.assets?.[token]?.r2_key)
+      ])];
+      context.inputPayload={
+        ...context.inputPayload,
+        r121_creative_director_engine:true,
+        r121_standard:R121_CREATIVE_DIRECTOR_STANDARD,
+        r121_concept_lock:conceptBundle.concept,
+        r121_concept_jury:conceptBundle.review,
+        r121_campaign_asset_tokens:R121_CAMPAIGN_ASSET_TOKENS
+      };
+    }
+
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
       const r119MaterialHero=context.r119Requested===true
         && (context.assets?.SERVICE_REBAR_VISUAL?.r2_key || context.assets?.TRUST_VISUAL?.r2_key || context.assets?.POSITIONING_VISUAL?.r2_key);
