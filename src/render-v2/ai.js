@@ -1359,6 +1359,73 @@ export async function generateRenderSpec(env,{inputPayload,direction,variantKey,
   return {spec:generatedSpec,model:r.model};
 }
 
+
+const r121SellabilitySchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    pass:{type:"boolean"},
+    summary:{type:"string"},
+    issues:{type:"array",maxItems:3,items:{
+      type:"object",additionalProperties:false,
+      properties:{
+        code:{type:"string"},severity:{type:"string",enum:["critical","major","minor"]},
+        target:{type:"string"},message:{type:"string"}
+      },
+      required:["code","severity","target","message"]
+    }},
+    actions:{type:"array",maxItems:3,items:{type:"string"}},
+    scores:{type:"object",additionalProperties:false,properties:r121ConceptJuryScores,required:R121_SELLABILITY_AXES}
+  },
+  required:["pass","summary","issues","actions","scores"]
+};
+
+export async function runR121SellabilityQa(env,{
+  inputPayload,concept,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null
+}={}) {
+  const prompt=[
+    "R121 SELLABILITY JURY. Judge the actual desktop and mobile screenshots against the LOCKED creative concept.",
+    "Do not score a checklist of UI details. Judge whether the finished work preserves the campaign idea and creates a strong desire to buy.",
+    "Use ONLY these six axes: "+JSON.stringify(R121_SELLABILITY_AXES)+".",
+    "Score calibration: 9.0 = strong professional agency work; 9.5 = exceptional; 9.7+ = plausible top-tier commissioned case-study quality.",
+    "PASS requires every axis >=9.5, and concept_strength, desire_to_buy, brand_authorship and execution_quality >=9.7.",
+    "HARD FAIL if it reads as a brochure, template, repeated split layout, stock-photo collage, generic industrial site, or if the concept requires explanation to be perceived.",
+    "HARD FAIL if the mobile screenshot looks like a compressed desktop rather than the same campaign re-authored for 390px.",
+    "HARD FAIL if the imagery feels repetitive even when technically different.",
+    "Do not invent missing factual evidence. Judge only visible design and deterministic browser evidence.",
+    "Return at most three issues and three actions. Name the highest-leverage problems only.",
+    "LOCKED CONCEPT:",
+    JSON.stringify(concept||{}),
+    "VERIFIED INPUT:",
+    JSON.stringify(inputPayload||{}),
+    "BROWSER EVIDENCE:",
+    JSON.stringify(browserEvidence||{})
+  ].join("\n");
+
+  const r=await runStructured(env,"visualQa",{
+    messages:[
+      {role:"system",content:"You are a hostile executive creative board deciding whether a premium digital concept is sellable as a flagship commission. Be decisive and sparse."},
+      {role:"user",content:[
+        {type:"text",text:prompt},
+        {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+desktopB64}},
+        {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+mobileB64}}
+      ]}
+    ],
+    schema:r121SellabilitySchema,maxTokens:1800,temperature:0.01,vision:true,
+    beforeAttempt:beforeModelAttempt,allowR118External:true
+  });
+  const scores=r.data.scores||{};
+  const min=Math.min(...R121_SELLABILITY_AXES.map(k=>Number(scores[k]||0)));
+  const critical=Math.min(
+    Number(scores.concept_strength||0),
+    Number(scores.desire_to_buy||0),
+    Number(scores.brand_authorship||0),
+    Number(scores.execution_quality||0)
+  );
+  const hardIssues=(r.data.issues||[]).filter(x=>x?.severity==="critical"||x?.severity==="major");
+  const pass=r.data.pass===true && min>=9.5 && critical>=9.7 && hardIssues.length===0;
+  return {...r.data,pass,min_score:min,critical_floor:critical,model:r.model};
+}
+
 const qaScores=Object.fromEntries(QA_SCORE_KEYS.map(k=>[k,{type:"number",minimum:0,maximum:10}]));
 const visualQaSchema={
   type:"object",additionalProperties:false,
