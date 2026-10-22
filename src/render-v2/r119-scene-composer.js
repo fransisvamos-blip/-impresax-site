@@ -41,7 +41,8 @@ export function buildR119SceneComposerSpec({
       picture(assets,"HERO_VISUAL","r119-hero__media")+
       '<div class="r119-hero__veil" aria-hidden="true"></div>'+
       '<div class="r119-beam r119-beam--hero" aria-hidden="true"></div>'+
-      '<div class="r119-hero__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h1>'+copyToken("HERO_HEADLINE")+'</h1><p class="r119-lede ixg-lede">'+copyToken("HERO_BODY")+'</p><div class="r119-actions ixg-actions"><a class="r119-btn r119-btn--solid" data-premium-button="true" href="'+ctaToken("PRIMARY")+'">'+copyToken("PRIMARY_CTA_LABEL")+'</a><a class="r119-btn r119-btn--ghost" data-premium-button="true" href="'+ctaToken("SECONDARY")+'">'+copyToken("SECONDARY_CTA_LABEL")+'</a></div></div>'+
+      '<div class="r119-hero__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h1>'+copyToken("HERO_HEADLINE")+'</h1><p class="r119-lede ixg-lede">'+copyToken("HERO_BODY")+'</p><div class="r119-actions ixg-actions"><a class="r119-btn r119-btn--solid" data-premium-button="true" href="'+ctaToken("PRIMARY")+'"><span>'+copyToken("PRIMARY_CTA_LABEL")+'</span><span aria-hidden="true">↗</span></a><a class="r119-btn r119-btn--ghost" data-premium-button="true" href="'+ctaToken("SECONDARY")+'"><span>'+copyToken("SECONDARY_CTA_LABEL")+'</span><span aria-hidden="true">→</span></a></div></div>'+
+      '<div class="r119-hero__rail" aria-hidden="true"><span>DEDIL / CATANZARO</span><span>BUILDING MATERIALS</span><span>REBAR PROCESSING</span></div>'+
 
     '</section>',
 
@@ -890,6 +891,214 @@ h1,h2,strong{text-wrap:balance}
   .r119-close>.r119-btn{position:relative!important;right:auto!important;bottom:auto!important;width:100%!important;min-height:78px!important;margin-top:42px!important}
 }
 
+
+/* R119 V28 — NO-PAPER / HIGH-DYNAMISM / RESPONSIVE LUXURY
+   Goal: experience-site behavior, depth and responsiveness without fake metrics. */
+.r119-scene{
+  --ease-premium:cubic-bezier(.2,.72,.2,1);
+  contain:paint;
+}
+.r119-scene a,.ix-v2-nav a{
+  transition:transform .45s var(--ease-premium),background-color .45s var(--ease-premium),
+             color .45s var(--ease-premium),border-color .45s var(--ease-premium),
+             opacity .45s var(--ease-premium),letter-spacing .45s var(--ease-premium)!important;
+}
+.r119-btn{position:relative!important;overflow:hidden!important;gap:28px!important;justify-content:space-between!important}
+.r119-btn::before{
+  content:"";position:absolute;inset:0;transform:translateX(-102%);
+  background:rgba(255,255,255,.10);transition:transform .55s var(--ease-premium)
+}
+.r119-btn:hover{transform:translateY(-3px)!important}
+.r119-btn:hover::before{transform:translateX(0)}
+.r119-btn span:last-child{font-size:18px;line-height:1;transition:transform .45s var(--ease-premium)}
+.r119-btn:hover span:last-child{transform:translate(4px,-4px)}
+.ix-v2-nav a:hover{opacity:1!important;letter-spacing:.15em!important}
+.r119-contact__link:hover{transform:translateX(8px)!important}
+.r119-contact__link:hover span:last-child{transform:translateX(8px)}
+
+/* global depth cues */
+.r119-positioning__media,.r119-materials__media,.r119-rebar__photo,.r119-partner .r119-proof__partner{
+  box-shadow:0 34px 90px rgba(0,0,0,.20)
+}
+.r119-positioning__media::after,.r119-materials__media::after,.r119-rebar__photo::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.05),transparent 26%,transparent 72%,rgba(180,20,23,.08));
+  mix-blend-mode:screen
+}
+
+/* HERO becomes an interface frame rather than a poster */
+.r119-hero{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important}
+.r119-hero__media{clip-path:polygon(0 0,100% 0,100% 100%,7% 100%)!important}
+.r119-hero__copy{z-index:8!important}
+.r119-hero__rail{
+  position:absolute;z-index:9;right:0;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:0;width:44px;
+  border-left:1px solid rgba(255,255,255,.18);background:rgba(2,3,4,.26);
+  backdrop-filter:blur(8px)
+}
+.r119-hero__rail span{
+  writing-mode:vertical-rl;transform:rotate(180deg);padding:22px 13px;
+  font:700 8px/1 var(--ix-body-font);letter-spacing:.18em;color:rgba(255,255,255,.58);
+  border-bottom:1px solid rgba(255,255,255,.12)
+}
+.r119-hero__copy::after{
+  content:"";position:absolute;left:-34px;bottom:-28px;width:min(56vw,760px);height:1px;
+  background:linear-gradient(90deg,var(--r119-red),rgba(255,255,255,.55),transparent)
+}
+
+/* Positioning becomes offset media + anchored copy, less full-page print spread */
+.r119-positioning{min-height:108svh!important;padding:8vh 0 8vh!important}
+.r119-positioning__media{
+  inset:6vh 0 6vh 38%!important;
+  border-left:1px solid rgba(255,255,255,.16);
+  clip-path:polygon(6% 0,100% 0,100% 94%,0 100%)!important
+}
+.r119-positioning__copy{
+  min-height:92svh!important;padding:14vh 5vw 8vh!important;width:min(900px,58vw)!important
+}
+.r119-positioning__copy::before{
+  content:"";position:absolute;left:5vw;top:10vh;width:88px;height:88px;
+  border:1px solid rgba(255,255,255,.20);border-bottom-color:var(--r119-red);
+  transform:rotate(8deg)
+}
+
+/* Materials: picture plane breaks grid and overlaps content */
+.r119-materials{min-height:106svh!important;overflow:visible!important}
+.r119-materials__media{
+  inset:7vh 3vw 7vh 45%!important;
+  clip-path:polygon(10% 0,100% 4%,94% 100%,0 92%)!important;
+  transform:rotate(.65deg);box-shadow:0 42px 120px rgba(20,16,12,.22)!important
+}
+.r119-materials__copy{z-index:7!important}
+.r119-materials__copy::before{
+  content:"MATERIAL SYSTEM";display:inline-flex;width:max-content;padding:10px 14px;
+  margin-bottom:20px;border:1px solid rgba(9,10,11,.24);
+  font:700 9px/1 var(--ix-body-font);letter-spacing:.16em
+}
+.r119-materials__edge{bottom:5vh!important;left:5vw!important;width:18vw!important}
+.r119-materials__structure{
+  pointer-events:none!important;transform:translate3d(0,0,0)!important;
+  box-shadow:22px 22px 0 rgba(180,20,23,.05)
+}
+
+/* Rebar: floating technical viewport + asymmetric caption */
+.r119-rebar{min-height:112svh!important}
+.r119-rebar__photo{
+  inset:5vh 3vw 5vh 3vw!important;
+  clip-path:polygon(0 4%,96% 0,100% 93%,7% 100%)!important;
+  box-shadow:0 50px 130px rgba(0,0,0,.46)!important
+}
+.r119-rebar__technical{inset:5vh 3vw!important}
+.r119-rebar__title{top:13vh!important}
+.r119-rebar__body{
+  left:auto!important;right:5vw!important;bottom:10vh!important;width:min(430px,31vw)!important;
+  padding:24px 28px!important;background:rgba(5,6,7,.52)!important;
+  backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.16)!important
+}
+
+/* Proof has a live ledger feel: offset rows, interactive emphasis */
+.r119-proof__facts article{
+  transition:transform .45s var(--ease-premium),background-color .45s var(--ease-premium),padding-left .45s var(--ease-premium)!important
+}
+.r119-proof__facts article:hover{
+  transform:translateX(14px);background:rgba(180,20,23,.035)
+}
+.r119-proof__facts article:hover strong{color:var(--r119-red)}
+.r119-proof__facts article strong{transition:color .35s var(--ease-premium)}
+.r119-proof__head::after{
+  content:"";display:block;width:120px;height:3px;background:var(--r119-red);margin-top:34px
+}
+
+/* U-Power stage: floating object with depth instead of flat framed paper */
+.r119-partner{perspective:1200px}
+.r119-partner .r119-proof__partner{
+  width:88%!important;margin-left:auto!important;margin-right:0!important;
+  transform:rotateY(-2.2deg) rotateX(.6deg)!important;
+  transform-origin:center right!important;
+  box-shadow:-36px 48px 120px rgba(0,0,0,.42)!important;
+  transition:transform .6s var(--ease-premium),box-shadow .6s var(--ease-premium)!important
+}
+.r119-partner .r119-proof__partner:hover{
+  transform:rotateY(0) rotateX(0) translateY(-6px)!important;
+  box-shadow:-18px 58px 140px rgba(0,0,0,.52)!important
+}
+.r119-partner__label{position:sticky!important;top:110px!important;align-self:flex-start!important}
+
+/* commercial bridge/final CTA feel like active controls */
+.r119-contact{min-height:76svh!important}
+.r119-contact::after{
+  content:"";position:absolute;right:-8vw;top:-16vh;width:42vw;height:42vw;
+  border:1px solid rgba(255,255,255,.16);border-radius:50%;
+  box-shadow:0 0 0 5vw rgba(255,255,255,.025),0 0 0 11vw rgba(255,255,255,.018)
+}
+.r119-contact__link{z-index:8!important}
+.r119-close>.r119-btn{
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:space-between!important;
+  padding:28px!important;box-shadow:0 30px 80px rgba(0,0,0,.25)!important
+}
+.r119-close>.r119-btn::after{
+  content:"↗";font-size:32px;align-self:flex-end
+}
+
+/* laptop/tablet: deliberately recomposed, not a squeezed 1440 layout */
+@media(min-width:701px) and (max-width:1180px){
+  .ix-v2-header-inner{min-height:78px!important;padding-left:32px!important;padding-right:32px!important}
+  .ix-v2-nav{gap:16px!important}.ix-v2-nav a{font-size:10px!important}
+  .r119-hero__copy{left:32px!important;width:min(760px,72vw)!important}
+  .r119-hero__copy h1{font-size:clamp(68px,8.5vw,104px)!important;max-width:9.2ch!important}
+  .r119-positioning__media{inset:7vh 0 7vh 44%!important}
+  .r119-positioning__copy{width:58vw!important;padding-left:32px!important}
+  .r119-positioning__copy h2{font-size:clamp(62px,7.4vw,94px)!important}
+  .r119-materials__media{inset:8vh 2vw 8vh 48%!important}
+  .r119-materials__copy{width:47vw!important;padding-left:32px!important}
+  .r119-materials__copy h2{font-size:clamp(62px,7.3vw,96px)!important}
+  .r119-rebar__title{left:32px!important;width:62vw!important}
+  .r119-rebar__title h2{font-size:clamp(68px,8vw,106px)!important}
+  .r119-rebar__body{right:32px!important;width:38vw!important}
+  .r119-proof{padding-left:32px!important;padding-right:32px!important}
+  .r119-proof__facts article:nth-child(2){padding-left:5vw!important}
+  .r119-proof__facts article:nth-child(3){padding-left:10vw!important}
+  .r119-partner{padding-left:32px!important;padding-right:32px!important}
+  .r119-contact{padding-left:32px!important;padding-right:32px!important}
+  .r119-contact__meta{width:68vw!important}
+  .r119-close{padding-left:32px!important;padding-right:32px!important}
+  .r119-close__copy{width:62vw!important}
+}
+
+/* mobile: interaction and depth survive, without horizontal overflow */
+@media(max-width:700px){
+  .r119-scene{contain:layout paint!important}
+  .r119-hero__rail{display:none!important}
+  .r119-btn{gap:12px!important}
+  .r119-hero__media{clip-path:none!important}
+  .r119-hero__copy::after{left:0!important;bottom:-18px!important;width:58vw!important}
+  .r119-positioning{padding:0!important}
+  .r119-positioning__media{clip-path:polygon(0 0,100% 0,94% 100%,0 92%)!important;box-shadow:0 30px 70px rgba(0,0,0,.34)!important}
+  .r119-positioning__copy::before{display:none!important}
+  .r119-materials{overflow:hidden!important}
+  .r119-materials__media{clip-path:polygon(0 0,100% 5%,100% 92%,6% 100%)!important;transform:none!important}
+  .r119-materials__copy::before{font-size:8px!important;padding:8px 10px!important}
+  .r119-rebar{min-height:88svh!important}
+  .r119-rebar__photo{inset:0!important;clip-path:none!important}
+  .r119-rebar__technical{inset:0!important}
+  .r119-rebar__body{
+    left:18px!important;right:18px!important;bottom:28px!important;width:auto!important;
+    padding:18px!important;background:rgba(5,6,7,.64)!important
+  }
+  .r119-proof__facts article:hover{transform:none!important;background:transparent!important}
+  .r119-partner .r119-proof__partner{
+    width:100%!important;transform:none!important;margin:0!important;box-shadow:0 28px 70px rgba(0,0,0,.38)!important
+  }
+  .r119-partner__label{position:relative!important;top:auto!important}
+  .r119-contact::after{right:-34vw!important;top:10vh!important;width:92vw!important;height:92vw!important}
+  .r119-close>.r119-btn{padding:18px!important;flex-direction:row!important;align-items:center!important}
+}
+
+/* motion preferences respected; hover remains progressive enhancement */
+@media(prefers-reduced-motion:reduce){
+  .r119-scene a,.ix-v2-nav a,.r119-proof__facts article,.r119-partner .r119-proof__partner{transition:none!important}
+}
+
 `;
 
   return {
@@ -919,7 +1128,7 @@ h1,h2,strong{text-wrap:balance}
       hero_copy_space:"Dark directional veil with oversized copy anchored to the lower-left field.",
       hero_mobile_crop_strategy:"Native 390px recut with bottom-anchored copy and independent scale.",
       hero_relevance_score:10,
-      implementation_notes:"R119 LOVEFROM / HIGH-END FLAGSHIP V27: eight evidence-led chapters with four distinct photographic roles, denser operational proof, tighter typography and independently composed mobile. Scene mode: "+mode+". A jury-reset mode radically flips hero alignment, positioning/media order, materials balance, proof surface and commercial bridge rather than replaying the same composition."
+      implementation_notes:"R119 NO-PAPER / HIGH-DYNAMISM / RESPONSIVE LUXURY V28: eight evidence-led chapters with four distinct photographic roles, denser operational proof, tighter typography and independently composed mobile. Scene mode: "+mode+". A jury-reset mode radically flips hero alignment, positioning/media order, materials balance, proof surface and commercial bridge rather than replaying the same composition."
     },
     strategy:R119_SCENE_COMPOSER_STANDARD
   };
