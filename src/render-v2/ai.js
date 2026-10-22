@@ -954,10 +954,143 @@ const r118FlagshipRenderSpecSchema={
   required:[...new Set([...renderSpecSchema.required,"section_blueprint"])]
 };
 
+
+const r121RenderSpecSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    main_html:{type:"string",minLength:4200},
+    custom_css:{type:"string",minLength:4800},
+    section_ids:{type:"array",minItems:6,maxItems:9,items:{type:"string"}},
+    section_blueprint:{type:"array",minItems:6,maxItems:9,items:{type:"string"}},
+    section_architecture_standard:{type:"string"},
+    section_first_standard:{type:"string"},
+    home_depth_standard:{type:"string"},
+    section_substance_standard:{type:"string"},
+    used_copy_tokens:{type:"array",minItems:6,items:{type:"string"}},
+    used_asset_tokens:{type:"array",minItems:6,items:{type:"string"}},
+    hero_visual_strategy:{type:"string"},
+    hero_subject:{type:"string"},
+    hero_scene_type:{type:"string"},
+    hero_copy_space:{type:"string"},
+    hero_mobile_crop_strategy:{type:"string"},
+    hero_relevance_score:{type:"number",minimum:0,maximum:10},
+    r121_standard:{type:"string",enum:[R121_CREATIVE_DIRECTOR_STANDARD]},
+    r121_concept_standard:{type:"string",enum:[R121_CONCEPT_LOCK_STANDARD]},
+    r121_concept_fidelity:{type:"string"},
+    r121_signature_motion_hooks:{type:"array",minItems:1,maxItems:4,items:{type:"string"}},
+    implementation_notes:{type:"string"}
+  },
+  required:[
+    "main_html","custom_css","section_ids","section_blueprint",
+    "section_architecture_standard","section_first_standard","home_depth_standard","section_substance_standard",
+    "used_copy_tokens","used_asset_tokens",
+    "hero_visual_strategy","hero_subject","hero_scene_type","hero_copy_space",
+    "hero_mobile_crop_strategy","hero_relevance_score",
+    "r121_standard","r121_concept_standard","r121_concept_fidelity","r121_signature_motion_hooks",
+    "implementation_notes"
+  ]
+};
+
 function actualTopLevelSectionIds(mainHtml="") {
   return [...String(mainHtml||"").matchAll(/<section\b[^>]*\bid\s*=\s*["']([^"']+)["'][^>]*>/gi)]
     .map(match=>String(match[1]||"").trim())
     .filter(Boolean);
+}
+
+
+export async function generateR121RenderSpec(env,{
+  inputPayload,direction,variantKey,copyManifest,assetTokens,concept,
+  qaFeedback=null,previousSpec=null,beforeModelAttempt=null
+}={}) {
+  const allowedAssets=[...new Set((assetTokens||[]).filter(x=>x&&x!=="PRIMARY_LOGO"))];
+  const safePrevious=qaFeedback && previousSpec ? {
+    section_ids:Array.isArray(previousSpec.section_ids)?previousSpec.section_ids.slice(0,9):[],
+    implementation_notes:String(previousSpec.implementation_notes||"").slice(0,900),
+    main_html:String(previousSpec.main_html||"").slice(0,6500),
+    custom_css:String(previousSpec.custom_css||"").slice(0,5200)
+  } : null;
+  const compactFeedback=qaFeedback ? {
+    reason:String(qaFeedback.reason||"R121_REPAIR"),
+    summary:String(qaFeedback.summary||"").slice(0,900),
+    issues:(Array.isArray(qaFeedback.issues)?qaFeedback.issues:[]).slice(0,10).map(x=>({
+      code:String(x?.code||"").slice(0,80),
+      target:String(x?.target||"").slice(0,90),
+      message:String(x?.message||x||"").slice(0,240)
+    })),
+    actions:(Array.isArray(qaFeedback.actions)?qaFeedback.actions:[]).slice(0,5).map(x=>String(x).slice(0,320))
+  } : null;
+
+  const prompt=[
+    "R121 CREATIVE DIRECTOR ENGINE — IMPLEMENTATION STAGE.",
+    "The creative decision is already LOCKED. Do not invent a new style, generic premium language or alternative layout thesis.",
+    "Translate the supplied Concept Lock into one production-grade homepage. The page must feel like a commissioned digital campaign, not a sequence of website sections.",
+    "",
+    "NON-NEGOTIABLE CREATIVE RULES:",
+    "1. CONCEPT FIDELITY: every major composition, image crop, typography choice and transition hook must visibly serve the locked campaign thesis and signature motif.",
+    "2. STORY BEFORE SECTIONS: follow the emotional/commercial progression in the desktop storyboard. The six compiler semantic ids are anchors, not a prescribed visual cadence.",
+    "3. ASSET ROLES ARE UNIQUE: use each R121 campaign asset as a primary visual at most once. Do not manufacture richness by repeating/cropping the same photograph throughout the page.",
+    "4. HERO: first section id=hero. It must contain exactly one <img src=\"{{asset:HERO_VISUAL}}\">, an <h1> with {{copy:HERO_HEADLINE}}, visible {{copy:HERO_BODY}}, {{cta:PRIMARY}} and {{cta:SECONDARY}}. Copy/CTAs must be genuinely over the photographic field on desktop and mobile.",
+    "5. REQUIRED SEMANTIC ANCHORS: include ids hero, positioning, services, trust, bridge, final-cta. You may add at most three concept-driven sections only when they materially advance the locked storyboard.",
+    "6. REQUIRED COPY CONTRACTS: positioning uses POSITIONING_TITLE + POSITIONING_BODY; services uses SERVICES_TITLE + SERVICES_INTRO; trust uses TRUST_TITLE + TRUST_INTRO; final-cta uses CLOSING_TITLE + CLOSING_BODY + primary CTA. Keep supporting copy visually subordinate; no walls of text.",
+    "7. TRUTH: visible text must use ONLY {{copy:TOKEN}} tokens. Links use ONLY {{cta:PRIMARY}}/{{cta:SECONDARY}}. Images use ONLY listed {{asset:TOKEN}} tokens. Official identity, if used in main, is only {{identity:PRIMARY_LOGO}} and may appear at most once.",
+    "8. MOTION HOOKS: add data-r121-motion attributes to 1–4 meaningful elements tied to the motion signature. The static composition must still look finished because QA screenshots do not depend on motion.",
+    "9. MOBILE IS A SECOND COMPOSITION: implement a genuine 390px recut following the mobile storyboard. It may reorder visual emphasis, crop differently, change overlap/scale and simplify motion hooks.",
+    "10. NO UI-KIT GRAMMAR: no card soup, SaaS dashboards, repeated left-copy/right-image splits, alternating dark/light bands, decorative empty boxes, generic feature grids or fake metrics.",
+    "11. NO VISUAL CHECKLIST DESIGN: do not add sections, graphics or effects simply to look rich. Every visible object must have a narrative job.",
+    "12. SHELL: custom_css must art-direct .ix-v2-header, .ix-v2-nav, .ix-v2-header-cta, .ix-v2-footer and .ix-v2-footer-grid so they belong to the campaign.",
+    "13. SAFETY: no scripts, forms, SVG, inline style attributes, external URLs, CSS url(), @import, @font-face, pseudo-element content property or event handlers.",
+    "14. RESPONSIVE: include desktop, an intentional 701–1180px composition, and a max-width:700px mobile composition. Include prefers-reduced-motion treatment for any transition-heavy styling.",
+    "15. OUTPUT: main_html is content inside <main> only. Do not output header/footer/main/html/body tags.",
+    "",
+    "LOCKED CONCEPT:",
+    JSON.stringify(concept||{}),
+    "",
+    "SELECTED DIRECTION — supporting visual context only:",
+    JSON.stringify(direction||{}),
+    "",
+    "VERIFIED INPUT — facts only, never render values directly unless represented by allowed copy tokens:",
+    JSON.stringify(inputPayload||{}),
+    "",
+    "ALLOWED COPY TOKENS:",
+    JSON.stringify(Object.keys(copyManifest||{})),
+    "",
+    "ALLOWED ASSET TOKENS:",
+    JSON.stringify(allowedAssets),
+    compactFeedback?"TARGETED MECHANICAL/RENDER REPAIR — preserve the Concept Lock, fix only these failures:"+JSON.stringify(compactFeedback):"",
+    safePrevious?"PREVIOUS R121 SPEC — use only as an implementation reference; never dilute the locked concept:"+JSON.stringify(safePrevious):""
+  ].filter(Boolean).join("\n");
+
+  const r=await runStructured(env,qaFeedback?"repair":"generator",{
+    messages:[
+      {role:"system",content:"You are the implementation art director for a locked global-studio-level campaign concept. Concept fidelity, production quality, truth safety and responsive craft are mandatory. Do not revert to generic website composition."},
+      {role:"user",content:prompt}
+    ],
+    schema:r121RenderSpecSchema,
+    maxTokens:9000,
+    temperature:qaFeedback?0.12:0.22,
+    beforeAttempt:beforeModelAttempt,
+    allowR118External:true
+  });
+
+  const actualSectionIds=actualTopLevelSectionIds(r.data?.main_html);
+  return {
+    spec:{
+      ...r.data,
+      section_ids:actualSectionIds.length?actualSectionIds:r.data.section_ids,
+      section_blueprint:actualSectionIds.length?actualSectionIds:r.data.section_blueprint,
+      section_architecture_standard:"R121_CONCEPT_DRIVEN_ARCHITECTURE_V1",
+      section_first_standard:"R121_STORY_FIRST_V1",
+      home_depth_standard:"R121_NARRATIVE_DEPTH_V1",
+      section_substance_standard:"R121_EVIDENCE_STAGING_V1",
+      r121_standard:R121_CREATIVE_DIRECTOR_STANDARD,
+      r121_concept_standard:R121_CONCEPT_LOCK_STANDARD,
+      perceptual_flagship_standard:"R121_SELLABILITY_V1",
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R121_CREATIVE_DIRECTOR",
+      implementation_notes:"R121 LOCKED CONCEPT IMPLEMENTATION — "+String(r.data?.implementation_notes||"")
+    },
+    model:r.model,
+    r121:true
+  };
 }
 
 export async function generateRenderSpec(env,{inputPayload,direction,variantKey,copyManifest,assetTokens,qaFeedback=null,previousSpec=null,beforeModelAttempt=null,allowR118External=false,r119EvidenceMode=false}) {
