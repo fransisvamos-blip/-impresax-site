@@ -41,7 +41,7 @@ export function buildR119SceneComposerSpec({
       picture(assets,"HERO_VISUAL","r119-hero__media")+
       '<div class="r120-hero__detail">'+picture(assets,"SERVICE_MATERIALS_VISUAL","r120-hero__detail-media")+'</div>'+
       '<div class="r119-hero__veil" aria-hidden="true"></div>'+
-      '<div class="r119-hero__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h1>'+copyToken("HERO_HEADLINE")+'</h1><div class="r119-actions ixg-actions"><a class="r119-btn r119-btn--solid" data-premium-button="true" href="'+ctaToken("PRIMARY")+'"><span>'+copyToken("PRIMARY_CTA_LABEL")+'</span><span aria-hidden="true">↗</span></a><a class="r119-btn r119-btn--ghost" data-premium-button="true" href="'+ctaToken("SECONDARY")+'"><span>'+copyToken("SECONDARY_CTA_LABEL")+'</span><span aria-hidden="true">→</span></a></div></div>'+
+      '<div class="r119-hero__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h1>'+copyToken("HERO_HEADLINE")+'</h1><div class="r120-microcopy r120-microcopy--hero">'+copyToken("HERO_BODY")+'</div><div class="r119-actions ixg-actions"><a class="r119-btn r119-btn--solid" data-premium-button="true" href="'+ctaToken("PRIMARY")+'"><span>'+copyToken("PRIMARY_CTA_LABEL")+'</span><span aria-hidden="true">↗</span></a><a class="r119-btn r119-btn--ghost" data-premium-button="true" href="'+ctaToken("SECONDARY")+'"><span>'+copyToken("SECONDARY_CTA_LABEL")+'</span><span aria-hidden="true">→</span></a></div></div>'+
       '<div class="r120-hero__graphic" aria-hidden="true"><span></span><span></span><span></span><span></span></div>'+
     '</section>',
 
@@ -52,7 +52,7 @@ export function buildR119SceneComposerSpec({
         picture(assets,"HERO_VISUAL","r120-positioning__detail r120-positioning__detail--a")+
         picture(assets,"SERVICE_REBAR_VISUAL","r120-positioning__detail r120-positioning__detail--b")+
       '</div>'+
-      '<div class="r119-positioning__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h2>'+copyToken("POSITIONING_TITLE")+'</h2></div>'+
+      '<div class="r119-positioning__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h2>'+copyToken("POSITIONING_TITLE")+'</h2><div class="r120-microcopy">'+copyToken("POSITIONING_BODY")+'</div></div>'+
       '<div class="r120-positioning__index" aria-hidden="true"><span></span><span></span><span></span></div>'+
     '</section>',
 
@@ -75,7 +75,7 @@ export function buildR119SceneComposerSpec({
       '</div>'+
       '<div class="r119-rebar__media r119-rebar__technical" aria-hidden="true"><span></span><span></span><span></span><span></span></div>'+
       '<div class="r119-rebar__veil" aria-hidden="true"></div>'+
-      '<div class="r119-rebar__title"><p class="r119-kicker">'+copyToken("SERVICES_TITLE")+'</p><h2>'+copyToken("SERVICE_2_TITLE")+'</h2></div>'+
+      '<div class="r119-rebar__title"><p class="r119-kicker">'+copyToken("SERVICES_TITLE")+'</p><h2>'+copyToken("SERVICE_2_TITLE")+'</h2><div class="r120-microcopy r120-microcopy--dark">'+copyToken("SERVICES_INTRO")+'</div></div>'+
       '<div class="r120-rebar__process" aria-hidden="true"><span></span><span></span><span></span><span></span></div>'+
     '</section>',
 
@@ -112,7 +112,7 @@ export function buildR119SceneComposerSpec({
 
     '<section id="final-cta" class="r119-scene r119-close'+sceneModeClass+'" data-r119-scene="true" data-surface="art-directed" data-brand-surface="dark" data-copy-density="low" data-signature-moment="true" data-spectacle-moment="true" data-stage-depth="cinematic" data-wow-moment="true">'+
       '<div class="r120-close__media">'+picture(assets,"HERO_VISUAL","r120-close__media-main")+'</div>'+
-      '<div class="r119-close__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h2>'+copyToken("CLOSING_TITLE")+'</h2></div>'+
+      '<div class="r119-close__copy"><p class="r119-kicker">'+copyToken("LOCALITY_LINE")+'</p><h2>'+copyToken("CLOSING_TITLE")+'</h2><div class="r120-microcopy r120-microcopy--dark">'+copyToken("CLOSING_BODY")+'</div></div>'+
       '<a class="r119-btn r119-btn--final" data-premium-button="true" href="'+ctaToken("PRIMARY")+'">'+copyToken("PRIMARY_CTA_LABEL")+'</a>'+
       '<div class="r120-close__graphic" aria-hidden="true"><span></span><span></span></div>'+
     '</section>'
@@ -136,6 +136,9 @@ body{background:var(--ix-ink);text-wrap:pretty}
 img{display:block;width:100%;height:100%;object-fit:cover}
 .r119-scene{position:relative;overflow:hidden;isolation:isolate;font-family:var(--ix-body)}
 .r119-kicker{margin:0;font-size:9px;line-height:1.2;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.r120-microcopy{margin-top:14px;max-width:32ch;font-size:13px;line-height:1.55;color:rgba(8,9,10,.58)}
+.r120-microcopy--hero,.r120-microcopy--dark{color:rgba(255,255,255,.68)}
+.r120-microcopy--hero{margin:0 0 22px;max-width:36ch}
 .r119-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:18px;min-height:54px;padding:0 22px;border:1px solid currentColor;text-decoration:none;font-size:11px;font-weight:800;transition:transform .35s var(--ix-ease),background-color .35s var(--ix-ease),border-color .35s var(--ix-ease)}
 .r119-btn:hover{transform:translateY(-3px)}
 .r119-btn--solid{background:var(--ix-red);border-color:var(--ix-red);color:#fff}
