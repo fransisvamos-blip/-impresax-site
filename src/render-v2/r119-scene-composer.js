@@ -433,7 +433,7 @@ img{display:block;max-width:100%}
   display:grid;
   grid-template-columns:minmax(0,62%) minmax(0,38%);
   grid-template-rows:auto 1fr;
-  background:var(--ix-ink);
+  background:linear-gradient(115deg,#090a0b 0%,#15181a 68%,#21090b 100%);
   color:white;
   padding:86px 5vw;
 }
@@ -755,7 +755,7 @@ img{display:block;max-width:100%}
   .r119-materials__structure{right:-52vw;top:36svh;width:104vw;height:52svh;opacity:.28}
   .r119-materials__edge{left:18px;bottom:34px;width:32vw}
 
-  .r119-rebar{min-height:0;display:flex;flex-direction:column;padding:0;background:var(--ix-ink)}
+  .r119-rebar{min-height:0;display:flex;flex-direction:column;padding:0;background:linear-gradient(160deg,#090a0b,#15181a 72%,#21090b)}
   .r119-rebar__photo{position:relative;inset:auto;height:52svh;order:1}
   .r119-rebar__media{inset:0;height:52svh}
   .r119-rebar__veil{display:none}
