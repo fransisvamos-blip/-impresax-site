@@ -38,10 +38,17 @@ export async function reserveAiCall(sql,packId,env,route,revisionId=null,{allowR
   return {used,limit};
 }
 
+async function browserCaptureLimit(sql,packId,env) {
+  const rows=await sql`select metadata from render_v2_packs where id=${packId}::uuid limit 1`;
+  const override=Number(rows[0]?.metadata?.browser_capture_limit_override);
+  if(Number.isFinite(override) && override>0) return Math.floor(override);
+  return envLimit(env,"V2_MAX_BROWSER_CAPTURES_PER_PACK",18);
+}
+
 export async function reserveBrowserCapture(sql,packId,env,variantKey,revisionId=null) {
-  const limit=envLimit(env,"V2_MAX_BROWSER_CAPTURES_PER_PACK",18);
+  const limit=await browserCaptureLimit(sql,packId,env);
   const used=await reserveCounter(sql,packId,"browser_captures",limit);
-  await recordMetric(sql,{packId,revisionId,name:"browser_capture_reserved",value:1,dimensions:{variant_key:variantKey,used,limit}});
+  await recordMetric(sql,{packId,revisionId,name:"browser_capture_reserved",value:1,dimensions:{variant_key:variantKey,used,limit,pack_override:limit!==envLimit(env,"V2_MAX_BROWSER_CAPTURES_PER_PACK",18)}});
   return {used,limit};
 }
 
@@ -58,6 +65,6 @@ export async function budgetSnapshot(sql,packId,env) {
     ai_calls:Number(metrics.ai_calls||0),
     ai_limit:envLimit(env,"V2_MAX_AI_CALLS_PER_PACK",40),
     browser_captures:Number(metrics.browser_captures||0),
-    browser_limit:envLimit(env,"V2_MAX_BROWSER_CAPTURES_PER_PACK",18)
+    browser_limit:await browserCaptureLimit(sql,packId,env)
   };
 }
