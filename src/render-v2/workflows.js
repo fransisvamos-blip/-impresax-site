@@ -752,6 +752,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
       const initialReason=String(params.initialFeedback?.reason||"");
+      const r121CreativeDirector=
+        packMetadata.r121_creative_director_engine===true
+        || String(packMetadata.r121_standard||"")===R121_CREATIVE_DIRECTOR_STANDARD
+        || /R121_/i.test(initialReason);
       const r119Requested=
         packMetadata.r119_scene_composer===true
         || packMetadata.r119_eight_scene_evidence===true
@@ -762,7 +766,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       // has not yet been stamped with r118_perceptual_jury.
       const r118PerceptualJury=packMetadata.r118_perceptual_jury===true
         || /R118_PERCEPTUAL/i.test(initialReason)
-        || r119Requested;
+        || r119Requested
+        || r121CreativeDirector;
       const inputPayload=(renderProfile||logoFirstBrandProfile||pilotHeroLocked||r118PerceptualJury)
         ? {
             ...input.payload,
@@ -778,6 +783,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             ...(r118PerceptualJury?{
               r118_perceptual_jury:true,
               perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1"
+            }:{}),
+            ...(r121CreativeDirector?{
+              r121_creative_director_engine:true,
+              r121_standard:R121_CREATIVE_DIRECTOR_STANDARD,
+              r121_concept_lock_standard:R121_CONCEPT_LOCK_STANDARD
             }:{})
           }
         : input.payload;
@@ -915,7 +925,14 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const direction=zeroPhoto
         ? zeroPhotoExecutionDirection(params.variantKey,inputPayload)
         : sanitizeDirectionForExecution(plan.directions?.[params.variantKey],{hasEditorialAssets:true});
-      return {inputPayload,assets,copyManifest,ctaManifest,direction,editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit,r118PerceptualJury,r119Requested};
+      return {
+        inputPayload,assets,copyManifest,ctaManifest,direction,
+        editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,
+        packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit,r118PerceptualJury,r119Requested,
+        r121CreativeDirector,
+        contentTruthPack:plan.content_truth_pack,
+        allDirections:plan.directions
+      };
     });
 
     const heroAsset=await step.do("ensure-premium-hero",{retries:{limit:1,delay:"4 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
