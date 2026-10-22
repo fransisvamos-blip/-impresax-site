@@ -545,6 +545,7 @@ async function ensureR121CampaignAssets(env,sql,{packId,inputPayload,concept,exi
       const qa=await runHeroAssetQa(env,{
         imageB64,inputPayload,direction,variantKey,
         allowR121External:true,
+        campaignRole:role,
         beforeModelAttempt:({model:qaModel,role:qaRole})=>
           reserveAiCall(sql,packId,env,"R121_CAMPAIGN_PREQA:"+token+":"+qaRole+":"+qaModel+":A"+attempt,null,{allowR118External:true})
       });
@@ -1029,6 +1030,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     });
 
     if(context.r121CreativeDirector===true) {
+      context.inputPayload={
+        ...context.inputPayload,
+        asset_mode:"R121_GENERATED_EDITORIAL_CAMPAIGN",
+        r121_campaign_generation_allowed:true,
+        r121_generated_imagery_truth_rule:"ILLUSTRATIVE_NOT_DOCUMENTARY",
+        r121_legacy_zero_photo_superseded:true
+      };
       const conceptBundle=await step.do("r121-concept-lock",{timeout:"16 minutes"},async()=>{
         const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
         const latestMeta=packRows[0]?.metadata||{};
