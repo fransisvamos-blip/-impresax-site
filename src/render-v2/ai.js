@@ -320,7 +320,7 @@ const r121StoryboardBeatSchema={
   type:"object",additionalProperties:false,
   properties:{
     beat:{type:"string"},purpose:{type:"string"},composition:{type:"string"},
-    dominant_asset:{type:"string"},copy_role:{type:"string"},interaction_role:{type:"string"}
+    dominant_asset:{type:"string",enum:R121_CAMPAIGN_ASSET_TOKENS},copy_role:{type:"string"},interaction_role:{type:"string"}
   },
   required:["beat","purpose","composition","dominant_asset","copy_role","interaction_role"]
 };
