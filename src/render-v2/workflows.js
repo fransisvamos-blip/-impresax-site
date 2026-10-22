@@ -1037,7 +1037,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         r121_generated_imagery_truth_rule:"ILLUSTRATIVE_NOT_DOCUMENTARY",
         r121_legacy_zero_photo_superseded:true
       };
-      const conceptBundle=await step.do("r121-concept-lock",{timeout:"16 minutes"},async()=>{
+      const conceptBundle=await step.do("r121-concept-lock",{retries:{limit:0,delay:"1 second",backoff:"constant"},timeout:"16 minutes"},async()=>{
         const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
         const latestMeta=packRows[0]?.metadata||{};
         const existing=latestMeta.r121_concept_lock;
@@ -1188,7 +1188,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const selectedDirection=context.allDirections?.[selectedKey]||context.direction;
       context.direction=sanitizeDirectionForExecution(selectedDirection,{hasEditorialAssets:true});
 
-      const campaign=await step.do("r121-campaign-assets",{timeout:"28 minutes"},async()=>{
+      const campaign=await step.do("r121-campaign-assets",{retries:{limit:0,delay:"1 second",backoff:"constant"},timeout:"28 minutes"},async()=>{
         const result=await ensureR121CampaignAssets(this.env,sql,{
           packId:params.packId,
           inputPayload:context.inputPayload,
@@ -1422,7 +1422,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       let generated;
       try {
-        generated=await step.do("r"+cycle+"-generate",{retries:{limit:context.r119Requested===true?0:1,delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
+        generated=await step.do("r"+cycle+"-generate",{retries:{limit:context.r121CreativeDirector===true?0:(context.r119Requested===true?0:1),delay:"3 seconds",backoff:"exponential"},timeout:"12 minutes"},async()=>{
           if(context.cabinaPrecomputed) {
             if(!context.cabinaRenderSpec) throw new Error("SYSTEM_INVARIANT:CABINA_RENDER_SPEC_REQUIRED");
             return {spec:context.cabinaRenderSpec,model:"CHATGPT_CABINA_PRECOMPUTED",cabina_precomputed:true};
@@ -2061,7 +2061,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
 
       let qa;
       try {
-        qa=await step.do("r"+cycle+"-visual-qa",{timeout:"8 minutes"},async()=>{
+        qa=await step.do("r"+cycle+"-visual-qa",{retries:{limit:context.r121CreativeDirector===true?0:5,delay:"10 seconds",backoff:"exponential"},timeout:"8 minutes"},async()=>{
           if(context.r121CreativeDirector===true) {
             const r121Cached=await sql`
               select q.scores,q.issues,q.actions,q.created_at,q.variant_revision_id
