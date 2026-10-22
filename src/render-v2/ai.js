@@ -202,7 +202,7 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
               ? (env.V2_MODEL_R121_CONCEPT_JURY_FALLBACK||"@cf/openai/gpt-oss-120b")
               : (env.V2_MODEL_R121_CONCEPT_JURY||"@cf/deepseek-ai/deepseek-v4.1-flash-1017"))
           : (attempt.fallback
-              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||"@cf/openai/gpt-oss-120b")
+              ? (env.V2_MODEL_R121_CONCEPT_FALLBACK||env.V2_MODEL_CREATIVE||"@cf/zai-org/glm-5.3-flash")
               : (env.V2_MODEL_R121_CONCEPT||"@cf/deepseek-ai/deepseek-v4.1-flash-1017")))
       : (fastR118Qa
           ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
@@ -244,7 +244,9 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
         const raw=collectRawText(result);
         if(!raw) throw parseError;
 
-        const fixerModel=env.V2_MODEL_TEXT_FALLBACK||DEFAULT_MODELS.textFallback;
+        const fixerModel=r121ConceptRoute===true
+          ? (env.V2_MODEL_R121_SCHEMA_NORMALIZER||env.V2_MODEL_CREATIVE||"@cf/zai-org/glm-5.3-flash")
+          : (env.V2_MODEL_TEXT_FALLBACK||DEFAULT_MODELS.textFallback);
         if(beforeAttempt) await beforeAttempt({
           role:role+"_schema_normalizer",
           model:fixerModel,
@@ -256,9 +258,11 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
           messages:[
             {
               role:"system",
-              content:generationNormalizer
-                ?"Normalize the supplied generated homepage object into exactly one JSON object matching the provided JSON Schema. Preserve the authored HTML, CSS, token usage, section order and factual content whenever they are valid. Fix schema shape/types/missing required fields only. Do NOT redesign, summarize, shorten into a draft, invent facts, add assets, or add prose outside JSON."
-                :"Convert the supplied reviewer output into exactly one JSON object matching the provided JSON Schema. Preserve the reviewer's factual judgments, scores, issues and actions. Do NOT perform a new visual review. Do NOT add claims that are absent from the supplied reviewer output. Return JSON only."
+              content:r121ConceptRoute===true && !qaRole
+                ?"Normalize the supplied R121 creative-concept object into exactly one JSON object matching the provided JSON Schema. Preserve the campaign thesis, organizing mechanism, verified proof plan, six asset roles, desktop/mobile storyboards, motion signature, ownability anchors and transplant test. Fix schema shape/types/missing required fields only. Do NOT convert it into a homepage, do NOT invent facts, do NOT redesign the concept, and return JSON only."
+                :(generationNormalizer
+                  ?"Normalize the supplied generated homepage object into exactly one JSON object matching the provided JSON Schema. Preserve the authored HTML, CSS, token usage, section order and factual content whenever they are valid. Fix schema shape/types/missing required fields only. Do NOT redesign, summarize, shorten into a draft, invent facts, add assets, or add prose outside JSON."
+                  :"Convert the supplied reviewer output into exactly one JSON object matching the provided JSON Schema. Preserve the reviewer's factual judgments, scores, issues and actions. Do NOT perform a new visual review. Do NOT add claims that are absent from the supplied reviewer output. Return JSON only.")
             },
             {
               role:"user",
