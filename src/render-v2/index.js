@@ -191,7 +191,9 @@ async function runPilotManualKick(env,sql) {
 
   const structuralRedesign=/STRUCTURAL_DIVERGENCE_REWORK|FULL_FLAGSHIP_REDESIGN|FULL_REDESIGN/i.test(reason);
   const r119Generative=/^R119_/i.test(reason);
-  const generativeRedesign=structuralRedesign || r119Generative;
+  const r121Generative=/^(?:R121_|R119_R121_)/i.test(reason)
+    || pack.metadata?.r121_creative_director_engine===true;
+  const generativeRedesign=structuralRedesign || r119Generative || r121Generative;
   const params={
     prospectId:pack.prospect_id,
     packId,
@@ -206,12 +208,17 @@ async function runPilotManualKick(env,sql) {
         ?"Cabina requested a genuinely new flagship composition for the locked pilot only."
         :"Cabina requested a targeted launch-grade revision for the locked pilot only."],
       actions:generativeRedesign
-        ?[
+        ?(r121Generative?[
+          "Run the R121 Creative Director Engine: concept lock before code, coherent campaign asset system, concept-driven implementation and live interactive preview.",
+          "Preserve DEDIL verified truth, verified partner proof and official identity; generated campaign imagery is illustrative, never documentary proof.",
+          "Treat desktop and mobile as separately art-directed expressions of the same locked campaign.",
+          "Do not start or mutate any other prospect."
+        ]:[
           "Generate a genuinely new flagship composition under the active R119/R118 architecture; do not reuse prior section geometry.",
           "Preserve DEDIL verified truth, licensed editorial imagery, verified partner proof and official identity.",
           "Treat desktop and mobile as separately art-directed compositions.",
           "Do not start or mutate any other prospect."
-        ]
+        ])
         :[
           "Use the Cabina precomputed RenderSpec exactly.",
           "Preserve verified content, real imagery and official identity.",
@@ -235,6 +242,8 @@ async function runPilotManualKick(env,sql) {
       cabina_precomputed:!generativeRedesign,
       structural_redesign:structuralRedesign,
       r119_generative:r119Generative,
+      r121_generative:r121Generative,
+      r121_creative_director_engine:r121Generative,
       queue_enabled:false
     }
   });
