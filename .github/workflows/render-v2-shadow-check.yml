@@ -64,11 +64,13 @@ jobs:
           cat /tmp/health.json || true
           exit 1
 
-      - name: One-shot terminate superseded DEDIL R121 v4
+
+      - name: One-shot DEDIL R121 v5 direct trigger
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler workflows instances terminate impresax-render-v2-variant \
-            rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-r121-direct-v4 \
+          INSTANCE_ID='rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-r121-direct-v5'
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"r121","initialFeedback":{"reason":"R121_CREATIVE_DIRECTOR_ENGINE_V1","issues":["Final R121 Creative Director pass for DEDIL only after hostile concept-jury rejection."],"actions":["Use the R121 Concept Director with maximum reasoning before code.","Build an ownable organizing idea from verified DEDIL specifics, especially rebar transformation, Catanzaro/Germaneto, verified scale and U-Power relationship.","Generate six materially different campaign visual modes under illustrative-not-documentary truth safety.","Keep mobile independently art-directed.","Do not weaken the sellability jury.","Do not start or mutate any other prospect."]}}'
+          npx wrangler workflows trigger impresax-render-v2-variant "$PARAMS" \
+            --id "$INSTANCE_ID" \
             --config wrangler.render-v2.jsonc
-
