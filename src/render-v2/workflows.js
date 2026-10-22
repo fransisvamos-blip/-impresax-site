@@ -1051,9 +1051,23 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           };
         }
 
-        const persistedHistory=Array.isArray(latestMeta.r121_concept_rejection_history)
-          ? latestMeta.r121_concept_rejection_history.slice(-8)
-          : [];
+        const machineReason=/^[A-Z0-9_]+(?::|$)/;
+        const persistedHistory=(Array.isArray(latestMeta.r121_concept_rejection_history)
+          ? latestMeta.r121_concept_rejection_history
+          : [])
+          .map(item=>{
+            const semanticReasons=(item?.rejection_reasons||[])
+              .map(x=>String(x||"").trim())
+              .filter(Boolean)
+              .filter(x=>!machineReason.test(x))
+              .slice(-8);
+            return {...item,rejection_reasons:semanticReasons};
+          })
+          .filter(item=>{
+            const scores=Object.values(item?.scores||{}).map(Number).filter(Number.isFinite);
+            return scores.some(x=>x>0) && (item.rejection_reasons||[]).length>0;
+          })
+          .slice(-4);
         const feedbackHistory=[...persistedHistory];
         let feedback=feedbackHistory.length
           ? {
