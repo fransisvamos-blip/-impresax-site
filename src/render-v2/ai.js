@@ -811,6 +811,41 @@ function r121SafeProcessText(value,brief) {
   return out.replace(/\s{2,}/g," ").trim();
 }
 
+
+function r121SafeNonDocumentaryText(value,brief) {
+  let out=r121SafeCampaignText(r121SafeProcessText(value,brief),brief);
+  out=out
+    .replace(/\b(?:machine|machinery|forklift|truck|lorry|conveyor|robot|operator|worker|employee)\b/gi,"material geometry")
+    .replace(/\b(?:company premises|company site|company warehouse|company factory|actual warehouse|actual factory|documentary site)\b/gi,"illustrative industrial environment")
+    .replace(/\b(?:etched|engraved|embossed|painted|printed)\s+(?:number|numbers|data|revenue|metric|metrics|logo|brand|proof|fact|facts)\b/gi,"HTML proof")
+    .replace(/\b(?:number|numbers|data|revenue|metric|metrics|proof|fact|facts)\s+(?:etched|engraved|embossed|painted|printed)\b/gi,"HTML proof")
+    .replace(/\b(?:testimonial|testimonials|customer quote|client quote)\b/gi,"verified proof")
+    .replace(/\s{2,}/g," ")
+    .trim();
+  return out;
+}
+
+function r121DeterministicOwnabilityAnchors(brief) {
+  const ops=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,2);
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" / ");
+  const proofs=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,2);
+  return [
+    ...ops.map(x=>"Verified operation: "+x),
+    locality?"Verified locality: "+locality:null,
+    ...proofs.map(x=>"Verified proof: "+x)
+  ].filter(Boolean).slice(0,5);
+}
+
+function r121DeterministicProofMechanism(brief) {
+  const facts=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,6);
+  return [
+    "Verified evidence is rendered only as HTML typography, data rails and official proof modules.",
+    "Generated campaign imagery never carries numbers, logos, labels, signage, branded vehicles, employees, machines, company premises or documentary evidence.",
+    "The exact proof inventory is: "+facts.join(" | ")+".",
+    "Any official partner identity may appear only through an approved official asset outside generated campaign imagery."
+  ].join(" ");
+}
+
 function r121CanonicalCampaignRoles(concept,brief) {
   const source=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
   const byToken=Object.fromEntries(source.map(x=>[String(x?.token||""),x]));
@@ -855,8 +890,12 @@ function r121CanonicalCampaignRoles(concept,brief) {
   return R121_CAMPAIGN_ASSET_TOKENS.map(token=>{
     const raw=byToken[token]||{token};
     const rule=canonical[token];
-    const modelSubject=r121SafeCampaignText(r121SafeProcessText(raw?.subject,brief),brief);
-    const subject=[modelSubject,rule.subject_suffix].filter(Boolean).join("; ");
+    const verifiedContext=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,2).join(" / ");
+    const subject=[
+      rule.subject_suffix,
+      verifiedContext?"visual context derived only from verified services: "+verifiedContext:"",
+      "no machines, operators, branded vehicles, signage, company premises, logos, labels, numbers or documentary proof"
+    ].filter(Boolean).join("; ");
     return {
       ...raw,
       token,
@@ -864,7 +903,7 @@ function r121CanonicalCampaignRoles(concept,brief) {
       subject,
       visual_function:rule.visual_function,
       crop_behavior:rule.crop_behavior,
-      truth_safety:"Illustrative editorial imagery only; not documentary evidence; plain text-free surfaces with no company or partner identifiers."
+      truth_safety:"Illustrative editorial imagery only; never documentary evidence. No company or partner identifiers, machines, employees, vehicles, premises, signage, numbers or embedded proof."
     };
   });
 }
@@ -873,17 +912,19 @@ function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) 
   const source=Array.isArray(storyboard)?storyboard:[];
   return source.map((beat,index)=>{
     const token=order[index%order.length];
-    const baseComposition=r121SafeProcessText(beat?.composition,brief);
-    const composition=mobile
+    const baseComposition=r121SafeNonDocumentaryText(beat?.composition,brief);
+    const composition=(mobile
       ? "Mobile-native vertical recut with different asset emphasis and sequencing. "+baseComposition
-      : baseComposition;
+      : baseComposition)
+      +" Generated imagery remains illustrative and contains no embedded proof or company identifiers.";
     return {
       ...beat,
-      purpose:r121SafeProcessText(beat?.purpose,brief),
+      purpose:r121SafeNonDocumentaryText(beat?.purpose,brief),
       composition,
       dominant_asset:token,
-      copy_role:r121SafeProcessText(beat?.copy_role,brief),
-      interaction_role:r121SafeInteraction(r121SafeProcessText(beat?.interaction_role,brief))
+      copy_role:r121SafeNonDocumentaryText(beat?.copy_role,brief)
+        +" Any factual proof appears only as verified HTML text outside the image.",
+      interaction_role:r121SafeInteraction(r121SafeNonDocumentaryText(beat?.interaction_role,brief))
     };
   });
 }
@@ -944,19 +985,20 @@ function r121MechanicalContractNormalize(concept,brief) {
     "signature_motif","visual_bible","typography_thesis","proof_mechanism","conversion_climax",
     "selection_rationale"
   ];
-  for(const key of narrativeKeys) clone[key]=r121SafeProcessText(clone[key],brief);
-  if(Array.isArray(clone.ownability_anchors)) clone.ownability_anchors=clone.ownability_anchors.map(x=>r121SafeProcessText(x,brief));
-  if(Array.isArray(clone.forbidden_patterns)) clone.forbidden_patterns=clone.forbidden_patterns.map(x=>r121SafeProcessText(x,brief));
-  if(Array.isArray(clone.asset_distinction_rationale)) clone.asset_distinction_rationale=clone.asset_distinction_rationale.map(x=>r121SafeProcessText(x,brief));
+  for(const key of narrativeKeys) clone[key]=r121SafeNonDocumentaryText(clone[key],brief);
+  clone.ownability_anchors=r121DeterministicOwnabilityAnchors(brief);
+  clone.proof_mechanism=r121DeterministicProofMechanism(brief);
+  if(Array.isArray(clone.forbidden_patterns)) clone.forbidden_patterns=clone.forbidden_patterns.map(x=>r121SafeNonDocumentaryText(x,brief));
+  if(Array.isArray(clone.asset_distinction_rationale)) clone.asset_distinction_rationale=clone.asset_distinction_rationale.map(x=>r121SafeNonDocumentaryText(x,brief));
 
   if(clone.motion_signature) {
     clone.motion_signature={
       ...clone.motion_signature,
-      name:r121SafeProcessText(clone.motion_signature.name,brief),
-      purpose:r121SafeProcessText(clone.motion_signature.purpose,brief),
-      behavior:r121SafeInteraction(r121SafeProcessText(clone.motion_signature.behavior,brief)),
-      mobile_behavior:r121SafeInteraction(r121SafeProcessText(clone.motion_signature.mobile_behavior,brief)),
-      reduced_motion_fallback:r121SafeProcessText(clone.motion_signature.reduced_motion_fallback,brief)
+      name:r121SafeNonDocumentaryText(clone.motion_signature.name,brief),
+      purpose:r121SafeNonDocumentaryText(clone.motion_signature.purpose,brief),
+      behavior:r121SafeInteraction(r121SafeNonDocumentaryText(clone.motion_signature.behavior,brief)),
+      mobile_behavior:r121SafeInteraction(r121SafeNonDocumentaryText(clone.motion_signature.mobile_behavior,brief)),
+      reduced_motion_fallback:r121SafeNonDocumentaryText(clone.motion_signature.reduced_motion_fallback,brief)
     };
   }
 
