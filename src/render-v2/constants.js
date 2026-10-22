@@ -48,6 +48,26 @@ export const AUTHORED_FLAGSHIP_SCORE_FLOOR = 90;
 export const AUTHORED_FLAGSHIP_DIMENSION_FLOOR = 8;
 export const AUTHORED_FLAGSHIP_WOW_MOMENTS = 3;
 export const AUTHORED_FLAGSHIP_PORTFOLIO_PASS_MIN = 4;
+export const R121_CREATIVE_DIRECTOR_STANDARD = "R121_CREATIVE_DIRECTOR_ENGINE_V1";
+export const R121_CONCEPT_LOCK_STANDARD = "R121_CONCEPT_LOCK_V1";
+export const R121_CAMPAIGN_ASSET_STANDARD = "R121_CAMPAIGN_ASSET_SYSTEM_V1";
+export const R121_LIVE_PREVIEW_STANDARD = "R121_LIVE_INTERACTIVE_PREVIEW_V1";
+export const R121_CAMPAIGN_ASSET_TOKENS = Object.freeze([
+  "R121_MATERIAL_MACRO",
+  "R121_PROCESS",
+  "R121_STRUCTURE",
+  "R121_SCALE",
+  "R121_DETAIL",
+  "R121_ATMOSPHERE"
+]);
+export const R121_SELLABILITY_AXES = Object.freeze([
+  "concept_strength",
+  "desire_to_buy",
+  "brand_authorship",
+  "narrative_clarity",
+  "execution_quality",
+  "mobile_equivalence"
+]);
 export const PERCEPTUAL_FLAGSHIP_STANDARD = "R118_PERCEPTUAL_JURY_V1";
 export const PERCEPTUAL_VISUAL_QA_REQUIRED = true;
 export const PERCEPTUAL_VISUAL_QA_FLOOR = 9.6;
