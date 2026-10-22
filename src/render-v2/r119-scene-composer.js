@@ -382,6 +382,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
       flagship_architecture_standard:R119_SCENE_COMPOSER_STANDARD,
       authored_flagship_standard:R119_SCENE_COMPOSER_STANDARD,
       perceptual_flagship_standard:"R118_PERCEPTUAL_JURY_V1",
+      visual_density_standard:"R120_VISUAL_DENSITY_COMMISSIONED_VALUE_V1",
+      copy_density_standard:"R120_LOW_COPY_IMAGE_LED_V1",
       scene_composer_standard:R119_SCENE_COMPOSER_STANDARD,
       surface_policy:"IMPRESAX_RENDER_STANDARD_R119_SIGNATURE_SCENE_COMPOSER_V1",
       used_copy_tokens:[],
@@ -443,6 +445,20 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
      !/\.r119-rebar\s*\{[^}]*grid-template-columns/i.test(styles)) {
     issues.push("R119_THREE_DISTINCT_LAYOUT_GRAMMARS_REQUIRED");
   }
+  const visualAssetKeys=Object.keys(manifests?.assets||{}).filter(k=>/_VISUAL$/.test(k));
+  const imageMoments=(main.match(/<img\b/gi)||[]).length;
+  const paragraphCount=(main.match(/<p\b/gi)||[]).length;
+  const lowCopyScenes=(main.match(/data-copy-density=["']low["']/gi)||[]).length;
+  const graphicMoments=(main.match(/\br120-[^"'\s>]*(?:graphic|process|spec|index)/gi)||[]).length;
+  if(visualAssetKeys.length>=4 && imageMoments<12) issues.push("R120_VISUAL_DENSITY_TOO_LOW:"+imageMoments+"/12");
+  if(paragraphCount>10) issues.push("R120_TEXT_DENSITY_TOO_HIGH:"+paragraphCount);
+  if(lowCopyScenes!==8) issues.push("R120_LOW_COPY_SCENE_CONTRACT_REQUIRED:"+lowCopyScenes+"/8");
+  if(graphicMoments<6) issues.push("R120_INSUFFICIENT_GRAPHIC_SYSTEM:"+graphicMoments+"/6");
+  if(!/\br120-positioning__mosaic\b/i.test(main) || !/\br120-materials__gallery\b/i.test(main) || !/\br120-contact__strip\b/i.test(main) || !/\br120-proof__visual\b/i.test(main)) {
+    issues.push("R120_COMMISSIONED_VISUAL_STRUCTURE_REQUIRED");
+  }
+  if(String(spec?.visual_density_standard||"")!=="R120_VISUAL_DENSITY_COMMISSIONED_VALUE_V1") issues.push("R120_VISUAL_DENSITY_STANDARD_REQUIRED");
+  if(String(spec?.copy_density_standard||"")!=="R120_LOW_COPY_IMAGE_LED_V1") issues.push("R120_LOW_COPY_STANDARD_REQUIRED");
   if(String(spec?.scene_composer_standard||"")!==R119_SCENE_COMPOSER_STANDARD) issues.push("R119_SCENE_COMPOSER_STANDARD_REQUIRED");
   if(String(spec?.perceptual_flagship_standard||"")!=="R118_PERCEPTUAL_JURY_V1") issues.push("R119_R118_JURY_REQUIRED");
   return issues;
