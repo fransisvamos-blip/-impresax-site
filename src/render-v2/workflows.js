@@ -15,6 +15,7 @@ import { remediateBlockedPack } from "./remediation.js";
 import { explicitHeroAsset, generatePremiumHeroVisual, generateR121CampaignVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { sectionVisualTokens, sectionVisualPlan } from "./showroom-policy.js";
+import { buildR121LivePreviewHtml } from "./live-preview.js";
 
 
 function verifiedList(value="") {
@@ -1679,15 +1680,30 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             select artifact_type,r2_key,sha256,mime,bytes
             from render_artifacts_v2
             where variant_revision_id=${revision.id}::uuid
-              and artifact_type in ('DESKTOP_1440','MOBILE_390','QA_DESKTOP','QA_MOBILE','BROWSER_DIAGNOSTICS')`;
+              and artifact_type in ('DESKTOP_1440','MOBILE_390','QA_DESKTOP','QA_MOBILE','BROWSER_DIAGNOSTICS','LIVE_PREVIEW_HTML')`;
           const byType=Object.fromEntries(existing.map(x=>[x.artifact_type,x]));
-          if(["DESKTOP_1440","MOBILE_390","QA_DESKTOP","QA_MOBILE","BROWSER_DIAGNOSTICS"].every(k=>byType[k])) {
+          const base="render-v2/"+context.inputPayload.prospect_code+"/"+params.packId+"/"+params.variantKey+"/r"+revision.revision+"/";
+          const coreCaptureReady=["DESKTOP_1440","MOBILE_390","QA_DESKTOP","QA_MOBILE","BROWSER_DIAGNOSTICS"].every(k=>byType[k]);
+          if(coreCaptureReady) {
+            if(context.r121CreativeDirector===true && !byType.LIVE_PREVIEW_HTML) {
+              const dataUrls=await materializeAssetDataUrls(this.env,context.assets);
+              const captureHtml=buildCaptureHtml(compiled.html,dataUrls);
+              const liveHtml=buildR121LivePreviewHtml(captureHtml,context.r121Concept||{});
+              byType.LIVE_PREVIEW_HTML=await putArtifact(this.env,sql,{
+                packId:params.packId,revisionId:revision.id,type:"LIVE_PREVIEW_HTML",
+                key:base+"live-preview.html",
+                body:new TextEncoder().encode(liveHtml),
+                mime:"text/html; charset=utf-8",
+                producerStep:"R121_LIVE_PREVIEW_MATERIALIZE"
+              });
+            }
             const diagBytes=await readArtifactBytes(this.env,byType.BROWSER_DIAGNOSTICS.r2_key);
             const diag=JSON.parse(new TextDecoder().decode(diagBytes));
             return {
               ok:true,reused:true,
               desktop:byType.DESKTOP_1440,mobile:byType.MOBILE_390,
               qaDesktop:byType.QA_DESKTOP,qaMobile:byType.QA_MOBILE,
+              livePreview:byType.LIVE_PREVIEW_HTML||null,
               gate:diag.gate,diagnostics:diag.diagnostics
             };
           }
@@ -1695,8 +1711,18 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           await reserveBrowserCapture(sql,params.packId,this.env,params.variantKey,revision.id);
           const dataUrls=await materializeAssetDataUrls(this.env,context.assets);
           const captureHtml=buildCaptureHtml(compiled.html,dataUrls);
+          let livePreview=null;
+          if(context.r121CreativeDirector===true) {
+            const liveHtml=buildR121LivePreviewHtml(captureHtml,context.r121Concept||{});
+            livePreview=await putArtifact(this.env,sql,{
+              packId:params.packId,revisionId:revision.id,type:"LIVE_PREVIEW_HTML",
+              key:base+"live-preview.html",
+              body:new TextEncoder().encode(liveHtml),
+              mime:"text/html; charset=utf-8",
+              producerStep:"R121_LIVE_PREVIEW_MATERIALIZE"
+            });
+          }
           const result=await captureVariant(this.env,captureHtml,context.inputPayload);
-          const base="render-v2/"+context.inputPayload.prospect_code+"/"+params.packId+"/"+params.variantKey+"/r"+revision.revision+"/";
           const [desktop,mobile,qaDesktop,qaMobile]=await Promise.all([
             putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"DESKTOP_1440",key:base+"desktop-1440.jpg",body:result.desktop.bytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE"}),
             putArtifact(this.env,sql,{packId:params.packId,revisionId:revision.id,type:"MOBILE_390",key:base+"mobile-390.jpg",body:result.mobile.bytes,mime:"image/jpeg",producerStep:"BROWSER_CAPTURE"}),
@@ -1710,7 +1736,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             body:new TextEncoder().encode(JSON.stringify(diagPayload)),
             mime:"application/json",producerStep:"BROWSER_CAPTURE"
           });
-          return {ok:true,desktop,mobile,qaDesktop,qaMobile,...diagPayload};
+          return {ok:true,desktop,mobile,qaDesktop,qaMobile,livePreview,...diagPayload};
         });
       } catch(error) {
         captured={ok:false,error:String(error?.message||error)};
