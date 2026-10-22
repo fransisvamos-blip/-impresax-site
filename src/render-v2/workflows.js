@@ -1063,30 +1063,53 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 .slice(-24)
             }
           : null;
+        const providerAttemptFailures=[];
         for(let attempt=1;attempt<=3;attempt++) {
-          const created=await createR121ConceptLock(
-            this.env,
-            context.inputPayload,
-            {content_truth:context.contentTruthPack},
-            {directions:context.allDirections},
-            context.editorialAssetTokens,
-            {
-              juryFeedback:feedback,
-              beforeModelAttempt:({role,model})=>
-                reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
-            }
-          );
-          const review=await reviewR121ConceptLock(
-            this.env,
-            context.inputPayload,
-            {content_truth:context.contentTruthPack},
-            {directions:context.allDirections},
-            created.concept,
-            {
-              beforeModelAttempt:({role,model})=>
-                reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT_JURY:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
-            }
-          );
+          let created;
+          let review;
+          try {
+            created=await createR121ConceptLock(
+              this.env,
+              context.inputPayload,
+              {content_truth:context.contentTruthPack},
+              {directions:context.allDirections},
+              context.editorialAssetTokens,
+              {
+                juryFeedback:feedback,
+                beforeModelAttempt:({role,model})=>
+                  reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
+              }
+            );
+            review=await reviewR121ConceptLock(
+              this.env,
+              context.inputPayload,
+              {content_truth:context.contentTruthPack},
+              {directions:context.allDirections},
+              created.concept,
+              {
+                beforeModelAttempt:({role,model})=>
+                  reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT_JURY:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
+              }
+            );
+          } catch(error) {
+            const message=String(error?.message||error);
+            const transient=/^(?:AI_PROVIDER_CALL_TIMEOUT|AI_OUTPUT_SCHEMA_FAILURE|AI_OUTPUT_SCHEMA_INVALID|AI_PROVIDER_FAILURE)/.test(message);
+            if(!transient || attempt>=3) throw error;
+            providerAttemptFailures.push({attempt,error:message.slice(0,900),at:new Date().toISOString()});
+            try {
+              await sql`
+                update render_v2_packs
+                set metadata=coalesce(metadata,'{}'::jsonb)
+                  || jsonb_build_object(
+                    'r121_provider_attempt_failures',${JSON.stringify(providerAttemptFailures.slice(-8))}::jsonb,
+                    'r121_provider_last_failure',${message.slice(0,900)},
+                    'r121_provider_last_failure_at',now()::text
+                  ),
+                    updated_at=now()
+                where id=${params.packId}::uuid`;
+            } catch {}
+            continue;
+          }
 
           await recordQa(sql,{
             packId:params.packId,revisionId:null,type:"R121_CONCEPT_JURY",status:review.pass?"PASS":"FAIL",
