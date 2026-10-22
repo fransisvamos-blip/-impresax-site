@@ -438,6 +438,57 @@ async function renderAssetResponse(sql, variantId, mode) {
   });
 }
 
+async function renderV2LivePreviewResponse(sql, env, revisionId) {
+  if (!env.RENDER_ARTIFACTS || typeof env.RENDER_ARTIFACTS.get !== "function") {
+    return new Response("Render storage unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  }
+  const rows=await sql`select r.id,r.status,
+      v.status as variant_status,v.certified_revision,v.best_preview_revision,
+      p.status as pack_status,p.metadata as pack_metadata,
+      a.r2_key,a.mime
+    from render_variant_revisions r
+    join render_v2_variants v on v.id=r.variant_id
+    join render_v2_packs p on p.id=v.render_pack_id
+    join render_artifacts_v2 a
+      on a.variant_revision_id=r.id
+     and a.artifact_type='LIVE_PREVIEW_HTML'
+    where r.id=${revisionId}::uuid
+      and (
+        (
+          r.status='RENDER_READY'
+          and v.status='RENDER_READY'
+          and r.revision=v.certified_revision
+        )
+        or (
+          r.status='PREVIEW_READY'
+          and v.status='PREVIEW_READY'
+          and r.revision=v.best_preview_revision
+          and p.status='PREVIEW_READY'
+          and (
+            coalesce((p.metadata->>'pilot_human_review_after_preview')::boolean,false)=true
+            or coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
+          )
+        )
+      )
+    limit 1`;
+  const row=rows[0];
+  if (!row?.r2_key) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  const object=await env.RENDER_ARTIFACTS.get(row.r2_key);
+  if (!object) return new Response("Not found",{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+  const bytes=new Uint8Array(await object.arrayBuffer());
+  return new Response(bytes,{
+    status:200,
+    headers:{
+      "Content-Type":"text/html; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Robots-Tag":"noindex, nofollow, noarchive",
+      "X-Content-Type-Options":"nosniff",
+      "X-Frame-Options":"SAMEORIGIN",
+      "Content-Security-Policy":"default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+    }
+  });
+}
+
 async function renderV2AssetResponse(sql, env, revisionId, mode) {
   if (!env.RENDER_ARTIFACTS || typeof env.RENDER_ARTIFACTS.get !== "function") {
     return new Response("Render storage unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
@@ -612,6 +663,11 @@ async function prospectDetail(sql, id) {
           r.id as certified_revision_id,r.revision,r.status as revision_status,r.compiler_version,r.render_spec,r.source_hash,
           r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score,
           exists(
+            select 1 from render_artifacts_v2 live
+            where live.variant_revision_id=r.id
+              and live.artifact_type='LIVE_PREVIEW_HTML'
+          ) as live_preview_ready,
+          exists(
             select 1 from render_qa_results_v2 hq
             where hq.variant_revision_id=r.id
               and hq.qa_type='HERO_VISUAL'
@@ -726,6 +782,7 @@ async function prospectDetail(sql, id) {
       pilot_candidate:pilotCandidate,
       pilot_candidate_status:pilotCandidate ? pilotStatus : null,
       pilot_candidate_revision:pilotCandidate ? Number(v.revision) : null,
+      live_preview_url:previewAllowed && v.live_preview_ready ? "/ops/render-v2-live/"+v.certified_revision_id : null,
       desktop_render_url:previewAllowed && v.desktop_r2_key ? "/ops/render-v2-assets/"+v.certified_revision_id+"/desktop" : null,
       mobile_render_url:previewAllowed && v.mobile_r2_key ? "/ops/render-v2-assets/"+v.certified_revision_id+"/mobile" : null
     };
@@ -1716,6 +1773,16 @@ export async function handleOpsRequest(request, env) {
     try {
       const sql=db(env);
       return renderAssetResponse(sql,publicRenderAsset[1],publicRenderAsset[2].toLowerCase());
+    } catch (error) {
+      return new Response("Unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
+    }
+  }
+
+  const publicRenderV2Live=url.pathname.match(/^\/ops\/render-v2-live\/([0-9a-f-]{36})$/i);
+  if (publicRenderV2Live && request.method === "GET") {
+    try {
+      const sql=db(env);
+      return renderV2LivePreviewResponse(sql,env,publicRenderV2Live[1]);
     } catch (error) {
       return new Response("Unavailable",{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});
     }
