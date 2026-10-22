@@ -177,7 +177,7 @@ function collectRawText(result) {
   return out.join("\n").slice(0,20000);
 }
 
-async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null,allowR118External=false}) {
+async function runStructured(env,role,{messages,schema,maxTokens=7000,temperature=0.2,vision=false,beforeAttempt=null,allowR118External=false,r121ConceptRoute=false}) {
   const qaRole=role==="visualQa"||role==="setQa";
   const r118RoleAllowed=allowR118External===true
     && String(env.V2_R118_EXTERNAL_AI_ENABLED||"false")==="true"
@@ -186,8 +186,8 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
   if(String(env.V2_EXTERNAL_AI_ENABLED||"false")!=="true" && !r118RoleAllowed) throw new Error("EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("AI_PROVIDER_BINDING_MISSING");
   let lastError=null;
-  const fastR118Qa=qaRole && allowR118External===true;
-  const fastR118Generation=!qaRole && allowR118External===true;
+  const fastR118Qa=qaRole && allowR118External===true && r121ConceptRoute!==true;
+  const fastR118Generation=!qaRole && allowR118External===true && r121ConceptRoute!==true;
   // R118/R119 generation gets one authored pass. If the provider returns useful
   // content with a schema defect, normalize that SAME output instead of paying
   // for a second full-page generation on another model.
@@ -196,11 +196,13 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
     : [{fallback:false,retry:0},{fallback:true,retry:0}];
 
   for(const attempt of plan) {
-    const model=fastR118Qa
-      ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
-      : (fastR118Generation
-          ? (env.V2_R118_FAST_GENERATOR_MODEL||DEFAULT_MODELS.codeFallback)
-          : modelFor(env,role,attempt.fallback));
+    const model=r121ConceptRoute===true
+      ? modelFor(env,"creative",attempt.fallback)
+      : (fastR118Qa
+          ? (env.V2_R118_FAST_JURY_MODEL||R118_FAST_JURY_MODEL)
+          : (fastR118Generation
+              ? (env.V2_R118_FAST_GENERATOR_MODEL||DEFAULT_MODELS.codeFallback)
+              : modelFor(env,role,attempt.fallback)));
     if(beforeAttempt) await beforeAttempt({role,model,fallback:attempt.fallback,retry:attempt.retry});
     try {
       const retrySuffix=attempt.retry
@@ -484,6 +486,9 @@ export async function generateContentTruthDraft(env,inputPayload,{beforeModelAtt
     "The hero must communicate what the business does and why the visitor should continue, without hype or invented superlatives.",
     "Every hero/service/trust/locality factual module MUST cite one or more exact URLs from VERIFIED INPUT source_references.",
     "Never invent, normalize or alter a source URL.",
+    "R121 GENERATED CAMPAIGN IMAGERY IS EXPLICITLY PERMITTED as illustrative, non-documentary art direction. Do NOT reject the concept because a legacy ZERO_PHOTO_PREMIUM flag existed before R121.",
+    "AVAILABLE DIRECTION KEYS: "+JSON.stringify(availableDirectionKeys.length?availableDirectionKeys:["A"])+". Reject any selected_direction_key not in this list.",
+    "Reject any testimonial, certification, capacity, logistics figure, client, project, mission/value claim or other factual assertion that is absent from CONTENT TRUTH.",
     "VERIFIED INPUT:",
     JSON.stringify(inputPayload)
   ].join("\n");
@@ -666,6 +671,17 @@ export async function createCreativeDirections(env,inputPayload,assetTokens,{bef
 
 
 export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
+  const directionMap=directions?.directions||directions||{};
+  const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
+  const conceptSchema=JSON.parse(JSON.stringify(r121ConceptLockSchema));
+  conceptSchema.properties.selected_direction_key.enum=availableDirectionKeys.length?availableDirectionKeys:["A"];
+  const r121Input={
+    ...(inputPayload||{}),
+    asset_mode:"R121_GENERATED_EDITORIAL_CAMPAIGN",
+    r121_campaign_generation_allowed:true,
+    r121_generated_imagery_truth_rule:"ILLUSTRATIVE_NOT_DOCUMENTARY",
+    r121_legacy_zero_photo_superseded:true
+  };
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
@@ -673,17 +689,19 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
     "The concept must be impossible to transplant unchanged to another company after swapping logo/copy.",
     "Build one coherent brand world: campaign thesis, signature motif, visual bible, typography thesis, proof mechanism, motion signature and conversion climax.",
-    "Asset planning is mandatory. Assign exactly six distinct campaign asset roles using these fixed tokens: "+JSON.stringify(R121_CAMPAIGN_ASSET_TOKENS)+". Each asset must have a DIFFERENT narrative function; do not describe six crops of the same scene.",
+    "Asset planning is mandatory. Assign exactly six distinct campaign asset roles using these fixed tokens: "+JSON.stringify(R121_CAMPAIGN_ASSET_TOKENS)+". Each asset must have a DIFFERENT narrative function AND a materially different visual mode.",
+    "MANDATORY VISUAL-MODE DIVERSITY: R121_MATERIAL_MACRO = tactile macro photography; R121_PROCESS = process/action editorial image; R121_STRUCTURE = text-free technical CGI or structural abstraction; R121_SCALE = wide environmental scale; R121_DETAIL = controlled studio still-life/detail; R121_ATMOSPHERE = abstract material/light atmosphere. Never turn all six into warehouse/factory/rebar photographs.",
     "Generated campaign imagery is illustrative editorial imagery. Never imply it is the prospect's real premises, employees, clients, machinery, certifications, projects or completed works unless verified input explicitly supports that claim.",
     "Storyboards must describe the emotional/commercial progression, not a list of generic website sections.",
     "Desktop and mobile must share the concept but may differ materially in sequencing, crop, scale and interaction.",
-    "Motion must communicate the concept. Ban gratuitous parallax, constant floating, generic fade-up spam and decorative cursor gimmicks.",
-    "Proof must be staged as evidence, not a card wall.",
+    "Motion must communicate the concept through a concrete transformation metaphor tied to the verified business. Generic fades, 'subtle transitions', parallax, pulse, floating and cursor gimmicks are NOT a motion concept. Describe exactly what transforms into what and why.",
+    "Proof must be staged as evidence, not a card wall. NEVER invent testimonials, certifications, production capacity, logistics figures, clients, projects, mission statements or brand values. Use only facts present in VERIFIED CONTENT TRUTH.",
     "Conversion climax must be a designed final decision moment, not merely a button under a paragraph.",
-    "Select the strongest route A/B/C based on the campaign idea, not on implementation convenience.",
+    "AVAILABLE DIRECTION KEYS: "+JSON.stringify(availableDirectionKeys.length?availableDirectionKeys:["A"])+". Select ONLY from these keys; never invent a missing route.",
+    "Select the strongest AVAILABLE route based on the campaign idea, not on implementation convenience.",
     juryFeedback?"PRIOR CONCEPT JURY REJECTION. Rebuild the concept, do not patch wording: "+JSON.stringify(juryFeedback):"",
     "VERIFIED INPUT:",
-    JSON.stringify(inputPayload),
+    JSON.stringify(r121Input),
     "VERIFIED CONTENT TRUTH:",
     JSON.stringify(contentTruth?.content_truth||contentTruth||{}),
     "COMPETING CREATIVE DIRECTIONS:",
@@ -696,24 +714,33 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
       {role:"system",content:"You are the final ImpresaX Creative Director. Lock the campaign idea before any web layout is allowed. Strategy, art direction, narrative and sellability matter more than UI conventions."},
       {role:"user",content:prompt}
     ],
-    schema:r121ConceptLockSchema,maxTokens:6200,temperature:0.24,beforeAttempt:beforeModelAttempt,allowR118External:true
+    schema:conceptSchema,maxTokens:6200,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
   });
   const concept={...r.data,standard:R121_CONCEPT_LOCK_STANDARD};
   return {concept,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
 }
 
 export async function reviewR121ConceptLock(env,inputPayload,contentTruth,directions,concept,{beforeModelAttempt=null}={}) {
+  const directionMap=directions?.directions||directions||{};
+  const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
+  const r121Input={
+    ...(inputPayload||{}),
+    asset_mode:"R121_GENERATED_EDITORIAL_CAMPAIGN",
+    r121_campaign_generation_allowed:true,
+    r121_generated_imagery_truth_rule:"ILLUSTRATIVE_NOT_DOCUMENTARY",
+    r121_legacy_zero_photo_superseded:true
+  };
   const prompt=[
     "R121 CONCEPT JURY. Judge the campaign concept BEFORE code exists.",
     "Do not reward completeness, number of sections, number of assets or compliance language.",
     "A pass means the concept itself could plausibly anchor a top-tier studio case study and make the business owner want the finished redesign.",
     "Score only the six supplied axes. 9 means strong professional work; 9.7+ means exceptional commissioned work. Pass requires every axis >=9.5, concept_strength/desire_to_buy/brand_authorship >=9.7, and no fundamental transplantability problem.",
     "Reject if the idea is basically 'industrial but premium', 'dark/red steel', 'editorial grid', 'lots of imagery', or any other style description without a memorable organizing idea.",
-    "Reject if the asset campaign is six variations of the same warehouse/construction scene.",
+    "Reject if the asset campaign is six variations of the same warehouse/construction scene. Require the six visual modes defined by R121: macro photo, process image, technical CGI/abstraction, environmental scale, studio detail/still-life, abstract atmosphere.",
     "Reject if motion is decorative instead of concept-driven.",
-    "Reject if mobile is merely a condensed desktop storyboard.",
+    "Reject if mobile is merely a condensed desktop storyboard. Mobile must materially reinterpret at least two beats through sequence, crop, scale, interaction or composition.",
     "VERIFIED INPUT:",
-    JSON.stringify(inputPayload),
+    JSON.stringify(r121Input),
     "CONTENT TRUTH:",
     JSON.stringify(contentTruth?.content_truth||contentTruth||{}),
     "DIRECTIONS:",
@@ -726,7 +753,7 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
       {role:"system",content:"You are a hostile senior creative-review board. Your job is to stop generic premium concepts before they become expensive code."},
       {role:"user",content:prompt}
     ],
-    schema:r121ConceptJurySchema,maxTokens:2200,temperature:0.02,beforeAttempt:beforeModelAttempt,allowR118External:true
+    schema:r121ConceptJurySchema,maxTokens:2200,temperature:0.02,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
   });
   const scores=r.data.scores||{};
   const min=Math.min(...R121_SELLABILITY_AXES.map(k=>Number(scores[k]||0)));
