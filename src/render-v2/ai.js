@@ -764,7 +764,7 @@ function r121SafeCampaignText(value,brief) {
 
 function r121SafeInteraction(value) {
   let out=String(value||"");
-  const forbidden=/\b(accordion|carousel|slider|webgl|canvas|javascript|scripted|custom cursor|drag|swipe|form submit|tabs|video controls?)\b/i;
+  const forbidden=/\b(accordion|carousel|slider|webgl|canvas|javascript|scripted|custom cursor|drag|swipe|form submit|tabs|video controls?|tap|click|expand|pre-?fill|toggle|scroll[ -]?snap)\b/i;
   if(forbidden.test(out)) {
     out="CSS-only structural reveal tied to viewport progress; static composition remains complete without motion.";
   }
@@ -1167,7 +1167,11 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
     "BRIEF FIDELITY HARD GATE: every campaign thesis, category reframe and organizing mechanism must be recognizably about THIS business, its verified operations, locality and commercial goal. Any unrelated lifestyle, sustainability, consumer-product, ecommerce, launch, pre-order, hospitality, fashion or generic purpose-led narrative is automatic rejection unless literally verified in the brief.",
-    "SERVICE-DUALITY RULE: when the brief contains more than one verified service/operation, the concept must make that verified duality structurally meaningful instead of inventing a more specific manufacturing technique.",
+    "SERVICE-DUALITY RULE: when the brief contains more than one verified service/operation, the concept must make that verified duality structurally meaningful instead of inventing a more specific manufacturing technique. Prefer a unique threshold, convergence, contrast or sequence created by the intersection of the verified services and locality over a generic industry verb.",
+    "IDENTITY SEPARATION: the signature motif must never become a new logo, monogram, stylized initial, badge or substitute identity. The official logo remains immutable and separate; the motif is a non-logo campaign device.",
+    "CATEGORY REFRAME SAFETY: reframe the perception of the verified services only. Never coin a new business category, certification, workshop/laboratory capability, audience segment or operational promise.",
+    "COLOR TRUTH: if exact brand colors are not explicitly verified, do not name or claim an official palette. State that color is derived from the immutable official identity at execution time.",
+    "CLAIM DISCIPLINE: client_reaction, campaign_thesis, category_reframe and conversion_climax describe perception and decision architecture, not new facts. Never introduce certified materials, faster projects, delivery guarantees, craftsmanship, sustainability, precise timing, project outcomes or audience labels unless literally verified.",
     "ORGANIZING-MECHANISM RULE: the concept must be a VERB, transformation, physical mechanism, operational sequence or proprietary metaphor derived from verified business reality. 'Premium', 'industrial', 'editorial', 'precise', 'trusted', 'bold', 'dark', 'technical' and similar adjectives are styling, never the concept.",
     "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the CREATIVE INTELLIGENCE BRIEF and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive operation/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
     "PROOF INVENTORY RULE: copy 3-6 exact factual anchors from CREATIVE INTELLIGENCE BRIEF.verified_proof_anchors into verified_proof_plan and explain through the storyboard how they become visual evidence. Do not weaken or paraphrase away revenue, employee count, verified partner/reseller status, locality or other strong proof when present.",
@@ -1273,8 +1277,9 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     JSON.stringify(r121Input),
     "CONTENT TRUTH:",
     JSON.stringify(contentTruth?.content_truth||contentTruth||{}),
-    "DIRECTIONS:",
-    JSON.stringify(directions?.directions||directions||{}),
+    "AVAILABLE DIRECTION KEYS:",
+    JSON.stringify(availableDirectionKeys),
+    "IMPORTANT JURY ISOLATION: legacy direction details and legacy asset tokens are intentionally excluded. Never reject the R121 concept because an older direction contained HERO_VISUAL, PARTNER_UPOWER_LOGO, SERVICE_* or TRUST_VISUAL. Judge token compliance ONLY from PROPOSED CONCEPT LOCK.asset_campaign and its storyboards.",
     "PROPOSED CONCEPT LOCK:",
     JSON.stringify(concept)
   ].join("\n");
