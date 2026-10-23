@@ -1,0 +1,47 @@
+name: Rendering V2 Workflow Diagnostic
+
+on:
+  push:
+    branches: [rendering-v2-shadow]
+    paths:
+      - '.github/workflows/render-v2-workflow-diagnostic.yml'
+  workflow_dispatch:
+
+jobs:
+  inspect-v22:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+      WORKFLOW_NAME: impresax-render-v2-variant
+      INSTANCE_ID: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-r121-creative-director-v22
+    steps:
+      - name: Inspect Cloudflare Workflow instance
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workflows/$WORKFLOW_NAME/instances/$INSTANCE_ID?simple=true"
+          code=$(curl -sS -o /tmp/instance.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" "$url")
+          echo "http_status=$code"
+          python - <<'PY'
+          import json
+          p="/tmp/instance.json"
+          d=json.load(open(p))
+          r=d.get("result") or {}
+          e=r.get("error") or {}
+          print("success=", d.get("success"))
+          print("instance_id=", r.get("id"))
+          print("status=", r.get("status"))
+          print("created_on=", r.get("created_on"))
+          print("started_on=", r.get("started_on"))
+          print("modified_on=", r.get("modified_on"))
+          print("ended_on=", r.get("ended_on"))
+          print("error_name=", e.get("name") if isinstance(e,dict) else "")
+          print("error_message=", e.get("message") if isinstance(e,dict) else "")
+          if not d.get("success"):
+              print("api_errors=", d.get("errors"))
+          PY
+          test "$code" = "200"
