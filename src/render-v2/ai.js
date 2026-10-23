@@ -764,7 +764,7 @@ function r121SafeCampaignText(value,brief) {
 
 function r121SafeInteraction(value) {
   let out=String(value||"");
-  const forbidden=/\b(accordion|carousel|slider|webgl|canvas|javascript|scripted|custom cursor|drag|swipe|form submit|tabs|video controls?|tap|click|expand|pre-?fill|toggle|scroll[ -]?snap)\b/i;
+  const forbidden=/\b(accordion|carousel|slider|webgl|canvas|javascript|scripted|custom cursor|drag|swipe|pinch|zoom|form submit|tabs|video controls?|tap|click|expand|pre-?fill|toggle|scroll[ -]?snap|parallax|tooltip|tooltips|hover|icon reveal|reveal icon)\b/i;
   if(forbidden.test(out)) {
     out="CSS-only structural reveal tied to viewport progress; static composition remains complete without motion.";
   }
@@ -824,10 +824,11 @@ function r121SafeProcessText(value,brief) {
 function r121SafeNonDocumentaryText(value,brief) {
   let out=r121SafeCampaignText(r121SafeProcessText(value,brief),brief);
   out=out
-    .replace(/\b(?:machine|machinery|forklift|truck|lorry|conveyor|robot|operator|worker|employee)\b/gi,"material geometry")
+    .replace(/\b(?:machine|machinery|forklift|truck|lorry|conveyor|robot|operator|worker|employee|hands?|people|person|human|technician|staff)\b/gi,"material geometry")
     .replace(/\b(?:company premises|company site|company warehouse|company factory|actual warehouse|actual factory|documentary site)\b/gi,"illustrative industrial environment")
-    .replace(/\b(?:etched|engraved|embossed|painted|printed)\s+(?:number|numbers|data|revenue|metric|metrics|logo|brand|proof|fact|facts)\b/gi,"HTML proof")
-    .replace(/\b(?:number|numbers|data|revenue|metric|metrics|proof|fact|facts)\s+(?:etched|engraved|embossed|painted|printed)\b/gi,"HTML proof")
+    .replace(/\b(?:etched|engraved|embossed|painted|printed|overlaid|overlayed|superimposed)\s+(?:number|numbers|data|revenue|metric|metrics|logo|brand|proof|fact|facts|badge|badges|icon|icons)\b/gi,"HTML proof")
+    .replace(/\b(?:number|numbers|data|revenue|metric|metrics|proof|fact|facts|badge|badges|icon|icons)\s+(?:etched|engraved|embossed|painted|printed|overlaid|overlayed|superimposed)\b/gi,"HTML proof")
+    .replace(/\b(?:proof badge|proof badges|data badge|data badges|partner badge|partner badges|metric badge|metric badges)\b/gi,"HTML proof")
     .replace(/\b(?:testimonial|testimonials|customer quote|client quote)\b/gi,"verified proof")
     .replace(/\s{2,}/g," ")
     .trim();
@@ -919,12 +920,20 @@ function r121CanonicalCampaignRoles(concept,brief) {
 
 function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) {
   const source=Array.isArray(storyboard)?storyboard:[];
+  const compositionByToken={
+    R121_MATERIAL_MACRO:"Extreme tactile macro of unbranded construction material surface and edge; no people, machinery, signage, numbers, icons, badges or proof inside the image.",
+    R121_PROCESS:"Abstract non-documentary material transition expressed through direction, sequence and geometry only; no hands, workers, machinery or asserted fabrication technique.",
+    R121_STRUCTURE:"Text-free technical CGI/structural abstraction using linear geometry only; no aerial cityscape, people, machinery, logos, badges or embedded facts.",
+    R121_SCALE:"Wide illustrative field using depth, repetition and perspective to communicate scale; not a real DEDIL site, not a city proof image, and no embedded metrics.",
+    R121_DETAIL:"Controlled studio still-life of one isolated material profile or edge; no process, people, environment, logos, numbers, badges or proof overlays.",
+    R121_ATMOSPHERE:"Abstract material/light atmosphere with shadow, reflection and depth; no identifiable site, process, people, logos, metrics, badges or documentary evidence."
+  };
   return source.map((beat,index)=>{
     const token=order[index%order.length];
-    const baseComposition=r121SafeNonDocumentaryText(beat?.composition,brief);
     const composition=(mobile
-      ? "Mobile-native vertical recut with different asset emphasis and sequencing. "+baseComposition
-      : baseComposition)
+      ? "Mobile-native composition with independent crop, scale and reveal order. "
+      : "")
+      +compositionByToken[token]
       +" Generated imagery remains illustrative and contains no embedded proof or company identifiers.";
     return {
       ...beat,
@@ -932,8 +941,8 @@ function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) 
       composition,
       dominant_asset:token,
       copy_role:r121SafeNonDocumentaryText(beat?.copy_role,brief)
-        +" Any factual proof appears only as verified HTML text outside the image.",
-      interaction_role:r121SafeInteraction(r121SafeNonDocumentaryText(beat?.interaction_role,brief))
+        +" Any factual proof appears only as verified HTML typography outside the image.",
+      interaction_role:"CSS-only structural reveal tied to viewport progress; static composition remains complete without motion."
     };
   });
 }
@@ -1188,7 +1197,9 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "PROCESS LITERALITY RULE: never infer a manufacturing process that is not literally present in CREATIVE INTELLIGENCE BRIEF.distinctive_operations. Generic words such as lavorazione/trasformazione do NOT authorize forging, melting, welding, cutting, bending, casting, furnace/foundry or any other specific technique.",
     "CAMPAIGN-ASSET BRAND SAFETY: all six generated campaign visuals are illustrative and UNBRANDED. Never place the prospect name/logo, U-Power name/logo, partner marks, branded trucks, stickers, labels, wall signs, packaging, uniforms or documentary-looking company identifiers inside generated imagery. Verified partner logos belong only to separate official proof modules.",
     "R121 TOKEN ISOLATION: asset_campaign and both storyboards may use ONLY the six fixed R121 campaign tokens. Legacy direction tokens such as PARTNER_UPOWER_LOGO, HERO_VISUAL, SERVICE_* or TRUST_VISUAL are context from older planning and MUST NOT be copied into the R121 campaign. Partner proof, when verified, is HTML/official-asset evidence outside generated campaign imagery.",
-    "EXECUTION REALITY: R121 render previews prohibit arbitrary scripts and forms. Motion must be implementable with CSS transitions / scroll-driven animation hooks plus a reduced-motion fallback. Do not propose accordion, tabs, carousel, sliders, drag/swipe UI, WebGL, canvas, video controls or custom cursors.",
+    "BEAT-ASSET CONTRACT: each storyboard beat must describe a composition that literally matches its dominant R121 token. SCALE is wide depth/repetition, STRUCTURE is text-free technical CGI, MATERIAL_MACRO is extreme tactile close-up, DETAIL is studio still-life, ATMOSPHERE is abstract light/material, PROCESS is abstract non-documentary transition with no people, hands, machinery or specific fabrication claim.",
+    "PROOF-SEPARATION HARD GATE: revenue, employee count, U-Power status, locality labels and any other factual proof may appear only as HTML typography or official proof modules OUTSIDE generated images. Never put numbers, icons, badges, labels, tooltips or partner marks inside campaign imagery.",
+    "EXECUTION REALITY: R121 render previews prohibit arbitrary scripts and forms. Motion must be implementable with CSS transitions / scroll-driven animation hooks plus a reduced-motion fallback. Do not propose accordion, tabs, carousel, sliders, drag/swipe/pinch UI, WebGL, canvas, video controls, hover tooltips, parallax, click/tap state or custom cursors.",
     "Proof must be staged as evidence, not a card wall. NEVER invent testimonials, certifications, production capacity, logistics figures, clients, projects, mission statements or brand values. Use only facts present in VERIFIED CONTENT TRUTH.",
     "Conversion climax must be a designed final decision moment, not merely a button under a paragraph.",
     "AVAILABLE DIRECTION KEYS: "+JSON.stringify(availableDirectionKeys.length?availableDirectionKeys:["A"])+". Select ONLY from these keys; never invent a missing route.",
