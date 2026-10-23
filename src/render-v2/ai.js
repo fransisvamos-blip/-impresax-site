@@ -259,19 +259,23 @@ async function runStructured(env,role,{messages,schema,maxTokens=7000,temperatur
           retry:0
         });
         const generationNormalizer=(fastR118Generation || r121ConceptRoute) && !qaRole;
+        const r121SourceContext=r121ConceptRoute===true
+          ? messages.map(message=>String(message?.content||"")).join("\n").slice(-22000)
+          : "";
         const fixerInference={
           messages:[
             {
               role:"system",
               content:r121ConceptRoute===true && !qaRole
-                ?"Normalize the supplied R121 creative-concept object into exactly one JSON object matching the provided JSON Schema. Preserve the campaign thesis, organizing mechanism, verified proof plan, six asset roles, desktop/mobile storyboards, motion signature, ownability anchors and transplant test. Fix schema shape/types/missing required fields only. Do NOT convert it into a homepage, do NOT invent facts, do NOT redesign the concept, and return JSON only."
+                ?"Normalize the supplied R121 creative-concept object into exactly one JSON object matching the provided JSON Schema. SOURCE CONSTRAINTS are authoritative. Preserve the campaign thesis and creative idea only when they remain faithful to those constraints. Fix schema shape/types/missing required fields using ONLY facts and business reality present in SOURCE CONSTRAINTS. Never replace missing content with generic lifestyle, sustainability, luxury, ecommerce, launch, pre-order or unrelated-industry ideas. Preserve the verified proof plan, six R121 asset roles, desktop/mobile storyboards, motion signature, ownability anchors and transplant test. Do NOT convert it into a homepage, do NOT invent facts, do NOT infer unverified processes, do NOT redesign into another vertical, and return JSON only."
                 :(generationNormalizer
                   ?"Normalize the supplied generated homepage object into exactly one JSON object matching the provided JSON Schema. Preserve the authored HTML, CSS, token usage, section order and factual content whenever they are valid. Fix schema shape/types/missing required fields only. Do NOT redesign, summarize, shorten into a draft, invent facts, add assets, or add prose outside JSON."
                   :"Convert the supplied reviewer output into exactly one JSON object matching the provided JSON Schema. Preserve the reviewer's factual judgments, scores, issues and actions. Do NOT perform a new visual review. Do NOT add claims that are absent from the supplied reviewer output. Return JSON only.")
             },
             {
               role:"user",
-              content:"JSON SCHEMA:\n"+JSON.stringify(schema)+"\n\nRAW OUTPUT:\n"+raw
+              content:(r121SourceContext?"SOURCE CONSTRAINTS — authoritative, never override:\n"+r121SourceContext+"\n\n":"")
+                +"JSON SCHEMA:\n"+JSON.stringify(schema)+"\n\nRAW OUTPUT:\n"+raw
             }
           ],
           temperature:0
@@ -1162,6 +1166,8 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 5 desktop beats and exactly 5 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
+    "BRIEF FIDELITY HARD GATE: every campaign thesis, category reframe and organizing mechanism must be recognizably about THIS business, its verified operations, locality and commercial goal. Any unrelated lifestyle, sustainability, consumer-product, ecommerce, launch, pre-order, hospitality, fashion or generic purpose-led narrative is automatic rejection unless literally verified in the brief.",
+    "SERVICE-DUALITY RULE: when the brief contains more than one verified service/operation, the concept must make that verified duality structurally meaningful instead of inventing a more specific manufacturing technique.",
     "ORGANIZING-MECHANISM RULE: the concept must be a VERB, transformation, physical mechanism, operational sequence or proprietary metaphor derived from verified business reality. 'Premium', 'industrial', 'editorial', 'precise', 'trusted', 'bold', 'dark', 'technical' and similar adjectives are styling, never the concept.",
     "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the CREATIVE INTELLIGENCE BRIEF and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive operation/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
     "PROOF INVENTORY RULE: copy 3-6 exact factual anchors from CREATIVE INTELLIGENCE BRIEF.verified_proof_anchors into verified_proof_plan and explain through the storyboard how they become visual evidence. Do not weaken or paraphrase away revenue, employee count, verified partner/reseller status, locality or other strong proof when present.",
@@ -1177,6 +1183,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "Motion must communicate the concept through a concrete transformation metaphor tied to the verified business. Generic fades, 'subtle transitions', parallax, pulse, floating and cursor gimmicks are NOT a motion concept. Describe exactly what transforms into what and why.",
     "PROCESS LITERALITY RULE: never infer a manufacturing process that is not literally present in CREATIVE INTELLIGENCE BRIEF.distinctive_operations. Generic words such as lavorazione/trasformazione do NOT authorize forging, melting, welding, cutting, bending, casting, furnace/foundry or any other specific technique.",
     "CAMPAIGN-ASSET BRAND SAFETY: all six generated campaign visuals are illustrative and UNBRANDED. Never place the prospect name/logo, U-Power name/logo, partner marks, branded trucks, stickers, labels, wall signs, packaging, uniforms or documentary-looking company identifiers inside generated imagery. Verified partner logos belong only to separate official proof modules.",
+    "R121 TOKEN ISOLATION: asset_campaign and both storyboards may use ONLY the six fixed R121 campaign tokens. Legacy direction tokens such as PARTNER_UPOWER_LOGO, HERO_VISUAL, SERVICE_* or TRUST_VISUAL are context from older planning and MUST NOT be copied into the R121 campaign. Partner proof, when verified, is HTML/official-asset evidence outside generated campaign imagery.",
     "EXECUTION REALITY: R121 render previews prohibit arbitrary scripts and forms. Motion must be implementable with CSS transitions / scroll-driven animation hooks plus a reduced-motion fallback. Do not propose accordion, tabs, carousel, sliders, drag/swipe UI, WebGL, canvas, video controls or custom cursors.",
     "Proof must be staged as evidence, not a card wall. NEVER invent testimonials, certifications, production capacity, logistics figures, clients, projects, mission statements or brand values. Use only facts present in VERIFIED CONTENT TRUTH.",
     "Conversion climax must be a designed final decision moment, not merely a button under a paragraph.",
