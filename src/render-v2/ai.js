@@ -726,6 +726,8 @@ function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
     },
     commercial_goal:String(inputPayload?.commercial_goal||"").trim(),
     verified_contacts:String(inputPayload?.verified_contacts||"").trim(),
+    primary_cta:String(inputPayload?.primary_cta||truth?.primary_cta_label||"").trim(),
+    secondary_cta:String(inputPayload?.secondary_cta||truth?.secondary_cta_label||"").trim(),
     official_identity_locked:Boolean(inputPayload?.official_logo?.lock==="IMMUTABLE"||inputPayload?.identity_mode==="OFFICIAL_LOGO"),
     source_references:Array.isArray(inputPayload?.source_references)?inputPayload.source_references:[]
   };
@@ -857,6 +859,12 @@ function r121DeterministicProofMechanism(brief) {
     "The exact proof inventory is: "+facts.join(" | ")+".",
     "Any official partner identity may appear only through an approved official asset outside generated campaign imagery."
   ].join(" ");
+}
+
+function r121DeterministicConversionClimax(brief) {
+  const primary=String(brief?.primary_cta||"RICHIEDI UN PREVENTIVO").trim();
+  const secondary=String(brief?.secondary_cta||"PARLA CON IL COMMERCIALE").trim();
+  return "The verified proof rail resolves directly into the two verified actions: "+primary+" and "+secondary+". No form, modal, overlay, prefill, click-state or scripted interaction is introduced.";
 }
 
 function r121CanonicalCampaignRoles(concept,brief) {
@@ -1042,6 +1050,7 @@ function r121MechanicalContractNormalize(concept,brief) {
   for(const key of narrativeKeys) clone[key]=r121SafeNonDocumentaryText(clone[key],brief);
   clone.ownability_anchors=r121DeterministicOwnabilityAnchors(brief);
   clone.proof_mechanism=r121DeterministicProofMechanism(brief);
+  clone.conversion_climax=r121DeterministicConversionClimax(brief);
   if(Array.isArray(clone.forbidden_patterns)) clone.forbidden_patterns=clone.forbidden_patterns.map(x=>r121SafeNonDocumentaryText(x,brief));
   if(Array.isArray(clone.asset_distinction_rationale)) clone.asset_distinction_rationale=clone.asset_distinction_rationale.map(x=>r121SafeNonDocumentaryText(x,brief));
 
@@ -1211,7 +1220,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
-    "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 5 desktop beats and exactly 5 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
+    "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 6 desktop beats and exactly 6 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
     "BRIEF FIDELITY HARD GATE: every campaign thesis, category reframe and organizing mechanism must be recognizably about THIS business, its verified operations, locality and commercial goal. Any unrelated lifestyle, sustainability, consumer-product, ecommerce, launch, pre-order, hospitality, fashion or generic purpose-led narrative is automatic rejection unless literally verified in the brief.",
@@ -1253,8 +1262,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     JSON.stringify(r121Input),
     "VERIFIED CONTENT TRUTH:",
     JSON.stringify(contentTruth?.content_truth||contentTruth||{}),
-    "COMPETING CREATIVE DIRECTIONS:",
-    JSON.stringify(directions?.directions||directions||{}),
+    "ROUTING NOTE: legacy creative-direction content is deliberately excluded from R121 concept ideation because it belongs to the old layout engine. Use the AVAILABLE DIRECTION KEYS only as routing identifiers; do not inherit old hero/grid/material language.",
     "CURRENT APPROVED/AVAILABLE ASSET TOKENS:",
     JSON.stringify(assetTokens||[])
   ].join("\n");
@@ -1290,6 +1298,50 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
   return {concept,integrity,model:r.model,hash:await sha256(stableStringify(concept)),standard:R121_CREATIVE_DIRECTOR_STANDARD};
 }
 
+export async function refineR121ConceptLock(env,inputPayload,contentTruth,directions,concept,{beforeModelAttempt=null,juryFeedback=null}={}) {
+  const directionMap=directions?.directions||directions||{};
+  const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
+  const conceptSchema=JSON.parse(JSON.stringify(r121ConceptLockSchema));
+  conceptSchema.properties.selected_direction_key.enum=availableDirectionKeys.length?availableDirectionKeys:["A"];
+  const brief=r121CreativeIntelligenceBrief(inputPayload,contentTruth);
+  const prompt=[
+    "R121 PRE-JURY CREATIVE REFINEMENT. Rewrite the proposed concept before the hostile jury sees it.",
+    "This is not a compliance pass and not a website-layout task. Strengthen the IDEA, authorship, narrative and desire-to-buy while preserving factual truth.",
+    "TOP-TIER BAR: the refined concept must feel like a commissioned brand-experience campaign, not a clever template for an industrial supplier.",
+    "OWNABILITY: find the creative hook in the peculiar conjunction of the verified service duality, the exact locality/language of the business, and commercial evidence. A generic dual-source, hub, confluence, network, relay, channel, flow, alignment, node, grid, journey or material metaphor is unacceptable.",
+    "NUMERIC PROOF RULE: revenue, headcount and other numeric proof are evidence, never geometry. Do not turn 19 employees, revenue figures, postal codes or other numbers into nodes, arcs, stripes, counts, shapes or motifs.",
+    "IDENTITY RULE: do not invent a monogram, letterform, badge or replacement logo. The official identity remains separate and immutable.",
+    "PROOF RULE: proof is load-bearing when the narrative would lose credibility or conversion logic without its HTML/data rail. It does NOT need to appear inside generated imagery and must never be embedded there.",
+    "PROCESS RULE: generic lavorazione/trasformazione does not authorize any specific technique. PROCESS imagery may express an abstract transition only.",
+    "MOTION RULE: motion must advance the same organizing idea and visibly connect service duality, proof reveal and conversion; no decorative sweep/pulse/line.",
+    "MOBILE RULE: mobile needs a genuinely different reveal strategy and CSS composition, not merely reordered crops. It may use sticky verified proof rails, portrait-scale structural framing and earlier evidence without adding new facts.",
+    "CONVERSION RULE: no forms, overlays, modals, prefill or scripted states. End only in verified CTA labels.",
+    juryFeedback?"LATEST JURY LEARNING: "+JSON.stringify(juryFeedback):"",
+    "AUTHORITATIVE CREATIVE INTELLIGENCE BRIEF:",
+    JSON.stringify(brief),
+    "PROPOSED CONCEPT TO REBUILD:",
+    JSON.stringify(concept)
+  ].join("\n");
+  const r=await runStructured(env,"creative",{
+    messages:[
+      {role:"system",content:"You are the senior creative director who performs the final concept rewrite before a hostile international design jury. Remove generic thinking; preserve truth; return only the refined campaign concept."},
+      {role:"user",content:prompt}
+    ],
+    schema:conceptSchema,maxTokens:7800,temperature:0.36,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
+  });
+  const refined=r121MechanicalContractNormalize(
+    r121DeterministicSafetyNormalize({
+      ...r.data,
+      standard:R121_CONCEPT_LOCK_STANDARD,
+      selected_direction_key:String(r.data?.selected_direction_key||concept?.selected_direction_key||availableDirectionKeys[0]||"A"),
+      verified_proof_plan:[...(concept?.verified_proof_plan||brief?.verified_proof_anchors||[])].slice(0,6)
+    },brief),
+    brief
+  );
+  const integrity=r121ConceptIntegrityPrecheck(refined,brief);
+  return {concept:refined,integrity,model:r.model,hash:await sha256(stableStringify(refined)),standard:R121_CREATIVE_DIRECTOR_STANDARD,refined:true};
+}
+
 export async function reviewR121ConceptLock(env,inputPayload,contentTruth,directions,concept,{beforeModelAttempt=null}={}) {
   const brief=r121CreativeIntelligenceBrief(inputPayload,contentTruth);
   const integrity=r121ConceptIntegrityPrecheck(concept,brief);
@@ -1323,6 +1375,10 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     "R121 supports CSS-only motion hooks in the live preview but still prohibits arbitrary scripts and forms. Reject concepts that require accordion/tabs/carousel/slider/drag/swipe/WebGL/canvas/video/custom-cursor behavior.",
     "Reject if mobile is merely a condensed desktop storyboard. mobile_divergence must describe at least two concrete differences and the actual mobile storyboard must demonstrate them.",
     "Reject unless ownability_anchors contains 3-5 verified, load-bearing anchors and the storyboard visibly depends on them.",
+    "PROOF JUDGING RULE: verified proof is allowed and expected to be load-bearing through HTML typography, proof rails, official proof modules and decision sequencing adjacent to a visual beat. NEVER require revenue, headcount, locality labels or partner marks to be embedded in generated imagery; that would violate R121 truth safety.",
+    "PARTNER JUDGING RULE: a textual U-Power/reseller fact in verified_proof_plan or HTML proof copy is NOT partner branding inside imagery. Reject partner branding only when asset_campaign subjects/compositions explicitly place a logo, badge, mark, packaging, uniform or identifier inside generated imagery.",
+    "PROCESS JUDGING RULE: because the verified operation is generic lavorazione/trasformazione, a compliant R121_PROCESS asset may be an abstract non-documentary material transition. Do not demand a concrete fabrication technique that is not verified.",
+    "MOBILE JUDGING RULE: mobile may remain factually identical while being materially distinct through earlier proof, sticky CSS proof rails, portrait-scale framing, different visual emphasis and a different information-reveal sequence. Do not require new mobile-only facts.",
     "Reject if verified_proof_plan ignores strong verified evidence available in VERIFIED INPUT or introduces any unverified proof.",
     "VERIFIED INPUT:",
     JSON.stringify(r121Input),
