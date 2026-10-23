@@ -805,12 +805,15 @@ function r121SafeProcessText(value,brief) {
   let out=String(value||"");
   const verifiedOps=r121Normalize((brief?.distinctive_operations||[]).join(" "));
   const rules=[
-    {re:/\b(?:forge|forging|forged|fucina|forgiare)\b/gi,support:["forg","fucin"],replacement:"transform"},
-    {re:/\b(?:molten|melt|melting|fuso|fusione)\b/gi,support:["melt","fusion","fuso"],replacement:"material transformation"},
-    {re:/\b(?:weld|welding|saldatura|saldare)\b/gi,support:["weld","sald"],replacement:"material connection"},
-    {re:/\b(?:cutting|cut|taglio|tagliare)\b/gi,support:["cut","tagli"],replacement:"material transition"},
-    {re:/\b(?:bending|bend|piegatura|piegare)\b/gi,support:["bend","pieg"],replacement:"material transformation"},
-    {re:/\b(?:casting|cast|colata|fonderia)\b/gi,support:["cast","colat","fonder"],replacement:"material forming"},
+    {re:/\b(?:forge|forging|forged|fucina|forgiare)\b/gi,support:["forg","fucin"],replacement:"verified transformation"},
+    {re:/\b(?:molten|melt|melting|fuso|fusione)\b/gi,support:["melt","fusion","fuso"],replacement:"verified transformation"},
+    {re:/\b(?:weld|welding|saldatura|saldare)\b/gi,support:["weld","sald"],replacement:"verified transformation"},
+    {re:/\b(?:cutting|cut|taglio|tagliare)\b/gi,support:["cut","tagli"],replacement:"verified transformation"},
+    {re:/\b(?:bending|bend|bent|piegatura|piegare|piegato|piegati)\b/gi,support:["bend","pieg"],replacement:"verified transformation"},
+    {re:/\b(?:shape|shaping|shaped|forming|formed|sagomare|sagomatura|sagomato)\b/gi,support:["shape","shap","form","sagom"],replacement:"verified transformation"},
+    {re:/\b(?:casting|cast|colata|fonderia)\b/gi,support:["cast","colat","fonder"],replacement:"verified transformation"},
+    {re:/\b(?:ribbing|ribbed|corrugating|corrugated|nervatura|nervato)\b/gi,support:["ribb","corrugat","nerv"],replacement:"verified material"},
+    {re:/\b(?:ready[- ]to[- ]use|pronto all uso|pronto per il cantiere)\b/gi,support:["ready to use","pronto"],replacement:"verified material"},
     {re:/\b(?:furnace|forno industriale)\b/gi,support:["furnace","forno"],replacement:"industrial context"}
   ];
   for(const rule of rules) {
@@ -920,13 +923,46 @@ function r121CanonicalCampaignRoles(concept,brief) {
 
 function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) {
   const source=Array.isArray(storyboard)?storyboard:[];
+  const services=(brief?.distinctive_operations||[]).filter(Boolean);
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ");
+  const proofs=(brief?.verified_proof_anchors||[]).filter(Boolean);
+  const proofA=proofs[0]||"verified business evidence";
+  const proofB=proofs[1]||proofA;
+  const proofC=proofs[2]||proofB;
+  const serviceA=services[0]||"verified service";
+  const serviceB=services[1]||serviceA;
+
   const compositionByToken={
     R121_MATERIAL_MACRO:"Extreme tactile macro of unbranded construction material surface and edge; no people, machinery, signage, numbers, icons, badges or proof inside the image.",
     R121_PROCESS:"Abstract non-documentary material transition expressed through direction, sequence and geometry only; no hands, workers, machinery or asserted fabrication technique.",
-    R121_STRUCTURE:"Text-free technical CGI/structural abstraction using linear geometry only; no aerial cityscape, people, machinery, logos, badges or embedded facts.",
-    R121_SCALE:"Wide illustrative field using depth, repetition and perspective to communicate scale; not a real DEDIL site, not a city proof image, and no embedded metrics.",
+    R121_STRUCTURE:"Text-free technical CGI/structural abstraction using two coordinated geometric systems; no aerial cityscape, people, machinery, logos, badges or embedded facts.",
+    R121_SCALE:"Wide illustrative field using depth, repetition and perspective to communicate operational scale; not a real DEDIL site and no embedded metrics.",
     R121_DETAIL:"Controlled studio still-life of one isolated material profile or edge; no process, people, environment, logos, numbers, badges or proof overlays.",
     R121_ATMOSPHERE:"Abstract material/light atmosphere with shadow, reflection and depth; no identifiable site, process, people, logos, metrics, badges or documentary evidence."
+  };
+  const purposeByToken={
+    R121_MATERIAL_MACRO:"Make the verified material domain tangible without inventing a fabrication process.",
+    R121_PROCESS:"Represent only the verified transformation service as an abstract transition, never as a specific technique.",
+    R121_STRUCTURE:"Make the verified dual offer structurally legible: wholesale building materials plus reinforcing-steel transformation.",
+    R121_SCALE:"Anchor the campaign to verified operational presence and locality without pretending to show the real premises.",
+    R121_DETAIL:"Turn verified trust evidence into a precise commercial decision point beside a controlled detail image.",
+    R121_ATMOSPHERE:"Create the final decision pause that resolves into the verified commercial CTA."
+  };
+  const copyByToken={
+    R121_MATERIAL_MACRO:"Verified service: "+serviceA+".",
+    R121_PROCESS:"Verified service: "+serviceB+".",
+    R121_STRUCTURE:"Verified service duality: "+serviceA+" + "+serviceB+".",
+    R121_SCALE:"Verified locality: "+locality+". Verified proof: "+proofA+".",
+    R121_DETAIL:"Verified proof: "+proofB+" | "+proofC+".",
+    R121_ATMOSPHERE:"Close with the verified contact path and CTA; no additional claim."
+  };
+  const beatByToken={
+    R121_MATERIAL_MACRO:"Material truth",
+    R121_PROCESS:"Verified transformation",
+    R121_STRUCTURE:"Two verified capabilities",
+    R121_SCALE:"Germaneto / Catanzaro presence",
+    R121_DETAIL:"Evidence",
+    R121_ATMOSPHERE:"Decision"
   };
   return source.map((beat,index)=>{
     const token=order[index%order.length];
@@ -937,11 +973,11 @@ function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) 
       +" Generated imagery remains illustrative and contains no embedded proof or company identifiers.";
     return {
       ...beat,
-      purpose:r121SafeNonDocumentaryText(beat?.purpose,brief),
+      beat:beatByToken[token],
+      purpose:purposeByToken[token],
       composition,
       dominant_asset:token,
-      copy_role:r121SafeNonDocumentaryText(beat?.copy_role,brief)
-        +" Any factual proof appears only as verified HTML typography outside the image.",
+      copy_role:copyByToken[token]+" Factual proof is HTML typography outside the image.",
       interaction_role:"CSS-only structural reveal tied to viewport progress; static composition remains complete without motion."
     };
   });
@@ -974,8 +1010,8 @@ function r121EnsureStoryboardCoverage(concept,brief) {
     }
   }
   clone.mobile_divergence=[
-    "Mobile changes the information reveal order so proof and tactile detail arrive earlier than on desktop.",
-    "Mobile changes visual emphasis: isolated detail and atmospheric frames replace desktop scale-first composition, with CSS-only progressive reveals."
+    "Mobile reveals tactile material first and verified proof by beat two; desktop establishes verified locality and scale before the proof rail.",
+    "Mobile uses isolated detail and atmosphere as dominant early compositions; desktop uses scale and structural abstraction first. Both remain CSS-only and factually identical."
   ];
   return clone;
 }
@@ -1102,8 +1138,11 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
 
   const thesis=r121Normalize(concept?.campaign_thesis);
   const mechanism=r121Normalize(concept?.organizing_mechanism);
-  const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional"];
-  if(generic.some(x=>thesis.includes(x)||mechanism.includes(x))) issues.push("ORGANIZING_IDEA_IS_STYLE_DESCRIPTION");
+  const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional",
+    "align","link","flow","channel","river","grid","network","assemble","assemblare","precision","strength","journey","forge","build","connect"];
+  if(generic.some(x=>thesis.includes(x)||mechanism===x||mechanism.startsWith(x+" ")||mechanism.endsWith(" "+x))) {
+    issues.push("ORGANIZING_IDEA_GENERIC_OR_TRANSPLANTABLE");
+  }
 
   const conceptText=r121Normalize([
     concept?.campaign_thesis,concept?.organizing_mechanism,concept?.signature_motif,
@@ -1181,7 +1220,8 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "CATEGORY REFRAME SAFETY: reframe the perception of the verified services only. Never coin a new business category, certification, workshop/laboratory capability, audience segment or operational promise.",
     "COLOR TRUTH: if exact brand colors are not explicitly verified, do not name or claim an official palette. State that color is derived from the immutable official identity at execution time.",
     "CLAIM DISCIPLINE: client_reaction, campaign_thesis, category_reframe and conversion_climax describe perception and decision architecture, not new facts. Never introduce certified materials, faster projects, delivery guarantees, craftsmanship, sustainability, precise timing, project outcomes or audience labels unless literally verified.",
-    "ORGANIZING-MECHANISM RULE: the concept must be a VERB, transformation, physical mechanism, operational sequence or proprietary metaphor derived from verified business reality. 'Premium', 'industrial', 'editorial', 'precise', 'trusted', 'bold', 'dark', 'technical' and similar adjectives are styling, never the concept.",
+    "ORGANIZING-MECHANISM RULE: the concept must be a proprietary multi-word mechanism derived from the INTERSECTION of verified service duality + locality + proof. Never use a generic one-word industrial verb or reusable steel metaphor. Explicitly forbidden organizing ideas include ALIGN, LINK, FLOW, CHANNEL, RIVER, GRID, NETWORK, ASSEMBLE/ASSEMBLARE, PRECISION, STRENGTH, JOURNEY, FORGE, BUILD, CONNECT and close synonyms unless the phrase becomes inseparable from the verified DEDIL anchors.",
+    "OWNABILITY BLUEPRINT: the concept must visibly depend on (1) the verified coexistence of wholesale building-material distribution and rebar transformation, (2) Germaneto/Catanzaro as operational context, and (3) at least two verified proof anchors. If any of those can be removed without collapsing the story, redesign before answering.",
     "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the CREATIVE INTELLIGENCE BRIEF and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive operation/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
     "PROOF INVENTORY RULE: copy 3-6 exact factual anchors from CREATIVE INTELLIGENCE BRIEF.verified_proof_anchors into verified_proof_plan and explain through the storyboard how they become visual evidence. Do not weaken or paraphrase away revenue, employee count, verified partner/reseller status, locality or other strong proof when present.",
     "The concept must be impossible to transplant unchanged to another company after swapping logo/copy.",
