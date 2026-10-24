@@ -873,40 +873,40 @@ function r121CanonicalCampaignRoles(concept,brief) {
   const byToken=Object.fromEntries(source.map(x=>[String(x?.token||""),x]));
   const canonical={
     R121_MATERIAL_MACRO:{
-      narrative_role:"Reveal material character through an extreme tactile macro.",
-      visual_function:"Microscopic texture and edge study with no environmental context.",
-      subject_suffix:"isolated raw-material surface, texture and edge",
-      crop_behavior:"Tight macro crop; tactile detail remains legible on desktop and mobile."
+      narrative_role:"Reveal one verified category cue through an extreme editorial close-up without inventing a product or material.",
+      visual_function:"Tactile/detail photography or abstract brand-surface study with no environmental context; when no physical cue is verified, use light, paper, surface or neutral geometry rather than inventing an object.",
+      subject_suffix:"close-up of a category-relevant unbranded cue explicitly supported by verified operations; otherwise abstract brand-derived surface and light",
+      crop_behavior:"Tight crop; detail remains legible on desktop and mobile without implying documentary evidence."
     },
     R121_PROCESS:{
-      narrative_role:"Express transformation through abstract handling and sequence without asserting a specific fabrication method.",
-      visual_function:"Mid-distance editorial action frame centered on movement and change, not machinery identity.",
-      subject_suffix:"non-documentary material handling or transformation context",
-      crop_behavior:"Directional action stays central; mobile crop preserves motion path rather than environment."
+      narrative_role:"Express the verified service or operating journey as an abstract sequence without inventing tools, machinery, people or a specific technique.",
+      visual_function:"Editorial path, transition, handoff or sequence expressed through direction and spatial rhythm rather than documentary process photography.",
+      subject_suffix:"non-documentary abstract representation of the verified service journey or operation",
+      crop_behavior:"Directional path stays central; mobile crop preserves sequence and momentum rather than environment."
     },
     R121_STRUCTURE:{
-      narrative_role:"Translate the material logic into a text-free technical structural abstraction.",
-      visual_function:"Orthographic or axonometric CGI geometry; diagrammatic spatial logic rather than photography.",
-      subject_suffix:"abstract structural geometry derived from linear construction material",
-      crop_behavior:"Geometric system remains readable as a complete form at wide and narrow ratios."
+      narrative_role:"Translate the verified offer architecture into a text-free technical or diagrammatic abstraction.",
+      visual_function:"Clean CGI or geometric spatial system derived from the number and relationship of verified services; never invented engineering.",
+      subject_suffix:"abstract geometry representing the verified offer structure and relationships between services",
+      crop_behavior:"The organizing geometry remains readable as a complete system at wide and narrow ratios."
     },
     R121_SCALE:{
-      narrative_role:"Communicate operational scale through wide space, depth and repetition.",
-      visual_function:"Wide environmental frame using repetition and perspective; never a technical diagram or close detail.",
-      subject_suffix:"large illustrative material field or distribution-scale environment",
-      crop_behavior:"Wide depth cue anchors desktop; mobile isolates one strong perspective corridor."
+      narrative_role:"Communicate verified locality, reach or operational context through wide illustrative space without pretending to show real premises.",
+      visual_function:"Wide environmental or territorial frame using depth, repetition and perspective; no fake facility, client site or documentary claim.",
+      subject_suffix:"illustrative wide context derived only from verified locality, service environment or operational scale",
+      crop_behavior:"Wide depth cue anchors desktop; mobile isolates one strong perspective or territorial cue."
     },
     R121_DETAIL:{
-      narrative_role:"Create a controlled studio still-life that rewards close inspection.",
-      visual_function:"Isolated object/detail portrait with shallow depth and precise light; no process or environment.",
-      subject_suffix:"single material profile, junction or edge in a controlled studio setting",
-      crop_behavior:"Object portrait stays isolated with deliberate negative space on both viewports."
+      narrative_role:"Create a controlled proof/detail still-life tied to a verified service cue or factual evidence without fabricating an object.",
+      visual_function:"Isolated studio detail or abstract evidence object with precise light and negative space; if no physical cue is verified, use restrained neutral geometry.",
+      subject_suffix:"controlled studio detail derived only from verified service or proof context; otherwise abstract proof geometry",
+      crop_behavior:"Detail remains isolated with deliberate negative space on both viewports."
     },
     R121_ATMOSPHERE:{
-      narrative_role:"Build an abstract atmospheric pause from light, shadow, reflection and particulate depth.",
-      visual_function:"Non-literal mood field with no identifiable process, site, product display or technical diagram.",
-      subject_suffix:"abstract industrial light and material atmosphere",
-      crop_behavior:"Atmospheric gradient and depth survive aggressive mobile crop without needing a focal object."
+      narrative_role:"Build the final emotional pause from the official identity's color tension, light, shadow and spatial depth.",
+      visual_function:"Non-literal brand atmosphere with no identifiable premises, process, people, product claim or technical diagram.",
+      subject_suffix:"abstract light, color and depth atmosphere derived from the official identity and verified brand context",
+      crop_behavior:"Atmospheric gradient and depth survive aggressive mobile crop without needing a documentary focal object."
     }
   };
   return R121_CAMPAIGN_ASSET_TOKENS.map(token=>{
@@ -938,40 +938,41 @@ function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) 
   const proofA=proofs[0]||"verified business evidence";
   const proofB=proofs[1]||proofA;
   const proofC=proofs[2]||proofB;
-  const serviceA=services[0]||"verified service";
-  const serviceB=services[1]||serviceA;
+  const serviceA=services[0]||"verified offer or service";
+  const serviceB=services[1]||"";
+  const offerSummary=services.length>1 ? services.slice(0,3).join(" + ") : serviceA;
 
   const compositionByToken={
-    R121_MATERIAL_MACRO:"Extreme tactile macro of unbranded construction material surface and edge; no people, machinery, signage, numbers, icons, badges or proof inside the image.",
-    R121_PROCESS:"Abstract non-documentary material transition expressed through direction, sequence and geometry only; no hands, workers, machinery or asserted fabrication technique.",
-    R121_STRUCTURE:"Text-free technical CGI/structural abstraction using two coordinated geometric systems; no aerial cityscape, people, machinery, logos, badges or embedded facts.",
-    R121_SCALE:"Wide illustrative field using depth, repetition and perspective to communicate operational scale; not a real DEDIL site and no embedded metrics.",
-    R121_DETAIL:"Controlled studio still-life of one isolated material profile or edge; no process, people, environment, logos, numbers, badges or proof overlays.",
-    R121_ATMOSPHERE:"Abstract material/light atmosphere with shadow, reflection and depth; no identifiable site, process, people, logos, metrics, badges or documentary evidence."
+    R121_MATERIAL_MACRO:"Extreme editorial close-up of a category-relevant unbranded cue supported by verified operations. If no physical cue is verified, use abstract brand-derived surface, paper, light or neutral geometry. No people, machinery, signage, labels, badges or embedded proof.",
+    R121_PROCESS:"Abstract non-documentary representation of the verified service/operating journey through path, sequence, transition or handoff. No people, hands, machinery or specific operational technique unless literally verified.",
+    R121_STRUCTURE:"Text-free CGI or diagrammatic abstraction of the verified offer architecture and relationship between services. No invented engineering, infrastructure or operational capability.",
+    R121_SCALE:"Wide illustrative context derived only from verified locality, reach or service environment. Never present it as the prospect's real premises, fleet, branch, client site or facility.",
+    R121_DETAIL:"Controlled studio detail derived from a verified service/proof cue; if no physical object is verified, use abstract evidence geometry with precise light and negative space. No invented products or equipment.",
+    R121_ATMOSPHERE:"Abstract brand atmosphere derived from official identity color tension, light, shadow and depth. No identifiable premises, people, process, product claim, logos, metrics or documentary evidence."
   };
   const purposeByToken={
-    R121_MATERIAL_MACRO:"Make the verified material domain tangible without inventing a fabrication process.",
-    R121_PROCESS:"Represent only the verified transformation service as an abstract transition, never as a specific technique.",
-    R121_STRUCTURE:"Make the verified dual offer structurally legible: wholesale building materials plus reinforcing-steel transformation.",
-    R121_SCALE:"Anchor the campaign to verified operational presence and locality without pretending to show the real premises.",
-    R121_DETAIL:"Turn verified trust evidence into a precise commercial decision point beside a controlled detail image.",
-    R121_ATMOSPHERE:"Create the final decision pause that resolves into the verified commercial CTA."
+    R121_MATERIAL_MACRO:"Make the verified category or service world tangible without inventing a product.",
+    R121_PROCESS:"Make the verified customer/service journey feel intentional through abstract sequence and movement.",
+    R121_STRUCTURE:"Make the verified offer architecture instantly legible as a proprietary visual system.",
+    R121_SCALE:"Anchor the campaign to verified locality or operational context without faking documentary scale.",
+    R121_DETAIL:"Turn verified evidence into a precise commercial decision moment beside a controlled detail image.",
+    R121_ATMOSPHERE:"Create the final branded decision pause that resolves into the verified commercial CTA."
   };
   const copyByToken={
-    R121_MATERIAL_MACRO:"Verified service: "+serviceA+".",
-    R121_PROCESS:"Verified service: "+serviceB+".",
-    R121_STRUCTURE:"Verified service duality: "+serviceA+" + "+serviceB+".",
-    R121_SCALE:"Verified locality: "+locality+". Verified proof: "+proofA+".",
+    R121_MATERIAL_MACRO:"Verified offer context: "+serviceA+".",
+    R121_PROCESS:serviceB ? "Verified service relationship: "+serviceA+" + "+serviceB+"." : "Verified service journey: "+serviceA+".",
+    R121_STRUCTURE:"Verified offer architecture: "+offerSummary+".",
+    R121_SCALE:(locality?"Verified locality/context: "+locality+". ":"")+"Verified proof: "+proofA+".",
     R121_DETAIL:"Verified proof: "+proofB+" | "+proofC+".",
     R121_ATMOSPHERE:"Close with the verified contact path and CTA; no additional claim."
   };
   const beatByToken={
-    R121_MATERIAL_MACRO:"Material truth",
-    R121_PROCESS:"Verified transformation",
-    R121_STRUCTURE:"Two verified capabilities",
-    R121_SCALE:"Germaneto / Catanzaro presence",
-    R121_DETAIL:"Evidence",
-    R121_ATMOSPHERE:"Decision"
+    R121_MATERIAL_MACRO:"Category detail",
+    R121_PROCESS:"Verified operation",
+    R121_STRUCTURE:"Offer architecture",
+    R121_SCALE:"Locality / scale",
+    R121_DETAIL:"Proof detail",
+    R121_ATMOSPHERE:"Decision atmosphere"
   };
   return source.map((beat,index)=>{
     const token=order[index%order.length];
@@ -991,7 +992,6 @@ function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) 
     };
   });
 }
-
 function r121EnsureStoryboardCoverage(concept,brief) {
   const clone={...concept};
   const desktopOrder=[
@@ -1019,8 +1019,8 @@ function r121EnsureStoryboardCoverage(concept,brief) {
     }
   }
   clone.mobile_divergence=[
-    "Mobile reveals tactile material first and verified proof by beat two; desktop establishes verified locality and scale before the proof rail.",
-    "Mobile uses isolated detail and atmosphere as dominant early compositions; desktop uses scale and structural abstraction first. Both remain CSS-only and factually identical."
+    "Mobile reveals the strongest category/service cue first and verified proof by beat two; desktop establishes verified context and scale before the proof rail.",
+    "Mobile uses detail and brand atmosphere as dominant early compositions; desktop uses context and offer-architecture abstraction first. Both remain CSS-only and factually identical."
   ];
   return clone;
 }
@@ -1246,7 +1246,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "MOBILE DIVERGENCE CONTRACT: explicitly state at least two mobile-only reinterpretations. At least one must change beat order or information reveal; at least one must change composition/interaction. Phrases such as 'same but stacked', 'adapted for mobile', 'optimized for mobile', or merely replacing hover with tap are automatic rejection.",
     "Motion must communicate the concept through a concrete transformation metaphor tied to the verified business. Generic fades, 'subtle transitions', parallax, pulse, floating and cursor gimmicks are NOT a motion concept. Describe exactly what transforms into what and why.",
     "PROCESS LITERALITY RULE: never infer a manufacturing process that is not literally present in CREATIVE INTELLIGENCE BRIEF.distinctive_operations. Generic words such as lavorazione/trasformazione do NOT authorize forging, melting, welding, cutting, bending, casting, furnace/foundry or any other specific technique.",
-    "CAMPAIGN-ASSET BRAND SAFETY: all six generated campaign visuals are illustrative and UNBRANDED. Never place the prospect name/logo, U-Power name/logo, partner marks, branded trucks, stickers, labels, wall signs, packaging, uniforms or documentary-looking company identifiers inside generated imagery. Verified partner logos belong only to separate official proof modules.",
+    "CAMPAIGN-ASSET BRAND SAFETY: all six generated campaign visuals are illustrative and UNBRANDED. Never place the prospect name/logo, partner names/logos or other partner marks, branded trucks, stickers, labels, wall signs, packaging, uniforms or documentary-looking company identifiers inside generated imagery. Verified partner logos belong only to separate official proof modules.",
     "R121 TOKEN ISOLATION: asset_campaign and both storyboards may use ONLY the six fixed R121 campaign tokens. Legacy direction tokens such as PARTNER_UPOWER_LOGO, HERO_VISUAL, SERVICE_* or TRUST_VISUAL are context from older planning and MUST NOT be copied into the R121 campaign. Partner proof, when verified, is HTML/official-asset evidence outside generated campaign imagery.",
     "BEAT-ASSET CONTRACT: each storyboard beat must describe a composition that literally matches its dominant R121 token. SCALE is wide depth/repetition, STRUCTURE is text-free technical CGI, MATERIAL_MACRO is extreme tactile close-up, DETAIL is studio still-life, ATMOSPHERE is abstract light/material, PROCESS is abstract non-documentary transition with no people, hands, machinery or specific fabrication claim.",
     "PROOF-SEPARATION HARD GATE: revenue, employee count, U-Power status, locality labels and any other factual proof may appear only as HTML typography or official proof modules OUTSIDE generated images. Never put numbers, icons, badges, labels, tooltips or partner marks inside campaign imagery.",
@@ -1310,9 +1310,9 @@ export async function refineR121ConceptLock(env,inputPayload,contentTruth,direct
     "R121 PRE-JURY CREATIVE REFINEMENT. Rewrite the proposed concept before the hostile jury sees it.",
     "This is not a compliance pass and not a website-layout task. Strengthen the IDEA, authorship, narrative and desire-to-buy while preserving factual truth.",
     ...R122_CONCEPT_RULES,
-    "TOP-TIER BAR: the refined concept must feel like a commissioned brand-experience campaign, not a clever template for an industrial supplier.",
+    "TOP-TIER BAR: the refined concept must feel like a commissioned brand-experience campaign, not a clever template for a generic local business or sector stereotype.",
     "OWNABILITY: find the creative hook in the peculiar conjunction of the verified service duality, the exact locality/language of the business, and commercial evidence. A generic dual-source, hub, confluence, network, relay, channel, flow, alignment, node, grid, journey or material metaphor is unacceptable.",
-    "NUMERIC PROOF RULE: revenue, headcount and other numeric proof are evidence, never geometry. Do not turn 19 employees, revenue figures, postal codes or other numbers into nodes, arcs, stripes, counts, shapes or motifs.",
+    "NUMERIC PROOF RULE: revenue, headcount and other numeric proof are evidence, never geometry. Do not turn employee counts, revenue figures, postal codes or other numbers into nodes, arcs, stripes, counts, shapes or motifs.",
     "IDENTITY RULE: do not invent a monogram, letterform, badge or replacement logo. The official identity remains separate and immutable.",
     "PROOF RULE: proof is load-bearing when the narrative would lose credibility or conversion logic without its HTML/data rail. It does NOT need to appear inside generated imagery and must never be embedded there.",
     "PROCESS RULE: generic lavorazione/trasformazione does not authorize any specific technique. PROCESS imagery may express an abstract transition only.",
@@ -1379,7 +1379,7 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     "Reject if mobile is merely a condensed desktop storyboard. mobile_divergence must describe at least two concrete differences and the actual mobile storyboard must demonstrate them.",
     "Reject unless ownability_anchors contains 3-5 verified, load-bearing anchors and the storyboard visibly depends on them.",
     "PROOF JUDGING RULE: verified proof is allowed and expected to be load-bearing through HTML typography, proof rails, official proof modules and decision sequencing adjacent to a visual beat. NEVER require revenue, headcount, locality labels or partner marks to be embedded in generated imagery; that would violate R121 truth safety.",
-    "PARTNER JUDGING RULE: a textual U-Power/reseller fact in verified_proof_plan or HTML proof copy is NOT partner branding inside imagery. Reject partner branding only when asset_campaign subjects/compositions explicitly place a logo, badge, mark, packaging, uniform or identifier inside generated imagery.",
+    "PARTNER JUDGING RULE: a textual verified partner/reseller fact in verified_proof_plan or HTML proof copy is NOT partner branding inside imagery. Reject partner branding only when asset_campaign subjects/compositions explicitly place a logo, badge, mark, packaging, uniform or identifier inside generated imagery.",
     "PROCESS JUDGING RULE: because the verified operation is generic lavorazione/trasformazione, a compliant R121_PROCESS asset may be an abstract non-documentary material transition. Do not demand a concrete fabrication technique that is not verified.",
     "MOBILE JUDGING RULE: mobile may remain factually identical while being materially distinct through earlier proof, sticky CSS proof rails, portrait-scale framing, different visual emphasis and a different information-reveal sequence. Do not require new mobile-only facts.",
     "Reject if verified_proof_plan ignores strong verified evidence available in VERIFIED INPUT or introduces any unverified proof.",
