@@ -541,7 +541,13 @@ export function sectionSubstanceViolations(mainHtml="",spec={},manifests={}) {
   } else {
     const reasonCount=(trust.match(/\bdata-trust-reason=["']?\d+/gi)||[]).length;
     const r116Flagship=[FLAGSHIP_ARCHITECTURE_STANDARD,AUTHORED_FLAGSHIP_STANDARD].includes(String(spec?.flagship_architecture_standard||""));
-    const availableTrustReasons=Object.keys(manifests?.copy||{}).filter(key=>/^TRUST_\d+$/.test(key)).length;
+    const availableTrustReasons=Object.keys(manifests?.copy||{})
+      .filter(key=>/^TRUST_\d+$/.test(key))
+      .filter(key=>{
+        const v=String(manifests?.copy?.[key]||"").toLowerCase();
+        return !(/(?:@|\bpec\b|\bemail\b|\be-mail\b|\btelefono\b|\bmobile\b|\bcellulare\b|\bcontatt)/i.test(v)
+          || /\b(?:tel\.?|fax)\s*[:.]?\s*[+\d]/i.test(v));
+      }).length;
     const minimumTrustReasons=Math.min(r116Flagship?3:MIN_WHY_US_REASONS,availableTrustReasons);
     if(reasonCount<minimumTrustReasons || reasonCount>MAX_WHY_US_REASONS) {
       issues.push((r116Flagship?"R116_VERIFIED_PROOF_REASON_COUNT_REQUIRED":"R112_WHY_US_REASON_COUNT_REQUIRED")+":"+reasonCount+"/"+minimumTrustReasons+"-"+MAX_WHY_US_REASONS);
