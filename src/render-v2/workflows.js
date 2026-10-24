@@ -16,6 +16,7 @@ import { explicitHeroAsset, generatePremiumHeroVisual, generateR121CampaignVisua
 import { renderConcurrencyState } from "./concurrency.js";
 import { sectionVisualTokens, sectionVisualPlan } from "./showroom-policy.js";
 import { buildR121LivePreviewHtml } from "./live-preview.js";
+import { R122_DESIRE_ENGINE_STANDARD } from "./r122-desire-engine.js";
 
 
 function verifiedList(value="") {
@@ -832,6 +833,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const plan=planRows[0];
       const packRows=await sql`select metadata from render_v2_packs where id=${params.packId}::uuid limit 1`;
       const packMetadata=packRows[0]?.metadata||{};
+      const rolloutRows=await sql`select metadata from render_v2_rollout_state where id=1 limit 1`;
+      const rolloutMetadata=rolloutRows[0]?.metadata||{};
+      const globalDesireEngine=String(rolloutMetadata.global_desire_engine_standard||"")===R122_DESIRE_ENGINE_STANDARD && rolloutMetadata.global_desire_engine_enabled!==false;
       const cabinaPrecomputed=params.initialFeedback?.reason==="CABINA_PRECOMPUTED_RENDER";
       const variantRenderSpecs=packMetadata.cabina_precomputed_render_specs && typeof packMetadata.cabina_precomputed_render_specs==="object"
         ? packMetadata.cabina_precomputed_render_specs
@@ -846,8 +850,10 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
       const logoFirstBrandProfile=packMetadata.logo_first_brand_profile||null;
       const pilotHeroLocked=packMetadata.pilot_reuse_hero_locked===true;
       const initialReason=String(params.initialFeedback?.reason||"");
+      const r122DesireEngine=!cabinaPrecomputed && (globalDesireEngine || String(packMetadata.r122_desire_engine_standard||"")===R122_DESIRE_ENGINE_STANDARD || /R122_/i.test(initialReason));
       const r121CreativeDirector=
-        packMetadata.r121_creative_director_engine===true
+        r122DesireEngine
+        || packMetadata.r121_creative_director_engine===true
         || String(packMetadata.r121_standard||"")===R121_CREATIVE_DIRECTOR_STANDARD
         || /R121_/i.test(initialReason);
       const r119Requested=
@@ -881,7 +887,13 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             ...(r121CreativeDirector?{
               r121_creative_director_engine:true,
               r121_standard:R121_CREATIVE_DIRECTOR_STANDARD,
-              r121_concept_lock_standard:R121_CONCEPT_LOCK_STANDARD
+              r121_concept_lock_standard:R121_CONCEPT_LOCK_STANDARD,
+              ...(r122DesireEngine?{
+                r122_desire_engine_standard:R122_DESIRE_ENGINE_STANDARD,
+                r122_logo_first_required:true,
+                r122_visual_richness_required:true,
+                r122_sellability_gate_required:true
+              }:{})
             }:{})
           }
         : input.payload;
@@ -1023,7 +1035,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         inputPayload,assets,copyManifest,ctaManifest,direction,
         editorialAssetTokens,deterministicSectionAssetTokens,deterministicSectionAssetPlan,zeroPhoto,
         packMetadata,cabinaPrecomputed,cabinaRenderSpec,r107Retrofit,r118PerceptualJury,r119Requested,
-        r121CreativeDirector,
+        r121CreativeDirector,r122DesireEngine,globalDesireEngine,
         contentTruthPack:plan.content_truth_pack,
         allDirections:plan.directions
       };
@@ -1042,7 +1054,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         const latestMeta=packRows[0]?.metadata||{};
         const existing=latestMeta.r121_concept_lock;
         const existingJury=latestMeta.r121_concept_jury;
-        if(existing && existing.standard===R121_CONCEPT_LOCK_STANDARD && existingJury?.pass===true) {
+        if(existing && existing.standard===R121_CONCEPT_LOCK_STANDARD && existingJury?.pass===true && (!context.r122DesireEngine || String(latestMeta.r122_desire_engine_standard||"")===R122_DESIRE_ENGINE_STANDARD)) {
           return {
             concept:existing,
             review:existingJury,
@@ -1156,6 +1168,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 r121_concept_locked:true
               })}::jsonb
                 || jsonb_build_object(
+                  'r122_desire_engine_standard',case when context.r122DesireEngine then R122_DESIRE_ENGINE_STANDARD else null end,
+                  'r122_desire_engine_active',context.r122DesireEngine,
+                  'r122_concept_locked_at',case when context.r122DesireEngine then now()::text else null end,
                   'r121_concept_lock',${JSON.stringify(created.concept)}::jsonb,
                   'r121_concept_jury',${JSON.stringify(review)}::jsonb,
                   'r121_concept_hash',${created.hash},
