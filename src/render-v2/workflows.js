@@ -892,7 +892,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 r122_desire_engine_standard:R122_DESIRE_ENGINE_STANDARD,
                 r122_logo_first_required:true,
                 r122_visual_richness_required:true,
-                r122_sellability_gate_required:true
+                r122_sellability_gate_required:true,
+                brand_gate_mode:"LOGO_FIRST_V1",
+                r122_brand_dna_source:"OFFICIAL_LOGO_AND_VERIFIED_BRAND_DNA"
               }:{})
             }:{})
           }
