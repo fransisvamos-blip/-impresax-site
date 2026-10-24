@@ -2,6 +2,7 @@ import { DEFAULT_MODELS, MODEL_ROUTE_VERSION, PROMPT_VERSION, QA_SCORE_KEYS, MIN
 import { filterHomepageTrustPoints } from "./showroom-policy.js";
 import { stableStringify, sha256 } from "./utils.js";
 import { sanitizeDirectionForExecution } from "./design-grammar.js";
+import { R122_DESIRE_ENGINE_STANDARD, R122_CONCEPT_RULES, R122_IMPLEMENTATION_RULES } from "./r122-desire-engine.js";
 
 function modelFor(env,role,fallback=false) {
   const vars={
@@ -1220,6 +1221,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
+    ...R122_CONCEPT_RULES,
     "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 6 desktop beats and exactly 6 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
@@ -1229,8 +1231,8 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "CATEGORY REFRAME SAFETY: reframe the perception of the verified services only. Never coin a new business category, certification, workshop/laboratory capability, audience segment or operational promise.",
     "COLOR TRUTH: if exact brand colors are not explicitly verified, do not name or claim an official palette. State that color is derived from the immutable official identity at execution time.",
     "CLAIM DISCIPLINE: client_reaction, campaign_thesis, category_reframe and conversion_climax describe perception and decision architecture, not new facts. Never introduce certified materials, faster projects, delivery guarantees, craftsmanship, sustainability, precise timing, project outcomes or audience labels unless literally verified.",
-    "ORGANIZING-MECHANISM RULE: the concept must be a proprietary multi-word mechanism derived from the INTERSECTION of verified service duality + locality + proof. Never use a generic one-word industrial verb or reusable steel metaphor. Explicitly forbidden organizing ideas include ALIGN, LINK, FLOW, CHANNEL, RIVER, GRID, NETWORK, ASSEMBLE/ASSEMBLARE, PRECISION, STRENGTH, JOURNEY, FORGE, BUILD, CONNECT and close synonyms unless the phrase becomes inseparable from the verified DEDIL anchors.",
-    "OWNABILITY BLUEPRINT: the concept must visibly depend on (1) the verified coexistence of wholesale building-material distribution and rebar transformation, (2) Germaneto/Catanzaro as operational context, and (3) at least two verified proof anchors. If any of those can be removed without collapsing the story, redesign before answering.",
+    "ORGANIZING-MECHANISM RULE: the concept must be a proprietary multi-word mechanism derived from the INTERSECTION of this prospect's verified offer/operations + locality/context + proof. Never use a generic one-word industry verb or reusable sector metaphor. Explicitly forbidden organizing ideas include ALIGN, LINK, FLOW, CHANNEL, RIVER, GRID, NETWORK, ASSEMBLE/ASSEMBLARE, PRECISION, STRENGTH, JOURNEY, FORGE, BUILD, CONNECT and close synonyms unless the phrase becomes inseparable from THIS prospect's verified anchors.",
+    "OWNABILITY BLUEPRINT: the concept must visibly depend on (1) the prospect's verified service/offer structure, including verified duality when more than one operation exists, (2) exact locality or operational context when verified, and (3) at least two verified proof anchors when available. If the same story could survive a logo/copy swap to another business, redesign before answering.",
     "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the CREATIVE INTELLIGENCE BRIEF and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive operation/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
     "PROOF INVENTORY RULE: copy 3-6 exact factual anchors from CREATIVE INTELLIGENCE BRIEF.verified_proof_anchors into verified_proof_plan and explain through the storyboard how they become visual evidence. Do not weaken or paraphrase away revenue, employee count, verified partner/reseller status, locality or other strong proof when present.",
     "The concept must be impossible to transplant unchanged to another company after swapping logo/copy.",
@@ -1307,6 +1309,7 @@ export async function refineR121ConceptLock(env,inputPayload,contentTruth,direct
   const prompt=[
     "R121 PRE-JURY CREATIVE REFINEMENT. Rewrite the proposed concept before the hostile jury sees it.",
     "This is not a compliance pass and not a website-layout task. Strengthen the IDEA, authorship, narrative and desire-to-buy while preserving factual truth.",
+    ...R122_CONCEPT_RULES,
     "TOP-TIER BAR: the refined concept must feel like a commissioned brand-experience campaign, not a clever template for an industrial supplier.",
     "OWNABILITY: find the creative hook in the peculiar conjunction of the verified service duality, the exact locality/language of the business, and commercial evidence. A generic dual-source, hub, confluence, network, relay, channel, flow, alignment, node, grid, journey or material metaphor is unacceptable.",
     "NUMERIC PROOF RULE: revenue, headcount and other numeric proof are evidence, never geometry. Do not turn 19 employees, revenue figures, postal codes or other numbers into nodes, arcs, stripes, counts, shapes or motifs.",
@@ -1693,6 +1696,7 @@ export async function generateR121RenderSpec(env,{
     "R121 CREATIVE DIRECTOR ENGINE — IMPLEMENTATION STAGE.",
     "The creative decision is already LOCKED. Do not invent a new style, generic premium language or alternative layout thesis.",
     "Translate the supplied Concept Lock into one production-grade homepage. The page must feel like a commissioned digital campaign, not a sequence of website sections.",
+    ...R122_IMPLEMENTATION_RULES,
     "",
     "NON-NEGOTIABLE CREATIVE RULES:",
     "1. CONCEPT FIDELITY: every major composition, image crop, typography choice and transition hook must visibly serve the locked campaign thesis and signature motif.",
@@ -1753,8 +1757,11 @@ export async function generateR121RenderSpec(env,{
       section_substance_standard:"R121_EVIDENCE_STAGING_V1",
       r121_standard:R121_CREATIVE_DIRECTOR_STANDARD,
       r121_concept_standard:R121_CONCEPT_LOCK_STANDARD,
+      r122_desire_engine_standard:R122_DESIRE_ENGINE_STANDARD,
+      r122_sellability_thesis:String(concept?.campaign_thesis||""),
+      r122_brand_dna_rationale:String(concept?.brand_world||concept?.visual_bible||""),
       perceptual_flagship_standard:"R121_SELLABILITY_V1",
-      surface_policy:"IMPRESAX_RENDER_STANDARD_R121_CREATIVE_DIRECTOR",
+      surface_policy:"IMPRESAX_RENDER_STANDARD_R122_DESIRE_ENGINE",
       implementation_notes:"R121 LOCKED CONCEPT IMPLEMENTATION — "+String(r.data?.implementation_notes||"")
     },
     model:r.model,
@@ -2052,8 +2059,11 @@ export async function runR121SellabilityQa(env,{
   inputPayload,concept,desktopB64,mobileB64,browserEvidence=null,beforeModelAttempt=null
 }={}) {
   const prompt=[
-    "R121 SELLABILITY JURY. Judge the actual desktop and mobile screenshots against the LOCKED creative concept.",
+    "R121 SELLABILITY JURY + R122 DESIRE ENGINE. Judge the actual desktop and mobile screenshots against the LOCKED creative concept.",
     "Do not score a checklist of UI details. Judge whether the finished work preserves the campaign idea and creates a strong desire to buy.",
+    "HARD FAIL if the hero lacks immediate visual authority, if menu/header looks theme-like, if the page feels image-poor, if CTAs look like generic buttons, or if the footer feels like a standard utility footer.",
+    "HARD FAIL if there are fewer than three genuinely memorable visual moments or if imagery does not feel materially varied.",
+    "HARD FAIL if the official identity appears pasted onto a style that could belong to another business rather than causally shaping the visual system.",
     "Use ONLY these six axes: "+JSON.stringify(R121_SELLABILITY_AXES)+".",
     "Score calibration: 9.0 = strong professional agency work; 9.5 = exceptional; 9.7+ = plausible top-tier commissioned case-study quality.",
     "PASS requires every axis >=9.5, and concept_strength, desire_to_buy, brand_authorship and execution_quality >=9.7.",
