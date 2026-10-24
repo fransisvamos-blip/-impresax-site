@@ -3,6 +3,7 @@ import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
 import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, authoredFlagshipViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations, sectionSubstanceViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
 import { applyPremiumIconography, iconographicSystemViolations } from "./iconography.js";
+import { applyPremiumElements, premiumElementViolations } from "./premium-elements.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
 const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']?\s*(?:https?:|javascript:|data:|\/\/)/i;
@@ -559,11 +560,13 @@ export async function compileRenderSpec(spec,{businessName,logoToken,copyManifes
   const identityManifest=logoToken?{PRIMARY_LOGO:logoToken}:{};
   const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest,identity:identityManifest};
   const iconographicSpec=applyPremiumIconography(spec,{businessName});
-  const normalized=normalizeRenderSpecForCompile(iconographicSpec,manifests);
+  const premiumSpec=applyPremiumElements(iconographicSpec,{businessName});
+  const normalized=normalizeRenderSpecForCompile(premiumSpec,manifests);
   const normalizedSpec=normalized.spec;
   const gate=validateRenderSpec(normalizedSpec,manifests);
   const iconIssues=iconographicSystemViolations(normalizedSpec);
-  const allIssues=[...(gate.issues||[]),...iconIssues];
+  const premiumIssues=premiumElementViolations(normalizedSpec);
+  const allIssues=[...(gate.issues||[]),...iconIssues,...premiumIssues];
   if(allIssues.length) return {ok:false,issues:[...new Set(allIssues)],normalizations:normalized.normalizations,normalized_spec:normalizedSpec};
 
   let main=normalizeMainFragment(normalizedSpec.main_html);
