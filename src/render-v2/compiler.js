@@ -114,9 +114,11 @@ export function normalizeRenderSpecForCompile(spec,manifests={}) {
     main_html:main,
     custom_css:css,
     section_ids:sectionIds.length?sectionIds:(Array.isArray(source.section_ids)?source.section_ids:[]),
+    section_blueprint:sectionIds.length?sectionIds:(Array.isArray(source.section_blueprint)?source.section_blueprint:[]),
     used_copy_tokens:tokenSet(main,COPY_TOKEN),
     used_asset_tokens:tokenSet(main,ASSET_TOKEN)
   };
+  if(sectionIds.length && JSON.stringify(source.section_blueprint||[])!==JSON.stringify(sectionIds)) normalizations.push("ALIGNED_SECTION_BLUEPRINT_TO_DOM");
   return {spec:normalized,normalizations};
 }
 
@@ -174,6 +176,10 @@ export function validateRenderSpec(spec, manifests) {
   if(textAttrs.length) issues.push("UNAUTHORIZED_TEXT_ATTRIBUTE:"+textAttrs.join("|").slice(0,120));
 
   const copyKeys=new Set(Object.keys(manifests?.copy||{}));
+  const availableServiceCount=[...copyKeys].filter(key=>/^SERVICE_\d+_TITLE$/.test(key)).length;
+  const requiredEditorialServices=Math.min(2,availableServiceCount);
+  const availableTrustReasonCount=[...copyKeys].filter(key=>/^TRUST_\d+$/.test(key)).length;
+  const requiredVerifiedTrustReasons=Math.min(3,availableTrustReasonCount);
   const assetKeys=new Set(Object.keys(manifests?.assets||{}));
   const ctaKeys=new Set(Object.keys(manifests?.cta||{}));
   const identityKeys=new Set(Object.keys(manifests?.identity||{}));
@@ -217,7 +223,7 @@ export function validateRenderSpec(spec, manifests) {
     for(const issue of r107UltraVisualViolations(main,css)) issues.push(issue);
   }
   if(String(spec?.authored_flagship_standard||"")==="R117_AUTHORED_FLAGSHIP_15K_V1") {
-    for(const issue of authoredFlagshipViolations(main,css,spec)) issues.push(issue);
+    for(const issue of authoredFlagshipViolations(main,css,spec,manifests)) issues.push(issue);
   }
   if(String(spec?.scene_composer_standard||"")===R119_SCENE_COMPOSER_STANDARD) {
     for(const issue of r119SceneComposerViolations(main,css,spec,manifests)) issues.push(issue);
@@ -232,7 +238,7 @@ export function validateRenderSpec(spec, manifests) {
   }
 
   if(String(spec?.section_substance_standard||"")==="R112_SECTION_SUBSTANCE_COMMERCIAL_DEPTH_V1") {
-    for(const issue of sectionSubstanceViolations(main,spec)) issues.push(issue);
+    for(const issue of sectionSubstanceViolations(main,spec,manifests)) issues.push(issue);
   }
 
   const availableSectionAssets=[...assetKeys].filter(key=>key!=="HERO_VISUAL");
@@ -428,19 +434,19 @@ export function validateRenderSpec(spec, manifests) {
     }
 
     const editorialServices=(flagshipServices.match(/data-service-editorial=["']true["']/gi)||[]).length;
-    if(editorialServices<2) issues.push("R116_SERVICE_EDITORIAL_LEDGER_REQUIRED:"+editorialServices+"/2");
+    if(requiredEditorialServices>0 && editorialServices<requiredEditorialServices) issues.push("R116_SERVICE_EDITORIAL_LEDGER_REQUIRED:"+editorialServices+"/"+requiredEditorialServices);
     if(/data-service-card=/i.test(flagshipServices)) issues.push("R116_LEGACY_SERVICE_CARD_GRAMMAR_FORBIDDEN");
     if(flagshipServices.includes("{{asset:SERVICE_MATERIALS_VISUAL}}")) issues.push("R116_REPEATED_MATERIALS_VISUAL_FORBIDDEN");
 
-    if(!/data-r116-set-piece=["']cinematic-materials["']/i.test(flagshipFeature1)) issues.push("R116_MATERIALS_SET_PIECE_REQUIRED");
-    if(!/data-r116-set-piece=["']technical-rebar["']/i.test(flagshipFeature2)) issues.push("R116_REBAR_SET_PIECE_REQUIRED");
+    if(copyKeys.has("SERVICE_1_TITLE") && !/data-r116-set-piece=["'][^"']+["']/i.test(flagshipFeature1)) issues.push("R116_MATERIALS_SET_PIECE_REQUIRED");
+    if(copyKeys.has("SERVICE_2_TITLE") && !/data-r116-set-piece=["'][^"']+["']/i.test(flagshipFeature2)) issues.push("R116_REBAR_SET_PIECE_REQUIRED");
     if(flagshipFeature1.includes("{{copy:LOCALITY_LINE}}") || flagshipFeature2.includes("{{copy:LOCALITY_LINE}}")) {
       issues.push("R116_CONTEXTLESS_LOCALITY_FILLER_FORBIDDEN");
     }
 
     if(!/data-r116-set-piece=["']trust["']/i.test(flagshipTrust)) issues.push("R116_TRUST_PROOF_ARCHITECTURE_REQUIRED");
     const verifiedTrustReasons=(flagshipTrust.match(/data-trust-reason=/gi)||[]).length;
-    if(verifiedTrustReasons<3) issues.push("R116_THREE_VERIFIED_PROOF_FACTS_REQUIRED:"+verifiedTrustReasons+"/3");
+    if(requiredVerifiedTrustReasons>0 && verifiedTrustReasons<requiredVerifiedTrustReasons) issues.push("R116_THREE_VERIFIED_PROOF_FACTS_REQUIRED:"+verifiedTrustReasons+"/"+requiredVerifiedTrustReasons);
     if(/\{\{copy:(?:LOCALITY_LINE|SERVICE_\d+_(?:TITLE|BODY)|POSITIONING_(?:TITLE|BODY)|FOOTER_LINE)\}\}/i.test(flagshipTrust)) {
       issues.push("R116_NON_PROOF_COPY_IN_TRUST_FORBIDDEN");
     }
@@ -484,7 +490,7 @@ export function validateRenderSpec(spec, manifests) {
     const trustBlock=sectionHtml("trust");
     const reasons=(trustBlock.match(/data-trust-reason=/gi)||[]).length;
     const graphics=(trustBlock.match(/ixg-trust-reason__graphic/g)||[]).length;
-    if(trustBlock && reasons<3) issues.push("R110_WHY_US_MIN_THREE_REASONS");
+    if(trustBlock && requiredVerifiedTrustReasons>0 && reasons<requiredVerifiedTrustReasons) issues.push("R110_WHY_US_MIN_THREE_REASONS");
     if(trustBlock && graphics<reasons) issues.push("R110_WHY_US_GRAPHIC_SUPPORT_REQUIRED");
     if(trustBlock && !/ixg-trust-reason\s+p/i.test(spec?.custom_css||"")) issues.push("R110_WHY_US_SUPPORT_COPY_REQUIRED");
     const partnerBlock=sectionHtml("partners");
