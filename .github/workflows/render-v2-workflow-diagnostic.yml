@@ -1,4 +1,4 @@
-name: Rendering V2 Visual Design 6 Gulli
+name: Rendering V2 Visual Design 6 Gulli V2
 
 on:
   push:
@@ -8,23 +8,23 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-gulli-visual-design:
+  launch-gulli-visual-design-v2:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       VARIANT_WORKFLOW: impresax-render-v2-variant
-      INSTANCE_ID: rv2-5e5bb714-cc4b-4935-bbba-8c38b997be12-A-visual6-v1
+      INSTANCE_ID: rv2-5e5bb714-cc4b-4935-bbba-8c38b997be12-A-visual6-v2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Launch Studio Legale Gulli visual rework
+      - name: Launch Studio Legale Gulli adaptive proof rework
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"6cd5f965-92c6-48a6-bd69-ff45e678639f","packId":"5e5bb714-cc4b-4935-bbba-8c38b997be12","inputPackId":"3f9262e3-efb2-46fb-8dca-da003d8cfcfd","variantId":"fe5002aa-d21b-47c7-af8d-5b751077ee6e","variantKey":"A","parentInstanceId":"rpv2-queue-5e5bb714-cc4b-4935-bbba-8c38b997be12-3","eventPrefix":"visual6","initialFeedback":{"reason":"ENGINE_CONTRACT_UPGRADE","issues":["Existing visual-design preview requires completion on the current evidence-adaptive ImpresaX rendering contract."],"actions":["Use only verified services, trust facts, identity and assets actually available.","Do not fabricate missing claims or proof.","Rebuild with the current premium rendering and responsive system.","Produce desktop 1440 and mobile 390 previews.","Keep human review hold; do not auto-approve or hand off to Site Factory."]}}'
+          PARAMS='{"prospectId":"6cd5f965-92c6-48a6-bd69-ff45e678639f","packId":"5e5bb714-cc4b-4935-bbba-8c38b997be12","inputPackId":"3f9262e3-efb2-46fb-8dca-da003d8cfcfd","variantId":"fe5002aa-d21b-47c7-af8d-5b751077ee6e","variantKey":"A","parentInstanceId":"rpv2-queue-5e5bb714-cc4b-4935-bbba-8c38b997be12-3","eventPrefix":"visual6b","initialFeedback":{"reason":"ENGINE_CONTRACT_UPGRADE","issues":["Previous compile incorrectly counted verified contact details as trust proof."],"actions":["Use the two actual non-contact trust proofs available; contact details belong only to contact surfaces.","Use only verified services, identity and assets.","Produce desktop 1440 and mobile 390 previews.","Keep human review hold; no auto approval."]}}'
           npx wrangler workflows trigger "$VARIANT_WORKFLOW" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
