@@ -815,9 +815,9 @@ function r121SafeProcessText(value,brief) {
     {re:/\b(?:bending|bend|bent|piegatura|piegare|piegato|piegati)\b/gi,support:["bend","pieg"],replacement:"verified transformation"},
     {re:/\b(?:shape|shaping|shaped|forming|formed|sagomare|sagomatura|sagomato)\b/gi,support:["shape","shap","form","sagom"],replacement:"verified transformation"},
     {re:/\b(?:casting|cast|colata|fonderia)\b/gi,support:["cast","colat","fonder"],replacement:"verified transformation"},
-    {re:/\b(?:ribbing|ribbed|corrugating|corrugated|nervatura|nervato)\b/gi,support:["ribb","corrugat","nerv"],replacement:"verified material"},
-    {re:/\b(?:ready[- ]to[- ]use|pronto all uso|pronto per il cantiere)\b/gi,support:["ready to use","pronto"],replacement:"verified material"},
-    {re:/\b(?:furnace|forno industriale)\b/gi,support:["furnace","forno"],replacement:"industrial context"}
+    {re:/\b(?:ribbing|ribbed|corrugating|corrugated|nervatura|nervato)\b/gi,support:["ribb","corrugat","nerv"],replacement:"verified category cue"},
+    {re:/\b(?:ready[- ]to[- ]use|pronto all uso|pronto per il cantiere)\b/gi,support:["ready to use","pronto"],replacement:"verified offer"},
+    {re:/\b(?:furnace|forno industriale)\b/gi,support:["furnace","forno"],replacement:"verified context"}
   ];
   for(const rule of rules) {
     const supported=rule.support.some(x=>verifiedOps.includes(x));
@@ -830,8 +830,8 @@ function r121SafeProcessText(value,brief) {
 function r121SafeNonDocumentaryText(value,brief) {
   let out=r121SafeCampaignText(r121SafeProcessText(value,brief),brief);
   out=out
-    .replace(/\b(?:machine|machinery|forklift|truck|lorry|conveyor|robot|operator|worker|employee|hands?|people|person|human|technician|staff)\b/gi,"material geometry")
-    .replace(/\b(?:company premises|company site|company warehouse|company factory|actual warehouse|actual factory|documentary site)\b/gi,"illustrative industrial environment")
+    .replace(/\b(?:machine|machinery|forklift|truck|lorry|conveyor|robot|operator|worker|employee|hands?|people|person|human|technician|staff)\b/gi,"abstract service geometry")
+    .replace(/\b(?:company premises|company site|company warehouse|company factory|actual warehouse|actual factory|documentary site)\b/gi,"illustrative environment")
     .replace(/\b(?:etched|engraved|embossed|painted|printed|overlaid|overlayed|superimposed)\s+(?:number|numbers|data|revenue|metric|metrics|logo|brand|proof|fact|facts|badge|badges|icon|icons)\b/gi,"HTML proof")
     .replace(/\b(?:number|numbers|data|revenue|metric|metrics|proof|fact|facts|badge|badges|icon|icons)\s+(?:etched|engraved|embossed|painted|printed|overlaid|overlayed|superimposed)\b/gi,"HTML proof")
     .replace(/\b(?:proof badge|proof badges|data badge|data badges|partner badge|partner badges|metric badge|metric badges)\b/gi,"HTML proof")
@@ -871,65 +871,66 @@ function r121DeterministicConversionClimax(brief) {
 function r121CanonicalCampaignRoles(concept,brief) {
   const source=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
   const byToken=Object.fromEntries(source.map(x=>[String(x?.token||""),x]));
-  const canonical={
+  const fallback={
     R121_MATERIAL_MACRO:{
-      narrative_role:"Reveal one verified category cue through an extreme editorial close-up without inventing a product or material.",
-      visual_function:"Tactile/detail photography or abstract brand-surface study with no environmental context; when no physical cue is verified, use light, paper, surface or neutral geometry rather than inventing an object.",
-      subject_suffix:"close-up of a category-relevant unbranded cue explicitly supported by verified operations; otherwise abstract brand-derived surface and light",
-      crop_behavior:"Tight crop; detail remains legible on desktop and mobile without implying documentary evidence."
+      narrative_role:"Reveal one verified category cue through an extreme editorial close-up.",
+      visual_function:"Tactile/detail photography or an abstract brand-surface study with no documentary claim.",
+      subject:"Category-relevant unbranded cue supported by verified operations; otherwise abstract brand-derived surface and light.",
+      crop_behavior:"Tight crop with tactile detail legible on desktop and mobile."
     },
     R121_PROCESS:{
-      narrative_role:"Express the verified service or operating journey as an abstract sequence without inventing tools, machinery, people or a specific technique.",
-      visual_function:"Editorial path, transition, handoff or sequence expressed through direction and spatial rhythm rather than documentary process photography.",
-      subject_suffix:"non-documentary abstract representation of the verified service journey or operation",
-      crop_behavior:"Directional path stays central; mobile crop preserves sequence and momentum rather than environment."
+      narrative_role:"Express the verified service or operating journey as an abstract sequence.",
+      visual_function:"Editorial path, transition or handoff expressed through direction and spatial rhythm.",
+      subject:"Non-documentary representation of the verified service journey or operation.",
+      crop_behavior:"Directional path remains central; mobile preserves sequence and momentum."
     },
     R121_STRUCTURE:{
-      narrative_role:"Translate the verified offer architecture into a text-free technical or diagrammatic abstraction.",
-      visual_function:"Clean CGI or geometric spatial system derived from the number and relationship of verified services; never invented engineering.",
-      subject_suffix:"abstract geometry representing the verified offer structure and relationships between services",
-      crop_behavior:"The organizing geometry remains readable as a complete system at wide and narrow ratios."
+      narrative_role:"Translate the verified offer architecture into a text-free visual system.",
+      visual_function:"CGI or geometric spatial system derived from the relationship of verified services.",
+      subject:"Abstract geometry representing the verified offer structure.",
+      crop_behavior:"Organizing geometry stays legible at wide and narrow ratios."
     },
     R121_SCALE:{
-      narrative_role:"Communicate verified locality, reach or operational context through wide illustrative space without pretending to show real premises.",
-      visual_function:"Wide environmental or territorial frame using depth, repetition and perspective; no fake facility, client site or documentary claim.",
-      subject_suffix:"illustrative wide context derived only from verified locality, service environment or operational scale",
-      crop_behavior:"Wide depth cue anchors desktop; mobile isolates one strong perspective or territorial cue."
+      narrative_role:"Communicate verified locality or operating context through wide illustrative space.",
+      visual_function:"Wide environmental or territorial frame using depth and perspective without pretending to show real premises.",
+      subject:"Illustrative context derived from verified locality or service environment.",
+      crop_behavior:"Wide context anchors desktop; mobile isolates one strong perspective or territorial cue."
     },
     R121_DETAIL:{
-      narrative_role:"Create a controlled proof/detail still-life tied to a verified service cue or factual evidence without fabricating an object.",
-      visual_function:"Isolated studio detail or abstract evidence object with precise light and negative space; if no physical cue is verified, use restrained neutral geometry.",
-      subject_suffix:"controlled studio detail derived only from verified service or proof context; otherwise abstract proof geometry",
-      crop_behavior:"Detail remains isolated with deliberate negative space on both viewports."
+      narrative_role:"Create a controlled detail tied to a verified service or proof cue.",
+      visual_function:"Isolated studio detail or evidence abstraction with precise light and negative space.",
+      subject:"Controlled detail derived only from verified service/proof context.",
+      crop_behavior:"Detail remains isolated with deliberate negative space."
     },
     R121_ATMOSPHERE:{
-      narrative_role:"Build the final emotional pause from the official identity's color tension, light, shadow and spatial depth.",
-      visual_function:"Non-literal brand atmosphere with no identifiable premises, process, people, product claim or technical diagram.",
-      subject_suffix:"abstract light, color and depth atmosphere derived from the official identity and verified brand context",
-      crop_behavior:"Atmospheric gradient and depth survive aggressive mobile crop without needing a documentary focal object."
+      narrative_role:"Build the final emotional pause from official-identity color tension, light and depth.",
+      visual_function:"Non-literal brand atmosphere with no documentary business claim.",
+      subject:"Abstract light, color and depth atmosphere derived from official identity and verified brand context.",
+      crop_behavior:"Atmosphere survives aggressive mobile crop without a documentary focal object."
     }
   };
+  const verifiedContext=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,3).join(" / ");
   return R121_CAMPAIGN_ASSET_TOKENS.map(token=>{
     const raw=byToken[token]||{token};
-    const rule=canonical[token];
-    const verifiedContext=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,2).join(" / ");
+    const rule=fallback[token];
+    const safe=value=>r121SafeNonDocumentaryText(value,brief);
+    const rawSubject=safe(raw?.subject);
     const subject=[
-      rule.subject_suffix,
-      verifiedContext?"visual context derived only from verified services: "+verifiedContext:"",
-      "no machines, operators, branded vehicles, signage, company premises, logos, labels, numbers or documentary proof"
-    ].filter(Boolean).join("; ");
+      rawSubject || rule.subject,
+      verifiedContext?"Ground visual semantics only in verified offer/service context: "+verifiedContext:"",
+      "Illustrative and unbranded; no company premises, employees, partner identifiers, embedded metrics or documentary proof."
+    ].filter(Boolean).join(" ");
     return {
       ...raw,
       token,
-      narrative_role:rule.narrative_role,
+      narrative_role:safe(raw?.narrative_role)||rule.narrative_role,
       subject,
-      visual_function:rule.visual_function,
-      crop_behavior:rule.crop_behavior,
-      truth_safety:"Illustrative editorial imagery only; never documentary evidence. No company or partner identifiers, machines, employees, vehicles, premises, signage, numbers or embedded proof."
+      visual_function:safe(raw?.visual_function)||rule.visual_function,
+      crop_behavior:safe(raw?.crop_behavior)||rule.crop_behavior,
+      truth_safety:"Illustrative editorial imagery only; never documentary evidence. No company or partner identifiers, employees, premises, signage, embedded proof or unsupported operational specifics."
     };
   });
 }
-
 function r121ReassignStoryboardAssets(storyboard,order,brief,{mobile=false}={}) {
   const source=Array.isArray(storyboard)?storyboard:[];
   const services=(brief?.distinctive_operations||[]).filter(Boolean);
