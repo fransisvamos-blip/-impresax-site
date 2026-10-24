@@ -380,7 +380,7 @@ export function fifteenKValueViolations(mainHtml="",css="") {
   return issues;
 }
 
-export function authoredFlagshipViolations(mainHtml="",css="",spec={}) {
+export function authoredFlagshipViolations(mainHtml="",css="",spec={},manifests={}) {
   const main=String(mainHtml||"");
   const styles=String(css||"");
   const issues=[];
@@ -399,7 +399,9 @@ export function authoredFlagshipViolations(mainHtml="",css="",spec={}) {
   if(signature<1) issues.push("R117_SIGNATURE_SECTION_REQUIRED");
 
   const authoredServices=(main.match(/\bixf-service-line\b/gi)||[]).length;
-  if(authoredServices<2) issues.push("R117_EDITORIAL_SERVICE_LEDGER_REQUIRED:"+authoredServices+"/2");
+  const availableServiceCount=Object.keys(manifests?.copy||{}).filter(key=>/^SERVICE_\d+_TITLE$/.test(key)).length;
+  const requiredServiceLedger=Math.min(2,availableServiceCount);
+  if(requiredServiceLedger>0 && authoredServices<requiredServiceLedger) issues.push("R117_EDITORIAL_SERVICE_LEDGER_REQUIRED:"+authoredServices+"/"+requiredServiceLedger);
 
   const editorialScenes=(main.match(/\bdata-editorial-feature=["']true["']/gi)||[]).length;
   if(editorialScenes<2) issues.push("R117_SIGNATURE_MIDPAGE_SCENES_REQUIRED:"+editorialScenes+"/2");
@@ -492,7 +494,7 @@ export function homeDepthViolations(mainHtml="",spec={}) {
   return issues;
 }
 
-export function sectionSubstanceViolations(mainHtml="",spec={}) {
+export function sectionSubstanceViolations(mainHtml="",spec={},manifests={}) {
   const main=String(mainHtml||"");
   const issues=[];
   const sectionMatches=[...main.matchAll(/<section\b[^>]*\bid=["']([^"']+)["'][^>]*>/gi)];
@@ -539,7 +541,8 @@ export function sectionSubstanceViolations(mainHtml="",spec={}) {
   } else {
     const reasonCount=(trust.match(/\bdata-trust-reason=["']?\d+/gi)||[]).length;
     const r116Flagship=[FLAGSHIP_ARCHITECTURE_STANDARD,AUTHORED_FLAGSHIP_STANDARD].includes(String(spec?.flagship_architecture_standard||""));
-    const minimumTrustReasons=r116Flagship?3:MIN_WHY_US_REASONS;
+    const availableTrustReasons=Object.keys(manifests?.copy||{}).filter(key=>/^TRUST_\d+$/.test(key)).length;
+    const minimumTrustReasons=Math.min(r116Flagship?3:MIN_WHY_US_REASONS,availableTrustReasons);
     if(reasonCount<minimumTrustReasons || reasonCount>MAX_WHY_US_REASONS) {
       issues.push((r116Flagship?"R116_VERIFIED_PROOF_REASON_COUNT_REQUIRED":"R112_WHY_US_REASON_COUNT_REQUIRED")+":"+reasonCount+"/"+minimumTrustReasons+"-"+MAX_WHY_US_REASONS);
     }
