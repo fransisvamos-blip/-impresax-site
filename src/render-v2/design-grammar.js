@@ -28,6 +28,7 @@ function serviceMarkup(copyManifest,klass) {
 
 function trustIsContact(copyManifest,key) {
   const value=String(copyManifest?.[key]||"");
+  if(/\b(?:p\.?\s*iva|partita\s+iva|vat)\b/i.test(value)) return false;
   return /@|\bpec\b|\be-?mail\b|\btelefono\b|\bcell(?:ulare)?\b|\btel\b|\+?\d[\d\s().\/-]{6,}/i.test(value);
 }
 
