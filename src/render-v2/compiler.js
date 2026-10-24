@@ -4,6 +4,7 @@ import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceCon
 import { esc, stableStringify, sha256 } from "./utils.js";
 import { applyPremiumIconography, iconographicSystemViolations } from "./iconography.js";
 import { applyPremiumElements, premiumElementViolations } from "./premium-elements.js";
+import { R122_DESIRE_ENGINE_STANDARD, r122DesireEngineViolations } from "./r122-desire-engine.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
 const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']?\s*(?:https?:|javascript:|data:|\/\/)/i;
@@ -573,14 +574,17 @@ function displayContactHref(href) {
 export async function compileRenderSpec(spec,{businessName,logoToken,copyManifest,assetManifest,ctaManifest}) {
   const identityManifest=logoToken?{PRIMARY_LOGO:logoToken}:{};
   const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest,identity:identityManifest};
-  const iconographicSpec=applyPremiumIconography(spec,{businessName});
-  const premiumSpec=applyPremiumElements(iconographicSpec,{businessName});
+  const desireActive=String(spec?.r122_desire_engine_standard||"")===R122_DESIRE_ENGINE_STANDARD
+    || String(spec?.r121_standard||"")==="R121_CREATIVE_DIRECTOR_ENGINE_V1";
+  const iconographicSpec=desireActive ? spec : applyPremiumIconography(spec,{businessName});
+  const premiumSpec=desireActive ? iconographicSpec : applyPremiumElements(iconographicSpec,{businessName});
   const normalized=normalizeRenderSpecForCompile(premiumSpec,manifests);
   const normalizedSpec=normalized.spec;
   const gate=validateRenderSpec(normalizedSpec,manifests);
-  const iconIssues=iconographicSystemViolations(normalizedSpec);
-  const premiumIssues=premiumElementViolations(normalizedSpec);
-  const allIssues=[...(gate.issues||[]),...iconIssues,...premiumIssues];
+  const iconIssues=desireActive ? [] : iconographicSystemViolations(normalizedSpec);
+  const premiumIssues=desireActive ? [] : premiumElementViolations(normalizedSpec);
+  const desireIssues=r122DesireEngineViolations(normalizedSpec,manifests);
+  const allIssues=[...(gate.issues||[]),...iconIssues,...premiumIssues,...desireIssues];
   if(allIssues.length) return {ok:false,issues:[...new Set(allIssues)],normalizations:normalized.normalizations,normalized_spec:normalizedSpec};
 
   let main=normalizeMainFragment(normalizedSpec.main_html);
