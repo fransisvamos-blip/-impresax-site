@@ -1153,7 +1153,26 @@ async function api(request, env, pathname) {
       limit 1`;
     const row=rows[0];
     if(!row) return json({ok:false,error:"V2_RENDER_VARIANT_NOT_FOUND"},404);
-    if(!["RENDER_READY","SELECTED"].includes(String(row.status||""))) {
+    const selectPackMeta=row.metadata||{};
+    const cabinaReviewCandidate=
+      String(row.status||"")==="PREVIEW_READY" &&
+      String(row.variant_key||"")==="A" &&
+      String(row.variant_status||"")==="RENDER_READY" &&
+      String(row.revision_status||"")==="RENDER_READY" &&
+      Boolean(row.desktop_r2_key && row.mobile_r2_key) &&
+      (selectPackMeta.cabina_visual_review_hold===true || String(selectPackMeta.cabina_visual_review_hold||"").toLowerCase()==="true") &&
+      Number(selectPackMeta.human_review_revision||0)===Number(row.certified_revision||0);
+    const cabinaReviewQaRows=cabinaReviewCandidate ? await sql`
+      select exists(
+        select 1 from render_qa_results_v2 q
+        where q.render_pack_id=${renderPackId}::uuid
+          and q.variant_revision_id=${row.revision_id}::uuid
+          and q.qa_type='CABINA_DETERMINISTIC'
+          and q.status='PASS'
+      ) as pass` : [{pass:false}];
+    const cabinaSingleConceptSelectable=cabinaReviewCandidate && Boolean(cabinaReviewQaRows[0]?.pass);
+
+    if(!["RENDER_READY","SELECTED"].includes(String(row.status||"")) && !cabinaSingleConceptSelectable) {
       return json({ok:false,error:"V2_RENDER_PACK_NOT_SELECTABLE"},409);
     }
     if(row.variant_status!=="RENDER_READY" || row.revision_status!=="RENDER_READY" || !row.desktop_r2_key || !row.mobile_r2_key) {
@@ -1224,7 +1243,7 @@ async function api(request, env, pathname) {
     const premiumHomeGatePass=
       String(gates.quality_contract_version||"")!=="RS_QUALITY_V3_PREMIUM_HOME" ||
       (Number(gates.premium_home_compiler_variants)===3 && Number(gates.premium_home_qa_variants)===3);
-    if(!baseGatePass || !premiumHomeGatePass) {
+    if(!cabinaSingleConceptSelectable && (!baseGatePass || !premiumHomeGatePass)) {
       return json({ok:false,error:!baseGatePass?"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED":"V2_PREMIUM_HOME_V3_GATE_REQUIRED"},409);
     }
 
@@ -1273,8 +1292,8 @@ async function api(request, env, pathname) {
     }
 
     const rows=await sql`
-      select p.*,v.id as variant_id,v.variant_key,v.status as variant_status,
-             r.id as revision_id,r.status as revision_status,r.render_spec,r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score,
+      select p.*,v.id as variant_id,v.variant_key,v.status as variant_status,v.certified_revision,
+             r.id as revision_id,r.revision,r.status as revision_status,r.render_spec,r.html_r2_key,r.desktop_r2_key,r.mobile_r2_key,r.score,
              i.payload as input_payload
       from render_v2_packs p
       join render_v2_variants v on v.render_pack_id=p.id
@@ -1300,6 +1319,24 @@ async function api(request, env, pathname) {
     if(row.variant_status!=="RENDER_READY" || row.revision_status!=="RENDER_READY" || !row.html_r2_key || !row.desktop_r2_key || !row.mobile_r2_key) {
       return json({ok:false,error:"V2_CERTIFIED_VARIANT_REQUIRED"},409);
     }
+
+    const implementPackMeta=row.metadata||{};
+    const cabinaSelectedCandidate=
+      String(row.variant_key||"")==="A" &&
+      String(row.variant_status||"")==="RENDER_READY" &&
+      String(row.revision_status||"")==="RENDER_READY" &&
+      Boolean(row.html_r2_key && row.desktop_r2_key && row.mobile_r2_key) &&
+      (implementPackMeta.cabina_visual_review_hold===true || String(implementPackMeta.cabina_visual_review_hold||"").toLowerCase()==="true") &&
+      Number(implementPackMeta.human_review_revision||0)===Number(row.revision||0);
+    const cabinaImplementQaRows=cabinaSelectedCandidate ? await sql`
+      select exists(
+        select 1 from render_qa_results_v2 q
+        where q.render_pack_id=${renderPackId}::uuid
+          and q.variant_revision_id=${row.revision_id}::uuid
+          and q.qa_type='CABINA_DETERMINISTIC'
+          and q.status='PASS'
+      ) as pass` : [{pass:false}];
+    const cabinaSingleConceptImplementable=cabinaSelectedCandidate && Boolean(cabinaImplementQaRows[0]?.pass);
 
     const gateRows=await sql`
       select
@@ -1365,7 +1402,7 @@ async function api(request, env, pathname) {
     const premiumHomeGatePass=
       String(gates.quality_contract_version||"")!=="RS_QUALITY_V3_PREMIUM_HOME" ||
       (Number(gates.premium_home_compiler_variants)===3 && Number(gates.premium_home_qa_variants)===3);
-    if(!baseGatePass || !premiumHomeGatePass) {
+    if(!cabinaSingleConceptImplementable && (!baseGatePass || !premiumHomeGatePass)) {
       return json({ok:false,error:!baseGatePass?"V2_THREE_CERTIFIED_VARIANTS_HERO_AND_QA_REQUIRED":"V2_PREMIUM_HOME_V3_GATE_REQUIRED"},409);
     }
 
