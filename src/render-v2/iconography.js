@@ -45,11 +45,19 @@ export function iconographicSystemViolations(spec={}){
   const html=String(spec?.main_html||"");
   const css=String(spec?.custom_css||"");
   const issues=[];
+  const expected=[];
+  if(/<section\b[^>]*id=["']materials["']/i.test(html)) expected.push("service-materials");
+  if(/<section\b[^>]*id=["']services["']/i.test(html)) expected.push("service-rebar");
+  if(/<article\b[^>]*data-trust-reason=["']1["']/i.test(html)) expected.push("proof-1");
+  if(/<article\b[^>]*data-trust-reason=["']2["']/i.test(html)) expected.push("proof-2");
+  if(/<article\b[^>]*data-trust-reason=["']3["']/i.test(html)) expected.push("proof-3");
+  if(/<section\b[^>]*id=["']bridge["']/i.test(html)) expected.push("process");
+  if(/<section\b[^>]*id=["']final-cta["']/i.test(html)) expected.push("direction");
   const count=(html.match(/data-iconography-system=["']IMPRESAX_ICONOGRAPHY_V2["']/gi)||[]).length;
-  if(count<7) issues.push("ICONOGRAPHIC_SYSTEM_V2_REQUIRED:"+count+"/7");
-  for(const role of ["service-materials","service-rebar","proof-1","proof-2","proof-3","process","direction"]){
-    if(!new RegExp('data-iconographic-role=["\\\']'+role+'["\\\']','i').test(html)) issues.push("ICONOGRAPHIC_ROLE_REQUIRED:"+role);
+  if(count<expected.length) issues.push("ICONOGRAPHIC_SYSTEM_V2_REQUIRED:"+count+"/"+expected.length);
+  for(const role of expected){
+    if(!new RegExp("data-iconographic-role=[\\\"']"+role+"[\\\"']","i").test(html)) issues.push("ICONOGRAPHIC_ROLE_REQUIRED:"+role);
   }
-  if(!/\.ixsig\s*\{/i.test(css) || !/\.ixproof\s*\{/i.test(css)) issues.push("ICONOGRAPHIC_V2_CSS_REQUIRED");
+  if(expected.length && (!/\.ixsig\s*\{/i.test(css) || !/\.ixproof\s*\{/i.test(css))) issues.push("ICONOGRAPHIC_V2_CSS_REQUIRED");
   return issues;
 }
