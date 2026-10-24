@@ -1,4 +1,4 @@
-name: Rendering V2 Iconography Launch
+name: Rendering V2 Premium Elements Launch
 
 on:
   push:
@@ -8,25 +8,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-dedil-iconography-v1:
+  launch-dedil-premium-elements-v2:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-iconography-v1
+      INSTANCE_ID: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-premium-elements-v2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Launch DEDIL with Iconographic System V1
+      - name: Launch DEDIL with premium iconography and CTA system
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"cabina","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["Apply IMPRESAX_ICONOGRAPHY_V1 to the current approved DEDIL direct composition."],"actions":["Use the current Cabina precomputed RenderSpec.","Apply the compiler-native iconographic system: 2 service glyphs, 3 proof glyphs, 1 process mark and 1 directional mark.","Keep iconography geometric, technical, integrated and non-template.","Preserve verified content, imagery and official identity.","Do not start or mutate any other prospect."]}}'
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"cabina","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["The previous iconography was too small and decorative; CTA buttons looked generic."],"actions":["Use the current Cabina precomputed DEDIL composition.","Apply IMPRESAX_ICONOGRAPHY_V2 with large composition-level service signatures and proof-integrated glyphs.","Apply IMPRESAX_PREMIUM_ELEMENTS_V1 to hero, header, bridge and closing CTA.","Reject generic rectangular CTA styling; use super-premium industrial brand objects.","Preserve verified content, imagery and official identity.","Do not start or mutate any other prospect."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" \
             --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
           sleep 8
