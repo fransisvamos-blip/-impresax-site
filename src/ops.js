@@ -601,6 +601,16 @@ async function dashboard(sql) {
                     or coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
                   )
                 )
+                or (
+                  p.status='PREVIEW_READY'
+                  and v.variant_key='A'
+                  and v.status='RENDER_READY'
+                  and r.status='RENDER_READY'
+                  and v.certified_revision=r.revision
+                  and v.best_preview_revision=r.revision
+                  and coalesce((p.metadata->>'cabina_visual_review_hold')::boolean,false)=true
+                  and coalesce(p.metadata->>'human_review_revision',r.revision::text)=r.revision::text
+                )
               )
           ) as render_v2_ready_count
         from render_v2_packs p
@@ -721,6 +731,16 @@ async function prospectDetail(sql, id) {
       packMeta.single_concept_mode===true &&
       packMeta.cabina_visual_review_hold===true &&
       String(v.variant_key||"")==="A";
+    const cabinaHeldRenderReady=
+      String(v.pack_status||"")==="PREVIEW_READY" &&
+      packMeta.cabina_visual_review_hold===true &&
+      String(v.variant_key||"")==="A" &&
+      String(v.status||"")==="RENDER_READY" &&
+      String(v.revision_status||"")==="RENDER_READY" &&
+      Number(v.revision||0)===Number(v.best_preview_revision||0) &&
+      Number(v.revision||0)===Number(v.certified_revision||0) &&
+      Number(packMeta.human_review_revision||v.revision||0)===Number(v.revision||0) &&
+      Boolean(v.certified_revision_id);
     const humanPreviewReady=
       String(v.pack_status||"")==="PREVIEW_READY" &&
       String(v.status||"")==="PREVIEW_READY" &&
@@ -731,7 +751,7 @@ async function prospectDetail(sql, id) {
         packMeta.pilot_human_review_after_preview===true ||
         packMeta.cabina_visual_review_hold===true
       );
-    const normalPackReady=["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) || singleConceptReady;
+    const normalPackReady=["RENDER_READY","SELECTED","APPROVED"].includes(String(v.pack_status||"")) || singleConceptReady || cabinaHeldRenderReady;
     const pilotCandidate=
       pilotMode &&
       String(v.render_pack_id||"")===pilotPackId &&
@@ -750,7 +770,7 @@ async function prospectDetail(sql, id) {
       v.status==="RENDER_READY" &&
       v.revision_status==="RENDER_READY" &&
       Boolean(v.certified_revision_id) &&
-      (Boolean(v.visual_preview_passed) || singleConceptReady);
+      (Boolean(v.visual_preview_passed) || singleConceptReady || cabinaHeldRenderReady);
     const previewAllowed=certifiedPreviewAllowed || humanPreviewReady;
     const directionKey=v.variant_key==="A" ? "variant_A_direction" : (v.variant_key==="B" ? "variant_B_direction" : "variant_C_direction");
     const creativeDirection=String(packMeta[directionKey] || (
