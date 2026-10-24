@@ -178,7 +178,15 @@ export function validateRenderSpec(spec, manifests) {
   const copyKeys=new Set(Object.keys(manifests?.copy||{}));
   const availableServiceCount=[...copyKeys].filter(key=>/^SERVICE_\d+_TITLE$/.test(key)).length;
   const requiredEditorialServices=Math.min(2,availableServiceCount);
-  const availableTrustReasonCount=[...copyKeys].filter(key=>/^TRUST_\d+$/.test(key)).length;
+  const contactishTrustValue=value=>{
+    const v=String(value||"").toLowerCase();
+    return /(?:@|\bpec\b|\bemail\b|\be-mail\b|\btelefono\b|\bmobile\b|\bcellulare\b|\bcontatt)/i.test(v)
+      || /\b(?:tel\.?|fax)\s*[:.]?\s*[+\d]/i.test(v);
+  };
+  const availableTrustReasonCount=[...copyKeys]
+    .filter(key=>/^TRUST_\d+$/.test(key))
+    .filter(key=>!contactishTrustValue(manifests?.copy?.[key]))
+    .length;
   const requiredVerifiedTrustReasons=Math.min(3,availableTrustReasonCount);
   const assetKeys=new Set(Object.keys(manifests?.assets||{}));
   const ctaKeys=new Set(Object.keys(manifests?.cta||{}));
