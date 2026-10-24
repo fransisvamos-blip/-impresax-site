@@ -1,4 +1,4 @@
-name: Rendering V2 Workflow Diagnostic
+name: Rendering V2 Direct Curated Recovery
 
 on:
   push:
@@ -8,46 +8,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  trigger-v23:
+  replace-with-curated-v2:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-r121-creative-director-v23
+      OLD_INSTANCE: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-direct-curated-v1
+      NEW_INSTANCE: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-direct-curated-v2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Trigger v23 with native Wrangler payload
+      - name: Terminate stale direct run and launch curated v2
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"r121","initialFeedback":{"reason":"R121_CREATIVE_DIRECTOR_ENGINE_V1","issues":["Cabina requested a genuinely new flagship composition for the locked pilot only."],"actions":["Run the R121 Creative Director Engine: concept lock before code, coherent campaign asset system, concept-driven implementation and live interactive preview.","Preserve DEDIL verified truth, verified partner proof and official identity; generated campaign imagery is illustrative, never documentary proof.","Treat desktop and mobile as separately art-directed expressions of the same locked campaign.","Do not start or mutate any other prospect."]}}'
+          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$OLD_INSTANCE" --json --config wrangler.render-v2.jsonc || true
+
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"cabina","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["Use the Cabina-authored DEDIL render specification directly."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Preserve verified content, existing verified assets and official identity.","Do not start or mutate any other prospect."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" \
-            --id "$INSTANCE_ID" \
+            --id "$NEW_INSTANCE" \
             --json \
             --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
 
-          sleep 6
-          base="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workflows/$WORKFLOW_NAME/instances"
-          curl --max-time 20 -sS \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "$base/$INSTANCE_ID?simple=true" > /tmp/status.json
-          python - <<'PY'
-          import json
-          d=json.load(open("/tmp/status.json"))
-          r=d.get("result") or {}
-          e=r.get("error") or {}
-          print("api_success=",d.get("success"))
-          print("instance_id=",r.get("id"))
-          print("status=",r.get("status"))
-          print("version_id=",r.get("version_id"))
-          print("error_name=",e.get("name") if isinstance(e,dict) else "")
-          print("error_message=",e.get("message") if isinstance(e,dict) else "")
-          if not d.get("success"): print("api_errors=",d.get("errors"))
-          PY
+          sleep 8
+          npx wrangler workflows instances describe "$WORKFLOW_NAME" "$NEW_INSTANCE" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
