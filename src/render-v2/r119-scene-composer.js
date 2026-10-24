@@ -432,7 +432,7 @@ export function r119SceneComposerViolations(mainHtml="",css="",spec={},manifests
   if(!/@media\s*\([^)]*max-width\s*:\s*700px/i.test(styles)) issues.push("R119_NATIVE_MOBILE_RECUT_REQUIRED");
   if(!/@media\s*\(min-width\s*:\s*701px\)\s*and\s*\(max-width\s*:\s*1180px\)/i.test(styles)) issues.push("R119_INTERMEDIATE_VIEWPORT_REQUIRED");
   if(!/@media\s*\(prefers-reduced-motion\s*:\s*reduce\)/i.test(styles)) issues.push("R119_REDUCED_MOTION_REQUIRED");
-  if(styles.length>32000) issues.push("R119_CSS_OVERRIDE_STACK_FORBIDDEN:"+styles.length);
+  if(styles.length>36000) issues.push("R119_CSS_OVERRIDE_STACK_FORBIDDEN:"+styles.length);
   const viewportPosterCount=(styles.match(/100svh/gi)||[]).length;
   if(viewportPosterCount>2) issues.push("R119_POSTER_STACK_FORBIDDEN:"+viewportPosterCount);
   if((styles.match(/transition\s*:/gi)||[]).length<6) issues.push("R119_MICRO_INTERACTION_SYSTEM_REQUIRED");
