@@ -2,6 +2,7 @@ import { r119SceneComposerViolations, R119_SCENE_COMPOSER_STANDARD } from "./r11
 import { COMPILER_VERSION, MIN_SECTION_VISUALS } from "./constants.js";
 import { copyPolicyViolations, flatStrongSectionBackgroundViolations, surfaceContractViolations, brandRichSurfaceViolations, watermarkVisibilityViolations, launchGradeViolations, typographyCompositionViolations, fifteenKValueViolations, authoredFlagshipViolations, iconicCommissionedViolations, r107UltraVisualViolations, homeDepthViolations, sectionSubstanceViolations } from "./showroom-policy.js";
 import { esc, stableStringify, sha256 } from "./utils.js";
+import { applyPremiumIconography, iconographicSystemViolations } from "./iconography.js";
 
 const FORBIDDEN_TAGS=/<\s*(script|style|iframe|object|embed|form|base|meta|link)\b/i;
 const FORBIDDEN_URL=/\b(?:src|srcset|href|poster|action|formaction)\s*=\s*["']?\s*(?:https?:|javascript:|data:|\/\/)/i;
@@ -557,10 +558,13 @@ function displayContactHref(href) {
 export async function compileRenderSpec(spec,{businessName,logoToken,copyManifest,assetManifest,ctaManifest}) {
   const identityManifest=logoToken?{PRIMARY_LOGO:logoToken}:{};
   const manifests={copy:copyManifest,assets:assetManifest,cta:ctaManifest,identity:identityManifest};
-  const normalized=normalizeRenderSpecForCompile(spec,manifests);
+  const iconographicSpec=applyPremiumIconography(spec,{businessName});
+  const normalized=normalizeRenderSpecForCompile(iconographicSpec,manifests);
   const normalizedSpec=normalized.spec;
   const gate=validateRenderSpec(normalizedSpec,manifests);
-  if(!gate.pass) return {ok:false,issues:gate.issues,normalizations:normalized.normalizations,normalized_spec:normalizedSpec};
+  const iconIssues=iconographicSystemViolations(normalizedSpec);
+  const allIssues=[...(gate.issues||[]),...iconIssues];
+  if(allIssues.length) return {ok:false,issues:[...new Set(allIssues)],normalizations:normalized.normalizations,normalized_spec:normalizedSpec};
 
   let main=normalizeMainFragment(normalizedSpec.main_html);
   main=replaceAllTokens(main,COPY_TOKEN,copyManifest,"COPY");
