@@ -1,4 +1,4 @@
-name: Rendering V2 Direct Curated Recovery
+name: Rendering V2 Direct Curated Launch
 
 on:
   push:
@@ -8,32 +8,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  replace-with-curated-v2:
+  launch-curated-v3:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      OLD_INSTANCE: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-direct-curated-v1
-      NEW_INSTANCE: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-direct-curated-v2
+      INSTANCE_ID: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-direct-curated-v3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Terminate stale direct run and launch curated v2
+      - name: Launch contract-safe curated DEDIL render
         shell: bash
         run: |
           set -euo pipefail
-          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$OLD_INSTANCE" --json --config wrangler.render-v2.jsonc || true
-
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"cabina","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["Use the Cabina-authored DEDIL render specification directly."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Preserve verified content, existing verified assets and official identity.","Do not start or mutate any other prospect."]}}'
+          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"cabina","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["Use the contract-safe Cabina-authored DEDIL render specification directly."],"actions":["Use the Cabina precomputed RenderSpec exactly.","Preserve verified content, verified imagery and official identity.","Do not start or mutate any other prospect."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" \
-            --id "$NEW_INSTANCE" \
-            --json \
-            --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
-
+            --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
           sleep 8
-          npx wrangler workflows instances describe "$WORKFLOW_NAME" "$NEW_INSTANCE" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
+          npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
