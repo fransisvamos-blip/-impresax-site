@@ -47,10 +47,11 @@ export function premiumElementViolations(spec={}){
   const css=String(spec?.custom_css||"");
   const issues=[];
   if(!/data-premium-elements=["']IMPRESAX_PREMIUM_ELEMENTS_V1["']/i.test(html)) issues.push("PREMIUM_ELEMENT_STANDARD_REQUIRED");
-  if(!/data-final-conversion-object=["']IMPRESAX_FINAL_CONVERSION_OBJECT_V1["']/i.test(html)) issues.push("FINAL_CONVERSION_OBJECT_REQUIRED");
   if(!/\.r119-btn\[data-premium-button\]/i.test(css)) issues.push("PREMIUM_BUTTON_SYSTEM_REQUIRED");
   if(!/\.ix-v2-header-cta\{/i.test(css)) issues.push("PREMIUM_HEADER_CTA_REQUIRED");
   if(!/\.r119-contact__link\{/i.test(css)) issues.push("PREMIUM_CONTACT_CTA_REQUIRED");
-  if(!/\.ixconvert__action\{/i.test(css) || !/\.ixconvert__rail\{/i.test(css)) issues.push("FINAL_CONVERSION_OBJECT_CSS_REQUIRED");
+  const hasR119Final=/class=["'][^"']*r119-btn--final[^"']*["']/i.test(html);
+  if(hasR119Final && !/data-final-conversion-object=["']IMPRESAX_FINAL_CONVERSION_OBJECT_V1["']/i.test(html)) issues.push("FINAL_CONVERSION_OBJECT_REQUIRED");
+  if(hasR119Final && (!/\.ixconvert__action\{/i.test(css) || !/\.ixconvert__rail\{/i.test(css))) issues.push("FINAL_CONVERSION_OBJECT_CSS_REQUIRED");
   return issues;
 }
