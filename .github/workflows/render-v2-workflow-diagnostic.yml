@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Stop Pilot V2
+name: Rendering V2 R122 Desire Pilot V3
 
 on:
   push:
@@ -7,21 +7,24 @@ on:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
 
 jobs:
-  stop-r122-kipoint-v2:
+  launch-r122-kipoint-v3:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 6
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v2
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Terminate v2
+      - name: Launch KiPoint R122 v3
+        shell: bash
         run: |
-          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc || true
-          sleep 4
+          set -euo pipefail
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v3","runKey":"kipoint-r122-v3","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["Previous safe-normalization flattened concept-specific visual subjects into generic abstractions."],"actions":["Create a proprietary KiPoint campaign concept rooted only in verified postal/logistics services, Catanzaro Lido context, MIMIT operator evidence, verified rating and official identity.","Keep six visual modes materially distinct and make each subject concrete enough to art-direct, while remaining illustrative and unbranded.","Preserve safe concrete visual subjects after truth checks; do not replace them with generic category placeholders.","Design premium navigation, campaign hero, three wow moments, authored conversion-object CTA and integrated footer.","Re-author mobile independently at 390px.","No construction, DEDIL, Germaneto, reinforcing steel, unverified endorsement, fake premises, fleet, employees or documentary claims."]}}'
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
+          sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
