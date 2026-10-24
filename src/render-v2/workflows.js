@@ -1168,9 +1168,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 r121_concept_locked:true
               })}::jsonb
                 || jsonb_build_object(
-                  'r122_desire_engine_standard',case when context.r122DesireEngine then R122_DESIRE_ENGINE_STANDARD else null end,
-                  'r122_desire_engine_active',context.r122DesireEngine,
-                  'r122_concept_locked_at',case when context.r122DesireEngine then now()::text else null end,
+                  'r122_desire_engine_standard',${context.r122DesireEngine?R122_DESIRE_ENGINE_STANDARD:null},
+                  'r122_desire_engine_active',${context.r122DesireEngine===true},
+                  'r122_concept_locked_at',${context.r122DesireEngine?new Date().toISOString():null},
                   'r121_concept_lock',${JSON.stringify(created.concept)}::jsonb,
                   'r121_concept_jury',${JSON.stringify(review)}::jsonb,
                   'r121_concept_hash',${created.hash},
