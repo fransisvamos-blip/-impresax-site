@@ -730,6 +730,12 @@ function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
     primary_cta:String(inputPayload?.primary_cta||truth?.primary_cta_label||"").trim(),
     secondary_cta:String(inputPayload?.secondary_cta||truth?.secondary_cta_label||"").trim(),
     official_identity_locked:Boolean(inputPayload?.official_logo?.lock==="IMMUTABLE"||inputPayload?.identity_mode==="OFFICIAL_LOGO"),
+    brand_constraints:{
+      visual_cues:String(inputPayload?.brand_dna?.visual_cues||"").trim(),
+      existing_colors:String(inputPayload?.brand_dna?.existing_colors||"").trim(),
+      typography_cues:String(inputPayload?.brand_dna?.typography_cues||"").trim(),
+      brand_personality:String(inputPayload?.brand_dna?.brand_personality||"").trim()
+    },
     source_references:Array.isArray(inputPayload?.source_references)?inputPayload.source_references:[]
   };
 }
@@ -826,6 +832,26 @@ function r121SafeProcessText(value,brief) {
   return out.replace(/\s{2,}/g," ").trim();
 }
 
+
+function r121SafeConceptNarrativeText(value,brief,{paletteSafe=false}={}) {
+  let out=r121SafeProcessText(String(value||""),brief);
+  out=out
+    .replace(/\b(?:city[- ]endorsed|municipally[- ]endorsed|government[- ]endorsed|sovereign|elite|waterfront prestige|official postal authority)\b/gi,"authoritative")
+    .replace(/\b(?:new|custom|proprietary)\s+(?:emblem|monogram|logo|logo mark|brand mark)\b/gi,"non-logo structural motif")
+    .replace(/\b(?:reinterpret|redraw|redesign|reshape|morph|transform)\s+(?:the\s+)?(?:official\s+)?(?:logo|brand mark)\b/gi,"leave the official logo unchanged while surrounding geometry evolves")
+    .replace(/\s{2,}/g," ")
+    .trim();
+  if(paletteSafe) {
+    const paletteVerified=String(brief?.brand_constraints?.existing_colors||"");
+    const explicitPalette=/#[0-9a-f]{3,8}|\brgb\b|\bcmyk\b|\bpantone\b|\b(?:red|blue|green|yellow|orange|purple|violet|pink|teal|cyan|magenta|amber|gold|silver|bronze|black|white|grey|gray|rosso|blu|verde|giallo|arancio|viola|rosa|nero|bianco|grigio)\b/i.test(paletteVerified)
+      && !/derivare|derive|identity|identit/i.test(paletteVerified);
+    if(!explicitPalette) {
+      out=out.replace(/\b(?:(?:deep|bright|electric|warm|cool|dark|light|muted|saturated|soft|vivid|navy|royal)\s+)?(?:red|blue|green|yellow|orange|purple|violet|pink|teal|cyan|magenta|amber|gold|silver|bronze|black|white|grey|gray|rosso|blu|verde|giallo|arancio|viola|rosa|nero|bianco|grigio)\b/gi,"official-identity sampled color");
+      out += " Palette rule: sample actual colors from the immutable official identity at execution time; do not invent named brand colors.";
+    }
+  }
+  return out.trim();
+}
 
 function r121SafeNonDocumentaryText(value,brief) {
   let out=r121SafeCampaignText(r121SafeProcessText(value,brief),brief);
@@ -1049,7 +1075,13 @@ function r121MechanicalContractNormalize(concept,brief) {
     "signature_motif","visual_bible","typography_thesis","proof_mechanism","conversion_climax",
     "selection_rationale"
   ];
-  for(const key of narrativeKeys) clone[key]=r121SafeNonDocumentaryText(clone[key],brief);
+  for(const key of narrativeKeys) {
+    clone[key]=r121SafeConceptNarrativeText(clone[key],brief,{paletteSafe:key==="visual_bible"||key==="brand_world"});
+  }
+  const businessName=String(brief?.business_name||"").trim();
+  if(businessName && !r121Normalize(clone.campaign_thesis).includes(r121Normalize(businessName))) {
+    clone.campaign_thesis=businessName+" — "+String(clone.campaign_thesis||"").trim();
+  }
   clone.ownability_anchors=r121DeterministicOwnabilityAnchors(brief);
   clone.proof_mechanism=r121DeterministicProofMechanism(brief);
   clone.conversion_climax=r121DeterministicConversionClimax(brief);
@@ -1059,11 +1091,11 @@ function r121MechanicalContractNormalize(concept,brief) {
   if(clone.motion_signature) {
     clone.motion_signature={
       ...clone.motion_signature,
-      name:r121SafeNonDocumentaryText(clone.motion_signature.name,brief),
-      purpose:r121SafeNonDocumentaryText(clone.motion_signature.purpose,brief),
-      behavior:r121SafeInteraction(r121SafeNonDocumentaryText(clone.motion_signature.behavior,brief)),
-      mobile_behavior:r121SafeInteraction(r121SafeNonDocumentaryText(clone.motion_signature.mobile_behavior,brief)),
-      reduced_motion_fallback:r121SafeNonDocumentaryText(clone.motion_signature.reduced_motion_fallback,brief)
+      name:r121SafeConceptNarrativeText(clone.motion_signature.name,brief),
+      purpose:r121SafeConceptNarrativeText(clone.motion_signature.purpose,brief),
+      behavior:r121SafeInteraction(r121SafeConceptNarrativeText(clone.motion_signature.behavior,brief)),
+      mobile_behavior:r121SafeInteraction(r121SafeConceptNarrativeText(clone.motion_signature.mobile_behavior,brief)),
+      reduced_motion_fallback:r121SafeConceptNarrativeText(clone.motion_signature.reduced_motion_fallback,brief)
     };
   }
 
