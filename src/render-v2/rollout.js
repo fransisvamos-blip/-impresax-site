@@ -442,6 +442,12 @@ async function tickChaos(env,sql) {
 async function drainQueue(env,sql,state) {
   if(!state.queue_enabled) return {enabled:false,started:[],blocked:[],remediation_started:[],finalizers_started:[]};
 
+  const queueScopeIds=new Set(
+    (Array.isArray(state?.metadata?.queue_scope_prospect_ids)?state.metadata.queue_scope_prospect_ids:[])
+      .map(x=>String(x||"").trim()).filter(Boolean)
+  );
+  const inQueueScope=id=>queueScopeIds.size===0 || queueScopeIds.has(String(id||""));
+
   const finalizersStarted=[];
   const finalizerCandidates=await sql`
     select p.id,p.prospect_id,p.input_pack_id,p.priority,p.updated_at
@@ -455,7 +461,7 @@ async function drainQueue(env,sql,state) {
            where v.render_pack_id=p.id and v.status='RENDER_READY' and v.certified_revision is not null)=3
     order by p.priority,p.updated_at
     limit 10`;
-  for(const pack of finalizerCandidates) {
+  for(const pack of finalizerCandidates.filter(x=>inQueueScope(x.prospect_id))) {
     const gate=await packGate(sql,pack.id);
     if(n(gate?.variants_ready)!==3 || n(gate?.set_qa_passes)>0) continue;
     const finalizer=await maybeStartFinalizer(env,sql,pack,gate);
@@ -497,7 +503,7 @@ async function drainQueue(env,sql,state) {
       order by p.rank,rp.created_at desc
       limit 10`;
 
-    for(const item of blockedPacks) {
+    for(const item of blockedPacks.filter(x=>inQueueScope(x.prospect_id))) {
       if(remediationSlots<=0) break;
       const attempt=n(item.remediation_attempts)+1;
       const remediationPolicyTag=String(REMEDIATION_POLICY_VERSION).toLowerCase().replace(/[^a-z0-9]+/g,"-").slice(0,28);
@@ -564,7 +570,7 @@ async function drainQueue(env,sql,state) {
       order by p.rank
       limit 30`;
 
-    for(const prospect of prospects) {
+    for(const prospect of prospects.filter(x=>inQueueScope(x.id))) {
       if(slots<1) break;
       const created=await createShadowInputPack(env,prospect.id);
       if(created.input_pack?.certification_status!=="PASS") {
