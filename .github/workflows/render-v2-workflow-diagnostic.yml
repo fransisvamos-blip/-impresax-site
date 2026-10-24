@@ -1,4 +1,4 @@
-name: Rendering V2 Final Conversion Launch
+name: Rendering V2 Visual Design 6 Wave 1
 
 on:
   push:
@@ -8,26 +8,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-dedil-final-conversion-v2:
+  launch-visual-design-6-wave-1:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
-      WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-38441f16-d2ff-48bb-bdc1-3520230548b9-A-dedil-final-conversion-v2
+      VARIANT_WORKFLOW: impresax-render-v2-variant
+      REMEDIATION_WORKFLOW: impresax-render-v2-input-remediation
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Launch DEDIL Final Conversion Object V1 compact
+      - name: Launch targeted visual-design batch wave 1
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"1695ca34-83ba-4752-998c-023702ceab42","packId":"38441f16-d2ff-48bb-bdc1-3520230548b9","inputPackId":"01a3d875-3007-4962-8fd4-a453e8fca48f","variantId":"23d69d20-3b20-4fd1-8ba4-e61f2a64f17c","variantKey":"A","parentInstanceId":"rpv2-38441f16-d2ff-48bb-bdc1-3520230548b9-dedil-plan-r119-v14","eventPrefix":"cabina","initialFeedback":{"reason":"CABINA_PRECOMPUTED_RENDER","issues":["The final quote CTA is still visually generic and oversized."],"actions":["Use the current Cabina precomputed DEDIL composition.","Keep IMPRESAX_ICONOGRAPHY_V2 and IMPRESAX_PREMIUM_ELEMENTS_V1.","Apply IMPRESAX_FINAL_CONVERSION_OBJECT_V1 to the final quote CTA.","Final CTA must be controlled-width, asymmetric, with a dedicated action module, brand rail and directional control.","Forbid generic full-width white slabs.","Preserve verified content, imagery and official identity.","Do not start or mutate any other prospect."]}}'
-          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" \
-            --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
-          sleep 8
-          npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
+
+          trigger_variant () {
+            local instance="$1" prospect="$2" pack="$3" input="$4" variant="$5" parent="$6"
+            local params
+            params=$(printf '{"prospectId":"%s","packId":"%s","inputPackId":"%s","variantId":"%s","variantKey":"A","parentInstanceId":"%s","eventPrefix":"visual6","initialFeedback":{"reason":"ENGINE_CONTRACT_UPGRADE","issues":["Existing visual-design preview requires completion on the current ImpresaX rendering contract."],"actions":["Preserve verified facts, official identity and verified assets.","Rebuild with the current premium rendering system rather than polishing the old preview.","Produce desktop 1440 and mobile 390 previews.","Keep human review hold; do not auto-approve or hand off to Site Factory."]}}' "$prospect" "$pack" "$input" "$variant" "$parent")
+            npx wrangler workflows trigger "$VARIANT_WORKFLOW" "$params" --id "$instance" --json --config wrangler.render-v2.jsonc
+          }
+
+          trigger_remediation () {
+            local instance="$1" prospect="$2" pack="$3"
+            local params
+            params=$(printf '{"prospectId":"%s","packId":"%s","attempt":3}' "$prospect" "$pack")
+            npx wrangler workflows trigger "$REMEDIATION_WORKFLOW" "$params" --id "$instance" --json --config wrangler.render-v2.jsonc
+          }
+
+          trigger_variant             "rv2-5c099137-a7fc-484f-855f-69a2b5ed387d-A-visual6-v1"             "91350cbb-fc69-4bc0-abfc-886f2d306da1"             "5c099137-a7fc-484f-855f-69a2b5ed387d"             "ce21b177-562e-40b2-9443-67c5be6102c5"             "ffdfe59c-9b28-4c2c-b745-bf90301b041e"             "rpv2-5c099137-a7fc-484f-855f-69a2b5ed387d"
+
+          trigger_variant             "rv2-d664069c-c51b-4248-8673-2c28b943b591-A-visual6-v1"             "4ca88af3-0e41-41dc-aed0-4dd3118d2486"             "d664069c-c51b-4248-8673-2c28b943b591"             "61286c99-1725-4305-a4cf-ce43dc7073cb"             "7e9594be-e0a3-49f0-a085-63b95257ca25"             "rpv2-d664069c-c51b-4248-8673-2c28b943b591"
+
+          trigger_variant             "rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-visual6-v1"             "0e5c7a2c-5fd8-48e1-ae71-6f9beff73735"             "beac207a-da17-436d-afdf-cfc5caff7727"             "ff343ba2-33b1-41fa-b4c0-9c3202b4d406"             "f342e900-e895-4970-8a72-bed745825e42"             "rpv2-beac207a-da17-436d-afdf-cfc5caff7727"
+
+          trigger_remediation             "rv2-remediate-556d70f8-8692-4949-b117-1d1c8549468d-cabina-3"             "d67c6884-96f5-4d6f-81ef-a158ccfee4a3"             "556d70f8-8692-4949-b117-1d1c8549468d"
+
+          trigger_remediation             "rv2-remediate-a766d551-7cdd-4605-b5bc-2b8d98c2d572-cabina-3"             "5bb7fc6b-a741-4c9e-91b8-b48a2e09f193"             "a766d551-7cdd-4605-b5bc-2b8d98c2d572"
+
+          echo "wave1_launched=true"
