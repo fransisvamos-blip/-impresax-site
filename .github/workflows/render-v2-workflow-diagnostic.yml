@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Desire Pilot V6
+name: Rendering V2 R122 Stop Pilot V6
 
 on:
   push:
@@ -7,9 +7,9 @@ on:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
 
 jobs:
-  launch-r122-kipoint-v6:
+  stop-r122-kipoint-v6:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 4
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
@@ -20,11 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 v6 fact-first kernel
-        shell: bash
+      - name: Terminate v6
         run: |
-          set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v6","runKey":"kipoint-r122-v6","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["Prior runs started from generic logistics metaphors before proving a proprietary business mechanism."],"actions":["First extract a fact-first concept kernel from verified business name, verified services, Catanzaro Lido locality and verified proof; do not name a campaign or choose a style until that kernel exists.","If literal semantics visibly present in KiPoint can be used without inventing brand history, use them as a structural ownability lever.","Make OPERATION, LOCALITY and PROOF each change visual physics, asset world and conversion sequence in a different way.","Generic wrappers such as ledger, seal, credential, corridor, route/map, hub, node, dashboard, gateway, trust-thread or journey are forbidden.","Six campaign assets must all belong to one authored world but remain materially different in medium, subject and narrative function.","Premium navigation, campaign hero, three wow moments, conversion-object CTA, integrated footer and independent mobile composition remain mandatory.","No invented logo geometry, named brand colors, fake premises, fleet, employees, equipment, endorsements or documentary company imagery."]}}'
-          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
-          sleep 8
+          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc || true
+          sleep 4
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
