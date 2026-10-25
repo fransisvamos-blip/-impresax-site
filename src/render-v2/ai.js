@@ -1128,6 +1128,80 @@ function r121BuildTransplantTest(concept,brief) {
   return [current,anchorStatement].filter(Boolean).join(" ");
 }
 
+function r122NormalizeOwnabilityMap(map,brief) {
+  const source=Array.isArray(map)?map:[];
+  const operation=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,4).join(" + ")||"verified operation";
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ")||"verified locality";
+  const proof=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,3).join(" | ")||"verified proof";
+  const literal=String(brief?.literal_brand_semantic||"NONE");
+  const fallbackByRole={
+    OPERATION:{
+      anchor:operation,
+      visual_consequence:"Each verified service state must produce a different spatial behavior, image subject or scale transition; the visual system cannot collapse them into one generic sector scene.",
+      narrative_consequence:"The story advances by moving through the verified service states instead of describing a generic category proposition.",
+      conversion_consequence:"The primary and secondary CTA choices resolve the service-state sequence into quotation and tracking decisions already verified for the business.",
+      removal_failure:"If the verified operation sequence is removed, the page loses its distinct state choreography, four asset assignments and CTA progression, leaving only a reusable logistics or local-business visual shell."
+    },
+    LOCALITY:{
+      anchor:locality,
+      visual_consequence:"Verified locality determines the environmental scale beat, spatial orientation and one distinct context scene without pretending to show real premises.",
+      narrative_consequence:"The campaign is anchored to the exact verified Catanzaro context instead of presenting an anonymous national logistics narrative.",
+      conversion_consequence:"Locality gives the proof rail and contact climax a concrete place of decision, linking the verified address/contact path to the conversion sequence.",
+      removal_failure:"If the verified locality is removed, the environmental beat, proof sequencing and contact climax lose their Catanzaro-specific anchor, so the campaign becomes transferable to any shipping business in any city."
+    },
+    PROOF:{
+      anchor:proof,
+      visual_consequence:"Verified evidence controls the proof rail, typography hierarchy and decision beat adjacent to imagery; it is never embedded inside generated images.",
+      narrative_consequence:"The story earns credibility through the exact MIMIT/rating/local evidence rather than generic trust language.",
+      conversion_consequence:"The proof beat must precede the final conversion object so the request-for-quote decision is supported by verified evidence.",
+      removal_failure:"If the verified proof is removed, the credibility beat and decision sequence collapse into unsupported marketing language, removing the factual reason this prospect should be trusted before conversion."
+    },
+    BRAND_NAME:{
+      anchor:literal!=="NONE"?literal:String(brief?.business_name||"verified business name"),
+      visual_consequence:"The literal verified name semantic becomes spatial behavior only, never a replacement logo, and must be visible in the organizing mechanism and motion logic.",
+      narrative_consequence:"The campaign language uses the literal visible name semantic as a structural cue without inventing brand history or logo meaning.",
+      conversion_consequence:"The semantic resolves the experience toward the final verified decision point, keeping the brand name causally tied to the conversion architecture.",
+      removal_failure:"If the literal brand-name semantic is removed, the organizing mechanism and motion lose the element that makes the system inseparable from this business name, making the concept easier to transplant."
+    }
+  };
+  const byRole=new Map();
+  for(const item of source){
+    const role=String(item?.role||"").toUpperCase();
+    if(fallbackByRole[role] && !byRole.has(role)) byRole.set(role,item);
+  }
+  const required=["OPERATION","LOCALITY","PROOF",...(literal!=="NONE"?["BRAND_NAME"]:[])];
+  return required.slice(0,5).map(role=>{
+    const raw=byRole.get(role)||{};
+    const fb=fallbackByRole[role];
+    const safe=value=>r121SafeConceptNarrativeText(value,brief);
+    const ensure=(value,fallback)=>String(value||"").trim().length>=55?safe(value):fallback;
+    return {
+      role,
+      anchor:String(raw?.anchor||"").trim()||fb.anchor,
+      visual_consequence:ensure(raw?.visual_consequence,fb.visual_consequence),
+      narrative_consequence:ensure(raw?.narrative_consequence,fb.narrative_consequence),
+      conversion_consequence:ensure(raw?.conversion_consequence,fb.conversion_consequence),
+      removal_failure:ensure(raw?.removal_failure,fb.removal_failure)
+    };
+  });
+}
+
+function r122NormalizeAnchorRemovalTests(tests,brief) {
+  const source=Array.isArray(tests)?tests.map(x=>r121SafeConceptNarrativeText(x,brief)).filter(Boolean):[];
+  const ops=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,4).join(" + ");
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ");
+  const proof=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,3).join(" | ");
+  const fallback=[
+    "Operation removal test: without "+(ops||"the verified service states")+", at least four asset roles and the CTA progression lose their specific service-state meaning, so the concept becomes a generic sector composition.",
+    "Locality removal test: without "+(locality||"the verified locality")+", the environmental scale beat, proof sequencing and contact climax lose the exact place anchor and could be transplanted to another city unchanged.",
+    "Proof removal test: without "+(proof||"the verified proof anchors")+", the evidence rail and final decision sequence lose factual credibility and collapse into unsupported marketing language."
+  ];
+  const result=[];
+  for(const item of source) if(String(item).trim().length>=55) result.push(item);
+  for(const item of fallback) if(result.length<3) result.push(item);
+  return result.slice(0,5);
+}
+
 function r121MechanicalContractNormalize(concept,brief) {
   let clone=JSON.parse(JSON.stringify(concept||{}));
   const narrativeKeys=[
@@ -1143,15 +1217,8 @@ function r121MechanicalContractNormalize(concept,brief) {
     clone.campaign_thesis=businessName+" — "+String(clone.campaign_thesis||"").trim();
   }
   clone.ownability_anchors=r121DeterministicOwnabilityAnchors(brief);
-  clone.ownability_map=(Array.isArray(clone.ownability_map)?clone.ownability_map:[]).map(item=>({
-    ...item,
-    anchor:r121SafeConceptNarrativeText(item?.anchor,brief),
-    visual_consequence:r121SafeConceptNarrativeText(item?.visual_consequence,brief),
-    narrative_consequence:r121SafeConceptNarrativeText(item?.narrative_consequence,brief),
-    conversion_consequence:r121SafeConceptNarrativeText(item?.conversion_consequence,brief),
-    removal_failure:r121SafeConceptNarrativeText(item?.removal_failure,brief)
-  }));
-  clone.anchor_removal_test=(Array.isArray(clone.anchor_removal_test)?clone.anchor_removal_test:[]).map(x=>r121SafeConceptNarrativeText(x,brief));
+  clone.ownability_map=r122NormalizeOwnabilityMap(clone.ownability_map,brief);
+  clone.anchor_removal_test=r122NormalizeAnchorRemovalTests(clone.anchor_removal_test,brief);
   clone.brand_name_semantic_hook=r121SafeConceptNarrativeText(clone.brand_name_semantic_hook,brief);
   clone.proof_mechanism=r121DeterministicProofMechanism(brief);
   clone.conversion_climax=r121DeterministicConversionClimax(brief);
