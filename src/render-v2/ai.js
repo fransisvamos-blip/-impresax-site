@@ -361,6 +361,27 @@ const r122OwnabilityMapItemSchema={
   required:["role","anchor","visual_consequence","narrative_consequence","conversion_consequence","removal_failure"]
 };
 
+const r122ConceptKernelSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    literal_name_material:{type:"string"},
+    operation_fact:{type:"string"},
+    locality_fact:{type:"string"},
+    proof_fact:{type:"string"},
+    business_specific_tension:{type:"string"},
+    unique_intersection:{type:"string"},
+    visual_physics:{type:"string"},
+    asset_world_rule:{type:"string"},
+    conversion_logic:{type:"string"},
+    transplant_failure:{type:"string"},
+    forbidden_wrappers:{type:"array",minItems:6,maxItems:16,items:{type:"string"}}
+  },
+  required:[
+    "literal_name_material","operation_fact","locality_fact","proof_fact","business_specific_tension",
+    "unique_intersection","visual_physics","asset_world_rule","conversion_logic","transplant_failure","forbidden_wrappers"
+  ]
+};
+
 const r121ConceptLockSchema={
   type:"object",additionalProperties:false,
   properties:{
@@ -1236,6 +1257,13 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   const removalTests=Array.isArray(concept?.anchor_removal_test)?concept.anchor_removal_test:[];
   if(removalTests.length<3 || removalTests.some(x=>String(x||"").trim().length<55)) issues.push("R122_ANCHOR_REMOVAL_TEST_REQUIRED");
 
+  const kernel=concept?.r122_kernel||{};
+  if(String(kernel?.unique_intersection||"").trim().length<80) issues.push("R122_KERNEL_UNIQUE_INTERSECTION_TOO_THIN");
+  if(String(kernel?.visual_physics||"").trim().length<55) issues.push("R122_KERNEL_VISUAL_PHYSICS_TOO_THIN");
+  if(String(kernel?.transplant_failure||"").trim().length<80) issues.push("R122_KERNEL_TRANSPLANT_FAILURE_TOO_THIN");
+  const kernelWorld=[kernel?.visual_physics,kernel?.asset_world_rule,kernel?.conversion_logic].filter(Boolean).join(" ");
+  if(r121TextOverlap(kernelWorld,conceptWorldText)<0.15) issues.push("R122_CONCEPT_DRIFTED_FROM_KERNEL");
+
   const thesis=r121Normalize(concept?.campaign_thesis);
   const mechanism=r121Normalize(concept?.organizing_mechanism);
   const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional",
@@ -1296,6 +1324,34 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   return {pass:issues.length===0,issues,brief};
 }
 
+async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFeedback=null}={}) {
+  const prompt=[
+    "R122 CONCEPT KERNEL. Do NOT name a campaign, design a website, choose a visual style or invent a metaphor.",
+    "Your task is to extract the unique commercial mechanism that already exists inside the verified business facts.",
+    "Start from literal material only: verified business name, verified services/operations, verified locality and verified proof.",
+    "LITERAL NAME MATERIAL: if the verified business name visibly contains an ordinary-language term, you may cite that exact visible term as semantic material. Do not infer etymology or founder intent. Otherwise write NONE.",
+    "BUSINESS-SPECIFIC TENSION: describe the exact tension/decision the customer faces that this verified business resolves, without inventing a promise.",
+    "UNIQUE INTERSECTION: explain why the combination of operation + locality + proof creates a mechanism that would collapse if moved to another company.",
+    "VISUAL PHYSICS: describe only spatial/visual behavior — what appears, accumulates, branches, resolves, locks, opens, compresses, separates, converges, reveals or changes state. Do not name a metaphor or UI component.",
+    "ASSET WORLD: define what the six campaign images must collectively explore so they behave like one authored world rather than six category pictures.",
+    "CONVERSION LOGIC: explain how the verified CTA choices emerge from the business-specific mechanism, not from generic marketing.",
+    "TRANSPLANT FAILURE: explicitly state why a logo/copy swap would break the mechanism.",
+    "FORBIDDEN WRAPPERS must include generic campaign containers such as ledger, seal, credential, passport, corridor, hub, node, route, map, dashboard, scorecard, certificate, gateway, control panel, trust thread and generic journey.",
+    "Do not use unverifiable superiority words such as premium, elite, authority, prestige, best, faster, safer, guaranteed or certified unless literally verified.",
+    juryFeedback?"PRIOR JURY FEEDBACK TO SOLVE: "+JSON.stringify(juryFeedback):"",
+    "AUTHORITATIVE VERIFIED BRIEF:",
+    JSON.stringify(brief)
+  ].join("\n");
+  const r=await runStructured(env,"creative",{
+    messages:[
+      {role:"system",content:"You are an elite brand-strategy kernel designer. Extract a proprietary mechanism from verified facts before any campaign naming or visual styling is allowed."},
+      {role:"user",content:prompt}
+    ],
+    schema:r122ConceptKernelSchema,maxTokens:2600,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
+  });
+  return r.data;
+}
+
 export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
   const directionMap=directions?.directions||directions||{};
   const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
@@ -1309,10 +1365,14 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     r121_legacy_zero_photo_superseded:true
   };
   const brief=r121CreativeIntelligenceBrief(inputPayload,contentTruth);
+  const r122Kernel=await createR122ConceptKernel(env,brief,{beforeModelAttempt,juryFeedback});
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
     ...R122_CONCEPT_RULES,
+    "R122 KERNEL IS AUTHORITATIVE. Do not invent a different organizing mechanism. Translate the kernel's business_specific_tension + unique_intersection + visual_physics into the campaign concept.",
+    "Do not name or wrap the concept until the kernel's spatial behavior is clear. Naming comes last.",
+    "The six asset subjects must all be recognizably generated from kernel.asset_world_rule and kernel.visual_physics, not from generic sector imagery.",
     "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 6 desktop beats and exactly 6 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
@@ -1351,6 +1411,8 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "AVAILABLE DIRECTION KEYS: "+JSON.stringify(availableDirectionKeys.length?availableDirectionKeys:["A"])+". Select ONLY from these keys; never invent a missing route.",
     "Select the strongest AVAILABLE route based on the campaign idea, not on implementation convenience.",
     juryFeedback?"PRIOR CONCEPT JURY REJECTION. Rebuild the concept, do not patch wording: "+JSON.stringify(juryFeedback):"",
+    "R122 AUTHORITATIVE CONCEPT KERNEL:",
+    JSON.stringify(r122Kernel),
     "CREATIVE INTELLIGENCE BRIEF — authoritative distilled facts for the concept:",
     JSON.stringify(brief),
     "CREATIVE INTELLIGENCE BRIEF:",
@@ -1386,6 +1448,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
   const concept=r121MechanicalContractNormalize(
     r121DeterministicSafetyNormalize({
       ...r.data,
+      r122_kernel:r122Kernel,
       standard:R121_CONCEPT_LOCK_STANDARD,
       verified_proof_plan:deterministicProofPlan
     },brief),
@@ -1433,6 +1496,7 @@ export async function refineR121ConceptLock(env,inputPayload,contentTruth,direct
   const refined=r121MechanicalContractNormalize(
     r121DeterministicSafetyNormalize({
       ...r.data,
+      r122_kernel:concept?.r122_kernel,
       standard:R121_CONCEPT_LOCK_STANDARD,
       selected_direction_key:String(r.data?.selected_direction_key||concept?.selected_direction_key||availableDirectionKeys[0]||"A"),
       verified_proof_plan:[...(concept?.verified_proof_plan||brief?.verified_proof_anchors||[])].slice(0,6)
