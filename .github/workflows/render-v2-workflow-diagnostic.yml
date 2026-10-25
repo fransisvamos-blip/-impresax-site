@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Stop V14
+name: Rendering V2 R122 Desire Pilot V15
 
 on:
   push:
@@ -7,21 +7,24 @@ on:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
 
 jobs:
-  stop-v14:
+  launch-r122-kipoint-v15:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 8
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v14
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Stop stale v14
+      - name: Launch KiPoint R122 v15
+        shell: bash
         run: |
-          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc || true
-          sleep 4
+          set -euo pipefail
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v15","runKey":"kipoint-r122-v15","initialFeedback":{"reason":"R122_DESIRE_ENGINE_ANCHOR_AWARE_PRECHECK","issues":["Previous deterministic precheck rejected concepts from keyword detection before the hostile jury could assess actual ownability."],"actions":["Use deterministic business-derived kernel.","Treat verified service states as parallel capabilities, not a fictional sequence.","Keep all verified business/locality/proof anchors load-bearing.","Let the pre-production jury judge transferability; keyword presence alone is not a rejection.","If concept passes pre-production gate, continue through six campaign assets, rendering and final 9.5/9.7 screenshot jury.","No queue expansion and no other prospect changes."]}}'
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
+          sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
