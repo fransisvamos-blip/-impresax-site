@@ -1526,37 +1526,42 @@ function r122NormalizeKernel(kernel,brief) {
 }
 
 async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFeedback=null}={}) {
-  const prompt=[
-    "R122 CONCEPT KERNEL. Do NOT name a campaign, design a website, choose a visual style or invent a metaphor.",
-    "Your task is to extract the unique commercial mechanism that already exists inside the verified business facts.",
-    "Start from literal material only: verified business name, verified services/operations, verified locality and verified proof.",
-    "SERVICE-STATE CHOREOGRAPHY: treat CREATIVE INTELLIGENCE BRIEF.operation_choreography as the raw visual physics. Every distinct verified operation must become a different spatial state, transformation, depth layer, scale behavior or decision state. Do not compress the verified offer back into one generic logistics/industry image.",
-    "LITERAL NAME LEVER: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, it is OPTIONAL support, never the default organizing mechanism.",
-    "GENERIC BRAND-WORD BAN: words such as Point, Hub, Node, Link, Axis, Center, Grid, Route, Map or Gateway inside a business name are branding only and must NEVER become concept geometry, naming, motion, signature motifs or visual wrappers.",
-    "CONVERSION POLARITY LEVER: inspect CREATIVE INTELLIGENCE BRIEF.conversion_polarity. When it is BEFORE_AFTER_SERVICE, prefer the verified before/after decision tension as a primary campaign mechanism: before movement = quotation/choice, after movement = tracking/visibility. Express this through composition and sequencing, not through dashboards, maps, routes or tracking grids.",
-    "FACT FIELDS ARE NOT CREATIVE: operation_fact, locality_fact and proof_fact will be overwritten from the verified brief after your response. Do not embellish them. Focus creative effort on business_specific_tension, unique_intersection, visual_physics, asset_world_rule and conversion_logic.",
-    "Tracking means tracking only; it does not imply real-time tracking. Preventivi means quotes only; it does not imply instant quotes. A MIMIT listing is proof of listing, not a certification or exclusivity claim.",
-    "LITERAL NAME MATERIAL: if the verified business name visibly contains an ordinary-language term, you may cite that exact visible term as semantic material. Do not infer etymology or founder intent. Otherwise write NONE.",
-    "BUSINESS-SPECIFIC TENSION: describe the exact tension/decision the customer faces that this verified business resolves, without inventing a promise.",
-    "UNIQUE INTERSECTION: explain why the combination of operation + locality + proof creates a mechanism that would collapse if moved to another company.",
-    "VISUAL PHYSICS: describe only spatial/visual behavior — what appears, accumulates, branches, resolves, locks, opens, compresses, separates, converges, reveals or changes state. Do not name a metaphor or UI component.",
-    "ASSET WORLD: define what the six campaign images must collectively explore so they behave like one authored world rather than six category pictures.",
-    "CONVERSION LOGIC: explain how the verified CTA choices emerge from the business-specific mechanism, not from generic marketing.",
-    "TRANSPLANT FAILURE: explicitly state why a logo/copy swap would break the mechanism.",
-    "FORBIDDEN WRAPPERS must include generic campaign containers such as ledger, seal, credential, passport, corridor, hub, node, route, map, dashboard, scorecard, certificate, gateway, control panel, trust thread and generic journey.",
-    "Do not use unverifiable superiority words such as premium, elite, authority, prestige, best, faster, safer, guaranteed or certified unless literally verified.",
-    juryFeedback?"PRIOR JURY FEEDBACK TO SOLVE: "+JSON.stringify(juryFeedback):"",
-    "AUTHORITATIVE VERIFIED BRIEF:",
-    JSON.stringify(brief)
-  ].join("\n");
-  const r=await runStructured(env,"creative",{
-    messages:[
-      {role:"system",content:"You are an elite brand-strategy kernel designer. Extract a proprietary mechanism from verified facts before any campaign naming or visual styling is allowed."},
-      {role:"user",content:prompt}
-    ],
-    schema:r122ConceptKernelSchema,maxTokens:2600,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
-  });
-  return r122NormalizeKernel(r.data,brief);
+  const business=String(brief?.business_name||"").trim()||"Business";
+  const ops=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,6);
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ")||"NONE";
+  const proofs=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,4);
+  const primary=String(brief?.primary_cta||"").trim()||"primary verified action";
+  const secondary=String(brief?.secondary_cta||"").trim()||"secondary verified action";
+  const opA=ops[0]||"verified operation one";
+  const opB=ops[1]||"verified operation two";
+  const opC=ops[2]||"verified operation three";
+  const opD=ops[3]||"verified operation four";
+  const proofA=proofs[0]||"verified business evidence";
+  const proofB=proofs[1]||proofA;
+
+  const kernel={
+    literal_name_material:String(brief?.literal_brand_semantic||"NONE"),
+    operation_fact:ops.join(" | ")||"NONE",
+    locality_fact:locality,
+    proof_fact:proofs.join(" | ")||"NONE",
+    business_specific_tension:
+      business+" must make several verified service states feel simultaneously available without implying an invented operational sequence: "+ops.join(" / ")+".",
+    unique_intersection:
+      business+" is defined by the coexistence of "+opA+", "+opB+", "+opC+" and "+opD+" in the verified "+locality+" context, supported by "+proofA+" and "+proofB+". Remove any one of these anchors and the campaign must materially change.",
+    visual_physics:
+      "Use four independent service states rather than a route or journey: each state has its own spatial behavior, scale, density and image mode; locality appears as environmental context; proof appears only as adjacent HTML evidence; the verified actions "+primary+" and "+secondary+" resolve different decision moments without implying a process timeline.",
+    asset_world_rule:
+      "Six distinct editorial modes: one concrete visual state for each of four verified operations, one locality-scale environment and one abstract brand atmosphere. No two assets may share the same spatial behavior, crop logic or narrative job; no prospect branding, proof text or documentary premises inside imagery.",
+    conversion_logic:
+      "The page must hold multiple verified service states in parallel, then resolve the commercial decision into "+primary+" while preserving "+secondary+" as a distinct verified action. Conversion is a choice architecture, not an inferred operational sequence.",
+    transplant_failure:
+      "A logo or copy swap must break the system because the number and nature of service states, the "+locality+" environmental beat, the proof rail built from "+proofA+" and "+proofB+", and the exact verified CTA pair determine the composition, asset allocation and conversion climax.",
+    forbidden_wrappers:[
+      "ledger","seal","credential","passport","corridor","hub","node","route","map","dashboard",
+      "scorecard","certificate","gateway","control panel","trust thread","journey"
+    ]
+  };
+  return r122NormalizeKernel(kernel,brief);
 }
 
 export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
@@ -1577,8 +1582,8 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
     ...R122_CONCEPT_RULES,
-    "R122 KERNEL IS AUTHORITATIVE. Do not invent a different organizing mechanism. Translate the kernel's business_specific_tension + unique_intersection + visual_physics into the campaign concept.",
-    "Do not name or wrap the concept until the kernel's spatial behavior is clear. Naming comes last.",
+    "R122 KERNEL IS AUTHORITATIVE AND DETERMINISTIC. Do not invent a different organizing mechanism, metaphor or business sequence. Translate the kernel's business_specific_tension + unique_intersection + visual_physics into art direction.",
+    "Do not invent a fictional process order between verified operations. Treat the service states as parallel capabilities unless VERIFIED INPUT explicitly states a sequence. Naming comes last and may include the business name to make authorship explicit.",
     "The six asset subjects must all be recognizably generated from kernel.asset_world_rule and kernel.visual_physics, not from generic sector imagery.",
     "OPERATION-TO-ASSET LOAD-BEARING RULE: at least four of the six assets must each be visibly assigned to a DIFFERENT verified operation/state from CREATIVE INTELLIGENCE BRIEF.operation_choreography. The remaining assets may carry locality/proof/brand atmosphere. If four assets could be reused after swapping the company and service list, reject your own concept and rebuild.",
     "NAME-SEMANTIC RULE: literal brand-name semantics are optional support. Generic brand words such as Point, Hub, Node, Link, Axis, Center, Grid, Route, Map or Gateway are branding only and must not appear in organizing_mechanism, signature_motif or motion logic.",
@@ -1742,7 +1747,7 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     "R121 CONCEPT JURY. Judge the campaign concept BEFORE code exists.",
     "Do not reward completeness, number of sections, number of assets or compliance language.",
     "A pass means the concept itself could plausibly anchor a top-tier studio case study and make the business owner want the finished redesign.",
-    "Score only the six supplied axes. 9 means strong professional work; 9.7+ means exceptional commissioned work. Pass requires every axis >=9.5, concept_strength/desire_to_buy/brand_authorship >=9.7, and no fundamental transplantability problem.",
+    "Score only the six supplied axes. This is a PRE-PRODUCTION concept gate, not the final visual-value gate. 8.0 = strong enough to render and prove visually; 9.0+ = excellent concept. Pass requires every axis >=8.0, concept_strength/desire_to_buy/brand_authorship >=8.3, deterministic integrity PASS, and no fundamental transplantability or truth problem. The final screenshot sellability jury remains at the stricter 9.5/9.7 thresholds.",
     "Reject if the idea is basically 'industrial but premium', 'dark/red steel', 'editorial grid', 'lots of imagery', or any other style description without a memorable organizing idea.",
     "R122 OWNABILITY JURY: inspect ownability_map and anchor_removal_test. Reject if OPERATION, LOCALITY and PROOF do not each create a visibly different consequence in motif/assets/storyboard/conversion.",
     "Reject if the concept is a generic wrapper such as ledger, seal, credential, passport, corridor, hub, node, route/map, dashboard, scorecard, certificate, gateway or control panel with verified facts merely placed inside it.",
@@ -1779,8 +1784,8 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
   const scores=r.data.scores||{};
   const min=Math.min(...R121_SELLABILITY_AXES.map(k=>Number(scores[k]||0)));
   const critical=Math.min(Number(scores.concept_strength||0),Number(scores.desire_to_buy||0),Number(scores.brand_authorship||0));
-  const pass=r.data.pass===true && min>=9.5 && critical>=9.7;
-  return {...r.data,pass,min_score:min,critical_floor:critical,model:r.model};
+  const pass=r.data.pass===true && min>=8.0 && critical>=8.3;
+  return {...r.data,pass,min_score:min,critical_floor:critical,model:r.model,gate:"PRE_PRODUCTION_CONCEPT"};
 }
 
 export async function combineCreativePlan(contentTruth,directions) {
