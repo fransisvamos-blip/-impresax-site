@@ -743,11 +743,32 @@ function r121SplitFacts(value) {
   return String(value||"").split(/[;\n]+/).map(x=>x.trim()).filter(Boolean);
 }
 
+function r122SplitVerifiedOperations(value) {
+  const raw=String(value||"").trim();
+  if(!raw) return [];
+  const semicolonParts=raw.split(/[;\n]+/).map(x=>x.trim()).filter(Boolean);
+  const parts=[];
+  for(const block of semicolonParts){
+    const commaParts=block.split(/\s*,\s*/).map(x=>x.trim()).filter(Boolean);
+    if(commaParts.length>1) parts.push(...commaParts);
+    else parts.push(block);
+  }
+  return [...new Set(parts.map(x=>x.replace(/[.]+$/,"").trim()).filter(Boolean))].slice(0,8);
+}
+
+function r122LiteralBrandSemantic(businessName) {
+  const source=String(businessName||"");
+  const lower=source.toLowerCase();
+  const dictionary=["point","studio","casa","home","lab","hub","line","linea","forma","frame","core","axis","asse","nodo","node","link","plus","nova","prime","centro","center"];
+  const hit=dictionary.find(word=>lower.includes(word));
+  return hit ? source.match(new RegExp(hit,"i"))?.[0]||hit : "NONE";
+}
+
 function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
   const truth=contentTruth?.content_truth||contentTruth||{};
   const services=[
-    ...r121SplitFacts(inputPayload?.verified_services),
-    ...(Array.isArray(truth?.services)?truth.services.map(x=>String(x?.title||"").trim()).filter(Boolean):[])
+    ...r122SplitVerifiedOperations(inputPayload?.verified_services),
+    ...(Array.isArray(truth?.services)?truth.services.flatMap(x=>r122SplitVerifiedOperations(String(x?.title||""))).filter(Boolean):[])
   ];
   const proofs=[
     ...r121SplitFacts(inputPayload?.verified_trust),
@@ -755,8 +776,10 @@ function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
   ];
   return {
     business_name:String(inputPayload?.business_name||"").trim(),
+    literal_brand_semantic:r122LiteralBrandSemantic(inputPayload?.business_name),
     vertical:String(inputPayload?.vertical||"").trim(),
-    distinctive_operations:[...new Set(services)].slice(0,6),
+    distinctive_operations:[...new Set(services)].slice(0,8),
+    operation_choreography:[...new Set(services)].slice(0,6).map((x,i)=>({index:i+1,operation:x,state:"STATE_"+(i+1)})),
     verified_proof_anchors:[...new Set(proofs)].slice(0,8),
     locality:{
       city:String(inputPayload?.city||"").trim(),
@@ -1315,6 +1338,15 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
     x?.visual_function,
     x?.crop_behavior
   ]).join(" "));
+  const atomicOps=(brief?.distinctive_operations||[]).filter(Boolean);
+  const assetTexts=(concept?.asset_campaign||[]).map(x=>r121Normalize([x?.narrative_role,x?.subject,x?.visual_function].filter(Boolean).join(" ")));
+  const visuallyRepresentedOps=atomicOps.filter(op=>assetTexts.some(t=>r121TextOverlap(t,op)>=0.22));
+  if(atomicOps.length>=4 && visuallyRepresentedOps.length<4) issues.push("R122_ASSET_WORLD_NOT_LOAD_BEARING_ACROSS_OPERATIONS:"+visuallyRepresentedOps.length+"/4");
+  const literalHook=r121Normalize(brief?.literal_brand_semantic||"");
+  if(literalHook && literalHook!=="none") {
+    const structuralText=r121Normalize([concept?.organizing_mechanism,concept?.signature_motif,concept?.motion_signature?.purpose,concept?.motion_signature?.behavior].join(" "));
+    if(!structuralText.includes(literalHook)) issues.push("R122_LITERAL_BRAND_SEMANTIC_NOT_STRUCTURAL:"+literalHook);
+  }
   const businessTokens=r121Normalize(brief?.business_name).split(" ").filter(x=>x.length>=5);
   if(businessTokens.some(x=>campaignCreativeText.includes(x))) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PROSPECT_BRANDING");
   if(campaignCreativeText.includes("u power")||campaignCreativeText.includes("upower")) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PARTNER_BRANDING");
@@ -1359,12 +1391,12 @@ function r122NormalizeKernel(kernel,brief) {
     return out;
   };
 
-  let literal=String(source.literal_name_material||"").trim();
+  let literal=String(brief?.literal_brand_semantic||source.literal_name_material||"").trim();
   if(!literal || /^none$/i.test(literal)) literal="NONE";
   else {
     const normalizedBusiness=r121Normalize(business).replace(/\s+/g,"");
     const normalizedLiteral=r121Normalize(literal).replace(/\s+/g,"");
-    if(normalizedLiteral.length<4 || !normalizedBusiness.includes(normalizedLiteral)) literal="NONE";
+    if(normalizedLiteral.length<3 || !normalizedBusiness.includes(normalizedLiteral)) literal="NONE";
   }
 
   return {
@@ -1391,6 +1423,8 @@ async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFe
     "R122 CONCEPT KERNEL. Do NOT name a campaign, design a website, choose a visual style or invent a metaphor.",
     "Your task is to extract the unique commercial mechanism that already exists inside the verified business facts.",
     "Start from literal material only: verified business name, verified services/operations, verified locality and verified proof.",
+    "SERVICE-STATE CHOREOGRAPHY: treat CREATIVE INTELLIGENCE BRIEF.operation_choreography as the raw visual physics. Every distinct verified operation must become a different spatial state, transformation, depth layer, scale behavior or decision state. Do not compress the verified offer back into one generic logistics/industry image.",
+    "LITERAL NAME LEVER: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, make that exact visible word structurally load-bearing. It may organize spatial behavior, sequencing or conversion, but never invent etymology or reinterpret the logo.",
     "FACT FIELDS ARE NOT CREATIVE: operation_fact, locality_fact and proof_fact will be overwritten from the verified brief after your response. Do not embellish them. Focus creative effort on business_specific_tension, unique_intersection, visual_physics, asset_world_rule and conversion_logic.",
     "Tracking means tracking only; it does not imply real-time tracking. Preventivi means quotes only; it does not imply instant quotes. A MIMIT listing is proof of listing, not a certification or exclusivity claim.",
     "LITERAL NAME MATERIAL: if the verified business name visibly contains an ordinary-language term, you may cite that exact visible term as semantic material. Do not infer etymology or founder intent. Otherwise write NONE.",
@@ -1437,6 +1471,9 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "R122 KERNEL IS AUTHORITATIVE. Do not invent a different organizing mechanism. Translate the kernel's business_specific_tension + unique_intersection + visual_physics into the campaign concept.",
     "Do not name or wrap the concept until the kernel's spatial behavior is clear. Naming comes last.",
     "The six asset subjects must all be recognizably generated from kernel.asset_world_rule and kernel.visual_physics, not from generic sector imagery.",
+    "OPERATION-TO-ASSET LOAD-BEARING RULE: at least four of the six assets must each be visibly assigned to a DIFFERENT verified operation/state from CREATIVE INTELLIGENCE BRIEF.operation_choreography. The remaining assets may carry locality/proof/brand atmosphere. If four assets could be reused after swapping the company and service list, reject your own concept and rebuild.",
+    "NAME-SEMANTIC RULE: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, organizing_mechanism and signature_motif must visibly use that literal semantic as spatial behavior, never as a new logo. For a literal word such as Point, the page may converge to, depart from, multiply, isolate or resolve at points; it may not invent a point-shaped logo.",
+    "NO WRAPPER NAMING: do not title the concept as a ledger, seal, corridor, passport, credential, route, map, hub, node, gateway, dashboard or similar container. Name the mechanism only after the operation-state choreography is concrete.",
     "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 6 desktop beats and exactly 6 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
     "A strong concept must change how the prospect is perceived, not merely make the site prettier.",
