@@ -764,6 +764,29 @@ function r122LiteralBrandSemantic(businessName) {
   return hit ? source.match(new RegExp(hit,"i"))?.[0]||hit : "NONE";
 }
 
+function r122ConversionPolarity(primary,secondary) {
+  const a=String(primary||"").trim();
+  const b=String(secondary||"").trim();
+  const an=r121Normalize(a),bn=r121Normalize(b);
+  if((/preventiv|quote|estimate/.test(an)) && (/tracc|track/.test(bn))) {
+    return {
+      type:"BEFORE_AFTER_SERVICE",
+      before_action:a,
+      after_action:b,
+      creative_tension:"Before movement the customer needs a decision; after movement the customer needs visibility. Keep these as two different conversion states, not as a route/map/dashboard metaphor."
+    };
+  }
+  if(a&&b&&r121Normalize(a)!==r121Normalize(b)) {
+    return {
+      type:"DUAL_VERIFIED_ACTION",
+      before_action:a,
+      after_action:b,
+      creative_tension:"Two verified actions create two different decision states; use their contrast only when it materially changes narrative and conversion architecture."
+    };
+  }
+  return {type:"SINGLE_ACTION",before_action:a,after_action:b,creative_tension:"No strong verified CTA polarity is available."};
+}
+
 function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
   const truth=contentTruth?.content_truth||contentTruth||{};
   const services=[
@@ -789,6 +812,10 @@ function r121CreativeIntelligenceBrief(inputPayload,contentTruth) {
     verified_contacts:String(inputPayload?.verified_contacts||"").trim(),
     primary_cta:String(inputPayload?.primary_cta||truth?.primary_cta_label||"").trim(),
     secondary_cta:String(inputPayload?.secondary_cta||truth?.secondary_cta_label||"").trim(),
+    conversion_polarity:r122ConversionPolarity(
+      String(inputPayload?.primary_cta||truth?.primary_cta_label||"").trim(),
+      String(inputPayload?.secondary_cta||truth?.secondary_cta_label||"").trim()
+    ),
     official_identity_locked:Boolean(inputPayload?.official_logo?.lock==="IMMUTABLE"||inputPayload?.identity_mode==="OFFICIAL_LOGO"),
     brand_constraints:{
       visual_cues:String(inputPayload?.brand_dna?.visual_cues||"").trim(),
@@ -824,7 +851,9 @@ function r121SafeCampaignText(value,brief) {
   }
   out=out
     .replace(/\bU[-\s]?Power\b/gi,"")
-    .replace(/\b(?:logo|logos|branding|branded|signage|sticker|stickers|wall sign|uniform|uniforms|packaging label|partner mark|company identifier)\b/gi,"")
+    .replace(/\b(?:MIMIT|Google|rating|ratings|review|reviews|star|stars|recensioni|stelle)\b/gi,"")
+    .replace(/\b\d+(?:[.,]\d+)?(?:\/\d+)?\b/g,"")
+    .replace(/\b(?:logo|logos|branding|branded|signage|sticker|stickers|wall sign|uniform|uniforms|packaging label|partner mark|company identifier|badge|badges)\b/gi,"")
     .replace(/\s{2,}/g," ")
     .replace(/\s+([,.;:])/g,"$1")
     .trim();
@@ -896,7 +925,9 @@ function r121SafeProcessText(value,brief) {
 function r121SafeConceptNarrativeText(value,brief,{paletteSafe=false}={}) {
   let out=r121SafeProcessText(String(value||""),brief);
   out=out
-    .replace(/\b(?:city[- ]endorsed|municipally[- ]endorsed|government[- ]endorsed|sovereign|elite|waterfront prestige|official postal authority)\b/gi,"authoritative")
+    .replace(/\b(?:city[- ]endorsed|municipally[- ]endorsed|government[- ]endorsed|sovereign|elite|waterfront prestige|official postal authority)\b/gi,"verified")
+    .replace(/\b(?:exclusive|exclusively|only choice|market leader|leading|best|superior|guaranteed|guarantee|prestige|prestigious|high-status)\b/gi,"")
+    .replace(/\bmeasurable\s+(?:confidence|trust|certainty)\b/gi,"verified evidence")
     .replace(/\b(?:new|custom|proprietary)\s+(?:emblem|monogram|logo|logo mark|brand mark)\b/gi,"non-logo structural motif")
     .replace(/\b(?:reinterpret|redraw|redesign|reshape|morph|transform)\s+(?:the\s+)?(?:official\s+)?(?:logo|brand mark)\b/gi,"leave the official logo unchanged while surrounding geometry evolves")
     .replace(/\s{2,}/g," ")
@@ -1005,7 +1036,8 @@ function r121CanonicalCampaignRoles(concept,brief) {
     const rule=rules[token];
     const safe=value=>r121SafeNonDocumentaryText(value,brief);
     const rawSubject=safe(raw?.subject);
-    const subjectBase=rawSubject && r121TextOverlap(rawSubject,rule.subject)<0.75
+    const preserveRaw=["R121_MATERIAL_MACRO","R121_PROCESS","R121_STRUCTURE"].includes(token);
+    const subjectBase=preserveRaw && rawSubject && r121TextOverlap(rawSubject,rule.subject)<0.75
       ? rule.subject+" — "+rawSubject
       : rule.subject;
     return {
@@ -1412,9 +1444,11 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   const visuallyRepresentedOps=atomicOps.filter(op=>assetTexts.some(t=>r121TextOverlap(t,op)>=0.22));
   if(atomicOps.length>=4 && visuallyRepresentedOps.length<4) issues.push("R122_ASSET_WORLD_NOT_LOAD_BEARING_ACROSS_OPERATIONS:"+visuallyRepresentedOps.length+"/4");
   const literalHook=r121Normalize(brief?.literal_brand_semantic||"");
-  if(literalHook && literalHook!=="none") {
+  if(literalHook==="point") {
     const structuralText=r121Normalize([concept?.organizing_mechanism,concept?.signature_motif,concept?.motion_signature?.purpose,concept?.motion_signature?.behavior].join(" "));
-    if(!structuralText.includes(literalHook)) issues.push("R122_LITERAL_BRAND_SEMANTIC_NOT_STRUCTURAL:"+literalHook);
+    if(/\b(dot|node|marker|map pin|grid|point to line|point-to-line|route point|tracking grid)\b/i.test(structuralText)) {
+      issues.push("R122_LITERAL_POINT_WRAPPER_FORBIDDEN");
+    }
   }
   const localityTokens=new Set(r121Normalize([brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" ")).split(" ").filter(x=>x.length>=4));
   const businessTokens=r121Normalize(brief?.business_name).split(" ")
@@ -1496,7 +1530,8 @@ async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFe
     "Your task is to extract the unique commercial mechanism that already exists inside the verified business facts.",
     "Start from literal material only: verified business name, verified services/operations, verified locality and verified proof.",
     "SERVICE-STATE CHOREOGRAPHY: treat CREATIVE INTELLIGENCE BRIEF.operation_choreography as the raw visual physics. Every distinct verified operation must become a different spatial state, transformation, depth layer, scale behavior or decision state. Do not compress the verified offer back into one generic logistics/industry image.",
-    "LITERAL NAME LEVER: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, make that exact visible word structurally load-bearing. It may organize spatial behavior, sequencing or conversion, but never invent etymology or reinterpret the logo.",
+    "LITERAL NAME LEVER: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, it is OPTIONAL support, never the default organizing mechanism. Do not literalize Point as a dot, node, marker, map pin, route point, grid intersection or point-to-line animation.",
+    "CONVERSION POLARITY LEVER: inspect CREATIVE INTELLIGENCE BRIEF.conversion_polarity. When it is BEFORE_AFTER_SERVICE, prefer the verified before/after decision tension as a primary campaign mechanism: before movement = quotation/choice, after movement = tracking/visibility. Express this through composition and sequencing, not through dashboards, maps, routes or tracking grids.",
     "FACT FIELDS ARE NOT CREATIVE: operation_fact, locality_fact and proof_fact will be overwritten from the verified brief after your response. Do not embellish them. Focus creative effort on business_specific_tension, unique_intersection, visual_physics, asset_world_rule and conversion_logic.",
     "Tracking means tracking only; it does not imply real-time tracking. Preventivi means quotes only; it does not imply instant quotes. A MIMIT listing is proof of listing, not a certification or exclusivity claim.",
     "LITERAL NAME MATERIAL: if the verified business name visibly contains an ordinary-language term, you may cite that exact visible term as semantic material. Do not infer etymology or founder intent. Otherwise write NONE.",
@@ -1544,7 +1579,8 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "Do not name or wrap the concept until the kernel's spatial behavior is clear. Naming comes last.",
     "The six asset subjects must all be recognizably generated from kernel.asset_world_rule and kernel.visual_physics, not from generic sector imagery.",
     "OPERATION-TO-ASSET LOAD-BEARING RULE: at least four of the six assets must each be visibly assigned to a DIFFERENT verified operation/state from CREATIVE INTELLIGENCE BRIEF.operation_choreography. The remaining assets may carry locality/proof/brand atmosphere. If four assets could be reused after swapping the company and service list, reject your own concept and rebuild.",
-    "NAME-SEMANTIC RULE: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, organizing_mechanism and signature_motif must visibly use that literal semantic as spatial behavior, never as a new logo. For a literal word such as Point, the page may converge to, depart from, multiply, isolate or resolve at points; it may not invent a point-shaped logo.",
+    "NAME-SEMANTIC RULE: literal brand-name semantics are optional support. Never turn Point into dots, nodes, markers, map pins, route geometry, tracking grids or a point-to-line system; those are generic wrappers.",
+    "CTA-POLARITY RULE: when CREATIVE INTELLIGENCE BRIEF.conversion_polarity.type is BEFORE_AFTER_SERVICE, make the two verified actions create materially different halves/states of the experience. The primary CTA governs pre-service decision; the secondary CTA governs post-service visibility. This distinction must affect storyboard order, visual modes and final conversion object.",
     "NO WRAPPER NAMING: do not title the concept as a ledger, seal, corridor, passport, credential, route, map, hub, node, gateway, dashboard or similar container. Name the mechanism only after the operation-state choreography is concrete.",
     "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 6 desktop beats and exactly 6 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
     "Think like a global brand-experience creative director, not a UI designer.",
