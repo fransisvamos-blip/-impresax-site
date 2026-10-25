@@ -957,62 +957,64 @@ function r121DeterministicConversionClimax(brief) {
 function r121CanonicalCampaignRoles(concept,brief) {
   const source=Array.isArray(concept?.asset_campaign)?concept.asset_campaign:[];
   const byToken=Object.fromEntries(source.map(x=>[String(x?.token||""),x]));
-  const fallback={
+  const operations=(brief?.distinctive_operations||[]).filter(Boolean);
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ");
+  const op=(index,fallback)=>operations[index]||operations[0]||fallback;
+
+  const rules={
     R121_MATERIAL_MACRO:{
-      narrative_role:"Reveal one verified category cue through an extreme editorial close-up.",
-      visual_function:"Tactile/detail photography or an abstract brand-surface study with no documentary claim.",
-      subject:"Category-relevant unbranded cue supported by verified operations; otherwise abstract brand-derived surface and light.",
-      crop_behavior:"Tight crop with tactile detail legible on desktop and mobile."
+      narrative_role:"Microscopic category cue",
+      subject:"Extreme macro photography of one unbranded cue associated only with verified service: "+op(0,"verified offer"),
+      visual_function:"PHOTOGRAPHIC MACRO ONLY — shallow depth of field, tactile surface, edge detail, no diagram, no environmental depth.",
+      crop_behavior:"Extreme close crop; one texture/detail fills the frame and remains tactile on mobile."
     },
     R121_PROCESS:{
-      narrative_role:"Express the verified service or operating journey as an abstract sequence.",
-      visual_function:"Editorial path, transition or handoff expressed through direction and spatial rhythm.",
-      subject:"Non-documentary representation of the verified service journey or operation.",
-      crop_behavior:"Directional path remains central; mobile preserves sequence and momentum."
+      narrative_role:"Sequential service-state transition",
+      subject:"Abstract directional transition representing verified service state: "+op(1,"verified service journey"),
+      visual_function:"SEQUENTIAL EDITORIAL MOTION IMAGE ONLY — directional path, staged transition and temporal rhythm; no macro texture and no orthographic diagram.",
+      crop_behavior:"Directional sequence crosses the frame; mobile preserves start-to-end movement in portrait orientation."
     },
     R121_STRUCTURE:{
-      narrative_role:"Translate the verified offer architecture into a text-free visual system.",
-      visual_function:"CGI or geometric spatial system derived from the relationship of verified services.",
-      subject:"Abstract geometry representing the verified offer structure.",
-      crop_behavior:"Organizing geometry stays legible at wide and narrow ratios."
+      narrative_role:"Offer architecture as technical abstraction",
+      subject:"Text-free orthographic CGI system representing verified service state: "+op(2,"verified offer architecture"),
+      visual_function:"ORTHOGRAPHIC CGI / AXONOMETRIC GEOMETRY ONLY — crisp planes, nodes and spatial relations; no photography, tactile texture or environment.",
+      crop_behavior:"Complete geometric system remains visible; mobile reframes the structure without turning it into a close-up."
     },
     R121_SCALE:{
-      narrative_role:"Communicate verified locality or operating context through wide illustrative space.",
-      visual_function:"Wide environmental or territorial frame using depth and perspective without pretending to show real premises.",
-      subject:"Illustrative context derived from verified locality or service environment.",
-      crop_behavior:"Wide context anchors desktop; mobile isolates one strong perspective or territorial cue."
+      narrative_role:"Verified locality at environmental scale",
+      subject:"Wide illustrative environmental context anchored to "+(locality||"verified locality")+" and service state: "+op(3,"verified local context"),
+      visual_function:"WIDE ENVIRONMENTAL PERSPECTIVE ONLY — horizon, depth, repetition and territorial scale; no studio still-life, macro or technical diagram.",
+      crop_behavior:"Wide depth dominates desktop; mobile isolates a strong perspective corridor while retaining environmental scale."
     },
     R121_DETAIL:{
-      narrative_role:"Create a controlled detail tied to a verified service or proof cue.",
-      visual_function:"Isolated studio detail or evidence abstraction with precise light and negative space.",
-      subject:"Controlled detail derived only from verified service/proof context.",
-      crop_behavior:"Detail remains isolated with deliberate negative space."
+      narrative_role:"Controlled proof-adjacent still-life",
+      subject:"Isolated studio still-life derived from verified proof/service cue without company identifiers",
+      visual_function:"CONTROLLED STUDIO STILL-LIFE ONLY — isolated detail, hard/soft light contrast and deliberate negative space; no wide environment, motion sequence or diagram.",
+      crop_behavior:"Single isolated subject with negative space; mobile uses portrait still-life framing."
     },
     R121_ATMOSPHERE:{
-      narrative_role:"Build the final emotional pause from official-identity color tension, light and depth.",
-      visual_function:"Non-literal brand atmosphere with no documentary business claim.",
-      subject:"Abstract light, color and depth atmosphere derived from official identity and verified brand context.",
-      crop_behavior:"Atmosphere survives aggressive mobile crop without a documentary focal object."
+      narrative_role:"Brand-derived emotional atmosphere",
+      subject:"Abstract field of light, shadow and official-identity sampled color with no literal service object",
+      visual_function:"ABSTRACT ATMOSPHERIC FIELD ONLY — volumetric light, gradient depth and reflection with no focal object, diagram, environment or documentary cue.",
+      crop_behavior:"Color/light field survives any crop; mobile intensifies vertical light and depth instead of isolating an object."
     }
   };
-  const verifiedContext=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,3).join(" / ");
+
   return R121_CAMPAIGN_ASSET_TOKENS.map(token=>{
     const raw=byToken[token]||{token};
-    const rule=fallback[token];
+    const rule=rules[token];
     const safe=value=>r121SafeNonDocumentaryText(value,brief);
     const rawSubject=safe(raw?.subject);
-    const subject=[
-      rawSubject || rule.subject,
-      verifiedContext?"Ground visual semantics only in verified offer/service context: "+verifiedContext:"",
-      "Illustrative and unbranded; no company premises, employees, partner identifiers, embedded metrics or documentary proof."
-    ].filter(Boolean).join(" ");
+    const subjectBase=rawSubject && r121TextOverlap(rawSubject,rule.subject)<0.75
+      ? rule.subject+" — "+rawSubject
+      : rule.subject;
     return {
       ...raw,
       token,
-      narrative_role:safe(raw?.narrative_role)||rule.narrative_role,
-      subject,
-      visual_function:safe(raw?.visual_function)||rule.visual_function,
-      crop_behavior:safe(raw?.crop_behavior)||rule.crop_behavior,
+      narrative_role:rule.narrative_role,
+      subject:subjectBase+"; Illustrative and unbranded; no company premises, employees, partner identifiers, embedded metrics or documentary proof.",
+      visual_function:rule.visual_function,
+      crop_behavior:rule.crop_behavior,
       truth_safety:"Illustrative editorial imagery only; never documentary evidence. No company or partner identifiers, employees, premises, signage, embedded proof or unsupported operational specifics."
     };
   });
