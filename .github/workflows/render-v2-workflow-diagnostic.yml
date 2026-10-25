@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Desire Pilot V4
+name: Rendering V2 R122 Desire Pilot V5
 
 on:
   push:
@@ -7,24 +7,24 @@ on:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
 
 jobs:
-  launch-r122-kipoint-v4:
+  launch-r122-kipoint-v5:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v4
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 v4
+      - name: Launch KiPoint R122 v5
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v4","runKey":"kipoint-r122-v4","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["Previous run exposed sanitizer scope bugs: brand name was removed from campaign thesis and unverified named palette/logo geometry was allowed."],"actions":["Keep KiPoint explicitly present in the campaign thesis and brand narrative.","Do not invent logo geometry or named brand colors when they are not textually verified; exact colors are sampled from the immutable official logo at execution.","Preserve safe, concrete concept-specific visual subjects for the six campaign assets.","Build ownability from verified services, Catanzaro Lido context, MIMIT operator proof, rating and contact/CTA logic.","Premium menu, campaign hero, three wow moments, authored final conversion object and integrated footer are mandatory.","Mobile must be independently re-authored at 390px.","No fake endorsements, fleet, premises, employees, sorting process, equipment or documentary company imagery."]}}'
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v5","runKey":"kipoint-r122-v5","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["Previous concepts remained transferable because verified anchors were not visually load-bearing."],"actions":["Build a proprietary campaign world in which verified service, Catanzaro Lido locality and verified proof each cause a materially different visual, narrative and conversion consequence.","Use ownability_map and anchor_removal_test rigorously; if removing any anchor leaves the concept substantially unchanged, redesign before jury.","Exploit only safe literal semantics visibly present in the verified business name when useful; do not invent etymology or logo symbolism.","Do not use ledger, seal, credential, passport, corridor, hub, node, route/map, dashboard, scorecard, certificate, gateway or control-panel as generic wrappers.","Preserve six distinct campaign asset modes, premium shell, three wow moments, final conversion object and independent mobile composition.","No construction/Dedil language, fake premises, employees, fleet, equipment, process specifics, endorsements or documentary company imagery."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
           sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
