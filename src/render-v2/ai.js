@@ -759,8 +759,9 @@ function r122SplitVerifiedOperations(value) {
 function r122LiteralBrandSemantic(businessName) {
   const source=String(businessName||"");
   const lower=source.toLowerCase();
-  const dictionary=["point","studio","casa","home","lab","hub","line","linea","forma","frame","core","axis","asse","nodo","node","link","plus","nova","prime","centro","center"];
-  const hit=dictionary.find(word=>lower.includes(word));
+  const genericWrapperWords=new Set(["point","hub","node","nodo","link","axis","asse","center","centro","grid","route","map","gateway"]);
+  const dictionary=["studio","casa","home","lab","line","linea","forma","frame","core","plus","nova","prime"];
+  const hit=dictionary.find(word=>lower.includes(word) && !genericWrapperWords.has(word));
   return hit ? source.match(new RegExp(hit,"i"))?.[0]||hit : "NONE";
 }
 
@@ -1530,7 +1531,8 @@ async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFe
     "Your task is to extract the unique commercial mechanism that already exists inside the verified business facts.",
     "Start from literal material only: verified business name, verified services/operations, verified locality and verified proof.",
     "SERVICE-STATE CHOREOGRAPHY: treat CREATIVE INTELLIGENCE BRIEF.operation_choreography as the raw visual physics. Every distinct verified operation must become a different spatial state, transformation, depth layer, scale behavior or decision state. Do not compress the verified offer back into one generic logistics/industry image.",
-    "LITERAL NAME LEVER: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, it is OPTIONAL support, never the default organizing mechanism. Do not literalize Point as a dot, node, marker, map pin, route point, grid intersection or point-to-line animation.",
+    "LITERAL NAME LEVER: when CREATIVE INTELLIGENCE BRIEF.literal_brand_semantic is not NONE, it is OPTIONAL support, never the default organizing mechanism.",
+    "GENERIC BRAND-WORD BAN: words such as Point, Hub, Node, Link, Axis, Center, Grid, Route, Map or Gateway inside a business name are branding only and must NEVER become concept geometry, naming, motion, signature motifs or visual wrappers.",
     "CONVERSION POLARITY LEVER: inspect CREATIVE INTELLIGENCE BRIEF.conversion_polarity. When it is BEFORE_AFTER_SERVICE, prefer the verified before/after decision tension as a primary campaign mechanism: before movement = quotation/choice, after movement = tracking/visibility. Express this through composition and sequencing, not through dashboards, maps, routes or tracking grids.",
     "FACT FIELDS ARE NOT CREATIVE: operation_fact, locality_fact and proof_fact will be overwritten from the verified brief after your response. Do not embellish them. Focus creative effort on business_specific_tension, unique_intersection, visual_physics, asset_world_rule and conversion_logic.",
     "Tracking means tracking only; it does not imply real-time tracking. Preventivi means quotes only; it does not imply instant quotes. A MIMIT listing is proof of listing, not a certification or exclusivity claim.",
@@ -1579,7 +1581,7 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "Do not name or wrap the concept until the kernel's spatial behavior is clear. Naming comes last.",
     "The six asset subjects must all be recognizably generated from kernel.asset_world_rule and kernel.visual_physics, not from generic sector imagery.",
     "OPERATION-TO-ASSET LOAD-BEARING RULE: at least four of the six assets must each be visibly assigned to a DIFFERENT verified operation/state from CREATIVE INTELLIGENCE BRIEF.operation_choreography. The remaining assets may carry locality/proof/brand atmosphere. If four assets could be reused after swapping the company and service list, reject your own concept and rebuild.",
-    "NAME-SEMANTIC RULE: literal brand-name semantics are optional support. Never turn Point into dots, nodes, markers, map pins, route geometry, tracking grids or a point-to-line system; those are generic wrappers.",
+    "NAME-SEMANTIC RULE: literal brand-name semantics are optional support. Generic brand words such as Point, Hub, Node, Link, Axis, Center, Grid, Route, Map or Gateway are branding only and must not appear in organizing_mechanism, signature_motif or motion logic.",
     "CTA-POLARITY RULE: when CREATIVE INTELLIGENCE BRIEF.conversion_polarity.type is BEFORE_AFTER_SERVICE, make the two verified actions create materially different halves/states of the experience. The primary CTA governs pre-service decision; the secondary CTA governs post-service visibility. This distinction must affect storyboard order, visual modes and final conversion object.",
     "NO WRAPPER NAMING: do not title the concept as a ledger, seal, corridor, passport, credential, route, map, hub, node, gateway, dashboard or similar container. Name the mechanism only after the operation-state choreography is concrete.",
     "OUTPUT BREVITY CONTRACT: keep ordinary strings under 30 words, visual_bible under 70 words, each asset-role field under 22 words, and each storyboard field under 22 words. Use exactly 6 desktop beats and exactly 6 mobile beats. transplant_test may be 70-110 words. No repeated explanation across fields.",
