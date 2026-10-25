@@ -1404,8 +1404,25 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional",
     "align","link","flow","channel","river","grid","network","assemble","assemblare","precision","strength","journey","forge","build","connect",
     "ledger","seal","credential","corridor","passport","hub","node","beacon","route","map","dashboard","scorecard","certificate","control panel","gateway"];
-  if(generic.some(x=>thesis.includes(x)||mechanism===x||mechanism.startsWith(x+" ")||mechanism.endsWith(" "+x))) {
-    issues.push("ORGANIZING_IDEA_GENERIC_OR_TRANSPLANTABLE");
+  const genericHit=generic.some(x=>thesis.includes(x)||mechanism===x||mechanism.startsWith(x+" ")||mechanism.endsWith(" "+x));
+  if(genericHit) {
+    const anchorCorpus=r121Normalize([
+      brief?.business_name,
+      ...(brief?.distinctive_operations||[]).slice(0,4),
+      brief?.locality?.city,
+      brief?.locality?.address,
+      ...(brief?.verified_proof_anchors||[]).slice(0,3)
+    ].filter(Boolean).join(" "));
+    const conceptCorpus=r121Normalize([
+      concept?.campaign_thesis,concept?.organizing_mechanism,concept?.category_reframe,
+      concept?.signature_motif,concept?.visual_bible,
+      ...(concept?.ownability_anchors||[]),
+      ...(concept?.ownability_map||[]).flatMap(x=>[x?.anchor,x?.visual_consequence,x?.narrative_consequence,x?.conversion_consequence]),
+      ...(concept?.asset_campaign||[]).flatMap(x=>[x?.narrative_role,x?.subject,x?.visual_function])
+    ].filter(Boolean).join(" "));
+    const businessSpecificity=r121TextOverlap(conceptCorpus,anchorCorpus);
+    const ownabilityCount=Array.isArray(concept?.ownability_map)?concept.ownability_map.length:0;
+    if(businessSpecificity<0.18 || ownabilityCount<3) issues.push("ORGANIZING_IDEA_GENERIC_OR_TRANSPLANTABLE");
   }
 
   const conceptText=r121Normalize([
