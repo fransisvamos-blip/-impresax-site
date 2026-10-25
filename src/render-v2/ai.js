@@ -1360,17 +1360,38 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
 
   const conceptWorldText=[
     concept?.organizing_mechanism,concept?.signature_motif,concept?.visual_bible,
+    concept?.proof_mechanism,concept?.conversion_climax,
     ...(concept?.asset_campaign||[]).flatMap(x=>[x?.narrative_role,x?.subject,x?.visual_function]),
-    ...(concept?.desktop_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.interaction_role]),
-    ...(concept?.mobile_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.interaction_role])
+    ...(concept?.desktop_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.copy_role,x?.interaction_role]),
+    ...(concept?.mobile_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.copy_role,x?.interaction_role])
   ].filter(Boolean).join(" ");
+  const storyboardText=r121Normalize([
+    ...(concept?.desktop_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.copy_role]),
+    ...(concept?.mobile_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.copy_role]),
+    concept?.visual_bible
+  ].filter(Boolean).join(" "));
+  const proofDecisionText=r121Normalize([
+    concept?.proof_mechanism,concept?.conversion_climax,
+    ...(concept?.desktop_storyboard||[]).flatMap(x=>[x?.copy_role,x?.purpose]),
+    ...(concept?.mobile_storyboard||[]).flatMap(x=>[x?.copy_role,x?.purpose])
+  ].filter(Boolean).join(" "));
   for(const item of ownabilityMap){
+    const role=String(item?.role||"UNKNOWN");
     const visual=String(item?.visual_consequence||"");
     const narrative=String(item?.narrative_consequence||"");
     const conversion=String(item?.conversion_consequence||"");
-    if(visual.length<24||narrative.length<24||conversion.length<24) issues.push("R122_OWNABILITY_CONSEQUENCE_TOO_THIN:"+String(item?.role||"UNKNOWN"));
-    if(r121TextOverlap(conceptWorldText,visual)<0.12) issues.push("R122_VISUAL_CONSEQUENCE_NOT_LOAD_BEARING:"+String(item?.role||"UNKNOWN"));
-    if(String(item?.removal_failure||"").trim().length<45) issues.push("R122_ANCHOR_REMOVAL_FAILURE_UNEXPLAINED:"+String(item?.role||"UNKNOWN"));
+    if(visual.length<24||narrative.length<24||conversion.length<24) issues.push("R122_OWNABILITY_CONSEQUENCE_TOO_THIN:"+role);
+    if(role==="PROOF"){
+      const proofAnchorHit=(brief?.verified_proof_anchors||[]).some(x=>r121TextOverlap(proofDecisionText,x)>=0.18);
+      if(!proofAnchorHit && r121TextOverlap(proofDecisionText,narrative+" "+conversion)<0.08) issues.push("R122_PROOF_NOT_LOAD_BEARING_IN_DECISION_ARCHITECTURE");
+    } else if(role==="LOCALITY"){
+      const localityValues=[brief?.locality?.city,brief?.locality?.address].filter(Boolean);
+      const localityHit=localityValues.some(x=>r121TextOverlap(storyboardText,x)>=0.15);
+      if(!localityHit && r121TextOverlap(conceptWorldText,visual)<0.08) issues.push("R122_LOCALITY_NOT_LOAD_BEARING_IN_ENVIRONMENTAL_BEAT");
+    } else if(r121TextOverlap(conceptWorldText,visual)<0.10) {
+      issues.push("R122_VISUAL_CONSEQUENCE_NOT_LOAD_BEARING:"+role);
+    }
+    if(String(item?.removal_failure||"").trim().length<45) issues.push("R122_ANCHOR_REMOVAL_FAILURE_UNEXPLAINED:"+role);
   }
   for(let i=0;i<ownabilityMap.length;i++){
     for(let j=i+1;j<ownabilityMap.length;j++){
@@ -1437,7 +1458,7 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
     {code:"FORGE",needles:["forge","forging","forged","fucina","forgiare"],support:["forg","fucin"]},
     {code:"MELT",needles:["molten","melt","melting","fuso","fusione"],support:["melt","fusion","fuso"]},
     {code:"WELD",needles:["weld","welding","saldatura","saldare"],support:["weld","sald"]},
-    {code:"CUT",needles:["cutting"," cut ","taglio","tagliare"],support:["cut","tagli"]},
+    {code:"CUT",needles:["cutting operation","cutting process","taglio industriale","tagliare"],support:["cut","tagli"]},
     {code:"BEND",needles:["bending"," bend ","piegatura","piegare"],support:["bend","pieg"]},
     {code:"CAST",needles:["casting"," cast ","colata","fonderia"],support:["cast","colat","fonder"]},
     {code:"FURNACE",needles:["furnace","forno industriale"],support:["furnace","forno"]}
