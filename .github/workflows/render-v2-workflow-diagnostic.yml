@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Desire Pilot V11
+name: Rendering V2 R122 Stop Pilot V11
 
 on:
   push:
@@ -7,9 +7,9 @@ on:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
 
 jobs:
-  launch-r122-kipoint-v11:
+  stop-r122-kipoint-v11:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 4
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
@@ -20,11 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 v11
-        shell: bash
+      - name: Terminate v11 before CTA-polarity v12
         run: |
-          set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v11","runKey":"kipoint-r122-v11","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["V10 cleared visual-role similarity but falsely treated verified Catanzaro locality as prospect branding."],"actions":["Use Catanzaro as verified locality/context, never as embedded image text or company signage.","Keep KiPoint/Francesco Maiuolo identifiers out of generated campaign imagery.","Preserve six distinct media grammars, atomic service-state assignment, Point semantic, MIMIT/rating proof and premium conversion architecture.","Proceed through campaign asset generation, desktop/mobile capture and sellability jury if the concept passes."]}}'
-          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
-          sleep 8
+          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc || true
+          sleep 4
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
