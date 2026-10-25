@@ -1416,7 +1416,10 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
     const structuralText=r121Normalize([concept?.organizing_mechanism,concept?.signature_motif,concept?.motion_signature?.purpose,concept?.motion_signature?.behavior].join(" "));
     if(!structuralText.includes(literalHook)) issues.push("R122_LITERAL_BRAND_SEMANTIC_NOT_STRUCTURAL:"+literalHook);
   }
-  const businessTokens=r121Normalize(brief?.business_name).split(" ").filter(x=>x.length>=5);
+  const localityTokens=new Set(r121Normalize([brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" ")).split(" ").filter(x=>x.length>=4));
+  const businessTokens=r121Normalize(brief?.business_name).split(" ")
+    .filter(x=>x.length>=5)
+    .filter(x=>!localityTokens.has(x));
   if(businessTokens.some(x=>campaignCreativeText.includes(x))) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PROSPECT_BRANDING");
   if(campaignCreativeText.includes("u power")||campaignCreativeText.includes("upower")) issues.push("CAMPAIGN_ASSET_MUST_NOT_DEPICT_PARTNER_BRANDING");
   if(/\b(logo|sticker|signage|branded|branding|wall sign|uniform|packaging label)\b/i.test(campaignCreativeText)) issues.push("CAMPAIGN_ASSET_BRANDING_OR_SIGNAGE_FORBIDDEN");
