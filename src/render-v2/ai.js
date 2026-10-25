@@ -1258,6 +1258,16 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   if(removalTests.length<3 || removalTests.some(x=>String(x||"").trim().length<55)) issues.push("R122_ANCHOR_REMOVAL_TEST_REQUIRED");
 
   const kernel=concept?.r122_kernel||{};
+  const expectedOperation=(brief?.distinctive_operations||[]).filter(Boolean).join(" | ")||"NONE";
+  const expectedLocality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ")||"NONE";
+  const expectedProof=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,4).join(" | ")||"NONE";
+  if(String(kernel?.operation_fact||"")!==expectedOperation) issues.push("R122_KERNEL_OPERATION_FACT_DRIFT");
+  if(String(kernel?.locality_fact||"")!==expectedLocality) issues.push("R122_KERNEL_LOCALITY_FACT_DRIFT");
+  if(String(kernel?.proof_fact||"")!==expectedProof) issues.push("R122_KERNEL_PROOF_FACT_DRIFT");
+  const literalMaterial=String(kernel?.literal_name_material||"");
+  if(literalMaterial!=="NONE" && !r121Normalize(brief?.business_name).replace(/\s+/g,"").includes(r121Normalize(literalMaterial).replace(/\s+/g,""))) {
+    issues.push("R122_KERNEL_NAME_SEMANTIC_NOT_LITERAL");
+  }
   if(String(kernel?.unique_intersection||"").trim().length<80) issues.push("R122_KERNEL_UNIQUE_INTERSECTION_TOO_THIN");
   if(String(kernel?.visual_physics||"").trim().length<55) issues.push("R122_KERNEL_VISUAL_PHYSICS_TOO_THIN");
   if(String(kernel?.transplant_failure||"").trim().length<80) issues.push("R122_KERNEL_TRANSPLANT_FAILURE_TOO_THIN");
@@ -1324,11 +1334,65 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   return {pass:issues.length===0,issues,brief};
 }
 
+function r122NormalizeKernel(kernel,brief) {
+  const source=JSON.parse(JSON.stringify(kernel||{}));
+  const business=String(brief?.business_name||"").trim();
+  const operations=(brief?.distinctive_operations||[]).filter(Boolean);
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ");
+  const proofs=(brief?.verified_proof_anchors||[]).filter(Boolean);
+  const verifiedCorpus=r121Normalize([
+    business,...operations,locality,...proofs,brief?.primary_cta,brief?.secondary_cta
+  ].filter(Boolean).join(" | "));
+
+  const safeKernelText=value=>{
+    let out=r121SafeConceptNarrativeText(String(value||""),brief,{paletteSafe:true});
+    if(!verifiedCorpus.includes("real time")) out=out.replace(/\breal[- ]?time\b/gi,"trackable");
+    if(!verifiedCorpus.includes("instant")) out=out.replace(/\binstant(?:aneous)?\b/gi,"direct");
+    out=out
+      .replace(/\b(?:certified|certification)\b/gi,"verified")
+      .replace(/\b(?:only|exclusive|exclusively|unique leader|best|elite|prestige|prestigious|premium|high[- ]status|superior|guaranteed|guarantee|authority)\b/gi,"")
+      .replace(/\b(?:satisfied client|happy client|customer portrait|client portrait|employee|staff|operator portrait|courier|driver|handover|hand[- ]off|handing over)\b/gi,"abstract service-state transition")
+      .replace(/\b(?:company office|local office|branch interior|actual shop|real shop|premises|warehouse interior|fleet|van|truck|vehicle)\b/gi,"illustrative non-documentary service context")
+      .replace(/\b(?:form|quote form|tracking dashboard|dashboard|control panel|route map|map interface|tablet interface|app screen)\b/gi,"abstract spatial composition")
+      .replace(/\s{2,}/g," ")
+      .trim();
+    return out;
+  };
+
+  let literal=String(source.literal_name_material||"").trim();
+  if(!literal || /^none$/i.test(literal)) literal="NONE";
+  else {
+    const normalizedBusiness=r121Normalize(business).replace(/\s+/g,"");
+    const normalizedLiteral=r121Normalize(literal).replace(/\s+/g,"");
+    if(normalizedLiteral.length<4 || !normalizedBusiness.includes(normalizedLiteral)) literal="NONE";
+  }
+
+  return {
+    ...source,
+    literal_name_material:literal,
+    operation_fact:operations.join(" | ")||"NONE",
+    locality_fact:locality||"NONE",
+    proof_fact:proofs.slice(0,4).join(" | ")||"NONE",
+    business_specific_tension:safeKernelText(source.business_specific_tension),
+    unique_intersection:safeKernelText(source.unique_intersection),
+    visual_physics:safeKernelText(source.visual_physics),
+    asset_world_rule:safeKernelText(source.asset_world_rule),
+    conversion_logic:safeKernelText(source.conversion_logic),
+    transplant_failure:safeKernelText(source.transplant_failure),
+    forbidden_wrappers:[...new Set([
+      ...(Array.isArray(source.forbidden_wrappers)?source.forbidden_wrappers:[]),
+      "ledger","seal","credential","passport","corridor","hub","node","route","map","dashboard","scorecard","certificate","gateway","control panel","trust thread","journey"
+    ].map(String))]
+  };
+}
+
 async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFeedback=null}={}) {
   const prompt=[
     "R122 CONCEPT KERNEL. Do NOT name a campaign, design a website, choose a visual style or invent a metaphor.",
     "Your task is to extract the unique commercial mechanism that already exists inside the verified business facts.",
     "Start from literal material only: verified business name, verified services/operations, verified locality and verified proof.",
+    "FACT FIELDS ARE NOT CREATIVE: operation_fact, locality_fact and proof_fact will be overwritten from the verified brief after your response. Do not embellish them. Focus creative effort on business_specific_tension, unique_intersection, visual_physics, asset_world_rule and conversion_logic.",
+    "Tracking means tracking only; it does not imply real-time tracking. Preventivi means quotes only; it does not imply instant quotes. A MIMIT listing is proof of listing, not a certification or exclusivity claim.",
     "LITERAL NAME MATERIAL: if the verified business name visibly contains an ordinary-language term, you may cite that exact visible term as semantic material. Do not infer etymology or founder intent. Otherwise write NONE.",
     "BUSINESS-SPECIFIC TENSION: describe the exact tension/decision the customer faces that this verified business resolves, without inventing a promise.",
     "UNIQUE INTERSECTION: explain why the combination of operation + locality + proof creates a mechanism that would collapse if moved to another company.",
@@ -1349,7 +1413,7 @@ async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFe
     ],
     schema:r122ConceptKernelSchema,maxTokens:2600,temperature:0.28,beforeAttempt:beforeModelAttempt,allowR118External:true,r121ConceptRoute:true
   });
-  return r.data;
+  return r122NormalizeKernel(r.data,brief);
 }
 
 export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
