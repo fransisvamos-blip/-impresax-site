@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Desire Pilot V7
+name: Rendering V2 R122 Desire Pilot V8
 
 on:
   push:
@@ -7,24 +7,24 @@ on:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
 
 jobs:
-  launch-r122-kipoint-v7:
+  launch-r122-kipoint-v8:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 7
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v7
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 v7 truth-locked kernel
+      - name: Launch KiPoint R122 v8 atomic-service pilot
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v7","runKey":"kipoint-r122-v7","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["Kernel facts are now locked directly to the verified brief; previous runs were allowed to embellish service/locality/proof fields."],"actions":["Use the exact verified services only: spedizioni nazionali/internazionali/speciali, logistica e magazzinaggio, servizi postali, tracking e preventivi.","Use the exact verified locality only: Catanzaro / Via C. Colombo 73 / Catanzaro Lido as supported by truth data; do not infer maritime/coastal positioning from locality.","Use the exact verified proof only: MIMIT 2026 listing, Catanzaro Lido presence, 4.4/5 from 187 Google reviews.","Tracking does not mean real-time tracking. Preventivi does not mean instant quotes. MIMIT listing does not mean certification or exclusivity.","Creative work may transform only the relationship between these facts, never the facts themselves.","Six assets must emerge from one business-specific visual physics, not generic courier imagery.","No route/map/dashboard/form/client/premises/fleet/employee/documentary scenes.","Premium shell, campaign hero, three wow moments, conversion-object CTA, integrated footer and independent mobile composition remain mandatory."]}}'
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v8","runKey":"kipoint-r122-v8","initialFeedback":{"reason":"R122_DESIRE_ENGINE_HARD_RESET","issues":["Previous concepts remained too transferable because verified services were treated as one generic logistics block instead of distinct service states."],"actions":["Use the new atomic service choreography: national/international/special shipments; logistics and warehousing; postal services; tracking and quotations.","Use the literal word Point inside KiPoint as a structural spatial semantic, never as a new logo or emblem.","At least four of six campaign assets must each embody a different verified service state.","Make Catanzaro locality and MIMIT/rating proof load-bearing outside imagery.","No wrapper metaphors such as ledger, seal, credential, corridor, passport, hub, route, map, dashboard or gateway.","Create premium shell, campaign hero, three wow moments, strong conversion-object CTA, integrated footer and a genuinely different mobile sequence.","No invented fleet, premises, staff, machinery, endorsements or documentary company imagery."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
           sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
