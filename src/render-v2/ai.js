@@ -348,6 +348,19 @@ const r121StoryboardBeatSchema={
   required:["beat","purpose","composition","dominant_asset","copy_role","interaction_role"]
 };
 
+const r122OwnabilityMapItemSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    role:{type:"string",enum:["OPERATION","LOCALITY","PROOF","BRAND_NAME"]},
+    anchor:{type:"string"},
+    visual_consequence:{type:"string"},
+    narrative_consequence:{type:"string"},
+    conversion_consequence:{type:"string"},
+    removal_failure:{type:"string"}
+  },
+  required:["role","anchor","visual_consequence","narrative_consequence","conversion_consequence","removal_failure"]
+};
+
 const r121ConceptLockSchema={
   type:"object",additionalProperties:false,
   properties:{
@@ -358,6 +371,9 @@ const r121ConceptLockSchema={
     client_reaction:{type:"string"},
     category_reframe:{type:"string"},
     ownability_anchors:{type:"array",minItems:3,maxItems:5,items:{type:"string"}},
+    ownability_map:{type:"array",minItems:3,maxItems:5,items:r122OwnabilityMapItemSchema},
+    anchor_removal_test:{type:"array",minItems:3,maxItems:5,items:{type:"string"}},
+    brand_name_semantic_hook:{type:"string"},
     verified_proof_plan:{type:"array",minItems:3,maxItems:6,items:{type:"string"}},
     brand_world:{type:"string"},
     signature_motif:{type:"string"},
@@ -384,7 +400,7 @@ const r121ConceptLockSchema={
   },
   required:[
     "standard","selected_direction_key","campaign_thesis","organizing_mechanism","client_reaction","category_reframe",
-    "ownability_anchors","verified_proof_plan","brand_world","signature_motif","visual_bible","typography_thesis",
+    "ownability_anchors","ownability_map","anchor_removal_test","brand_name_semantic_hook","verified_proof_plan","brand_world","signature_motif","visual_bible","typography_thesis",
     "motion_signature","proof_mechanism","conversion_climax","asset_campaign","desktop_storyboard","mobile_storyboard",
     "mobile_divergence","asset_distinction_rationale","forbidden_patterns","transplant_test","selection_rationale"
   ]
@@ -1083,6 +1099,16 @@ function r121MechanicalContractNormalize(concept,brief) {
     clone.campaign_thesis=businessName+" — "+String(clone.campaign_thesis||"").trim();
   }
   clone.ownability_anchors=r121DeterministicOwnabilityAnchors(brief);
+  clone.ownability_map=(Array.isArray(clone.ownability_map)?clone.ownability_map:[]).map(item=>({
+    ...item,
+    anchor:r121SafeConceptNarrativeText(item?.anchor,brief),
+    visual_consequence:r121SafeConceptNarrativeText(item?.visual_consequence,brief),
+    narrative_consequence:r121SafeConceptNarrativeText(item?.narrative_consequence,brief),
+    conversion_consequence:r121SafeConceptNarrativeText(item?.conversion_consequence,brief),
+    removal_failure:r121SafeConceptNarrativeText(item?.removal_failure,brief)
+  }));
+  clone.anchor_removal_test=(Array.isArray(clone.anchor_removal_test)?clone.anchor_removal_test:[]).map(x=>r121SafeConceptNarrativeText(x,brief));
+  clone.brand_name_semantic_hook=r121SafeConceptNarrativeText(clone.brand_name_semantic_hook,brief);
   clone.proof_mechanism=r121DeterministicProofMechanism(brief);
   clone.conversion_climax=r121DeterministicConversionClimax(brief);
   if(Array.isArray(clone.forbidden_patterns)) clone.forbidden_patterns=clone.forbidden_patterns.map(x=>r121SafeNonDocumentaryText(x,brief));
@@ -1179,10 +1205,42 @@ function r121ConceptIntegrityPrecheck(concept,brief) {
   if(!localityHit) issues.push("OWNABILITY_MISSING_LOCALITY");
   if(!proofHit) issues.push("OWNABILITY_MISSING_VERIFIED_PROOF");
 
+  const ownabilityMap=Array.isArray(concept?.ownability_map)?concept.ownability_map:[];
+  const mapRoles=new Set(ownabilityMap.map(x=>String(x?.role||"")));
+  if(ownabilityMap.length<3) issues.push("R122_OWNABILITY_MAP_NEEDS_THREE_ANCHORS");
+  if((brief?.distinctive_operations||[]).length && !mapRoles.has("OPERATION")) issues.push("R122_OWNABILITY_MAP_MISSING_OPERATION");
+  if((brief?.locality?.city||brief?.locality?.address) && !mapRoles.has("LOCALITY")) issues.push("R122_OWNABILITY_MAP_MISSING_LOCALITY");
+  if((brief?.verified_proof_anchors||[]).length && !mapRoles.has("PROOF")) issues.push("R122_OWNABILITY_MAP_MISSING_PROOF");
+
+  const conceptWorldText=[
+    concept?.organizing_mechanism,concept?.signature_motif,concept?.visual_bible,
+    ...(concept?.asset_campaign||[]).flatMap(x=>[x?.narrative_role,x?.subject,x?.visual_function]),
+    ...(concept?.desktop_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.interaction_role]),
+    ...(concept?.mobile_storyboard||[]).flatMap(x=>[x?.purpose,x?.composition,x?.interaction_role])
+  ].filter(Boolean).join(" ");
+  for(const item of ownabilityMap){
+    const visual=String(item?.visual_consequence||"");
+    const narrative=String(item?.narrative_consequence||"");
+    const conversion=String(item?.conversion_consequence||"");
+    if(visual.length<24||narrative.length<24||conversion.length<24) issues.push("R122_OWNABILITY_CONSEQUENCE_TOO_THIN:"+String(item?.role||"UNKNOWN"));
+    if(r121TextOverlap(conceptWorldText,visual)<0.12) issues.push("R122_VISUAL_CONSEQUENCE_NOT_LOAD_BEARING:"+String(item?.role||"UNKNOWN"));
+    if(String(item?.removal_failure||"").trim().length<45) issues.push("R122_ANCHOR_REMOVAL_FAILURE_UNEXPLAINED:"+String(item?.role||"UNKNOWN"));
+  }
+  for(let i=0;i<ownabilityMap.length;i++){
+    for(let j=i+1;j<ownabilityMap.length;j++){
+      if(r121TextOverlap(ownabilityMap[i]?.visual_consequence,ownabilityMap[j]?.visual_consequence)>=0.72) {
+        issues.push("R122_OWNABILITY_VISUAL_CONSEQUENCES_TOO_SIMILAR:"+i+":"+j);
+      }
+    }
+  }
+  const removalTests=Array.isArray(concept?.anchor_removal_test)?concept.anchor_removal_test:[];
+  if(removalTests.length<3 || removalTests.some(x=>String(x||"").trim().length<55)) issues.push("R122_ANCHOR_REMOVAL_TEST_REQUIRED");
+
   const thesis=r121Normalize(concept?.campaign_thesis);
   const mechanism=r121Normalize(concept?.organizing_mechanism);
   const generic=["premium industrial","industrial premium","editorial industrial","precision trust","strong reliable","modern professional",
-    "align","link","flow","channel","river","grid","network","assemble","assemblare","precision","strength","journey","forge","build","connect"];
+    "align","link","flow","channel","river","grid","network","assemble","assemblare","precision","strength","journey","forge","build","connect",
+    "ledger","seal","credential","corridor","passport","hub","node","beacon","route","map","dashboard","scorecard","certificate","control panel","gateway"];
   if(generic.some(x=>thesis.includes(x)||mechanism===x||mechanism.startsWith(x+" ")||mechanism.endsWith(" "+x))) {
     issues.push("ORGANIZING_IDEA_GENERIC_OR_TRANSPLANTABLE");
   }
@@ -1267,6 +1325,10 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
     "ORGANIZING-MECHANISM RULE: the concept must be a proprietary multi-word mechanism derived from the INTERSECTION of this prospect's verified offer/operations + locality/context + proof. Never use a generic one-word industry verb or reusable sector metaphor. Explicitly forbidden organizing ideas include ALIGN, LINK, FLOW, CHANNEL, RIVER, GRID, NETWORK, ASSEMBLE/ASSEMBLARE, PRECISION, STRENGTH, JOURNEY, FORGE, BUILD, CONNECT and close synonyms unless the phrase becomes inseparable from THIS prospect's verified anchors.",
     "OWNABILITY BLUEPRINT: the concept must visibly depend on (1) the prospect's verified service/offer structure, including verified duality when more than one operation exists, (2) exact locality or operational context when verified, and (3) at least two verified proof anchors when available. If the same story could survive a logo/copy swap to another business, redesign before answering.",
     "OWNABILITY RULE: choose 3-5 VERIFIED anchors from the CREATIVE INTELLIGENCE BRIEF and make each load-bearing in the concept/storyboard. At least one anchor must come from a distinctive operation/process, one from locality/operational reality, and one from verified proof/scale/partnership when available.",
+    "R122 OWNABILITY MAP: fill ownability_map with 3-5 anchor mappings. Each mapping must state exactly what visual consequence, narrative consequence and conversion consequence exists BECAUSE of that verified anchor, plus what breaks if the anchor is removed. The three consequences must be materially different across anchors.",
+    "ANCHOR REMOVAL TEST: write at least three concrete tests. If removing an operation, locality or proof anchor leaves the motif, six images and conversion sequence substantially unchanged, the concept is transplantable and must be redesigned.",
+    "BRAND-NAME SEMANTICS: inspect only the literal verified business name. If it contains an ordinary-language term that can safely organize the campaign (for example a real word visibly present in the name), you MAY use that literal term as an ownability lever. Do not invent etymology, founder intent or logo symbolism. Otherwise set brand_name_semantic_hook to NONE.",
+    "ANTI-WRAPPER RULE: a ledger, seal, credential, passport, corridor, hub, node, route, map, dashboard, scorecard, certificate, gateway or control-panel metaphor is NOT a concept by itself. It passes only if the verified anchors materially change its visual physics, asset subjects and conversion behavior.",
     "PROOF INVENTORY RULE: copy 3-6 exact factual anchors from CREATIVE INTELLIGENCE BRIEF.verified_proof_anchors into verified_proof_plan and explain through the storyboard how they become visual evidence. Do not weaken or paraphrase away revenue, employee count, verified partner/reseller status, locality or other strong proof when present.",
     "The concept must be impossible to transplant unchanged to another company after swapping logo/copy.",
     "Build one coherent brand world: campaign thesis, signature motif, visual bible, typography thesis, proof mechanism, motion signature and conversion climax.",
@@ -1345,6 +1407,9 @@ export async function refineR121ConceptLock(env,inputPayload,contentTruth,direct
     ...R122_CONCEPT_RULES,
     "TOP-TIER BAR: the refined concept must feel like a commissioned brand-experience campaign, not a clever template for a generic local business or sector stereotype.",
     "OWNABILITY: find the creative hook in the peculiar conjunction of the verified service duality, the exact locality/language of the business, and commercial evidence. A generic dual-source, hub, confluence, network, relay, channel, flow, alignment, node, grid, journey or material metaphor is unacceptable.",
+    "OWNABILITY MAP REWRITE: do not merely rename the organizing mechanism. Rebuild ownability_map so OPERATION, LOCALITY and PROOF each cause a different visible/narrative/conversion behavior, and make those consequences appear in the motif, six assets and storyboard.",
+    "NAME-SEMANTIC LEVER: when a literal ordinary-language term is visibly present in the verified business name, test whether it can become a structural campaign verb/noun without claiming brand history. If useful, make it load-bearing; otherwise write NONE.",
+    "GENERIC WRAPPER BAN: ledger, seal, credential, passport, corridor, hub, node, route, map, dashboard, scorecard, certificate, gateway and control-panel concepts are presumed generic and must be discarded unless the anchor-removal test proves otherwise.",
     "NUMERIC PROOF RULE: revenue, headcount and other numeric proof are evidence, never geometry. Do not turn employee counts, revenue figures, postal codes or other numbers into nodes, arcs, stripes, counts, shapes or motifs.",
     "IDENTITY RULE: do not invent a monogram, letterform, badge or replacement logo. The official identity remains separate and immutable.",
     "PROOF RULE: proof is load-bearing when the narrative would lose credibility or conversion logic without its HTML/data rail. It does NOT need to appear inside generated imagery and must never be embedded there.",
@@ -1404,6 +1469,9 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
     "A pass means the concept itself could plausibly anchor a top-tier studio case study and make the business owner want the finished redesign.",
     "Score only the six supplied axes. 9 means strong professional work; 9.7+ means exceptional commissioned work. Pass requires every axis >=9.5, concept_strength/desire_to_buy/brand_authorship >=9.7, and no fundamental transplantability problem.",
     "Reject if the idea is basically 'industrial but premium', 'dark/red steel', 'editorial grid', 'lots of imagery', or any other style description without a memorable organizing idea.",
+    "R122 OWNABILITY JURY: inspect ownability_map and anchor_removal_test. Reject if OPERATION, LOCALITY and PROOF do not each create a visibly different consequence in motif/assets/storyboard/conversion.",
+    "Reject if the concept is a generic wrapper such as ledger, seal, credential, passport, corridor, hub, node, route/map, dashboard, scorecard, certificate, gateway or control panel with verified facts merely placed inside it.",
+    "Reward safe semantic leverage from the literal verified business name when it makes the campaign harder to transplant, but reject invented etymology or logo symbolism.",
     "Reject if the asset campaign is six variations of the same warehouse/construction scene. Require the six visual modes defined by R121: macro photo, process image, technical CGI/abstraction, environmental scale, studio detail/still-life, abstract atmosphere.",
     "Reject if motion is decorative instead of concept-driven.",
     "Reject any inferred process not literally supported by CREATIVE INTELLIGENCE BRIEF.distinctive_operations. 'Lavorazione/trasformazione' alone never proves forging, melting, welding, cutting, bending or casting.",
