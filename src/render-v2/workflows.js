@@ -1173,14 +1173,14 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                 r121_concept_locked:true
               })}::jsonb
                 || jsonb_build_object(
-                  'r122_desire_engine_standard',${context.r122DesireEngine?R122_DESIRE_ENGINE_STANDARD:null},
-                  'r122_desire_engine_active',${context.r122DesireEngine===true},
-                  'r122_concept_locked_at',${context.r122DesireEngine?new Date().toISOString():null},
+                  'r122_desire_engine_standard',${context.r122DesireEngine?R122_DESIRE_ENGINE_STANDARD:null}::text,
+                  'r122_desire_engine_active',${context.r122DesireEngine===true}::boolean,
+                  'r122_concept_locked_at',${context.r122DesireEngine?new Date().toISOString():null}::text,
                   'r121_concept_lock',${JSON.stringify(created.concept)}::jsonb,
                   'r121_concept_jury',${JSON.stringify(review)}::jsonb,
-                  'r121_concept_hash',${created.hash},
+                  'r121_concept_hash',${created.hash}::text,
                   'r121_concept_locked_at',now()::text,
-                  'r121_selected_direction_key',${created.concept.selected_direction_key}
+                  'r121_selected_direction_key',${created.concept.selected_direction_key}::text
                 ),
                   updated_at=now()
               where id=${params.packId}::uuid`;
@@ -1203,7 +1203,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
               set metadata=coalesce(metadata,'{}'::jsonb)
                 || jsonb_build_object(
                   'r121_concept_rejection_history',${JSON.stringify(compactHistory)}::jsonb,
-                  'r121_last_rejected_concept_hash',${created.hash},
+                  'r121_last_rejected_concept_hash',${created.hash}::text,
                   'r121_last_rejected_at',now()::text
                 ),
                   updated_at=now()
