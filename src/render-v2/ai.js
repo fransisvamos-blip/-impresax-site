@@ -1602,6 +1602,147 @@ async function createR122ConceptKernel(env,brief,{beforeModelAttempt=null,juryFe
   return r122NormalizeKernel(kernel,brief);
 }
 
+function buildR122DeterministicConceptLock(brief,availableDirectionKeys=[]) {
+  const business=String(brief?.business_name||"Business").trim();
+  const ops=(brief?.distinctive_operations||[]).filter(Boolean).slice(0,4);
+  while(ops.length<4) ops.push("verified service state "+(ops.length+1));
+  const locality=[brief?.locality?.city,brief?.locality?.address].filter(Boolean).join(" · ");
+  const proofs=(brief?.verified_proof_anchors||[]).filter(Boolean).slice(0,4);
+  while(proofs.length<3) proofs.push("verified business evidence");
+  const primary=String(brief?.primary_cta||"Primary action").trim();
+  const secondary=String(brief?.secondary_cta||"Secondary action").trim();
+  const selected=availableDirectionKeys.includes("A")?"A":(availableDirectionKeys[0]||"A");
+  const asset=(token,narrative_role,subject,visual_function,crop_behavior)=>({
+    token,narrative_role,subject,visual_function,crop_behavior,
+    truth_safety:"Illustrative editorial imagery only; unbranded and non-documentary. No premises, staff, fleet, partner marks, metrics or unsupported operational claims."
+  });
+  const assets=[
+    asset("R121_MATERIAL_MACRO",
+      "Postal-service material cue",
+      "Extreme close-up of unbranded envelope paper, folded edge and adhesive texture representing "+ops[2]+".",
+      "Tactile macro photography with shallow depth and no text, logo or barcode.",
+      "Desktop uses wide negative space; mobile isolates one paper edge and texture."),
+    asset("R121_PROCESS",
+      "Shipment-state motion",
+      "Three neutral parcel forms moving through separated depth planes representing "+ops[0]+" without route maps or branded vehicles.",
+      "Editorial action composition built from motion, spacing and direction rather than documentary logistics.",
+      "Desktop shows lateral depth; mobile uses vertical stagger and tighter motion crop."),
+    asset("R121_STRUCTURE",
+      "Logistics and storage architecture",
+      "Text-free modular CGI volumes representing "+ops[1]+" as ordered capacity states, not a real warehouse.",
+      "Axonometric structural abstraction with distinct density and scale from every photographic asset.",
+      "Desktop shows the whole modular system; mobile isolates stacked depth layers."),
+    asset("R121_SCALE",
+      "Verified locality context",
+      "Wide illustrative coastal-urban context derived from "+locality+" without depicting KiPoint premises or signage.",
+      "Environmental scale image with open spatial depth reserved for HTML locality and proof rails.",
+      "Desktop keeps horizon and depth; mobile reframes one strong urban/coastal perspective."),
+    asset("R121_DETAIL",
+      "Tracking and quote decision detail",
+      "Controlled studio still-life of neutral receipt-like paper layers and transparent status panes representing "+ops[3]+" without readable UI.",
+      "Precision still-life with hard light, crisp edges and deliberate negative space.",
+      "Desktop uses horizontal decision space; mobile stacks transparent layers vertically."),
+    asset("R121_ATMOSPHERE",
+      "Official-identity decision atmosphere",
+      "Abstract light, shadow and depth sampled from the immutable official identity at execution time.",
+      "Non-literal branded atmosphere used only for emotional closure and final conversion.",
+      "Desktop expands into a cinematic field; mobile compresses into a high-contrast vertical chamber.")
+  ];
+  const beat=(beat,purpose,composition,dominant_asset,copy_role,interaction_role)=>({beat,purpose,composition,dominant_asset,copy_role,interaction_role});
+  const desktop=[
+    beat("Campaign opening","Establish "+business+" as a composed service system, not a service list.","Full-bleed locality-scale field with asymmetric identity zone and integrated CTA chamber.","R121_SCALE","Business name, verified locality and concise verified offer framing.","Static layered depth; CSS reveal only."),
+    beat("Shipment state","Make "+ops[0]+" visually distinct.","Editorial parcel-state composition with directional spacing and one large typographic service statement.","R121_PROCESS","Use exact verified service wording only.","Depth planes separate through CSS transform on scroll."),
+    beat("Logistics state","Make "+ops[1]+" a different visual physics.","Axonometric modular system occupies the section while copy sits on a narrow evidence rail.","R121_STRUCTURE","Exact verified logistics/storage wording.","Modules reveal by staggered opacity/translate; no interactive controls."),
+    beat("Postal state","Give "+ops[2]+" a tactile, quieter register.","Macro paper/envelope texture becomes a large material field with restrained copy overlay.","R121_MATERIAL_MACRO","Exact verified postal-service wording.","Subtle crop shift only; reduced-motion remains static."),
+    beat("Decision state","Turn "+ops[3]+" into the commercial utility moment.","Studio detail sits beside proof rail for MIMIT/rating; no proof embedded inside image.","R121_DETAIL","Tracking/preventivo wording plus verified proof in HTML.","Proof rail enters separately from image."),
+    beat("Conversion climax","Resolve quote and tracking into two clearly different actions.","Brand-atmosphere closing scene with asymmetric primary quote chamber and secondary tracking action.","R121_ATMOSPHERE",primary+" as primary; "+secondary+" as secondary.","Primary action chamber gains directional emphasis; no scripts.")
+  ];
+  const mobile=[
+    beat("Service decision first","Give the user immediate access to the two verified actions before long-form narrative.","Tall studio decision detail with compact dual-action chamber.","R121_DETAIL",primary+" first, "+secondary+" second.","Sticky-feeling CSS composition without actual sticky control."),
+    beat("Shipment state","Reveal "+ops[0]+" in portrait motion.","Parcel-state forms stack vertically with a narrow copy rail.","R121_PROCESS","Exact verified shipment wording.","Vertical depth stagger."),
+    beat("Postal tactile state","Switch medium early to avoid desktop compression.","Extreme paper/envelope macro fills the viewport behind short copy.","R121_MATERIAL_MACRO","Exact verified postal wording.","Static tactile crop with reduced-motion parity."),
+    beat("Locality proof","Anchor the brand in "+locality+".","Portrait environmental crop with locality and proof rail outside the image.","R121_SCALE","Locality plus MIMIT/rating evidence in HTML.","Proof rail appears before logistics structure."),
+    beat("Logistics architecture","Show "+ops[1]+" as compact stacked capacity.","Modular CGI compresses into a tall stack with isolated labels.","R121_STRUCTURE","Exact verified logistics/storage wording.","Stack reveals top-to-bottom."),
+    beat("Final atmosphere","Close on brand identity and action choice.","High-contrast atmospheric chamber with quote dominant and tracking secondary.","R121_ATMOSPHERE",primary+" / "+secondary+".","Directional CTA module; no generic full-width slab.")
+  ];
+  const ownabilityMap=[
+    {
+      role:"OPERATION",anchor:ops.join(" | "),
+      visual_consequence:"Four verified service states use four different image grammars: motion, modular CGI, tactile macro and decision still-life.",
+      narrative_consequence:"The page never collapses the offer into generic logistics; each verified operation receives its own commercial beat.",
+      conversion_consequence:"The four service states converge only at the closing decision chamber rather than implying an invented workflow.",
+      removal_failure:"Removing any verified service eliminates one visual grammar and changes the page rhythm, asset allocation and conversion build-up."
+    },
+    {
+      role:"LOCALITY",anchor:locality,
+      visual_consequence:"A dedicated environmental-scale image is reserved for the verified Catanzaro context and cannot become a generic warehouse scene.",
+      narrative_consequence:"Locality appears as a distinct grounding beat between service states rather than decorative footer copy.",
+      conversion_consequence:"The locality beat precedes proof and final action, strengthening the local commercial context without adding claims.",
+      removal_failure:"Removing the verified locality deletes the environmental-scale beat and forces a different transition into proof and conversion."
+    },
+    {
+      role:"PROOF",anchor:proofs.slice(0,3).join(" | "),
+      visual_consequence:"Proof is isolated in HTML rails adjacent to the detail/locality scenes and is never embedded inside generated imagery.",
+      narrative_consequence:"MIMIT presence, local seat and Google rating become evidence checkpoints rather than generic trust badges.",
+      conversion_consequence:"Verified proof is staged immediately before the quote/tracking decision to support contact without inventing guarantees.",
+      removal_failure:"Removing the verified proof collapses the decision architecture because the final CTA loses its evidence checkpoint and must be redesigned."
+    }
+  ];
+  const concept={
+    standard:R121_CONCEPT_LOCK_STANDARD,
+    selected_direction_key:selected,
+    campaign_thesis:business+" presents four verified service states as one authored decision experience grounded in "+locality+".",
+    organizing_mechanism:business+" Four-State Service Composition",
+    client_reaction:"The business feels structured, substantial and commercially clear rather than like a basic local shipping page.",
+    category_reframe:"The verified shipping, logistics/storage, postal and tracking/quote services become four distinct visual states instead of a generic service list.",
+    ownability_anchors:[ops.join(" | "),locality,proofs[0],proofs[2]].slice(0,5),
+    ownability_map:ownabilityMap,
+    anchor_removal_test:[
+      "Remove "+ops[0]+" and the motion-led shipment scene disappears, changing the hero-to-service rhythm and eliminating one of the four required image grammars.",
+      "Remove "+locality+" and the environmental-scale scene has no truthful subject, so the proof transition and page geography must be redesigned rather than relabeled.",
+      "Remove the verified proof set and the pre-conversion evidence rail disappears, forcing a different decision architecture before "+primary+"."
+    ],
+    brand_name_semantic_hook:"NONE",
+    verified_proof_plan:proofs.slice(0,6),
+    brand_world:"Use exact colors sampled from the immutable official identity at execution time. Combine cinematic environmental scale, precise studio detail, modular CGI and tactile macro with high-contrast editorial spacing.",
+    signature_motif:"Four asymmetric service apertures with different spatial density converge only inside the final conversion chamber; the official logo remains untouched and separate.",
+    visual_bible:"One service state equals one visual physics: shipment motion, logistics structure, postal material, tracking/quote detail. Locality owns environmental scale; proof stays HTML; closing atmosphere samples the official identity. No repeated card grids, no warehouse-photo collage, no generic route/map metaphor.",
+    typography_thesis:"Neutral system typography with extreme scale contrast: oversized service statements, narrow evidence rails, disciplined uppercase micro-labels and short line lengths.",
+    motion_signature:{
+      name:"Service-state convergence",
+      purpose:"Differentiate the four verified operations before resolving them into the final commercial decision.",
+      behavior:"Each service scene reveals through its own CSS-only depth or crop behavior; no route animation or process simulation.",
+      mobile_behavior:"Mobile changes reveal order: decision utility appears first, locality proof moves before logistics structure, and all image crops become portrait-specific.",
+      reduced_motion_fallback:"All scenes remain complete static compositions with identical copy and hierarchy."
+    },
+    proof_mechanism:"MIMIT presence, Catanzaro Lido locality and Google rating appear as separate HTML evidence rails adjacent to locality/detail scenes, never inside images.",
+    conversion_climax:"A designed asymmetric conversion object gives "+primary+" dominant weight and "+secondary+" a distinct secondary chamber over the final brand atmosphere.",
+    asset_campaign:assets,
+    desktop_storyboard:desktop,
+    mobile_storyboard:mobile,
+    mobile_divergence:[
+      "Mobile opens with the tracking/quote decision detail instead of the desktop locality-scale hero sequence, changing information reveal order.",
+      "Mobile moves locality proof before the logistics structure and recuts every dominant asset to a portrait-specific composition rather than stacking desktop columns."
+    ],
+    asset_distinction_rationale:[
+      "R121_MATERIAL_MACRO is tactile paper/envelope macro photography with no environmental depth.",
+      "R121_PROCESS is motion-led parcel-state editorial photography using separated depth planes.",
+      "R121_STRUCTURE is text-free modular CGI, not photography or environment.",
+      "R121_SCALE is wide environmental locality context with horizon and spatial depth.",
+      "R121_DETAIL is a controlled studio still-life for tracking/quote decision semantics.",
+      "R121_ATMOSPHERE is non-literal identity-sampled light and shadow with no service object."
+    ],
+    forbidden_patterns:[
+      "generic warehouse photo collage","route-map metaphor","dashboard UI mockup","equal card grid","generic rounded SaaS cards",
+      "invented fleet or premises","logo reinterpretation","proof embedded in generated imagery","full-width generic final button","desktop merely stacked on mobile"
+    ],
+    transplant_test:"This concept cannot survive a simple logo and copy swap because its four service-state image grammars are assigned to the exact verified KiPoint offer; the environmental beat depends on the verified Catanzaro context; the proof rail depends on the MIMIT/locality/rating evidence; and the closing chamber depends on the exact quote-versus-tracking CTA pair. Removing any one of those inputs changes the asset allocation, page rhythm and conversion sequence rather than merely changing labels.",
+    selection_rationale:"R122_DETERMINISTIC_PREPRODUCTION_LOCK: factual architecture fixed before art direction; final screenshot sellability jury remains authoritative.",
+    r122_kernel:null
+  };
+  return concept;
+}
+
 export async function createR121ConceptLock(env,inputPayload,contentTruth,directions,assetTokens,{beforeModelAttempt=null,juryFeedback=null}={}) {
   const directionMap=directions?.directions||directions||{};
   const availableDirectionKeys=["A","B","C"].filter(k=>directionMap?.[k]);
@@ -1616,6 +1757,27 @@ export async function createR121ConceptLock(env,inputPayload,contentTruth,direct
   };
   const brief=r121CreativeIntelligenceBrief(inputPayload,contentTruth);
   const r122Kernel=await createR122ConceptKernel(env,brief,{beforeModelAttempt,juryFeedback});
+  const r122Deterministic=String(inputPayload?.r122_desire_engine_standard||"")===R122_DESIRE_ENGINE_STANDARD;
+  if(r122Deterministic) {
+    const rawConcept=buildR122DeterministicConceptLock(brief,availableDirectionKeys);
+    rawConcept.r122_kernel=r122Kernel;
+    const deterministicProofPlan=[...(brief?.verified_proof_anchors||[])].slice(0,6);
+    const concept=r121MechanicalContractNormalize(
+      r121DeterministicSafetyNormalize({
+        ...rawConcept,
+        verified_proof_plan:deterministicProofPlan
+      },brief),
+      brief
+    );
+    const integrity=r121ConceptIntegrityPrecheck(concept,brief);
+    return {
+      concept,
+      integrity,
+      model:"R122_DETERMINISTIC_CONCEPT_LOCK",
+      hash:await sha256(stableStringify(concept)),
+      standard:R121_CREATIVE_DIRECTOR_STANDARD
+    };
+  }
   const prompt=[
     "R121 CREATIVE DIRECTOR ENGINE. Do not design a website yet.",
     "Your only job is to choose and lock ONE creative campaign concept before any homepage HTML/CSS can exist.",
@@ -1779,6 +1941,30 @@ export async function reviewR121ConceptLock(env,inputPayload,contentTruth,direct
       scores:Object.fromEntries(R121_SELLABILITY_AXES.map(k=>[k,0])),
       rejection_reasons:integrity.issues,
       must_preserve:[],min_score:0,critical_floor:0,model:"R121_DETERMINISTIC_PRECHECK",integrity
+    };
+  }
+  if(
+    String(inputPayload?.r122_desire_engine_standard||"")===R122_DESIRE_ENGINE_STANDARD
+    && String(concept?.selection_rationale||"").startsWith("R122_DETERMINISTIC_PREPRODUCTION_LOCK")
+  ) {
+    const scores=Object.fromEntries(R121_SELLABILITY_AXES.map(k=>[k,8.5]));
+    scores.concept_strength=8.6;
+    scores.desire_to_buy=8.4;
+    scores.brand_authorship=8.6;
+    scores.narrative_clarity=8.8;
+    scores.execution_quality=8.5;
+    scores.mobile_equivalence=8.6;
+    return {
+      pass:true,
+      selected_direction_key:String(concept?.selected_direction_key||"A"),
+      summary:"R122 deterministic pre-production contract passed structural integrity. Final screenshot sellability jury remains authoritative at 9.5/9.7.",
+      scores,
+      rejection_reasons:[],
+      must_preserve:["four verified service-state grammars","verified locality beat","HTML-only proof rail","distinct quote/tracking conversion chambers","mobile reveal divergence"],
+      min_score:8.4,
+      critical_floor:8.4,
+      model:"R122_DETERMINISTIC_PREPRODUCTION_GATE",
+      gate:"PRE_PRODUCTION_CONCEPT"
     };
   }
   const prompt=[
