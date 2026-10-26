@@ -1137,7 +1137,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           } catch(error) {
             const message=String(error?.message||error);
             const transient=/^(?:AI_PROVIDER_CALL_TIMEOUT|AI_OUTPUT_SCHEMA_FAILURE|AI_OUTPUT_SCHEMA_INVALID|AI_PROVIDER_FAILURE)/.test(message);
-            if(context.r122DesireEngine===true || !transient || attempt>=conceptAttemptLimit) throw error;
+            if(!transient || attempt>=3) throw error;
             providerAttemptFailures.push({attempt,error:message.slice(0,900),at:new Date().toISOString()});
             try {
               await sql`
