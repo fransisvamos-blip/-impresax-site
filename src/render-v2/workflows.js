@@ -1563,6 +1563,19 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
         return rows[0]||null;
       });
       previousSpec=prior?.render_spec||null;
+    } else if(context.r122DesireEngine===true) {
+      const prior=await step.do("load-r122-scaffold-revision",async()=>{
+        const rows=await sql`
+          select r.*
+          from render_v2_variants v
+          join render_variant_revisions r on r.variant_id=v.id
+          where v.id=${params.variantId}::uuid
+            and r.revision=coalesce(v.best_preview_revision,v.certified_revision,v.current_revision)
+            and r.render_spec is not null
+          limit 1`;
+        return rows[0]||null;
+      });
+      previousSpec=prior?.render_spec||null;
     }
 
     let previewEmitted=false;
