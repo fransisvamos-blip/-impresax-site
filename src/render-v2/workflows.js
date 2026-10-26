@@ -521,6 +521,37 @@ async function createGeneratedHeroAsset(env,sql,{packId,inputPayload,direction,v
 async function ensureR121CampaignAssets(env,sql,{packId,inputPayload,concept,existingAssets={},variantKey="A"}) {
   const assets={...existingAssets};
   const provenance=[];
+
+  // Reuse any previously approved campaign asset for this same pack/token.
+  // This avoids regenerating good work after a later token fails.
+  for(const token of R121_CAMPAIGN_ASSET_TOKENS) {
+    if(assets[token]?.r2_key) continue;
+    const type="INPUT_ASSET_"+token;
+    const rows=await sql`
+      select artifact_type,r2_key,sha256,mime,bytes,created_at
+      from render_artifacts_v2
+      where render_pack_id=${packId}::uuid
+        and artifact_type=${type}
+        and producer_step='R121_CAMPAIGN_PREQA_PASS'
+      order by created_at desc
+      limit 1`;
+    const row=rows[0];
+    if(!row?.r2_key) continue;
+    assets[token]={
+      asset_id:token,
+      role:"editorial",
+      source_type:"R121_GENERATED_EDITORIAL_PREQA_PASS_REUSED",
+      commercial_use_status:"AI_GENERATED_EDITORIAL",
+      generated:true,
+      illustrative_not_documentary:true,
+      preqa_pass:true,
+      r2_key:row.r2_key,
+      mime:row.mime,
+      sha256:row.sha256,
+      bytes:Number(row.bytes||0),
+      reused_from_prior_run:true
+    };
+  }
   const direction={
     core_idea:String(concept?.campaign_thesis||""),
     hero_logic:String(concept?.visual_bible||""),
