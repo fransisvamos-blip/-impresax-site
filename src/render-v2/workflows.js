@@ -1092,7 +1092,8 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             }
           : null;
         const providerAttemptFailures=[];
-        for(let attempt=1;attempt<=3;attempt++) {
+        const conceptAttemptLimit=context.r122DesireEngine===true?1:3;
+        for(let attempt=1;attempt<=conceptAttemptLimit;attempt++) {
           let created;
           let review;
           try {
@@ -1108,18 +1109,20 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
                   reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
               }
             );
-            created=await refineR121ConceptLock(
-              this.env,
-              context.inputPayload,
-              {content_truth:context.contentTruthPack},
-              {directions:context.allDirections},
-              created.concept,
-              {
-                juryFeedback:feedback,
-                beforeModelAttempt:({role,model})=>
-                  reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT_REFINE:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
-              }
-            );
+            if(context.r122DesireEngine!==true) {
+              created=await refineR121ConceptLock(
+                this.env,
+                context.inputPayload,
+                {content_truth:context.contentTruthPack},
+                {directions:context.allDirections},
+                created.concept,
+                {
+                  juryFeedback:feedback,
+                  beforeModelAttempt:({role,model})=>
+                    reserveAiCall(sql,params.packId,this.env,"R121_CONCEPT_REFINE:"+role+":"+model+":A"+attempt,null,{allowR118External:true})
+                }
+              );
+            }
             review=await reviewR121ConceptLock(
               this.env,
               context.inputPayload,
@@ -1134,7 +1137,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
           } catch(error) {
             const message=String(error?.message||error);
             const transient=/^(?:AI_PROVIDER_CALL_TIMEOUT|AI_OUTPUT_SCHEMA_FAILURE|AI_OUTPUT_SCHEMA_INVALID|AI_PROVIDER_FAILURE)/.test(message);
-            if(!transient || attempt>=3) throw error;
+            if(context.r122DesireEngine===true || !transient || attempt>=conceptAttemptLimit) throw error;
             providerAttemptFailures.push({attempt,error:message.slice(0,900),at:new Date().toISOString()});
             try {
               await sql`
