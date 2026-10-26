@@ -1579,10 +1579,11 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     }
 
     let previewEmitted=false;
-    const visualRevisionLimit=context.r122DesireEngine===true
-      ? 1
-      : (context.r118PerceptualJury===true ? R118_FAST_VISUAL_REVISIONS : MAX_VISUAL_REVISIONS);
-    for(let cycle=1;cycle<=visualRevisionLimit;cycle++) {
+    const visualRevisionLimit=context.r118PerceptualJury===true
+      ? R118_FAST_VISUAL_REVISIONS
+      : MAX_VISUAL_REVISIONS;
+    const effectiveVisualRevisionLimit=context.r122DesireEngine===true ? 1 : visualRevisionLimit;
+    for(let cycle=1;cycle<=effectiveVisualRevisionLimit;cycle++) {
       const revision=await step.do("r"+cycle+"-allocate",async()=>{
         const r=await allocateRevision(sql,params.variantId,cycle===1?params.parentRevisionId:null,event.instanceId+":cycle:"+cycle);
         await updateWorkflow(sql,event.instanceId,{status:"RUNNING",currentStep:"GENERATE",attempt:cycle,metadata:{revision:r.revision}});
@@ -1792,7 +1793,7 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
             return {ok:true};
           });
         } else {
-          const retryable=fail?.failure?.retryable===true && !budget && cycle<visualRevisionLimit;
+          const retryable=fail?.failure?.retryable===true && !budget && cycle<effectiveVisualRevisionLimit;
           if(retryable) {
             await step.do("r"+cycle+"-generation-provider-retry",async()=>{
               await updateRevision(sql,revision.id,{status:"QA_FAILED"});
