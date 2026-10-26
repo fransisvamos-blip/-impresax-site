@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Deterministic Production V19
+name: Rendering V2 R122 Production V20
 
 on:
   push:
@@ -8,24 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-kipoint-v19:
+  launch-kipoint-v20:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v19
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 V19 direct asset production
+      - name: Launch KiPoint R122 V20 reuse approved assets
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v19","runKey":"kipoint-r122-v19","initialFeedback":{"reason":"R122_DESIRE_ENGINE_DETERMINISTIC_PRODUCTION","issues":["The concept lock is deterministic; legacy refinement is disabled and metadata persistence is typed."],"actions":["Validate the deterministic production contract once, then generate the six campaign assets immediately.","Use one distinct visual grammar per verified service state plus locality scale and identity atmosphere.","Keep all generated imagery unbranded and illustrative, with proof only in HTML.","Render premium navigation, full campaign hero, three wow moments, asymmetric conversion object, integrated footer and independent mobile composition.","Do not promote a new best preview unless final screenshot sellability gates pass."]}}'
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v20","runKey":"kipoint-r122-v20","initialFeedback":{"reason":"R122_DESIRE_ENGINE_DETERMINISTIC_PRODUCTION","issues":["Reuse any campaign visual already approved in R2. Regenerate only failed/missing tokens with QA-guided prompts."],"actions":["Reuse approved R121_MATERIAL_MACRO.","For R121_PROCESS generate one continuous full-frame scene: no panels, triptych, labels, text, pseudo-text, barcode or floating objects.","Use QA rejection guidance on subsequent attempts and allow up to three attempts per token.","Complete R121_STRUCTURE, R121_SCALE, R121_DETAIL and R121_ATMOSPHERE with distinct visual media.","After 6/6 assets pass, render desktop/mobile and enforce final 9.5/9.7 screenshot sellability gate."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
           sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
