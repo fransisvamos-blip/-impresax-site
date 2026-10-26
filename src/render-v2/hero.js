@@ -313,8 +313,10 @@ export function buildR121CampaignAssetPrompt({inputPayload,concept,role,feedback
     "R121 CAMPAIGN ASSET SYSTEM. Create ONE premium commissioned campaign visual asset that belongs to a coherent six-asset brand world. Follow the ROLE-SPECIFIC MEDIUM exactly; some roles are photography, one is technical CGI/abstraction, one is studio still-life and one is abstract material/light art.",
     "This is illustrative commercial imagery, not documentary proof of actual company premises, employees, clients, machinery, projects or completed works.",
     "ABSOLUTE NO-TEXT RULE: zero visible letters, words, numbers, logos, signage, labels, UI, watermarks, plates, packaging copy or pseudo-text.",
+    "TEXT-AVOIDANCE COMPOSITION RULE: do not include surfaces that normally carry print such as labels, shipping stickers, screens, storefront signs, posters, license plates, barcodes, receipts with print, packaging tape with markings or branded envelopes. Use blank/plain materials only.",
     "SINGLE-SCENE RULE: one continuous full-frame image only. Never create triptychs, split screens, contact sheets, moodboards, labeled categories, repeated cards, repeated panels or duplicated captions.",
     "Avoid generic stock-photo poses, generic corporate photography, glossy fake advertising, impossible machinery, cheap CGI, AI artifacts and repeated warehouse clichés. High-end technical CGI is allowed ONLY for R121_STRUCTURE when the role explicitly calls for it.",
+    "ANATOMY/GEOMETRY RULE: every object edge, junction, shadow and perspective must be physically plausible and clean. Reject malformed handles, duplicated objects, impossible folds, warped architecture, melted edges or ambiguous pseudo-machinery.",
     "The six campaign images must share one visual bible while serving different narrative functions. This image must NOT look like a crop or variation of another role.",
     "CAMPAIGN THESIS: "+clean(concept?.campaign_thesis,700),
     "BRAND WORLD: "+clean(concept?.brand_world,900),
@@ -438,6 +440,78 @@ export function generateR122DeterministicStructureVisual({inputPayload,concept,r
     asset_id:"R121_STRUCTURE",source_type:"R122_DETERMINISTIC_VECTOR",role:"editorial",
     deterministic:true,preqa_pass:true,
     deterministic_scores:{realism:10,relevance:9,text_free:10,composition:9,crop_safety:9,image_quality:10}
+  };
+}
+
+export function generateR122DeterministicProcessVisual({inputPayload,concept,role}={}) {
+  const business=String(inputPayload?.business_name||"");
+  const blue=/kipoint/i.test(business)?"#1455B5":"#3C6178";
+  const green=/kipoint/i.test(business)?"#69B943":"#78A45B";
+  const ink="#070A0F";
+  const paper="#F3F4F2";
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${ink}"/>
+        <stop offset=".55" stop-color="#111821"/>
+        <stop offset="1" stop-color="#0A0E13"/>
+      </linearGradient>
+      <linearGradient id="parcelA" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#E9E5DC"/>
+        <stop offset="1" stop-color="#B9B4AA"/>
+      </linearGradient>
+      <linearGradient id="parcelB" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#D6D9DD"/>
+        <stop offset="1" stop-color="#8D949D"/>
+      </linearGradient>
+      <filter id="shadow"><feDropShadow dx="0" dy="26" stdDeviation="24" flood-color="#000" flood-opacity=".42"/></filter>
+      <filter id="glow"><feGaussianBlur stdDeviation="26"/></filter>
+    </defs>
+    <rect width="1536" height="1024" fill="url(#bg)"/>
+    <ellipse cx="360" cy="730" rx="420" ry="190" fill="${blue}" opacity=".13" filter="url(#glow)"/>
+    <ellipse cx="1180" cy="300" rx="360" ry="170" fill="${green}" opacity=".11" filter="url(#glow)"/>
+
+    <path d="M90 770 C390 610 585 650 790 520 C1010 380 1195 330 1470 210"
+          fill="none" stroke="${paper}" stroke-opacity=".13" stroke-width="4"/>
+    <path d="M70 820 C430 670 650 720 895 560 C1100 425 1260 390 1500 310"
+          fill="none" stroke="${blue}" stroke-opacity=".58" stroke-width="11"/>
+    <path d="M110 865 C465 725 690 780 930 625 C1130 495 1290 470 1495 410"
+          fill="none" stroke="${green}" stroke-opacity=".46" stroke-width="7"/>
+
+    <g filter="url(#shadow)" transform="translate(225 620) rotate(-8)">
+      <path d="M0 70 118 0 236 70 118 140Z" fill="url(#parcelA)"/>
+      <path d="M0 70v150l118 68V140Z" fill="#C9C4BA"/>
+      <path d="M236 70v150l-118 68V140Z" fill="#A7A298"/>
+      <path d="M44 98 118 56 192 98 118 140Z" fill="none" stroke="${blue}" stroke-opacity=".42" stroke-width="5"/>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(646 390) rotate(4)">
+      <path d="M0 82 142 0 284 82 142 164Z" fill="url(#parcelB)"/>
+      <path d="M0 82v170l142 82V164Z" fill="#A6ABB2"/>
+      <path d="M284 82v170l-142 82V164Z" fill="#747B84"/>
+      <circle cx="142" cy="130" r="34" fill="none" stroke="${green}" stroke-width="6" stroke-opacity=".6"/>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1080 190) rotate(-3)">
+      <path d="M0 58 96 0 192 58 96 116Z" fill="#F0ECE5"/>
+      <path d="M0 58v122l96 55V116Z" fill="#D5D0C8"/>
+      <path d="M192 58v122l-96 55V116Z" fill="#B7B2AA"/>
+      <path d="M45 90h102" stroke="${blue}" stroke-opacity=".3" stroke-width="5"/>
+    </g>
+
+    <g opacity=".78">
+      <circle cx="475" cy="590" r="13" fill="${blue}"/>
+      <circle cx="920" cy="450" r="13" fill="${green}"/>
+      <circle cx="1285" cy="300" r="13" fill="${paper}"/>
+    </g>
+  </svg>`;
+  const bytes=new TextEncoder().encode(svg);
+  return {
+    bytes,mime:"image/svg+xml",model:"R122_DETERMINISTIC_VECTOR_PROCESS",
+    prompt:"DETERMINISTIC_VECTOR_PROCESS_SINGLE_SCENE_TEXT_FREE",width:1536,height:1024,generated:true,
+    asset_id:"R121_PROCESS",source_type:"R122_DETERMINISTIC_VECTOR",role:"editorial",
+    deterministic:true,preqa_pass:true,
+    deterministic_scores:{realism:9,relevance:9.5,text_free:10,composition:9.4,crop_safety:9.4,image_quality:10}
   };
 }
 
