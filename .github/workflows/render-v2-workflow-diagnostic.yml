@@ -1,27 +1,31 @@
-name: Rendering V2 R122 Stop V16
+name: Rendering V2 R122 Deterministic Production V17
 
 on:
   push:
     branches: [rendering-v2-shadow]
     paths:
       - '.github/workflows/render-v2-workflow-diagnostic.yml'
+  workflow_dispatch:
 
 jobs:
-  stop-v16:
+  launch-kipoint-v17:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 8
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v16
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v17
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Stop stale v16
+      - name: Launch KiPoint R122 deterministic production
+        shell: bash
         run: |
-          npx wrangler workflows instances terminate "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc || true
-          sleep 4
-          npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc
+          set -euo pipefail
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v17","runKey":"kipoint-r122-v17","initialFeedback":{"reason":"R122_DESIRE_ENGINE_DETERMINISTIC_PRODUCTION","issues":["Stop pre-production concept roulette. Build from the deterministic verified production contract and prove quality in the rendered screenshots."],"actions":["Use the deterministic four-service-state concept lock; do not generate or substitute a different campaign metaphor.","Generate six distinct editorial campaign assets: postal material macro, shipment motion, logistics/storage CGI structure, Catanzaro locality scale, tracking/quote detail, identity-derived atmosphere.","Keep all imagery unbranded and illustrative; proof remains HTML.","Render premium navigation, full campaign hero, three wow moments, strong asymmetric conversion-object final CTA, integrated footer and independently re-authored mobile.","Final screenshot sellability jury remains authoritative at 9.5 minimum and 9.7 critical axes.","Do not expose the new revision in Control Room unless the final visual gates pass."]}}'
+          npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
+          sleep 8
+          npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
