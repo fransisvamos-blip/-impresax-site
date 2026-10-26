@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Production V23
+name: Rendering V2 R122 Production V24
 
 on:
   push:
@@ -8,24 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-kipoint-v23:
+  launch-kipoint-v24:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v23
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v24
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 deterministic renderer V23
+      - name: Launch KiPoint R122 V24 jury repair
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v23","runKey":"kipoint-r122-v23","initialFeedback":{"reason":"R122_DETERMINISTIC_RENDERER","issues":["Asset pipeline is complete and the AI HTML renderer is disabled for R122."],"actions":["Reuse the locked deterministic concept and all approved R121 assets.","Load the last certified render as technical scaffold only.","Transform it through the deterministic R122 renderer: six visual roles, full-bleed campaign hero, premium shell, proof image, authored conversion object and mobile recut.","Proceed through compiler, desktop/mobile capture and final screenshot sellability jury.","Do not expose as best preview unless final visual gates pass."]}}'
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v24","runKey":"kipoint-r122-v24","initialFeedback":{"reason":"R122_FINAL_JURY_REPAIR","issues":["r6/r7 exposed concrete visual defects: trust overlap, weak/empty visual stages, generic header CTA, unverified green UI accent and repetitive copy."],"actions":["Start from the certified technical scaffold and apply the rebuilt deterministic R122 scenes once.","Use the six approved R121 visual roles.","Keep UI accents blue/neutral only, matching the verified official logo signal.","Use the new authored chamfered header CTA and two-chamber final conversion object.","Use rebuilt positioning, process, structure and trust scenes with no overlap or empty panels.","Proceed through desktop/mobile capture and strict final sellability jury."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
           sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
