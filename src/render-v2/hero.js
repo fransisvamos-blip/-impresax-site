@@ -93,6 +93,9 @@ function sectorDirection(inputPayload={}) {
     inputPayload.brand_dna?.business_positioning
   ].map(x=>String(x||"").toLowerCase()).join(" ");
 
+  if(/logistic|spedizion|postal|posta|tracking|magazzin|parcel|corrier/.test(hay)) {
+    return "LOGISTICS / SHIPPING ART DIRECTION: use unbranded neutral parcel, envelope, paper, modular-volume or abstract service-state cues only when they match the requested role. Never create route maps, dashboards, shipping labels, readable barcodes, category captions, branded packaging, vehicles, fleets, storefronts, warehouses presented as real premises, uniforms or staff. For PROCESS assets use one continuous cinematic scene with believable grounded objects and directional depth — never multiple panels or labeled categories. For locality assets use illustrative environmental context only, with no claim that the depicted place is the real KiPoint location.";
+  }
   if(/materiali|ingrosso|distribuz|tondo|cemento armato|rebar|acciaio|fornitur/.test(hay) && /edil|costruz|cement|materiali|rebar|tondo/.test(hay)) {
     return "Show a believable premium B2B construction-materials and rebar-supply context with a commissioned-editorial visual standard: raw steel/rebar, real warehouse or processing depth, dramatic but natural industrial light, tactile material surfaces and a distinctive asymmetric composition. The image should feel made for this specific industrial brand, not pulled from a stock library. Use ONLY blank unbranded PPE and raw materials. Avoid cardboard boxes, printed packaging, stickers, hanging tags, wall signs, warning boards, vehicle plates, branded clothing, pallets with labels, storefronts and any surface likely to contain writing. Do NOT portray the company as the builder of a luxury villa or claim a completed construction project that is not verified. Avoid generic office imagery, generic catalog inventory shots, centered product piles and showroom cleanliness.";
   }
@@ -295,21 +298,22 @@ export async function generatePremiumHeroVisual(env,{inputPayload,direction,vari
 function r121RolePrompt(role={}) {
   const token=String(role?.token||"");
   const defaults={
-    R121_MATERIAL_MACRO:"MEDIUM: tactile macro photography. Extreme close material study. No people, no environment. Texture, mass, edge detail and directional light are the subject.",
-    R121_PROCESS:"MEDIUM: cinematic editorial process photography. Show believable transformation, handling, bending, cutting or movement of material without readable controls, labels, uniforms, signage or branded machinery.",
-    R121_STRUCTURE:"MEDIUM: high-end text-free technical CGI / structural abstraction. Build an engineered spatial system from rebar/steel/construction geometry, exploded layers, junctions and load-bearing logic. It must feel like commissioned motion-design key art, not a photograph and not a fake completed company project.",
-    R121_SCALE:"MEDIUM: wide illustrative environmental photography. Communicate scale through space, repetition, inventory depth, structure and tiny anonymous human scale only when useful. Never imply this is the real DEDIL facility.",
-    R121_DETAIL:"MEDIUM: controlled studio still-life. Isolate material/tool/engineered junction on a deliberately lit studio field with precise shadow and texture. No warehouse background, no signage, no screens, no catalogue text.",
-    R121_ATMOSPHERE:"MEDIUM: abstract material-and-light campaign image. Use shadow, dust, reflected red light, steel/concrete texture, repetition and negative space without depicting a literal facility, product catalogue or readable object."
+    R121_MATERIAL_MACRO:"MEDIUM: tactile macro photography. Extreme close study of one verified category cue or neutral material related to the role subject. No people, no environment, no text, no labels, no packaging copy. Physical texture and edge detail must look real.",
+    R121_PROCESS:"MEDIUM: cinematic editorial motion image. ONE continuous full-frame scene only — never a triptych, split screen, contact sheet, cards, panels or repeated labeled categories. Show one coherent directional transition using physically plausible unbranded objects or abstract service-state forms. ABSOLUTELY ZERO text, pseudo-text, labels, numbers, barcodes, UI or signage. Objects must be grounded with believable contact shadows; no floating objects, impossible materials or duplicated identical forms. Keep clean negative space for HTML copy.",
+    R121_STRUCTURE:"MEDIUM: high-end text-free technical CGI / structural abstraction derived only from the verified offer architecture. Use modular geometry, layers, junctions, density or scale relationships without inventing engineering, machinery, facilities or branded objects. No photography, no text, no diagram labels.",
+    R121_SCALE:"MEDIUM: wide illustrative environmental image grounded only in verified locality or service context. It must communicate scale through space and perspective without pretending to show the prospect's real premises, fleet, staff or client site. No text, signage, branded vehicles or documentary identifiers.",
+    R121_DETAIL:"MEDIUM: controlled studio still-life tied to the verified service/proof cue. One precise subject system, physically plausible materials, deliberate negative space and real contact shadows. No warehouse background, screens, readable labels, barcodes, UI or catalogue text.",
+    R121_ATMOSPHERE:"MEDIUM: abstract identity-derived light-and-depth campaign image. Use color sampled from the official identity at execution time, shadow, reflection, texture and negative space. No literal premises, people, products, UI, logos, labels or text."
   };
-  return defaults[token]||"Distinct commissioned campaign visual with a unique narrative purpose and clearly differentiated visual medium.";
+  return defaults[token]||"Distinct commissioned campaign visual with one narrative purpose, one continuous full-frame composition, zero visible text and a clearly differentiated medium.";
 }
 
-export function buildR121CampaignAssetPrompt({inputPayload,concept,role}) {
+export function buildR121CampaignAssetPrompt({inputPayload,concept,role,feedback=""}) {
   return [
     "R121 CAMPAIGN ASSET SYSTEM. Create ONE premium commissioned campaign visual asset that belongs to a coherent six-asset brand world. Follow the ROLE-SPECIFIC MEDIUM exactly; some roles are photography, one is technical CGI/abstraction, one is studio still-life and one is abstract material/light art.",
     "This is illustrative commercial imagery, not documentary proof of actual company premises, employees, clients, machinery, projects or completed works.",
     "ABSOLUTE NO-TEXT RULE: zero visible letters, words, numbers, logos, signage, labels, UI, watermarks, plates, packaging copy or pseudo-text.",
+    "SINGLE-SCENE RULE: one continuous full-frame image only. Never create triptychs, split screens, contact sheets, moodboards, labeled categories, repeated cards, repeated panels or duplicated captions.",
     "Avoid generic stock-photo poses, generic corporate photography, glossy fake advertising, impossible machinery, cheap CGI, AI artifacts and repeated warehouse clichés. High-end technical CGI is allowed ONLY for R121_STRUCTURE when the role explicitly calls for it.",
     "The six campaign images must share one visual bible while serving different narrative functions. This image must NOT look like a crop or variation of another role.",
     "CAMPAIGN THESIS: "+clean(concept?.campaign_thesis,700),
@@ -323,20 +327,21 @@ export function buildR121CampaignAssetPrompt({inputPayload,concept,role}) {
     "ROLE CROP BEHAVIOR: "+clean(role?.crop_behavior,500),
     "ROLE TRUTH SAFETY: "+clean(role?.truth_safety,500),
     "ROLE-SPECIFIC DIRECTION: "+r121RolePrompt(role),
+    feedback?"PREVIOUS RAW-ASSET QA REJECTION — FIX THESE EXACTLY: "+clean(feedback,2200):"",
     sectorDirection(inputPayload),
     "Use sophisticated role-appropriate lighting, restrained color, tactile surfaces, deliberate depth and a memorable asymmetric composition. Keep the focal system crop-safe for both 1440 desktop and 390 mobile.",
     "Return ONE full-frame visual asset only. Never render a website, poster, moodboard, collage, text panel or UI."
   ].join("\n");
 }
 
-export async function generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt=1}) {
+export async function generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt=1,feedback=""}) {
   const r121ExternalEnabled=String(env.V2_R118_EXTERNAL_AI_ENABLED||"false")==="true"
     || String(env.V2_EXTERNAL_AI_ENABLED||"false")==="true";
   if(!r121ExternalEnabled) throw new Error("R121_EXTERNAL_AI_DISABLED_BY_CABINA");
   if(!env.AI) throw new Error("R121_IMAGE_AI_BINDING_REQUIRED");
   const primary=env.V2_MODEL_HERO_IMAGE||"@cf/black-forest-labs/flux-2-dev";
   const fallback=env.V2_MODEL_HERO_IMAGE_FALLBACK||"@cf/black-forest-labs/flux-2-klein-9b";
-  const prompt=buildR121CampaignAssetPrompt({inputPayload,concept,role});
+  const prompt=buildR121CampaignAssetPrompt({inputPayload,concept,role,feedback});
   const token=String(role?.token||"R121_ASSET");
   const tokenSeed=[...token].reduce((n,ch)=>n+ch.charCodeAt(0)*17,0);
   const attempt=Math.max(1,Number(generationAttempt)||1);
