@@ -2276,62 +2276,92 @@ function actualTopLevelSectionIds(mainHtml="") {
 
 
 
-function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens,concept}={}) {
+function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens,concept,qaFeedback=null}={}) {
   if(!previousSpec?.main_html || !previousSpec?.custom_css) return null;
   let html=String(previousSpec.main_html);
   let css=String(previousSpec.custom_css);
 
   const addSectionAttrs=(id,attrs)=>{
     const re=new RegExp('<section\\b([^>]*\\bid=["\\\']'+id+'["\\\'][^>]*)>','i');
-    html=html.replace(re,(m,a)=>'<section'+a+' '+attrs+'>');
+    html=html.replace(re,(m,a)=>{
+      const clean=a
+        .replace(/\\sdata-r122-design=["'][^"']*["']/gi,"")
+        .replace(/\\sdata-r122-hero=["'][^"']*["']/gi,"")
+        .replace(/\\sdata-r122-wow=["'][^"']*["']/gi,"")
+        .replace(/\\sdata-r122-final-cta=["'][^"']*["']/gi,"");
+      return '<section'+clean+' '+attrs+'>';
+    });
+  };
+  const replaceSectionInner=(id,inner)=>{
+    const re=new RegExp('(<section\\b[^>]*\\bid=["\\\']'+id+'["\\\'][^>]*>)[\\s\\S]*?(<\\/section>)','i');
+    html=html.replace(re,'$1'+inner+'$2');
   };
 
   addSectionAttrs("hero",'data-r122-design="desire-engine" data-r122-hero="campaign" data-r122-wow="true"');
   addSectionAttrs("positioning",'data-r122-wow="true"');
   addSectionAttrs("services",'data-r122-wow="true"');
+  addSectionAttrs("service-feature-1",'data-r122-wow="true"');
   addSectionAttrs("final-cta",'data-r122-final-cta="conversion-object" data-r122-wow="true"');
 
+  html=html.replace(/data-r122-cta=["']hero-primary["']\\s*/gi,"");
   html=html.replace('href="{{cta:PRIMARY}}"','data-r122-cta="hero-primary" href="{{cta:PRIMARY}}"');
 
-  // Re-map the legacy visual slots to the six approved R122 campaign roles.
-  html=html.replace('{{asset:VISUAL_02}}','{{asset:R121_SCALE}}');
-  html=html.replace('{{asset:VISUAL_03}}','{{asset:R121_PROCESS}}');
-
-  // Material macro becomes the opening service-world visual.
-  html=html.replace(
-    '<div class="ixg-services__composition">',
-    '<figure class="r122-service-macro" data-r121-motion="material-reveal"><img src="{{asset:R121_MATERIAL_MACRO}}" alt=""></figure><div class="ixg-services__composition">'
+  replaceSectionInner("positioning",
+    '<div class="ixg-shell r122-positioning-grid">'
+    +'<figure class="r122-positioning-visual" data-r121-motion="locality-reveal"><img src="{{asset:R121_SCALE}}" alt=""></figure>'
+    +'<div class="r122-positioning-caption"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:SERVICES_TITLE}}</h2></div>'
+    +'</div>'
   );
 
-  // The second editorial feature receives the deterministic structural system.
-  html=html.replace(
-    '<div class="ixg-feature__stage no-visual"><div class="ixg-feature__device"',
-    '<div class="ixg-feature__stage has-visual" data-r121-motion="structural-slide"><figure class="r122-structure-visual"><img src="{{asset:R121_STRUCTURE}}" alt=""></figure><div class="ixg-feature__device"'
+  replaceSectionInner("services",
+    '<figure class="r122-service-macro" data-r121-motion="material-reveal"><img src="{{asset:R121_MATERIAL_MACRO}}" alt=""></figure>'
+    +'<div class="ixg-shell r122-services-shell">'
+    +'<header class="ixg-section-head"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:SERVICES_TITLE}}</h2></header>'
+    +'<div class="ixg-services__composition"><article class="ixf-service-line" data-service-editorial="true" data-service-index-rail="locked">'
+    +'<span class="r122-service-mark" aria-hidden="true"><i></i><i></i></span>'
+    +'<h3 class="ixf-service-line__title">{{copy:SERVICE_1_TITLE}}</h3>'
+    +'</article></div></div>'
   );
 
-  // Proof remains HTML; the adjacent detail image creates visual weight without embedding claims.
-  html=html.replace(
-    '<div class="ixg-trust-reasons">',
-    '<figure class="r122-proof-visual" data-r121-motion="detail-focus"><img src="{{asset:R121_DETAIL}}" alt=""></figure><div class="ixg-trust-reasons">'
+  replaceSectionInner("service-feature-1",
+    '<div class="ixg-shell r122-feature-grid">'
+    +'<figure class="r122-process-visual" data-r121-motion="process-depth"><img src="{{asset:R121_PROCESS}}" alt=""></figure>'
+    +'<div class="r122-feature-copy"><p class="ixg-kicker">{{copy:SECONDARY_CTA_LABEL}}</p><a class="ixg-cta ixg-cta--secondary r122-inline-action" data-premium-button="true" href="{{cta:SECONDARY}}"><span class="ixg-cta__label">{{copy:SECONDARY_CTA_LABEL}}</span><span class="ixg-cta__mark" aria-hidden="true"><i></i></span></a></div>'
+    +'</div>'
   );
 
-  // Bridge becomes the atmospheric transition into conversion.
-  html=html.replace(
-    '<div class="ixg-shell ixg-bridge__grid">',
-    '<figure class="r122-atmosphere" aria-hidden="true"><img src="{{asset:R121_ATMOSPHERE}}" alt=""></figure><div class="ixg-shell ixg-bridge__grid">'
+  replaceSectionInner("brand-scene-2",
+    '<div class="ixg-shell r122-feature-grid r122-feature-grid--reverse">'
+    +'<div class="r122-structure-copy"><p class="ixg-kicker">{{copy:SERVICES_TITLE}}</p><h2>{{copy:LOCALITY_LINE}}</h2></div>'
+    +'<figure class="r122-structure-visual" data-r121-motion="structural-slide"><img src="{{asset:R121_STRUCTURE}}" alt=""></figure>'
+    +'</div>'
   );
 
-  // Turn the closing CTA into an authored conversion object.
-  const finalIdx=html.indexOf('id="final-cta"');
-  if(finalIdx>=0) {
-    const head=html.slice(0,finalIdx);
-    let tail=html.slice(finalIdx);
-    tail=tail.replace(
-      '<div class="ixg-actions">',
-      '<div class="ixg-actions r122-conversion__action" data-r122-action="true" data-r121-motion="proof-lock">'
-    );
-    html=head+tail;
-  }
+  replaceSectionInner("trust",
+    '<div class="ixg-shell r122-trust-grid">'
+    +'<figure class="r122-proof-visual" data-r121-motion="detail-focus"><img src="{{asset:R121_DETAIL}}" alt=""></figure>'
+    +'<div class="r122-trust-copy"><header class="ixg-section-head ixg-section-head--light"><p class="ixg-kicker">{{copy:TRUST_TITLE}}</p></header>'
+    +'<div class="ixg-trust-reasons">'
+    +'<article class="ixg-trust-reason" data-trust-reason="1"><span class="r122-proof-mark" aria-hidden="true"><i></i></span><strong>{{copy:TRUST_1}}</strong></article>'
+    +'<article class="ixg-trust-reason" data-trust-reason="2"><span class="r122-proof-mark" aria-hidden="true"><i></i></span><strong>{{copy:TRUST_2}}</strong></article>'
+    +'<article class="ixg-trust-reason" data-trust-reason="3"><span class="r122-proof-mark" aria-hidden="true"><i></i></span><strong>{{copy:TRUST_3}}</strong></article>'
+    +'</div></div></div>'
+  );
+
+  replaceSectionInner("bridge",
+    '<figure class="r122-atmosphere" aria-hidden="true"><img src="{{asset:R121_ATMOSPHERE}}" alt=""></figure>'
+    +'<div class="ixg-shell r122-bridge-grid"><div class="r122-bridge-copy"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:BRIDGE_TITLE}}</h2></div>'
+    +'<a class="ixg-cta ixg-cta--secondary r122-bridge-action" data-premium-button="true" href="{{cta:SECONDARY}}"><span class="ixg-cta__label">{{copy:SECONDARY_CTA_LABEL}}</span><span class="ixg-cta__mark" aria-hidden="true"><i></i></span></a></div>'
+  );
+
+  replaceSectionInner("final-cta",
+    '<div class="ixg-shell ixg-contact__inner r122-final-grid">'
+    +'<div class="r122-final-copy"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:CLOSING_TITLE}}</h2></div>'
+    +'<div class="r122-conversion__action" data-r122-action="true" data-r121-motion="proof-lock">'
+    +'<a class="ixg-cta ixg-cta--primary" data-premium-button="true" href="{{cta:PRIMARY}}"><span class="ixg-cta__label">{{copy:PRIMARY_CTA_LABEL}}</span><span class="ixg-cta__mark" aria-hidden="true"><i></i></span></a>'
+    +'<a class="r122-conversion__secondary" data-premium-button="true" href="{{cta:SECONDARY}}"><span>{{copy:SECONDARY_CTA_LABEL}}</span></a>'
+    +'</div></div>'
+  );
 
   const r122Css=String.raw`
 /* =========================================================
@@ -2341,7 +2371,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   --r122-ink:#07090d;
   --r122-paper:#f4f5f1;
   --r122-blue:#1455b5;
-  --r122-green:#69b943;
+  --r122-accent:#1455b5;
   --r122-line:rgba(255,255,255,.16);
   --r122-shadow:0 36px 90px rgba(0,0,0,.28);
 }
@@ -2367,21 +2397,25 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   font-size:12px!important;
 }
 .ix-v2-header-cta{
-  min-height:50px!important;
-  padding:0 22px!important;
-  border:1px solid rgba(255,255,255,.2)!important;
+  min-height:52px!important;
+  padding:0 30px 0 24px!important;
+  border:1px solid rgba(255,255,255,.34)!important;
+  border-left:5px solid var(--r122-blue)!important;
   border-radius:0!important;
-  background:linear-gradient(135deg,var(--r122-blue),#0b3475)!important;
-  box-shadow:0 14px 34px rgba(20,85,181,.25)!important;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)!important;
+  background:rgba(255,255,255,.06)!important;
+  color:#fff!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.28)!important;
   text-transform:uppercase!important;
-  letter-spacing:.08em!important;
+  letter-spacing:.09em!important;
+  font-weight:800!important;
 }
 .ix-v2-footer{
   position:relative!important;
   overflow:hidden!important;
   background:
     radial-gradient(circle at 14% 20%,rgba(20,85,181,.22),transparent 34%),
-    radial-gradient(circle at 82% 72%,rgba(105,185,67,.16),transparent 36%),
+    radial-gradient(circle at 82% 72%,rgba(20,85,181,.16),transparent 36%),
     var(--r122-ink)!important;
   color:var(--r122-paper)!important;
 }
@@ -2456,10 +2490,10 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   min-height:62px!important;
   padding:0 26px!important;
   border-radius:0!important;
-  background:var(--r122-green)!important;
+  background:var(--r122-accent)!important;
   color:#07100a!important;
   border:0!important;
-  box-shadow:0 22px 54px rgba(105,185,67,.25)!important;
+  box-shadow:0 22px 54px rgba(20,85,181,.25)!important;
   text-transform:uppercase!important;
   letter-spacing:.055em!important;
   font-weight:800!important;
@@ -2474,34 +2508,17 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 
 #positioning{
   position:relative!important;
-  background:var(--r122-paper)!important;
-  color:#0a0d12!important;
-  padding-block:clamp(100px,12vw,180px)!important;
-}
-#positioning .ixf-positioning__grid{
-  display:grid!important;
-  grid-template-columns:minmax(250px,.72fr) minmax(320px,.78fr) minmax(420px,1.5fr)!important;
-  gap:clamp(28px,5vw,78px)!important;
-  align-items:end!important;
-}
-#positioning .ixf-positioning__media{
-  position:relative!important;
-  min-height:560px!important;
+  background:#080b10!important;
+  color:var(--r122-paper)!important;
+  padding-block:clamp(82px,9vw,138px)!important;
   overflow:hidden!important;
-  box-shadow:var(--r122-shadow)!important;
 }
-#positioning .ixf-positioning__media img{
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  object-fit:cover!important;
-}
-#positioning h2{
-  font-size:clamp(48px,6vw,96px)!important;
-  line-height:.94!important;
-  letter-spacing:-.045em!important;
-}
+.r122-positioning-grid{position:relative!important;min-height:680px!important;display:grid!important}
+.r122-positioning-visual{position:absolute!important;inset:0!important;margin:0!important;overflow:hidden!important;box-shadow:var(--r122-shadow)!important}
+.r122-positioning-visual:after{content:""!important;position:absolute!important;inset:0!important;background:linear-gradient(90deg,rgba(5,8,12,.86),rgba(5,8,12,.16) 62%,rgba(5,8,12,.44))!important}
+.r122-positioning-visual img{width:100%!important;height:100%!important;object-fit:cover!important;filter:contrast(1.12) saturate(1.04)!important}
+.r122-positioning-caption{position:relative!important;z-index:2!important;align-self:end!important;width:min(720px,72%)!important;padding:clamp(34px,5vw,70px)!important}
+.r122-positioning-caption h2{margin:.15em 0 0!important;font-size:clamp(48px,6vw,92px)!important;line-height:.92!important;letter-spacing:-.045em!important}
 
 #services{
   position:relative!important;
@@ -2633,6 +2650,30 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   background:transparent!important;
 }
 
+.r122-services-shell{position:relative!important;z-index:2!important}
+.r122-service-mark{display:inline-grid!important;grid-template-columns:34px 12px!important;gap:7px!important;align-items:center!important;margin-bottom:22px!important}
+.r122-service-mark i{display:block!important;height:4px!important;background:var(--r122-blue)!important}
+.r122-service-mark i:last-child{opacity:.4!important}
+#services .ixf-service-line__title{max-width:18ch!important;overflow-wrap:anywhere!important}
+.r122-feature-grid{display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(240px,.55fr)!important;gap:clamp(34px,6vw,94px)!important;align-items:center!important}
+.r122-feature-grid--reverse{grid-template-columns:minmax(260px,.62fr) minmax(0,1.38fr)!important}
+.r122-process-visual,.r122-structure-visual{position:relative!important;min-height:610px!important;margin:0!important;overflow:hidden!important;background:#080b10!important;box-shadow:var(--r122-shadow)!important}
+.r122-process-visual img,.r122-structure-visual img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;filter:contrast(1.14) saturate(1.04)!important}
+.r122-feature-copy,.r122-structure-copy{min-width:0!important}
+.r122-feature-copy{display:grid!important;gap:24px!important}
+.r122-inline-action{width:max-content!important;min-height:58px!important;border-radius:0!important;border:1px solid rgba(17,17,17,.22)!important;background:transparent!important}
+.r122-structure-copy h2{font-size:clamp(36px,4.5vw,68px)!important;line-height:.96!important;letter-spacing:-.035em!important;overflow-wrap:anywhere!important}
+.r122-trust-grid{display:grid!important;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important;gap:clamp(42px,7vw,108px)!important;align-items:stretch!important}
+.r122-proof-visual{position:relative!important;min-height:600px!important;margin:0!important;overflow:hidden!important;background:#111820!important;box-shadow:var(--r122-shadow)!important}
+.r122-proof-visual img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;filter:contrast(1.12) saturate(.98)!important}
+.r122-trust-copy{min-width:0!important;display:grid!important;align-content:center!important}
+#trust .ixg-trust-reasons{display:grid!important;grid-template-columns:1fr!important;gap:0!important;width:100%!important;min-width:0!important;border-top:1px solid rgba(255,255,255,.22)!important}
+#trust .ixg-trust-reason{min-width:0!important;min-height:132px!important;display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;gap:20px!important;align-items:center!important;padding:24px 0!important;border-bottom:1px solid rgba(255,255,255,.18)!important;background:transparent!important;overflow:hidden!important}
+#trust .ixg-trust-reason strong{min-width:0!important;max-width:100%!important;font-size:clamp(18px,1.75vw,28px)!important;line-height:1.15!important;letter-spacing:-.02em!important;overflow-wrap:anywhere!important}
+.r122-proof-mark{position:relative!important;width:28px!important;height:28px!important;display:block!important;border:1px solid rgba(255,255,255,.32)!important}
+.r122-proof-mark i{position:absolute!important;left:6px!important;right:6px!important;top:50%!important;height:2px!important;background:var(--r122-blue)!important}
+.ixproof,.ixg-trust-reason__graphic,.ixg-feature__device,.ixsig,.ixprocess,.ixdirection,.ixr89-lines,.ixr90-stage{display:none!important}
+
 #bridge{
   position:relative!important;
   overflow:hidden!important;
@@ -2658,7 +2699,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   height:100%!important;
   object-fit:cover!important;
 }
-#bridge .ixg-bridge__grid{
+#bridge .r122-bridge-grid{
   position:relative!important;
   z-index:2!important;
   display:grid!important;
@@ -2674,7 +2715,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   display:flex!important;
   align-items:center!important;
   background:
-    radial-gradient(circle at 78% 25%,rgba(105,185,67,.19),transparent 32%),
+    radial-gradient(circle at 78% 25%,rgba(20,85,181,.19),transparent 32%),
     radial-gradient(circle at 20% 78%,rgba(20,85,181,.28),transparent 36%),
     #06090d!important;
   color:var(--r122-paper)!important;
@@ -2694,7 +2735,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 #final-cta .r122-conversion__action{
   min-height:150px!important;
   display:grid!important;
-  grid-template-columns:1fr 116px!important;
+  grid-template-columns:minmax(0,1fr) 220px!important;
   align-items:stretch!important;
   border:1px solid rgba(255,255,255,.22)!important;
   border-radius:0!important;
@@ -2709,7 +2750,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   top:0!important;
   bottom:0!important;
   width:6px!important;
-  background:var(--r122-green)!important;
+  background:var(--r122-accent)!important;
 }
 #final-cta .r122-conversion__action .ixg-cta--primary{
   min-height:150px!important;
@@ -2733,6 +2774,8 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   display:grid!important;
   place-items:center!important;
 }
+#final-cta .r122-conversion__secondary{min-width:0!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:24px!important;background:#091426!important;color:#fff!important;border-left:1px solid rgba(6,9,13,.18)!important;text-decoration:none!important;text-transform:uppercase!important;letter-spacing:.07em!important;font-weight:800!important;font-size:12px!important;text-align:center!important}
+
 
 [data-r121-motion]{
   transition:transform .8s cubic-bezier(.2,.7,.2,1),opacity .8s ease,filter .8s ease!important;
@@ -2841,7 +2884,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   #trust .ixg-trust-reasons{width:100%!important}
 
   #bridge{min-height:720px!important}
-  #bridge .ixg-bridge__grid{
+  #bridge .r122-bridge-grid{
     display:flex!important;
     flex-direction:column!important;
     align-items:flex-start!important;
@@ -2878,6 +2921,21 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   }
 }
 
+@media (max-width:700px){
+  .r122-positioning-grid{min-height:620px!important;width:calc(100% + 32px)!important;margin-left:-16px!important}
+  .r122-positioning-caption{width:100%!important;padding:28px 22px 34px!important}
+  .r122-positioning-caption h2{font-size:48px!important;max-width:10ch!important}
+  .r122-feature-grid,.r122-feature-grid--reverse{display:flex!important;flex-direction:column!important;gap:28px!important}
+  .r122-process-visual,.r122-structure-visual{order:-1!important;width:calc(100% + 32px)!important;margin-left:-16px!important;min-height:440px!important}
+  .r122-feature-copy,.r122-structure-copy{width:100%!important}
+  .r122-trust-grid{display:flex!important;flex-direction:column!important;gap:36px!important}
+  .r122-proof-visual{order:-1!important;width:calc(100% + 32px)!important;margin:0 0 8px -16px!important;min-height:430px!important}
+  #trust .ixg-trust-reason{grid-template-columns:30px minmax(0,1fr)!important;min-height:108px!important;padding:20px 0!important}
+  #trust .ixg-trust-reason strong{font-size:19px!important}
+  #bridge .r122-bridge-grid{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:28px!important}
+  #final-cta .r122-conversion__action{grid-template-columns:1fr!important}
+  #final-cta .r122-conversion__secondary{min-height:68px!important;border-left:0!important;border-top:1px solid rgba(6,9,13,.18)!important}
+}
 @media (prefers-reduced-motion:reduce){
   [data-r121-motion]{transition:none!important;transform:none!important}
 }
@@ -2931,7 +2989,7 @@ export async function generateR121RenderSpec(env,{
     && previousSpec?.main_html
     && previousSpec?.custom_css;
   if(r122Deterministic) {
-    const spec=buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens,concept});
+    const spec=buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens,concept,qaFeedback});
     if(spec) return {spec,model:"R122_DETERMINISTIC_RENDERER_V1",r121:true,r122:true,deterministic:true};
   }
   const safePrevious=qaFeedback && previousSpec ? {
