@@ -12,7 +12,7 @@ import { buildContactManifest } from "./contacts.js";
 import { sanitizeDirectionForExecution, zeroPhotoExecutionDirection, buildZeroPhotoPremiumSpec } from "./design-grammar.js";
 import { buildR119SceneComposerSpec } from "./r119-scene-composer.js";
 import { remediateBlockedPack } from "./remediation.js";
-import { explicitHeroAsset, generatePremiumHeroVisual, generateR121CampaignVisual, generateR122DeterministicStructureVisual } from "./hero.js";
+import { explicitHeroAsset, generatePremiumHeroVisual, generateR121CampaignVisual, generateR122DeterministicStructureVisual, generateR122DeterministicAtmosphereVisual } from "./hero.js";
 import { renderConcurrencyState } from "./concurrency.js";
 import { sectionVisualTokens, sectionVisualPlan } from "./showroom-policy.js";
 import { buildR121LivePreviewHtml } from "./live-preview.js";
@@ -569,6 +569,33 @@ async function ensureR121CampaignAssets(env,sql,{packId,inputPayload,concept,exi
     const role=roleByToken[token]||{token,narrative_role:token,subject:token,visual_function:"campaign visual",crop_behavior:"desktop/mobile safe",truth_safety:"illustrative only"};
     let accepted=null;
     let lastQa=null;
+
+    if(token==="R121_ATMOSPHERE") {
+      const generated=generateR122DeterministicAtmosphereVisual({inputPayload,concept,role});
+      const imageHash=await sha256(generated.bytes);
+      const key="render-v2/"+code+"/"+packId+"/r121-campaign/"+token.toLowerCase()+"-deterministic-"+imageHash.slice(0,16)+".svg";
+      const artifact=await putArtifact(env,sql,{
+        packId,revisionId:null,type:"INPUT_ASSET_"+token,key,body:generated.bytes,mime:generated.mime,
+        producerStep:"R122_DETERMINISTIC_ATMOSPHERE_PASS"
+      });
+      const scores=generated.deterministic_scores;
+      await recordQa(sql,{
+        packId,revisionId:null,type:"R121_CAMPAIGN_ASSET",status:"PASS",scores,issues:[],actions:[],
+        artifactHashes:{token,attempt:0,asset_sha256:artifact.sha256,asset_r2_key:artifact.r2_key,generator_model:generated.model,reviewer_model:"R122_DETERMINISTIC_VECTOR_GATE"},
+        modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
+        idempotencyKey:"qa:R121_CAMPAIGN_ASSET:"+packId+":"+token+":"+artifact.sha256
+      });
+      accepted={
+        asset_id:token,role:"editorial",source_type:"R122_DETERMINISTIC_VECTOR_ATMOSPHERE",
+        commercial_use_status:"INTERNAL_GENERATED_ARTWORK",generated:true,illustrative_not_documentary:true,
+        preqa_pass:true,model:generated.model,r2_key:artifact.r2_key,mime:artifact.mime,sha256:artifact.sha256,
+        bytes:artifact.bytes,campaign_role:role.narrative_role,truth_safety:role.truth_safety,
+        preqa_scores:scores,deterministic:true
+      };
+      assets[token]=accepted;
+      provenance.push({token,source:"R122_DETERMINISTIC_VECTOR",license:"INTERNAL_GENERATION",truth_safety:"ILLUSTRATIVE_NOT_DOCUMENTARY"});
+      continue;
+    }
 
     if(token==="R121_STRUCTURE") {
       const generated=generateR122DeterministicStructureVisual({inputPayload,concept,role});
