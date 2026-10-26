@@ -1579,9 +1579,9 @@ export class RenderVariantWorkflow extends WorkflowEntrypoint {
     }
 
     let previewEmitted=false;
-    const visualRevisionLimit=context.r118PerceptualJury===true
-      ? R118_FAST_VISUAL_REVISIONS
-      : MAX_VISUAL_REVISIONS;
+    const visualRevisionLimit=context.r122DesireEngine===true
+      ? 1
+      : (context.r118PerceptualJury===true ? R118_FAST_VISUAL_REVISIONS : MAX_VISUAL_REVISIONS);
     for(let cycle=1;cycle<=visualRevisionLimit;cycle++) {
       const revision=await step.do("r"+cycle+"-allocate",async()=>{
         const r=await allocateRevision(sql,params.variantId,cycle===1?params.parentRevisionId:null,event.instanceId+":cycle:"+cycle);
