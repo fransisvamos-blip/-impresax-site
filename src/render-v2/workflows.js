@@ -539,9 +539,10 @@ async function ensureR121CampaignAssets(env,sql,{packId,inputPayload,concept,exi
     let accepted=null;
     let lastQa=null;
 
-    for(let attempt=1;attempt<=2;attempt++) {
+    let generationFeedback="";
+    for(let attempt=1;attempt<=3;attempt++) {
       await reserveAiCall(sql,packId,env,"R121_CAMPAIGN_IMAGE:"+token+":A"+attempt,null,{allowR118External:true});
-      const generated=await generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt:attempt});
+      const generated=await generateR121CampaignVisual(env,{inputPayload,concept,role,generationAttempt:attempt,feedback:generationFeedback});
       const imageB64=bytesToBase64(generated.bytes);
       const qa=await runHeroAssetQa(env,{
         imageB64,inputPayload,direction,variantKey,
@@ -578,6 +579,16 @@ async function ensureR121CampaignAssets(env,sql,{packId,inputPayload,concept,exi
         modelRouteVersion:MODEL_ROUTE_VERSION,promptVersion:PROMPT_VERSION,
         idempotencyKey:"qa:R121_CAMPAIGN_ASSET:"+packId+":"+token+":"+artifact.sha256
       });
+
+      if(!approved) {
+        generationFeedback=[
+          "RAW ASSET PRE-QA REJECTED FOR "+token+".",
+          qa.summary||"",
+          ...((qa.issues||[]).map(x=>x?.message||x?.code||String(x))),
+          ...((qa.regeneration_guidance||[]).map(String)),
+          "Generate a materially different single-scene asset. Absolutely zero text, pseudo-text, labels, panels, triptychs or repeated card grids."
+        ].filter(Boolean).join(" | ").slice(0,3200);
+      }
 
       if(approved) {
         accepted={
