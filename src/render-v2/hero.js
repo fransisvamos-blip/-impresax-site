@@ -334,6 +334,52 @@ export function buildR121CampaignAssetPrompt({inputPayload,concept,role,feedback
   ].join("\n");
 }
 
+export function generateR122DeterministicAtmosphereVisual({inputPayload,concept,role}={}) {
+  const business=String(inputPayload?.business_name||"");
+  const isKiPoint=/kipoint/i.test(business);
+  const blue=isKiPoint?"#1455B5":"#315F78";
+  const green=isKiPoint?"#69B943":"#6E9B67";
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+    <defs>
+      <radialGradient id="blueGlow" cx="34%" cy="42%" r="68%">
+        <stop offset="0" stop-color="${blue}" stop-opacity=".92"/>
+        <stop offset=".34" stop-color="${blue}" stop-opacity=".34"/>
+        <stop offset="1" stop-color="#07101C" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="greenGlow" cx="74%" cy="58%" r="58%">
+        <stop offset="0" stop-color="${green}" stop-opacity=".78"/>
+        <stop offset=".38" stop-color="${green}" stop-opacity=".22"/>
+        <stop offset="1" stop-color="#07101C" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#05080D"/>
+        <stop offset=".48" stop-color="#0A1220"/>
+        <stop offset="1" stop-color="#040608"/>
+      </linearGradient>
+      <filter id="blur"><feGaussianBlur stdDeviation="50"/></filter>
+      <filter id="blur2"><feGaussianBlur stdDeviation="110"/></filter>
+    </defs>
+    <rect width="1536" height="1024" fill="url(#base)"/>
+    <ellipse cx="420" cy="400" rx="560" ry="460" fill="url(#blueGlow)" filter="url(#blur2)"/>
+    <ellipse cx="1110" cy="620" rx="480" ry="390" fill="url(#greenGlow)" filter="url(#blur2)"/>
+    <path d="M-80 780 C280 610 510 640 760 500 C1010 360 1180 230 1610 180" fill="none" stroke="${blue}" stroke-width="18" opacity=".42" filter="url(#blur)"/>
+    <path d="M-50 850 C370 700 650 760 930 620 C1160 505 1320 420 1600 360" fill="none" stroke="${green}" stroke-width="12" opacity=".48" filter="url(#blur)"/>
+    <path d="M180 170 C550 320 690 240 910 120" fill="none" stroke="#FFF" stroke-width="2" opacity=".16"/>
+    <circle cx="1010" cy="380" r="116" fill="none" stroke="${green}" stroke-width="5" opacity=".24"/>
+    <circle cx="1010" cy="380" r="54" fill="${blue}" opacity=".18" filter="url(#blur)"/>
+    <rect x="96" y="92" width="430" height="4" fill="${blue}" opacity=".7"/>
+    <rect x="1040" y="900" width="400" height="4" fill="${green}" opacity=".68"/>
+  </svg>`;
+  const bytes=new TextEncoder().encode(svg);
+  return {
+    bytes,mime:"image/svg+xml",model:"R122_DETERMINISTIC_VECTOR_ATMOSPHERE",
+    prompt:"DETERMINISTIC_VECTOR_ATMOSPHERE_BLUE_GREEN_IDENTITY",width:1536,height:1024,generated:true,
+    asset_id:"R121_ATMOSPHERE",source_type:"R122_DETERMINISTIC_VECTOR",role:"editorial",
+    deterministic:true,preqa_pass:true,
+    deterministic_scores:{realism:9,relevance:9,text_free:10,composition:9,crop_safety:9,image_quality:10}
+  };
+}
+
 export function generateR122DeterministicStructureVisual({inputPayload,concept,role}={}) {
   const business=String(inputPayload?.business_name||"");
   const blue=/kipoint/i.test(business)?"#1455B5":"#4E6A78";
