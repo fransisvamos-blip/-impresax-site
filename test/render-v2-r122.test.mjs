@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";\nimport test from "node:test";
+import { readFileSync } from "node:fs";
+import test from "node:test";
 import assert from "node:assert/strict";
 import { generateR121RenderSpec } from "../src/render-v2/ai.js";
 import { R122_DESIRE_ENGINE_STANDARD } from "../src/render-v2/r122-desire-engine.js";
