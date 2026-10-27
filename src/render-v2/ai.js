@@ -2667,14 +2667,19 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 .r122-feature-copy{display:grid!important;gap:24px!important}
 .r122-inline-action{width:max-content!important;min-height:58px!important;border-radius:0!important;border:1px solid rgba(17,17,17,.22)!important;background:transparent!important}
 .r122-structure-copy h2{font-size:clamp(36px,4.5vw,68px)!important;line-height:.96!important;letter-spacing:-.035em!important;overflow-wrap:anywhere!important}
-.r122-trust-grid{display:grid!important;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important;gap:clamp(42px,7vw,108px)!important;align-items:stretch!important}
+.r122-trust-grid{display:grid!important;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)!important;gap:clamp(42px,6vw,92px)!important;align-items:stretch!important}
 .r122-proof-visual{position:relative!important;min-height:600px!important;margin:0!important;overflow:hidden!important;background:#111820!important;box-shadow:var(--r122-shadow)!important}
-.r122-proof-visual img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;filter:contrast(1.12) saturate(.98)!important}
-.r122-trust-copy{min-width:0!important;display:grid!important;align-content:center!important}
-#trust .ixg-trust-reasons{display:grid!important;grid-template-columns:1fr!important;gap:0!important;width:100%!important;min-width:0!important;border-top:1px solid rgba(255,255,255,.22)!important}
-#trust .ixg-trust-reason{min-width:0!important;min-height:132px!important;display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;gap:20px!important;align-items:center!important;padding:24px 0!important;border-bottom:1px solid rgba(255,255,255,.18)!important;background:transparent!important;overflow:hidden!important}
-#trust .ixg-trust-reason strong{min-width:0!important;max-width:100%!important;font-size:clamp(18px,1.75vw,28px)!important;line-height:1.15!important;letter-spacing:-.02em!important;overflow-wrap:anywhere!important}
-.r122-proof-mark{position:relative!important;width:28px!important;height:28px!important;display:block!important;border:1px solid rgba(255,255,255,.32)!important}
+.r122-proof-visual img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;filter:contrast(1.12) saturate(.86)!important}
+.r122-trust-copy{min-width:0!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-content:center!important}
+#trust .r122-trust-copy .ixg-section-head,
+#trust .r122-trust-copy .ixg-trust-reasons{grid-column:auto!important;grid-row:auto!important;min-width:0!important;width:100%!important}
+#trust .r122-trust-copy .ixg-section-head{margin:0 0 34px!important}
+#trust .r122-trust-copy .ixg-section-head h2{max-width:11ch!important;margin:0!important;font-size:clamp(38px,4.2vw,66px)!important;line-height:.94!important;letter-spacing:-.045em!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
+#trust .r122-trust-copy .r122-trust-intro{max-width:50ch!important;margin-top:18px!important;font-size:clamp(15px,1.15vw,18px)!important;line-height:1.5!important}
+#trust .ixg-trust-reasons{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:0!important;width:100%!important;min-width:0!important;border-top:1px solid rgba(255,255,255,.22)!important}
+#trust .ixg-trust-reason{min-width:0!important;min-height:112px!important;display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;gap:18px!important;align-items:center!important;padding:22px 0!important;border-bottom:1px solid rgba(255,255,255,.18)!important;background:transparent!important;overflow:visible!important}
+#trust .ixg-trust-reason strong{display:block!important;min-width:0!important;max-width:100%!important;font-size:clamp(17px,1.45vw,23px)!important;line-height:1.22!important;letter-spacing:-.015em!important;overflow-wrap:break-word!important;word-break:normal!important;hyphens:none!important}
+.r122-proof-mark{position:relative!important;width:26px!important;height:26px!important;display:block!important;border:1px solid rgba(255,255,255,.32)!important}
 .r122-proof-mark i{position:absolute!important;left:6px!important;right:6px!important;top:50%!important;height:2px!important;background:var(--r122-accent)!important}
 .ixproof,.ixg-trust-reason__graphic,.ixg-feature__device,.ixsig,.ixprocess,.ixdirection,.ixr89-lines,.ixr90-stage{display:none!important}
 
