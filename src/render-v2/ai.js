@@ -2826,7 +2826,8 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   }
   #hero[data-r122-design="desire-engine"] .ixm-hero__image{
     object-position:62% center!important;
-    transform:scale(1.08)!important;
+    transform:scale(1)!important;
+    filter:saturate(.94) contrast(1.08)!important;
   }
   #hero[data-r122-design="desire-engine"] .ixm-hero__veil{
     background:linear-gradient(0deg,rgba(3,7,12,.96) 0%,rgba(3,7,12,.72) 44%,rgba(3,7,12,.2) 78%)!important;
@@ -2945,8 +2946,23 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 }
 
 @media (max-width:700px){
+  main{display:flex!important;flex-direction:column!important}
+  main > #hero{order:1!important}
+  main > #positioning{order:2!important}
+  main > #trust{order:3!important}
+  main > #bridge{order:4!important}
+  main > #services{order:5!important}
+  main > #brand-scene-2{order:6!important}
+  main > #service-feature-1{order:7!important}
+  main > #final-cta{order:8!important}
+
   .r122-positioning-grid{min-height:620px!important;width:calc(100% + 32px)!important;margin-left:-16px!important}
-  .r122-positioning-caption{width:100%!important;padding:28px 22px 34px!important}
+  .r122-positioning-visual img{object-position:58% center!important;filter:contrast(1.22) saturate(1.2) brightness(1.12)!important}
+  .r122-positioning-caption{width:100%!important;padding:28px 22px 34px!important;background:rgba(5,8,12,.84)!important;border-left:0!important;border-top:4px solid var(--r122-accent)!important}
+  .r122-mobile-proof-early{display:grid!important;grid-template-columns:24px minmax(0,1fr)!important;gap:12px!important;align-items:center!important;margin-top:28px!important;padding-top:18px!important;border-top:1px solid rgba(255,255,255,.24)!important}
+  .r122-mobile-proof-early .r122-proof-mark{width:22px!important;height:22px!important}
+  .r122-mobile-proof-early strong{font-size:15px!important;line-height:1.28!important;color:#fff!important;letter-spacing:-.01em!important;word-break:normal!important}
+  #trust [data-trust-reason="1"]{display:none!important}
   .r122-positioning-caption h2{font-size:48px!important;max-width:10ch!important}
   .r122-feature-grid,.r122-feature-grid--reverse{display:flex!important;flex-direction:column!important;gap:28px!important}
   .r122-process-visual,.r122-structure-visual{order:-1!important;width:calc(100% + 32px)!important;margin-left:-16px!important;min-height:440px!important}
