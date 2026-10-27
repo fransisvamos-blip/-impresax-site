@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Production V24
+name: Rendering V2 R122 Production V25
 
 on:
   push:
@@ -8,24 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-kipoint-v24:
+  launch-kipoint-v25:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v24
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 V24 jury repair
+      - name: Launch KiPoint R122 V25 r7 targeted repair
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v24","runKey":"kipoint-r122-v24","initialFeedback":{"reason":"R122_FINAL_JURY_REPAIR","issues":["r6/r7 exposed concrete visual defects: trust overlap, weak/empty visual stages, generic header CTA, unverified green UI accent and repetitive copy."],"actions":["Start from the certified technical scaffold and apply the rebuilt deterministic R122 scenes once.","Use the six approved R121 visual roles.","Keep UI accents blue/neutral only, matching the verified official logo signal.","Use the new authored chamfered header CTA and two-chamber final conversion object.","Use rebuilt positioning, process, structure and trust scenes with no overlap or empty panels.","Proceed through desktop/mobile capture and strict final sellability jury."]}}'
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentRevisionId":"b3e6ab19-bf2f-4a9a-b2d5-e5ca254d02b7","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v25","runKey":"kipoint-r122-v25-r7-repair","initialFeedback":{"reason":"R122_R7_TARGETED_VISUAL_REPAIR","issues":["r7 is the approved repair base. r8/r9 broke positioning, services, trust and final CTA compiler contracts. r7 visual QA also found generic header CTA, palette inconsistency, empty areas, overlap and repetitive copy."],"actions":["Use r7 as the parent RenderSpec; do not fall back to r4 or continue from r9.","Preserve POSITIONING_TITLE/POSITIONING_BODY, SERVICES_TITLE/SERVICES_INTRO, TRUST_TITLE/TRUST_INTRO and CLOSING_TITLE/CLOSING_BODY plus PRIMARY CTA in their required sections.","Inherit the verified official identity accent through the existing brand token; do not invent named brand colors.","Reuse the six approved R121 campaign assets in distinct narrative roles; do not restart concept or asset generation.","Repair header/nav, CTA authority, empty areas, text overlap, repetition, service/trust art direction, final conversion climax, footer and mobile composition.","Proceed through 1440 desktop capture, 390 mobile capture, visual QA and strict R122 final sellability jury. Do not alter any other prospect or enable the global queue."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
           sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
