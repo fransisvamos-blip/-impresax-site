@@ -2948,8 +2948,13 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   .r122-feature-copy,.r122-structure-copy{width:100%!important}
   .r122-trust-grid{display:flex!important;flex-direction:column!important;gap:36px!important}
   .r122-proof-visual{order:-1!important;width:calc(100% + 32px)!important;margin:0 0 8px -16px!important;min-height:430px!important}
-  #trust .ixg-trust-reason{grid-template-columns:30px minmax(0,1fr)!important;min-height:108px!important;padding:20px 0!important}
-  #trust .ixg-trust-reason strong{font-size:19px!important}
+  #trust .r122-trust-copy{display:block!important;width:100%!important;min-width:0!important}
+  #trust .r122-trust-copy .ixg-section-head,
+  #trust .r122-trust-copy .ixg-trust-reasons{display:block!important;width:100%!important;min-width:0!important;grid-column:auto!important;grid-row:auto!important}
+  #trust .r122-trust-copy .ixg-section-head h2{max-width:100%!important;font-size:42px!important;line-height:.96!important}
+  #trust .ixg-trust-reasons{border-top:1px solid rgba(255,255,255,.22)!important}
+  #trust .ixg-trust-reason{display:grid!important;grid-template-columns:26px minmax(0,1fr)!important;gap:14px!important;min-height:0!important;padding:18px 0!important;width:100%!important}
+  #trust .ixg-trust-reason strong{font-size:17px!important;line-height:1.25!important;overflow-wrap:break-word!important;word-break:normal!important;hyphens:none!important}
   #bridge .r122-bridge-grid{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:28px!important}
   #final-cta .r122-conversion__action{grid-template-columns:1fr!important}
   #final-cta .r122-conversion__secondary{min-height:68px!important;border-left:0!important;border-top:1px solid rgba(6,9,13,.18)!important}
