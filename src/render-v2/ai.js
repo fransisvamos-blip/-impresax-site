@@ -2663,6 +2663,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 .r122-feature-grid--reverse{grid-template-columns:minmax(260px,.62fr) minmax(0,1.38fr)!important}
 .r122-process-visual,.r122-structure-visual{position:relative!important;min-height:610px!important;margin:0!important;overflow:hidden!important;background:#080b10!important;box-shadow:var(--r122-shadow)!important}
 .r122-process-visual img,.r122-structure-visual img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;opacity:1!important;filter:contrast(1.14) saturate(1.04)!important}
+.r122-structure-visual img{filter:grayscale(.9) saturate(.12) contrast(1.12) brightness(.94)!important}
 .r122-feature-copy,.r122-structure-copy{min-width:0!important}
 .r122-feature-copy{display:grid!important;gap:24px!important}
 .r122-inline-action{width:max-content!important;min-height:58px!important;border-radius:0!important;border:1px solid rgba(17,17,17,.22)!important;background:transparent!important}
@@ -2692,21 +2693,29 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   display:flex!important;
   align-items:center!important;
 }
-.r122-atmosphere{
+.r122-locality-fragment{
   position:absolute!important;
   inset:0!important;
   margin:0!important;
+  overflow:hidden!important;
+  background:#0b1118!important;
 }
-.r122-atmosphere:after{
+.r122-locality-fragment:after{
   content:""!important;
   position:absolute!important;
   inset:0!important;
-  background:linear-gradient(90deg,rgba(5,8,13,.9),rgba(5,8,13,.32) 55%,rgba(5,8,13,.72))!important;
+  background:
+    linear-gradient(90deg,rgba(5,8,13,.96),rgba(5,8,13,.62) 50%,rgba(5,8,13,.88)),
+    linear-gradient(0deg,rgba(5,8,13,.82),transparent 58%)!important;
 }
-.r122-atmosphere img{
+.r122-locality-fragment img{
   width:100%!important;
   height:100%!important;
   object-fit:cover!important;
+  object-position:86% 45%!important;
+  transform:scale(1.62)!important;
+  filter:grayscale(1) saturate(0) contrast(1.28) brightness(.48)!important;
+  opacity:.58!important;
 }
 #bridge .r122-bridge-grid{
   position:relative!important;
@@ -2969,7 +2978,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
     used_copy_tokens:usedCopy.length?usedCopy:Object.keys(copyManifest||{}),
     used_asset_tokens:usedAssets,
     hero_visual_strategy:"Full-bleed environmental hero with dark asymmetric copy field, strong dual-action hierarchy and mobile-specific crop.",
-    hero_subject:"Verified locality-scale editorial environment supporting the KiPoint multi-service positioning.",
+    hero_subject:"Verified locality-scale editorial environment supporting the prospect-specific multi-service positioning.",
     hero_scene_type:"R122_FULL_BLEED_CAMPAIGN",
     hero_copy_space:"LEFT_ASYMMETRIC_OVERLAY",
     hero_mobile_crop_strategy:"Portrait recut with subject shifted right and copy anchored low over a stronger vertical veil.",
