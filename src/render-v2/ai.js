@@ -2280,6 +2280,9 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   if(!previousSpec?.main_html || !previousSpec?.custom_css) return null;
   let html=String(previousSpec.main_html);
   let css=String(previousSpec.custom_css);
+  const r122CssMarker="/* =========================================================\n   R122 DESIRE ENGINE — deterministic premium production";
+  const priorR122CssIndex=css.indexOf(r122CssMarker);
+  if(priorR122CssIndex>=0) css=css.slice(0,priorR122CssIndex).trimEnd();
 
   const addSectionAttrs=(id,attrs)=>{
     const re=new RegExp('<section\\b([^>]*\\bid=["\\\']'+id+'["\\\'][^>]*)>','i');
@@ -2308,7 +2311,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 
   replaceSectionInner("positioning",
     '<div class="ixg-shell r122-positioning-grid">'
-    +'<figure class="r122-positioning-visual" data-r121-motion="locality-reveal"><img src="{{asset:R121_SCALE}}" alt=""></figure>'
+    +'<figure class="r122-positioning-visual" data-r121-motion="atmosphere-reveal"><img src="{{asset:R121_ATMOSPHERE}}" alt=""></figure>'
     +'<div class="r122-positioning-caption"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2><p class="r122-positioning-body">{{copy:POSITIONING_BODY}}</p></div>'
     +'</div>'
   );
@@ -2349,7 +2352,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   );
 
   replaceSectionInner("bridge",
-    '<figure class="r122-atmosphere" aria-hidden="true"><img src="{{asset:R121_ATMOSPHERE}}" alt=""></figure>'
+    '<figure class="r122-locality-fragment" aria-hidden="true"><img src="{{asset:R121_SCALE}}" alt=""></figure>'
     +'<div class="ixg-shell r122-bridge-grid"><div class="r122-bridge-copy"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:BRIDGE_TITLE}}</h2></div>'
     +'<a class="ixg-cta ixg-cta--secondary r122-bridge-action" data-premium-button="true" href="{{cta:SECONDARY}}"><span class="ixg-cta__label">{{copy:SECONDARY_CTA_LABEL}}</span><span class="ixg-cta__mark" aria-hidden="true"><i></i></span></a></div>'
   );
