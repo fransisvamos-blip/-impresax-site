@@ -2312,7 +2312,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   replaceSectionInner("positioning",
     '<div class="ixg-shell r122-positioning-grid">'
     +'<figure class="r122-positioning-visual" data-r121-motion="atmosphere-reveal"><img src="{{asset:R121_ATMOSPHERE}}" alt=""></figure>'
-    +'<div class="r122-positioning-caption"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2><p class="r122-positioning-body">{{copy:POSITIONING_BODY}}</p></div>'
+    +'<div class="r122-positioning-caption"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2><p class="r122-positioning-body">{{copy:POSITIONING_BODY}}</p><div class="r122-mobile-proof-early"><span class="r122-proof-mark" aria-hidden="true"><i></i></span><strong>{{copy:TRUST_1}}</strong></div></div>'
     +'</div>'
   );
 
