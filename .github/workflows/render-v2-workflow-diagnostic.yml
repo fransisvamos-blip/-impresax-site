@@ -1,4 +1,4 @@
-name: Rendering V2 R122 Production V26
+name: Rendering V2 R122 Production V27
 
 on:
   push:
@@ -8,24 +8,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  launch-kipoint-v26:
+  launch-kipoint-v27:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
       WORKFLOW_NAME: impresax-render-v2-variant
-      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v26
+      INSTANCE_ID: rv2-beac207a-da17-436d-afdf-cfc5caff7727-A-r122-desire-v27
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 22}
       - run: npm install --no-audit --no-fund
-      - name: Launch KiPoint R122 V26 targeted sellability repair
+      - name: Launch KiPoint R122 V27 mobile art-direction repair
         shell: bash
         run: |
           set -euo pipefail
-          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentRevisionId":"b3e6ab19-bf2f-4a9a-b2d5-e5ca254d02b7","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v26","runKey":"kipoint-r122-v26-trust-imagery-repair","initialFeedback":{"reason":"R122_R11_TARGETED_SELLABILITY_REPAIR","issues":["r11 reached 6.5 but failed for trust section collision on desktop, unreadable vertical proof columns on mobile, repeated courtyard imagery between hero and Profilo aziendale, and possible off-identity CGI color."],"actions":["Start from r7 as the clean structural parent; preserve all four compiler copy contracts.","Use the rebuilt nested trust rail: no ghost grid columns, no mid-word breaks, readable proof rows on desktop and 390 mobile.","Use R121_ATMOSPHERE as the Profilo aziendale visual and move R121_SCALE to a dark, cropped, monochrome locality fragment later in the story so the hero courtyard is not repeated as a second full scene.","Neutralize the suspect R121_STRUCTURE CGI color without regenerating the approved asset.","Reuse the six approved R121 assets; do not regenerate concept or assets.","Capture desktop 1440 and mobile 390, then run strict visual QA and R122 sellability jury. Keep global queue OFF and do not mutate other prospects."]}}'
+          PARAMS='{"prospectId":"0e5c7a2c-5fd8-48e1-ae71-6f9beff73735","packId":"beac207a-da17-436d-afdf-cfc5caff7727","inputPackId":"ff343ba2-33b1-41fa-b4c0-9c3202b4d406","variantId":"f342e900-e895-4970-8a72-bed745825e42","variantKey":"A","parentRevisionId":"b3e6ab19-bf2f-4a9a-b2d5-e5ca254d02b7","parentInstanceId":"rpv2-beac207a-da17-436d-afdf-cfc5caff7727","eventPrefix":"r122v27","runKey":"kipoint-r122-v27-mobile-art-direction","initialFeedback":{"reason":"R122_R13_TARGETED_MOBILE_AND_CONTRAST_REPAIR","issues":["r13 trust collision is solved, but Profilo aziendale has low contrast, Contatto diretto still reads as repeated hero environment, and mobile is perceived as compressed desktop with proof too late."],"actions":["Start from r7 clean structural parent and preserve all compiler contracts.","Use luminous high-contrast R121_ATMOSPHERE for Profilo aziendale with authored dark copy panel and official accent edge.","Keep R121_SCALE only as a highly zoomed, blurred, monochrome material trace at the bottom of Contatto diretto, never as a second environmental scene.","On 390 mobile use a distinct section order: hero, positioning with verified proof at beat two, trust, bridge, services, offer architecture, verified operation, final CTA.","Do not repeat TRUST_1 later on mobile after it has been surfaced at beat two.","Remove mobile hero zoom that can soften the source image.","Reuse all six approved campaign assets, do not regenerate concept/assets, keep queue OFF and do not mutate any other prospect.","Capture desktop 1440 and mobile 390 and run strict R122 sellability jury."]}}'
           npx wrangler workflows trigger "$WORKFLOW_NAME" "$PARAMS" --id "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/trigger.json
           sleep 8
           npx wrangler workflows instances describe "$WORKFLOW_NAME" "$INSTANCE_ID" --json --config wrangler.render-v2.jsonc | tee /tmp/status.json
