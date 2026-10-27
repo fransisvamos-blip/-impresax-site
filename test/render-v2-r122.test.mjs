@@ -62,7 +62,7 @@ test("R122 deterministic repair preserves compiler copy contracts and inherits t
   assert.ok(services.includes("{{copy:SERVICES_TITLE}}") && services.includes("{{copy:SERVICES_INTRO}}"));
   assert.ok(trust.includes("{{copy:TRUST_TITLE}}") && trust.includes("{{copy:TRUST_INTRO}}"));
   assert.ok(closing.includes("{{copy:CLOSING_TITLE}}") && closing.includes("{{copy:CLOSING_BODY}}") && closing.includes("{{cta:PRIMARY}}"));
-  assert.match(result.spec.custom_css,/--r122-accent:var\\(--ix-accent\\)/);
+  assert.ok(result.spec.custom_css.includes("--r122-accent:var(--ix-accent)"));
   assert.doesNotMatch(result.spec.custom_css,/#1455b5|--r122-blue/);
   assert.match(result.spec.custom_css,/r122-positioning-caption h2:empty/);
 });
