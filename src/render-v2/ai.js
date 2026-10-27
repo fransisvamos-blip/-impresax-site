@@ -2309,14 +2309,14 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   replaceSectionInner("positioning",
     '<div class="ixg-shell r122-positioning-grid">'
     +'<figure class="r122-positioning-visual" data-r121-motion="locality-reveal"><img src="{{asset:R121_SCALE}}" alt=""></figure>'
-    +'<div class="r122-positioning-caption"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:SERVICES_TITLE}}</h2></div>'
+    +'<div class="r122-positioning-caption"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:POSITIONING_TITLE}}</h2><p class="r122-positioning-body">{{copy:POSITIONING_BODY}}</p></div>'
     +'</div>'
   );
 
   replaceSectionInner("services",
     '<figure class="r122-service-macro" data-r121-motion="material-reveal"><img src="{{asset:R121_MATERIAL_MACRO}}" alt=""></figure>'
     +'<div class="ixg-shell r122-services-shell">'
-    +'<header class="ixg-section-head"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:SERVICES_TITLE}}</h2></header>'
+    +'<header class="ixg-section-head"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:SERVICES_TITLE}}</h2><p class="ixg-section-intro r122-services-intro">{{copy:SERVICES_INTRO}}</p></header>'
     +'<div class="ixg-services__composition"><article class="ixf-service-line" data-service-editorial="true" data-service-index-rail="locked">'
     +'<span class="r122-service-mark" aria-hidden="true"><i></i><i></i></span>'
     +'<h3 class="ixf-service-line__title">{{copy:SERVICE_1_TITLE}}</h3>'
@@ -2340,7 +2340,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   replaceSectionInner("trust",
     '<div class="ixg-shell r122-trust-grid">'
     +'<figure class="r122-proof-visual" data-r121-motion="detail-focus"><img src="{{asset:R121_DETAIL}}" alt=""></figure>'
-    +'<div class="r122-trust-copy"><header class="ixg-section-head ixg-section-head--light"><p class="ixg-kicker">{{copy:TRUST_TITLE}}</p></header>'
+    +'<div class="r122-trust-copy"><header class="ixg-section-head ixg-section-head--light"><h2>{{copy:TRUST_TITLE}}</h2><p class="ixg-section-intro r122-trust-intro">{{copy:TRUST_INTRO}}</p></header>'
     +'<div class="ixg-trust-reasons">'
     +'<article class="ixg-trust-reason" data-trust-reason="1"><span class="r122-proof-mark" aria-hidden="true"><i></i></span><strong>{{copy:TRUST_1}}</strong></article>'
     +'<article class="ixg-trust-reason" data-trust-reason="2"><span class="r122-proof-mark" aria-hidden="true"><i></i></span><strong>{{copy:TRUST_2}}</strong></article>'
@@ -2356,7 +2356,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 
   replaceSectionInner("final-cta",
     '<div class="ixg-shell ixg-contact__inner r122-final-grid">'
-    +'<div class="r122-final-copy"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:CLOSING_TITLE}}</h2></div>'
+    +'<div class="r122-final-copy"><p class="ixg-kicker">{{copy:LOCALITY_LINE}}</p><h2>{{copy:CLOSING_TITLE}}</h2><p class="r122-final-body">{{copy:CLOSING_BODY}}</p></div>'
     +'<div class="r122-conversion__action" data-r122-action="true" data-r121-motion="proof-lock">'
     +'<a class="ixg-cta ixg-cta--primary" data-premium-button="true" href="{{cta:PRIMARY}}"><span class="ixg-cta__label">{{copy:PRIMARY_CTA_LABEL}}</span><span class="ixg-cta__mark" aria-hidden="true"><i></i></span></a>'
     +'<a class="r122-conversion__secondary" data-premium-button="true" href="{{cta:SECONDARY}}"><span>{{copy:SECONDARY_CTA_LABEL}}</span></a>'
@@ -2370,8 +2370,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 :root{
   --r122-ink:#07090d;
   --r122-paper:#f4f5f1;
-  --r122-blue:#1455b5;
-  --r122-accent:#1455b5;
+  --r122-accent:var(--ix-accent);
   --r122-line:rgba(255,255,255,.16);
   --r122-shadow:0 36px 90px rgba(0,0,0,.28);
 }
@@ -2400,7 +2399,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   min-height:52px!important;
   padding:0 30px 0 24px!important;
   border:1px solid rgba(255,255,255,.34)!important;
-  border-left:5px solid var(--r122-blue)!important;
+  border-left:5px solid var(--r122-accent)!important;
   border-radius:0!important;
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)!important;
   background:rgba(255,255,255,.06)!important;
@@ -2414,8 +2413,8 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   position:relative!important;
   overflow:hidden!important;
   background:
-    radial-gradient(circle at 14% 20%,rgba(20,85,181,.22),transparent 34%),
-    radial-gradient(circle at 82% 72%,rgba(20,85,181,.16),transparent 36%),
+    radial-gradient(circle at 14% 20%,rgba(255,255,255,.055),transparent 34%),
+    radial-gradient(circle at 82% 72%,rgba(255,255,255,.035),transparent 36%),
     var(--r122-ink)!important;
   color:var(--r122-paper)!important;
 }
@@ -2491,9 +2490,9 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   padding:0 26px!important;
   border-radius:0!important;
   background:var(--r122-accent)!important;
-  color:#07100a!important;
+  color:#fff!important;
   border:0!important;
-  box-shadow:0 22px 54px rgba(20,85,181,.25)!important;
+  box-shadow:0 22px 54px rgba(0,0,0,.28)!important;
   text-transform:uppercase!important;
   letter-spacing:.055em!important;
   font-weight:800!important;
@@ -2518,7 +2517,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 .r122-positioning-visual:after{content:""!important;position:absolute!important;inset:0!important;background:linear-gradient(90deg,rgba(5,8,12,.86),rgba(5,8,12,.16) 62%,rgba(5,8,12,.44))!important}
 .r122-positioning-visual img{width:100%!important;height:100%!important;object-fit:cover!important;filter:contrast(1.12) saturate(1.04)!important}
 .r122-positioning-caption{position:relative!important;z-index:2!important;align-self:end!important;width:min(720px,72%)!important;padding:clamp(34px,5vw,70px)!important}
-.r122-positioning-caption h2{margin:.15em 0 0!important;font-size:clamp(48px,6vw,92px)!important;line-height:.92!important;letter-spacing:-.045em!important}
+.r122-positioning-caption h2{margin:.15em 0 0!important;font-size:clamp(48px,6vw,92px)!important;line-height:.92!important;letter-spacing:-.045em!important}\n.r122-positioning-body{max-width:52ch!important;margin-top:22px!important;color:rgba(255,255,255,.78)!important;font-size:clamp(16px,1.25vw,20px)!important;line-height:1.55!important}\n.r122-positioning-caption h2:empty,.r122-positioning-body:empty,.r122-services-intro:empty,.r122-trust-intro:empty,.r122-final-body:empty{display:none!important}
 
 #services{
   position:relative!important;
@@ -2652,7 +2651,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 
 .r122-services-shell{position:relative!important;z-index:2!important}
 .r122-service-mark{display:inline-grid!important;grid-template-columns:34px 12px!important;gap:7px!important;align-items:center!important;margin-bottom:22px!important}
-.r122-service-mark i{display:block!important;height:4px!important;background:var(--r122-blue)!important}
+.r122-service-mark i{display:block!important;height:4px!important;background:var(--r122-accent)!important}
 .r122-service-mark i:last-child{opacity:.4!important}
 #services .ixf-service-line__title{max-width:18ch!important;overflow-wrap:anywhere!important}
 .r122-feature-grid{display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(240px,.55fr)!important;gap:clamp(34px,6vw,94px)!important;align-items:center!important}
@@ -2671,7 +2670,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
 #trust .ixg-trust-reason{min-width:0!important;min-height:132px!important;display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;gap:20px!important;align-items:center!important;padding:24px 0!important;border-bottom:1px solid rgba(255,255,255,.18)!important;background:transparent!important;overflow:hidden!important}
 #trust .ixg-trust-reason strong{min-width:0!important;max-width:100%!important;font-size:clamp(18px,1.75vw,28px)!important;line-height:1.15!important;letter-spacing:-.02em!important;overflow-wrap:anywhere!important}
 .r122-proof-mark{position:relative!important;width:28px!important;height:28px!important;display:block!important;border:1px solid rgba(255,255,255,.32)!important}
-.r122-proof-mark i{position:absolute!important;left:6px!important;right:6px!important;top:50%!important;height:2px!important;background:var(--r122-blue)!important}
+.r122-proof-mark i{position:absolute!important;left:6px!important;right:6px!important;top:50%!important;height:2px!important;background:var(--r122-accent)!important}
 .ixproof,.ixg-trust-reason__graphic,.ixg-feature__device,.ixsig,.ixprocess,.ixdirection,.ixr89-lines,.ixr90-stage{display:none!important}
 
 #bridge{
@@ -2715,8 +2714,8 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   display:flex!important;
   align-items:center!important;
   background:
-    radial-gradient(circle at 78% 25%,rgba(20,85,181,.19),transparent 32%),
-    radial-gradient(circle at 20% 78%,rgba(20,85,181,.28),transparent 36%),
+    radial-gradient(circle at 78% 25%,rgba(255,255,255,.055),transparent 32%),
+    radial-gradient(circle at 20% 78%,rgba(255,255,255,.075),transparent 36%),
     #06090d!important;
   color:var(--r122-paper)!important;
 }
@@ -2726,8 +2725,7 @@ function buildR122DeterministicRenderSpec({previousSpec,copyManifest,assetTokens
   gap:clamp(50px,8vw,130px)!important;
   align-items:end!important;
 }
-#final-cta h2{
-  max-width:9ch!important;
+#final-cta h2{\n  max-width:9ch!important;
   font-size:clamp(58px,7vw,112px)!important;
   line-height:.88!important;
   letter-spacing:-.055em!important;
