@@ -138,13 +138,17 @@ async function runPilotManualKick(env,sql) {
   const meta=state.metadata||{};
   const kick=meta.pilot_manual_kick;
   if(!kick || typeof kick!=="object") return {skipped:true,reason:"NO_PILOT_MANUAL_KICK"};
-  if(
-    state.phase!=="PILOT_SINGLE_PROSPECT" ||
-    state.queue_enabled===true ||
-    Number(state.max_concurrency||0)!==1 ||
-    meta.global_queue_must_remain_paused!==true ||
-    meta.pilot_single_prospect!==true
-  ) {
+  const queueLocked=state.queue_enabled!==true && Number(state.max_concurrency||0)===1;
+  const legacyPilotMode=
+    state.phase==="PILOT_SINGLE_PROSPECT"
+    && queueLocked
+    && meta.global_queue_must_remain_paused===true
+    && meta.pilot_single_prospect===true;
+  const r122PilotMode=
+    state.phase==="R122_DESIRE_ENGINE_PILOT"
+    && queueLocked
+    && Boolean(String(meta.r122_pilot_prospect_id||"").trim());
+  if(!legacyPilotMode && !r122PilotMode) {
     throw new Error("PILOT_MANUAL_KICK_SAFETY_GUARD");
   }
 
@@ -153,12 +157,13 @@ async function runPilotManualKick(env,sql) {
   const runKey=String(kick.run_key||"").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-").slice(0,48);
   const reason=String(kick.reason||"CABINA_PRECOMPUTED_RENDER").trim();
   if(!packId || !["A","B","C"].includes(variantKey) || !runKey) throw new Error("PILOT_MANUAL_KICK_INVALID");
-  if(packId!==String(state.pilot_pack_id||"")) throw new Error("PILOT_MANUAL_KICK_PACK_MISMATCH");
+  if(legacyPilotMode && packId!==String(state.pilot_pack_id||"")) throw new Error("PILOT_MANUAL_KICK_PACK_MISMATCH");
 
   const packs=await sql`select * from render_v2_packs where id=${packId}::uuid limit 1`;
   if(!packs.length) throw new Error("PILOT_MANUAL_KICK_PACK_NOT_FOUND");
   const pack=packs[0];
-  if(String(pack.prospect_id)!==String(meta.pilot_prospect_id||"")) throw new Error("PILOT_MANUAL_KICK_PROSPECT_MISMATCH");
+  const expectedPilotProspectId=String(r122PilotMode?meta.r122_pilot_prospect_id:meta.pilot_prospect_id||"");
+  if(String(pack.prospect_id)!==expectedPilotProspectId) throw new Error("PILOT_MANUAL_KICK_PROSPECT_MISMATCH");
 
   const variants=await sql`
     select * from render_v2_variants
@@ -166,6 +171,23 @@ async function runPilotManualKick(env,sql) {
     limit 1`;
   if(!variants.length) throw new Error("PILOT_MANUAL_KICK_VARIANT_NOT_FOUND");
   const variant=variants[0];
+
+  let parentRevisionId=null;
+  const requestedParentRevisionId=String(kick.parent_revision_id||"").trim();
+  if(requestedParentRevisionId) {
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedParentRevisionId)) {
+      throw new Error("PILOT_MANUAL_KICK_PARENT_REVISION_INVALID");
+    }
+    const parentRows=await sql`
+      select id,revision
+      from render_variant_revisions
+      where id=${requestedParentRevisionId}::uuid
+        and variant_id=${variant.id}::uuid
+        and render_spec is not null
+      limit 1`;
+    if(!parentRows.length) throw new Error("PILOT_MANUAL_KICK_PARENT_REVISION_MISMATCH");
+    parentRevisionId=String(parentRows[0].id);
+  }
 
   const instanceId="rv2-"+packId+"-"+variantKey+"-"+runKey;
   const existing=await sql`select * from render_workflows_v2 where workflow_instance_id=${instanceId} limit 1`;
@@ -200,6 +222,7 @@ async function runPilotManualKick(env,sql) {
     inputPackId:pack.input_pack_id,
     variantId:variant.id,
     variantKey,
+    parentRevisionId,
     parentInstanceId:String(kick.parent_workflow_instance_id||("rpv2-"+packId)),
     eventPrefix:String(kick.event_prefix||"r90"),
     initialFeedback:{
@@ -210,12 +233,12 @@ async function runPilotManualKick(env,sql) {
       actions:generativeRedesign
         ?(r121Generative?[
           "Run the R121 Creative Director Engine: concept lock before code, coherent campaign asset system, concept-driven implementation and live interactive preview.",
-          "Preserve DEDIL verified truth, verified partner proof and official identity; generated campaign imagery is illustrative, never documentary proof.",
+          "Preserve only the current prospect's verified truth, verified proof and official identity; generated campaign imagery is illustrative, never documentary proof.",
           "Treat desktop and mobile as separately art-directed expressions of the same locked campaign.",
           "Do not start or mutate any other prospect."
         ]:[
           "Generate a genuinely new flagship composition under the active R119/R118 architecture; do not reuse prior section geometry.",
-          "Preserve DEDIL verified truth, licensed editorial imagery, verified partner proof and official identity.",
+          "Preserve only the current prospect's verified truth, licensed editorial imagery, verified proof and official identity.",
           "Treat desktop and mobile as separately art-directed compositions.",
           "Do not start or mutate any other prospect."
         ])
@@ -244,6 +267,8 @@ async function runPilotManualKick(env,sql) {
       r119_generative:r119Generative,
       r121_generative:r121Generative,
       r121_creative_director_engine:r121Generative,
+      parent_revision_id:parentRevisionId,
+      r122_pilot_mode:r122PilotMode,
       queue_enabled:false
     }
   });
@@ -265,7 +290,8 @@ async function runPilotManualKick(env,sql) {
         variant_key:variantKey,
         run_key:runKey,
         reason,
-        instance_id:instanceId
+        instance_id:instanceId,
+        parent_revision_id:parentRevisionId
       }
     });
   } catch {}

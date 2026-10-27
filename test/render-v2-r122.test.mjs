@@ -1,4 +1,4 @@
-import test from "node:test";
+import { readFileSync } from "node:fs";\nimport test from "node:test";
 import assert from "node:assert/strict";
 import { generateR121RenderSpec } from "../src/render-v2/ai.js";
 import { R122_DESIRE_ENGINE_STANDARD } from "../src/render-v2/r122-desire-engine.js";
@@ -65,4 +65,13 @@ test("R122 deterministic repair preserves compiler copy contracts and inherits t
   assert.ok(result.spec.custom_css.includes("--r122-accent:var(--ix-accent)"));
   assert.doesNotMatch(result.spec.custom_css,/#1455b5|--r122-blue/);
   assert.match(result.spec.custom_css,/r122-positioning-caption h2:empty/);
+});
+
+test("R122 pilot kick stays queue-locked, can pin a parent revision and contains no DEDIL-specific repair copy",()=>{
+  const source=readFileSync(new URL("../src/render-v2/index.js",import.meta.url),"utf8");
+  assert.match(source,/state\.phase==="R122_DESIRE_ENGINE_PILOT"/);
+  assert.match(source,/kick\.parent_revision_id/);
+  assert.match(source,/parentRevisionId,/);
+  assert.match(source,/r122_pilot_mode:r122PilotMode/);
+  assert.doesNotMatch(source,/Preserve DEDIL verified truth/);
 });
