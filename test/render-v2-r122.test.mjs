@@ -53,10 +53,15 @@ test("R122 deterministic repair preserves compiler copy contracts and inherits t
   });
 
   assert.equal(result.deterministic,true);
-  assert.match(result.spec.main_html,/id="positioning"[\\s\\S]*{{copy:POSITIONING_TITLE}}[\\s\\S]*{{copy:POSITIONING_BODY}}/);
-  assert.match(result.spec.main_html,/id="services"[\\s\\S]*{{copy:SERVICES_TITLE}}[\\s\\S]*{{copy:SERVICES_INTRO}}/);
-  assert.match(result.spec.main_html,/id="trust"[\\s\\S]*{{copy:TRUST_TITLE}}[\\s\\S]*{{copy:TRUST_INTRO}}/);
-  assert.match(result.spec.main_html,/id="final-cta"[\\s\\S]*{{copy:CLOSING_TITLE}}[\\s\\S]*{{copy:CLOSING_BODY}}[\\s\\S]*{{cta:PRIMARY}}/);
+  const html=result.spec.main_html;
+  const positioning=html.slice(html.indexOf('id="positioning"'),html.indexOf('</section>',html.indexOf('id="positioning"')));
+  const services=html.slice(html.indexOf('id="services"'),html.indexOf('</section>',html.indexOf('id="services"')));
+  const trust=html.slice(html.indexOf('id="trust"'),html.indexOf('</section>',html.indexOf('id="trust"')));
+  const closing=html.slice(html.indexOf('id="final-cta"'),html.indexOf('</section>',html.indexOf('id="final-cta"')));
+  assert.ok(positioning.includes("{{copy:POSITIONING_TITLE}}") && positioning.includes("{{copy:POSITIONING_BODY}}"));
+  assert.ok(services.includes("{{copy:SERVICES_TITLE}}") && services.includes("{{copy:SERVICES_INTRO}}"));
+  assert.ok(trust.includes("{{copy:TRUST_TITLE}}") && trust.includes("{{copy:TRUST_INTRO}}"));
+  assert.ok(closing.includes("{{copy:CLOSING_TITLE}}") && closing.includes("{{copy:CLOSING_BODY}}") && closing.includes("{{cta:PRIMARY}}"));
   assert.match(result.spec.custom_css,/--r122-accent:var\\(--ix-accent\\)/);
   assert.doesNotMatch(result.spec.custom_css,/#1455b5|--r122-blue/);
   assert.match(result.spec.custom_css,/r122-positioning-caption h2:empty/);
