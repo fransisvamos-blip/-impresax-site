@@ -1,13 +1,9 @@
 name: Rendering V2 Shadow Autodeploy
 
+# IMPRESAX PAUSED BY OWNER 2026-11-04: no automatic triggers.
+# Manual dispatch also skips the deployment job until explicit reactivation.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/render-v2-shadow-autodeploy.yml'
   workflow_dispatch:
-  schedule:
-    - cron: '*/15 * * * *'
 
 concurrency:
   group: rendering-v2-shadow-autodeploy
@@ -15,6 +11,7 @@ concurrency:
 
 jobs:
   deploy-shadow:
+    if: ${{ false }} # OWNER PAUSE: do not execute, even on manual dispatch
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
