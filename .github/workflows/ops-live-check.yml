@@ -1,18 +1,12 @@
 name: ImpresaX Ops Live Check
 
+# Owner pause 2026-11-04: workflow disabled, no automatic runs.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "public/admin/**"
-      - "package.json"
-      - "wrangler.jsonc"
-      - ".github/workflows/ops-live-check.yml"
   workflow_dispatch:
 
 jobs:
   live:
+    if: ${{ false }} # Owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
