@@ -96,16 +96,9 @@ export default {
     return redirectToRoot("tenant-not-found");
   },
 
-  async scheduled(_controller, env, ctx) {
-    ctx.waitUntil((async () => {
-      await runCloudflareRenderEngine(env);
-      try {
-        await syncRenderPreviews(env);
-      } catch (error) {
-        console.error("RENDER_PREVIEW_SYNC_FAILED", error?.message || String(error));
-      }
-      await runOrchestrator(env, "cloudflare-cron");
-    })());
+  async scheduled() {
+    // Owner pause 2026-11-04: no background renders, preview sync or orchestration.
+    return;
   },
 };
 

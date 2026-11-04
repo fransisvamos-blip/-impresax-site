@@ -24,9 +24,7 @@
     "run_worker_first": true
   },
   "triggers": {
-    "crons": [
-      "* * * * *"
-    ]
+    "crons": []
   },
   "keep_vars": true,
   "send_email": [
