@@ -11,16 +11,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: recurring/scheduled ImpresaX jobs remain disabled after landing release.
 # OWNER PAUSE: all automatic ImpresaX deployments remain disabled after approved art-direction release.
 # OWNER PAUSE: landing deployed; all ImpresaX automatic deployments stay disabled.
-# Owner-authorized one-shot lounge art-direction release. No recurring jobs.
+# OWNER PAUSE: art-direction release completed, automatic ImpresaX deployments remain disabled.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-20261112'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # single publish, then restore pause
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
