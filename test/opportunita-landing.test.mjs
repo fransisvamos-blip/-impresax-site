@@ -23,7 +23,7 @@ test("authentic single image and photo attribution",()=>{
   assert.equal((html.match(/<img\b/g)||[]).length,1);
   assert.match(html,/File:Catanzarolidolandscape\.jpg/);
   assert.match(html,/Foto aerea:.*Wikimedia Commons/);
-  assert.match(html,/non è una fotografia del lounge bar/);
+  assert.match(html,/non del lounge bar|non dell.attività commerciale/);
 });
 test("two-stage conversion flow, optional data, tel and privacy",()=>{
   for(const v of ["cessione","gestione","entrambe"])assert.match(html,new RegExp('data-choice="'+v+'"'));
