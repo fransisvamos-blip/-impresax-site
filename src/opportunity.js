@@ -64,7 +64,8 @@ export async function serveOpportunity(request,env) {
   }
   if(url.pathname==="/api/interesse") return handleOpportunityLead(request,env);
   if(request.method!=="GET"&&request.method!=="HEAD") return response({ok:false,error:"METHOD_NOT_ALLOWED"},405);
-  const paths={"/":"/opportunita/index.html","/privacy":"/opportunita/privacy.html","/privacy/":"/opportunita/privacy.html"};
+  // Cloudflare Assets canonicalizes index.html and *.html to directory/extensionless URLs.
+  const paths={"/":"/opportunita/","/privacy":"/opportunita/privacy","/privacy/":"/opportunita/privacy"};
   const target=paths[url.pathname];
   if(!target) return response({ok:false,error:"NOT_FOUND"},404);
   const assetUrl=new URL(target,request.url);
