@@ -13,11 +13,17 @@ test("public offer prominently names the transaction without a public price",()=
   assert.doesNotMatch(html,/(?:300[., ]?000|300000|€\s*300)/);
 });
 test("premium palette does not resurrect the prior green-led visual direction",()=>{
-  assert.match(style,/--paper:#f5f2ed/);
-  assert.match(style,/--red:#a73742/);
-  assert.doesNotMatch(style,/--green\b|#66776a|#556958|#354238|#364438/);
-  assert.match(style,/--display:'Manrope'/);
+  assert.match(style,/--paper:#f8f9fc/);
+  assert.match(style,/--blue:#1955c9/);
+  assert.match(style,/--navy:#112746/);
+  assert.doesNotMatch(style,/#a73742|#b84531|#66776a|#556958|#354238|#364438/);
+  assert.match(style,/--display:'Space Grotesk'/);
   assert.match(style,/\.hero h1 \.emphasis\s*\{[\s\S]*?text-transform:uppercase/);
+  assert.match(style,/\.hero-grid-art/);
+  assert.match(style,/\.value-card:nth-child\(3\)/);
+  assert.match(style,/\.formula-deco/);
+  assert.match(style,/\.statement-waves/);
+  assert.match(style,/\.end-gridlines/);
 });
 test("authentic single image and photo attribution",()=>{
   assert.equal((html.match(/<img\b/g)||[]).length,1);
@@ -42,7 +48,7 @@ test("two-stage conversion flow, optional data, tel and privacy",()=>{
 });
 test("privacy page has consistent color and type system",()=>{
  assert.match(privacy,/Informativa sulla privacy/);
- assert.match(privacy,/#f5f2ed/);
- assert.match(privacy,/Manrope/);
+ assert.match(privacy,/#f8f9fc/);
+ assert.match(privacy,/Space Grotesk/);
  assert.match(privacy,/info@impresax\.org/);
 });

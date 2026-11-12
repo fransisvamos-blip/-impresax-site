@@ -11,12 +11,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: recurring/scheduled ImpresaX jobs remain disabled after landing release.
 # OWNER PAUSE: all automatic ImpresaX deployments remain disabled after approved art-direction release.
 # OWNER PAUSE: landing deployed; all ImpresaX automatic deployments stay disabled.
+# Owner-authorized one-shot lounge art-direction release. No recurring jobs.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # single publish, then restore pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -40,6 +44,8 @@ jobs:
           for attempt in {1..6}; do
             if curl -fsSL --max-time 18 "https://opportunita.impresax.org/" -o /tmp/lido-landing.html &&
                grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/lido-landing.html &&
+               grep -q -- '--blue:#1955c9' /tmp/lido-landing.html &&
+               grep -q 'statement-waves' /tmp/lido-landing.html &&
                curl -fsSL --max-time 18 "https://opportunita.impresax.org/privacy" -o /tmp/lido-privacy.html; then
               echo "Landing and privacy verified live"
               exit 0
