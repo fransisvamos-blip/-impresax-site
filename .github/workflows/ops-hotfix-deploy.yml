@@ -2,16 +2,13 @@ name: ImpresaX Ops Hotfix Deploy
 
 # Owner pause 2026-11-04: workflow disabled, no automatic runs.
 # OWNER PAUSE: no automatic runs after manual approved one-time release.
-# One-time deployment only: new lounge bar client facts, phone and lead form update.
+# OWNER PAUSE: no scheduled or push deployments after client-approved single release.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-20261112'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # temporary one-shot; revert immediately after deployment
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
