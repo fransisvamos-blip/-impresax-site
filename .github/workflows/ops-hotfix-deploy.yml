@@ -10,12 +10,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: ImpresaX automatic runs remain disabled after approved lounge landing release.
 # OWNER PAUSE: recurring/scheduled ImpresaX jobs remain disabled after landing release.
 # OWNER PAUSE: all automatic ImpresaX deployments remain disabled after approved art-direction release.
+# Approved one-time release for the lounge landing; no recurring/scheduled triggers.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-shot; restore pause after release
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -29,8 +33,23 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Render preview contract test
         run: node --test test/render-preview.test.mjs
+      - name: Test the lounge landing without browser credits
+        run: node --test test/opportunita-landing.test.mjs
       - name: Deploy production worker
         run: npx wrangler deploy --config wrangler.jsonc
+      - name: Verify live lounge landing without TinyFish
+        run: |
+          set -euo pipefail
+          for attempt in {1..6}; do
+            if curl -fsSL --max-time 18 "https://opportunita.impresax.org/" -o /tmp/lido-landing.html &&
+               grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/lido-landing.html &&
+               curl -fsSL --max-time 18 "https://opportunita.impresax.org/privacy" -o /tmp/lido-privacy.html; then
+              echo "Landing and privacy verified live"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
       - name: Verify Ops health
         run: |
           set -euo pipefail
