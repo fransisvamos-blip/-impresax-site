@@ -5,6 +5,7 @@ const CODE = "CZ_LIDO_LOUNGE_2026";
 const BUDGETS = new Set(["fino-50","50-100","100-200","oltre-200","da-definire"]);
 const TIMES = new Set(["entro-30","entro-90","oltre-90","da-definire"]);
 const EXPERIENCE = new Set(["si","no","preferisco-non-dire"]);
+const TRANSACTIONS = new Set(["cessione","gestione","entrambe"]);
 
 const clean = (v, max) => String(v == null ? "" : v).trim().slice(0,max);
 const response = (data,status=200) => new Response(JSON.stringify(data),{
@@ -28,9 +29,10 @@ export async function handleOpportunityLead(request,env) {
   const budget=clean(data?.budget_band,30);
   const timeline=clean(data?.timeline,30);
   const experience=clean(data?.experience,30)||"preferisco-non-dire";
+  const transaction=clean(data?.transaction_interest,30);
   if(fullName.length<3||!/^\+?[\d\s().-]{8,35}$/.test(phone)||phone.replace(/\D/g,"").length<8||
      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||
-     !BUDGETS.has(budget)||!TIMES.has(timeline)||!EXPERIENCE.has(experience)||
+     !BUDGETS.has(budget)||!TIMES.has(timeline)||!EXPERIENCE.has(experience)||!TRANSACTIONS.has(transaction)||
      data?.privacy_accepted!==true)
     return response({ok:false,error:"DATI_NON_VALIDI"},422);
   if(!env.OPS_DATABASE_URL) return response({ok:false,error:"SERVIZIO_TEMPORANEAMENTE_NON_DISPONIBILE"},503);
@@ -38,11 +40,11 @@ export async function handleOpportunityLead(request,env) {
     const sql=neon(env.OPS_DATABASE_URL);
     const rows=await sql`
       insert into public.activity_sale_leads (
-        listing_code,full_name,phone,email,budget_band,timeline,experience,notes,source_page,
+        listing_code,full_name,phone,email,budget_band,timeline,experience,transaction_interest,notes,source_page,
         utm_source,utm_medium,utm_campaign,utm_content,utm_term,
         privacy_accepted,privacy_version
       ) values (
-        ${CODE},${fullName},${phone},${email},${budget},${timeline},${experience},
+        ${CODE},${fullName},${phone},${email},${budget},${timeline},${experience},${transaction},
         ${clean(data?.notes,1500)||null},${clean(data?.source_page,500)||null},
         ${clean(data?.utm_source,100)||null},${clean(data?.utm_medium,100)||null},
         ${clean(data?.utm_campaign,120)||null},${clean(data?.utm_content,120)||null},
