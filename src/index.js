@@ -1,4 +1,5 @@
 import { handleOpsRequest, isOpsHost, runOrchestrator } from "./ops.js";
+import { serveOpportunity } from "./opportunity.js";
 import { resolveFactoryTenant } from "./site-factory.js";
 import { getBuiltinTenant } from "./tenant-registry.js";
 import { handlePublicRequest } from "./requests.js";
@@ -28,6 +29,11 @@ export default {
           "Cache-Control": "public, max-age=3600",
         },
       });
+    }
+
+    // Dedicated commercial landing. Never enters the automated tenant/render pipeline.
+    if (host === "opportunita.impresax.org") {
+      return serveOpportunity(request, env);
     }
 
     // Private ImpresaX Ops / Control Room.
