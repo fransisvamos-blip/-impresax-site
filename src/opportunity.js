@@ -26,12 +26,12 @@ export async function handleOpportunityLead(request,env) {
   const fullName=clean(data?.full_name,120);
   const phone=clean(data?.phone,35);
   const email=clean(data?.email,254).toLowerCase();
-  const budget=clean(data?.budget_band,30);
-  const timeline=clean(data?.timeline,30);
+  const budget=clean(data?.budget_band,30)||"da-definire";
+  const timeline=clean(data?.timeline,30)||"da-definire";
   const experience=clean(data?.experience,30)||"preferisco-non-dire";
   const transaction=clean(data?.transaction_interest,30);
   if(fullName.length<3||!/^\+?[\d\s().-]{8,35}$/.test(phone)||phone.replace(/\D/g,"").length<8||
-     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||
+     (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))||
      !BUDGETS.has(budget)||!TIMES.has(timeline)||!EXPERIENCE.has(experience)||!TRANSACTIONS.has(transaction)||
      data?.privacy_accepted!==true)
     return response({ok:false,error:"DATI_NON_VALIDI"},422);
@@ -44,7 +44,7 @@ export async function handleOpportunityLead(request,env) {
         utm_source,utm_medium,utm_campaign,utm_content,utm_term,
         privacy_accepted,privacy_version
       ) values (
-        ${CODE},${fullName},${phone},${email},${budget},${timeline},${experience},${transaction},
+        ${CODE},${fullName},${phone},${email||null},${budget},${timeline},${experience},${transaction},
         ${clean(data?.notes,1500)||null},${clean(data?.source_page,500)||null},
         ${clean(data?.utm_source,100)||null},${clean(data?.utm_medium,100)||null},
         ${clean(data?.utm_campaign,120)||null},${clean(data?.utm_content,120)||null},
