@@ -6,12 +6,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: ImpresaX deploy and scheduler disabled; one-time landing rebuild complete.
 # OWNER PAUSE: all recurring or push-based ImpresaX deployments remain disabled.
 # OWNER PAUSE: ImpresaX workflows remain off after one-time landing publication.
+# One-time approved release: anonymized lounge bar landing v6. Restore pause immediately.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # temporary single-run release
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
