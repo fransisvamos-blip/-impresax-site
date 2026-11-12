@@ -74,3 +74,18 @@ test("privacy is styled coherently and has contact instructions",()=>{
  assert.match(privacy,/info@impresax\.org/);
  assert.match(privacy,/titolare del trattamento/);
 });
+
+test("Gallery 07 design delivers visual contrast across chapters",()=>{
+ assert.match(css,/GALLERY 07/);
+ assert.match(css,/\.hero\{background:#161b20/);
+ assert.match(css,/\.choice-section\{background:#f5f2ec/);
+ assert.match(css,/\.value-card:nth-child\(1\)\{grid-column:span 7;grid-row:span 2/);
+ assert.match(css,/\.deal-sheet\{background:#232a2e/);
+ assert.match(css,/\.statement\{background:#c8c0b5/);
+ assert.match(css,/\.end\{background:#191e23/);
+ assert.match(html,/class="hero-signature"/);
+ assert.match(html,/class="photo-collection"/);
+ assert.match(html,/per il tuo progetto/);
+ assert.match(html,/Con un nuovo protagonista/);
+ assert.match(css,/@media\(max-width:575px\)/);
+});

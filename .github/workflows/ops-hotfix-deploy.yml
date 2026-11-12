@@ -13,12 +13,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: landing deployed; all ImpresaX automatic deployments stay disabled.
 # OWNER PAUSE: art-direction release completed, automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: exclusive editorial landing released. All ImpresaX automatic deployments remain disabled.
+# Owner-approved one-time Gallery 07 release. No recurring triggers.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # single publish, restore pause after
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -44,6 +48,8 @@ jobs:
                grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/lido-landing.html &&
                grep -q -- '--paper:#f6f4ee' /tmp/lido-landing.html &&
                grep -q 'class="deal-sheet"' /tmp/lido-landing.html &&
+               grep -q 'GALLERY 07' /tmp/lido-landing.html &&
+               grep -q 'class="hero-signature"' /tmp/lido-landing.html &&
                grep -q -- 'background:#1c2128' /tmp/lido-landing.html &&
                curl -fsSL --max-time 18 "https://opportunita.impresax.org/privacy" -o /tmp/lido-privacy.html; then
               echo "Landing and privacy verified live"
