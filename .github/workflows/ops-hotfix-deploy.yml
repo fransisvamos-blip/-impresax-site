@@ -17,12 +17,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: Gallery 08 successfully released; no automatic ImpresaX deploys or recurring triggers.
 # OWNER PAUSE: Atelier 01 published; automatic ImpresaX deploys and scheduled runs remain disabled.
 # OWNER PAUSE: render-approved landing released; all automatic ImpresaX deployments remain disabled.
+# Single owner-requested typography correction, no recurring triggers.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # single release, re-pause immediately
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -48,6 +52,9 @@ jobs:
                grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/opportunita.html &&
                grep -q -- '--orange:#ed7628' /tmp/opportunita.html &&
                grep -q 'MEDITERRANEAN EDITORIAL / CONVERSION DESIGN V2' /tmp/opportunita.html &&
+               grep -q 'class="heading-accent"' /tmp/opportunita.html &&
+               ! grep -q 'Instrument+Serif' /tmp/opportunita.html &&
+               ! grep -q '<em>' /tmp/opportunita.html &&
                grep -q 'id="wizard-step-two" hidden' /tmp/opportunita.html &&
                grep -q 'class="deal-sheet"' /tmp/opportunita.html &&
                ! grep -q 'ATELIER 01' /tmp/opportunita.html &&

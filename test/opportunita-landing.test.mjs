@@ -83,3 +83,20 @@ test("privacy reflects new presentation and preserves the contact point",()=>{
  assert.match(privacy,/info@impresax\.org/);
  assert.match(privacy,/titolare del trattamento/);
 });
+
+test("important text uses upright Manrope type without italic or decorative serif",()=>{
+ assert.doesNotMatch(html,/<\/?em\b/i);
+ assert.equal((html.match(/class="heading-accent"/g)||[]).length,7);
+ assert.doesNotMatch(css,/\bitalic\b/i);
+ assert.doesNotMatch(css,/var\(--serif\)|Instrument Serif/);
+ assert.doesNotMatch(html,/Instrument\+Serif/);
+ assert.doesNotMatch(privacy,/Instrument\+Serif/);
+ assert.match(css,/\.hero-intro\{[^}]*font:800[^}]*var\(--display\)/);
+ assert.match(css,/\.photo-caption strong\{[^}]*font:800[^}]*var\(--display\)/);
+ for (const selector of [
+  ".choice-title .heading-accent",".section-title .heading-accent",
+  ".statement-grid h2 .heading-accent",".questions h2 .heading-accent",
+  ".end h2 .heading-accent"
+ ]) assert.ok(css.includes(selector+"{"),"missing upright heading style: "+selector);
+ assert.match(css,/\.hero h1 \.emphasis\{[^}]*text-transform:uppercase/);
+});
