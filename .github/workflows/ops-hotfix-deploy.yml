@@ -48,7 +48,7 @@ jobs:
       - name: Verify Mediterranean render live (without TinyFish)
         run: |
           set -euo pipefail
-          for attempt in {1..8}; do
+          for attempt in {1..5}; do
             if curl -fsSL --max-time 18 'https://opportunita.impresax.org/' -o /tmp/opportunita.html &&
                grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/opportunita.html &&
                grep -q -- '--orange:#ed7628' /tmp/opportunita.html &&
@@ -63,7 +63,7 @@ jobs:
                ! grep -q 'Instrument+Serif' /tmp/opportunita.html &&
                ! grep -q '<em>' /tmp/opportunita.html &&
                grep -q 'id="wizard-step-two" hidden' /tmp/opportunita.html &&
-               grep -q 'class="deal-sheet"' /tmp/opportunita.html &&
+               grep -q 'class="deal-sheet reveal-on-scroll"' /tmp/opportunita.html &&
                ! grep -q 'ATELIER 01' /tmp/opportunita.html &&
                curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' -o /tmp/opportunita-privacy.html &&
                grep -q '13 novembre 2026' /tmp/opportunita-privacy.html; then
