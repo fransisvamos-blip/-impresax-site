@@ -19,12 +19,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: render-approved landing released; all automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: final typography corrections live; ImpresaX automatic deployments remain disabled.
 # OWNER PAUSE: Visual Enrichment V3 successfully published. ImpresaX automatic deploys remain disabled.
+# One-time owner-approved faithful V3 render implementation. No schedule.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-time; restore pause immediately
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -42,29 +46,26 @@ jobs:
         run: node --test test/opportunita-landing.test.mjs
       - name: Deploy production worker
         run: npx wrangler deploy --config wrangler.jsonc
-      - name: Verify Mediterranean render live (without TinyFish)
+      - name: Verify faithful V3 desktop and mobile layout live without browser credits
         run: |
           set -euo pipefail
-          for attempt in {1..5}; do
+          for attempt in {1..6}; do
             if curl -fsSL --max-time 18 'https://opportunita.impresax.org/' -o /tmp/opportunita.html &&
-               grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/opportunita.html &&
-               grep -q -- '--orange:#ed7628' /tmp/opportunita.html &&
-               grep -q 'MEDITERRANEAN EDITORIAL / CONVERSION DESIGN V2' /tmp/opportunita.html &&
-               grep -q 'VISUAL ENRICHMENT V3' /tmp/opportunita.html &&
-               grep -q 'class="visual-gallery"' /tmp/opportunita.html &&
-               grep -q 'Beach_of_Catanzaro_Lido_17.jpg' /tmp/opportunita.html &&
-               grep -q 'Tramonto_a_Catanzaro_Lido.JPG' /tmp/opportunita.html &&
-               grep -q 'class="step-icon"' /tmp/opportunita.html &&
-               grep -q 'prefers-reduced-motion:reduce' /tmp/opportunita.html &&
-               grep -q 'class="heading-accent"' /tmp/opportunita.html &&
-               ! grep -q 'Instrument+Serif' /tmp/opportunita.html &&
-               ! grep -q '<em>' /tmp/opportunita.html &&
-               grep -q 'id="wizard-step-two" hidden' /tmp/opportunita.html &&
-               grep -q 'class="deal-sheet reveal-on-scroll"' /tmp/opportunita.html &&
-               ! grep -q 'ATELIER 01' /tmp/opportunita.html &&
+               grep -q 'REFERENCE V3' /tmp/opportunita.html &&
+               grep -q 'IN CESSIONE O GESTIONE.' /tmp/opportunita.html &&
+               grep -q 'class="offer-card offer-card--buy"' /tmp/opportunita.html &&
+               grep -q 'class="offer-card offer-card--manage"' /tmp/opportunita.html &&
+               grep -q 'class="contact-panel"' /tmp/opportunita.html &&
+               grep -q 'id="transaction_interest" name="transaction_interest"' /tmp/opportunita.html &&
+               grep -q 'id="lead-form"' /tmp/opportunita.html &&
+               grep -q "fetch('/api/interesse'" /tmp/opportunita.html &&
+               grep -q 'photo-1767878032664-cd1d61f0e076' /tmp/opportunita.html &&
+               grep -q 'photo-1774806245018-a2bdd2eb620b' /tmp/opportunita.html &&
+               grep -q '@media(max-width:670px)' /tmp/opportunita.html &&
+               ! grep -q 'VISUAL ENRICHMENT V3' /tmp/opportunita.html &&
                curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' -o /tmp/opportunita-privacy.html &&
-               grep -q '13 novembre 2026' /tmp/opportunita-privacy.html; then
-              echo 'APPROVED RENDER LIVE and privacy verified'
+               grep -q 'Informativa sulla privacy' /tmp/opportunita-privacy.html; then
+              echo 'V3 reference site and privacy confirmed live'
               exit 0
             fi
             sleep 5
