@@ -19,16 +19,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: render-approved landing released; all automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: final typography corrections live; ImpresaX automatic deployments remain disabled.
 # OWNER PAUSE: Visual Enrichment V3 successfully published. ImpresaX automatic deploys remain disabled.
-# One-time owner-approved faithful V3 render implementation. No schedule.
+# OWNER PAUSE: faithful approved V3 reference deployed; all automatic ImpresaX workflows remain disabled.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-20261112'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # one-time; restore pause immediately
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
