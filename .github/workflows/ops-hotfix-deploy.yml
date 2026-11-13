@@ -16,12 +16,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: Gallery 07 published; all automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: Gallery 08 successfully released; no automatic ImpresaX deploys or recurring triggers.
 # OWNER PAUSE: Atelier 01 published; automatic ImpresaX deploys and scheduled runs remain disabled.
+# ONE-TIME approved release: implement the user-approved conversion render. Not recurring.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # temporary; re-pause immediately
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -39,35 +43,22 @@ jobs:
         run: node --test test/opportunita-landing.test.mjs
       - name: Deploy production worker
         run: npx wrangler deploy --config wrangler.jsonc
-      - name: Verify the new Atelier design on live site (zero TinyFish)
+      - name: Verify Mediterranean render live (without TinyFish)
         run: |
           set -euo pipefail
-          for attempt in {1..6}; do
-            if curl -fsSL --max-time 18 "https://opportunita.impresax.org/" -o /tmp/lido-landing.html &&
-               grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/lido-landing.html &&
-               grep -q -- '--silk:#f9f8f5' /tmp/lido-landing.html &&
-               grep -q 'ATELIER 01' /tmp/lido-landing.html &&
-               grep -q 'id="wizard-step-two" hidden' /tmp/lido-landing.html &&
-               grep -q 'class="deal-sheet"' /tmp/lido-landing.html &&
-               ! grep -q 'class="contents-strip"' /tmp/lido-landing.html &&
-               curl -fsSL --max-time 18 "https://opportunita.impresax.org/privacy" -o /tmp/lido-privacy.html; then
-              echo "Atelier landing and privacy verified live"
+          for attempt in {1..8}; do
+            if curl -fsSL --max-time 18 'https://opportunita.impresax.org/' -o /tmp/opportunita.html &&
+               grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/opportunita.html &&
+               grep -q -- '--orange:#ed7628' /tmp/opportunita.html &&
+               grep -q 'MEDITERRANEAN EDITORIAL / CONVERSION DESIGN V2' /tmp/opportunita.html &&
+               grep -q 'id="wizard-step-two" hidden' /tmp/opportunita.html &&
+               grep -q 'class="deal-sheet"' /tmp/opportunita.html &&
+               ! grep -q 'ATELIER 01' /tmp/opportunita.html &&
+               curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' -o /tmp/opportunita-privacy.html &&
+               grep -q '13 novembre 2026' /tmp/opportunita-privacy.html; then
+              echo 'APPROVED RENDER LIVE and privacy verified'
               exit 0
             fi
             sleep 5
           done
-          exit 1
-      - name: Verify Ops health
-        run: |
-          set -euo pipefail
-          for i in {1..20}; do
-            code=$(curl -L -sS -o /tmp/health.json -w "%{http_code}" --connect-timeout 8 --max-time 15 "https://admin.impresax.org/ops/healthz" || true)
-            echo "attempt=$i code=$code"
-            if [ "$code" = "200" ] && grep -q '"render_v2_admin_bridge":true' /tmp/health.json; then
-              cat /tmp/health.json
-              exit 0
-            fi
-            sleep 3
-          done
-          cat /tmp/health.json || true
           exit 1

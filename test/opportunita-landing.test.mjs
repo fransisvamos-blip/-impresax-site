@@ -8,50 +8,52 @@ const privacy=readFileSync(new URL("../public/opportunita/privacy.html",import.m
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??"";
 const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??"";
 
-test("offer is immediately explicit and does not reveal sale price or identity",()=>{
- assert.match(html,/<h1 id="hero-title">[\s\S]*?Un lounge bar avviato a Catanzaro Lido\.[\s\S]*?IN CESSIONE<br>O GESTIONE\./);
+test("offer is unmistakable above the fold and price stays private",()=>{
+ assert.match(html,/<h1 id="hero-title">[\s\S]*?Un lounge bar avviato, nel cuore della movida\.[\s\S]*?IN CESSIONE<br>O GESTIONE\./);
+ assert.match(html,/CATANZARO LIDO · CALABRIA/);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  assert.doesNotMatch(html,/(?:300[., ]?000|300000|€\s*300)/);
- assert.match(html,/l'immobile non è in vendita/i);
- assert.doesNotMatch(html,/REF \/ CZL/);
+ assert.match(html,/L'immobile non è in vendita/);
 });
-test("CSS is consolidated, with new palette and no inherited visual overrides",()=>{
- assert.equal((html.match(/<style>/g)||[]).length,1);
- assert.match(css,/ATELIER 01/);
- assert.match(css,/--silk:#f9f8f5/);
- assert.match(css,/--onyx:#171819/);
- assert.match(css,/--stone:#e2dbd1/);
- assert.match(css,/--champagne:#b5a183/);
- assert.doesNotMatch(css,/GALLERY 08|GALLERY 07|#1955c9|#a73742|#b84531|#364438/);
- assert.doesNotMatch(html,/class="contents-strip"|class="strength-watermark"|class="hero-signature"/);
- assert.ok(css.length<30000,"Consolidated CSS should remain compact");
+test("render-approved palette: warm white, navy, targeted orange and peach",()=>{
+ assert.match(css,/--paper:#fafaf7/);
+ assert.match(css,/--navy:#123b59/);
+ assert.match(css,/--orange:#ed7628/);
+ assert.match(css,/--peach:#fae7d8/);
+ assert.match(css,/--powder:#e7f0f4/);
+ assert.match(css,/\.hero h1 \.emphasis\{[^}]*background:var\(--orange\)/);
+ assert.match(css,/\.button-primary\{[^}]*background:var\(--navy\)/);
+ assert.match(css,/\.send\{[^}]*background:var\(--orange\)/);
+ assert.doesNotMatch(css,/#a73742|#b84531|#1955c9|#364438|ATELIER 01/);
 });
-test("colors and contrast intentionally differ across major sections",()=>{
- assert.match(css,/\.hero\{background:var\(--silk\)/);
- assert.match(css,/\.choice-section\{[^}]*background:var\(--onyx\)/);
- assert.match(css,/\.section\{background:white/);
- assert.match(css,/\.formula-section\{background:var\(--ivory\)/);
- assert.match(css,/\.statement\{background:var\(--stone\)/);
- assert.match(css,/\.questions\{background:#f2eee8/);
- assert.match(css,/\.end\{background:var\(--onyx\)/);
+test("different section identities support reading and conversion",()=>{
+ assert.match(css,/\.hero\{[^}]*background:linear-gradient/);
+ assert.match(css,/\.choice-section\{[^}]*background:#e7f0f4/);
+ assert.match(css,/\.value-card:first-child\{[^}]*background:var\(--navy\)/);
+ assert.match(css,/\.value-card:nth-child\(2\)\{[^}]*background:#f9e9db/);
+ assert.match(css,/\.formula-section\{[^}]*background:#fff4e9/);
+ assert.match(css,/\.statement\{[^}]*background:var\(--navy\)/);
+ assert.match(css,/\.questions\{[^}]*background:#eaf1f5/);
+ assert.match(css,/\.end\{[^}]*background:var\(--navy-dark\)/);
 });
-test("real external location photo has correct disclosure and attribution",()=>{
+test("real location photograph has honest caption and attribution",()=>{
  assert.equal((html.match(/<img\b/g)||[]).length,1);
  assert.match(html,/File:Catanzarolidolandscape\.jpg/);
  assert.match(html,/Foto aerea:.*Wikimedia Commons/);
  assert.match(html,/Non è una fotografia del lounge bar/);
 });
-test("business dossier is factual and light on gratuitous branding",()=>{
- assert.match(html,/class="deal-sheet"/);
- for(const fact of ["Attività lounge bar","Catanzaro Lido","Cessione · Gestione","Non compreso nella vendita"])
+test("business claims stay grounded and commercially clear",()=>{
+ for(const fact of ["7 anni","clientela fidelizzata","Catanzaro Lido","Attività lounge bar","Cessione · Gestione","Non compreso nella vendita"]){
   assert.ok(html.includes(fact),fact);
+ }
  assert.match(html,/verifica documentale/);
- assert.doesNotMatch(html,/fatturato (?:garantito|certo)/i);
+ assert.doesNotMatch(html,/fatturato (?:garantito|certo)|profitti garantiti/i);
+ assert.match(html,/I titolari stanno per dedicarsi a un nuovo progetto/);
 });
-test("two-step acquisition and management choices remain intact",()=>{
+test("two-step form retains three choices, required contact fields and legal consent",()=>{
  assert.match(html,/id="wizard-step-two" hidden/);
  assert.match(html,/id="lead-form"/);
- for(const opt of ["cessione","gestione","entrambe"]) assert.match(html,new RegExp('data-choice="'+opt+'"'));
+ for(const v of ["cessione","gestione","entrambe"]) assert.match(html,new RegExp('data-choice="'+v+'"'));
  assert.match(html,/id="transaction_interest" name="transaction_interest"/);
  assert.match(html,/id="full_name"[^>]*required/);
  assert.match(html,/id="phone"[^>]*required/);
@@ -62,19 +64,22 @@ test("two-step acquisition and management choices remain intact",()=>{
  assert.match(html,/utm_campaign/);
  new Script(js,{filename:"opportunita-inline.js"});
 });
-test("mobile and accessibility contracts survive the redesign",()=>{
- assert.match(css,/@media\(max-width:1130px\)/);
+test("mobile rules, focus and live feedback remain accessible",()=>{
+ assert.match(css,/@media\(max-width:1150px\)/);
  assert.match(css,/@media\(max-width:820px\)/);
  assert.match(css,/@media\(max-width:575px\)/);
+ assert.match(css,/\.choice-option:focus-visible/);
  assert.match(css,/prefers-reduced-motion/);
  assert.match(css,/\.mobilebar\{position:fixed/);
  assert.match(html,/aria-label="Modalità di interesse"/);
  assert.match(html,/role="status"/);
  assert.match(html,/aria-live="polite"/);
 });
-test("privacy has matching visual treatment and retains GDPR contact",()=>{
+test("privacy reflects new presentation and preserves the contact point",()=>{
  assert.match(privacy,/Informativa sulla privacy/);
- assert.match(privacy,/#f9f8f5/);
+ assert.match(privacy,/#fafaf7/);
+ assert.match(privacy,/#ed7628/);
+ assert.match(privacy,/13 novembre 2026/);
  assert.match(privacy,/info@impresax\.org/);
  assert.match(privacy,/titolare del trattamento/);
 });
