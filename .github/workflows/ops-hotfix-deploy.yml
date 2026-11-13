@@ -18,12 +18,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: Atelier 01 published; automatic ImpresaX deploys and scheduled runs remain disabled.
 # OWNER PAUSE: render-approved landing released; all automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: final typography corrections live; ImpresaX automatic deployments remain disabled.
+# Authorized one-time visual enrichment release for the opportunity landing.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # single release; restore pause afterwards
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -49,6 +53,12 @@ jobs:
                grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/opportunita.html &&
                grep -q -- '--orange:#ed7628' /tmp/opportunita.html &&
                grep -q 'MEDITERRANEAN EDITORIAL / CONVERSION DESIGN V2' /tmp/opportunita.html &&
+               grep -q 'VISUAL ENRICHMENT V3' /tmp/opportunita.html &&
+               grep -q 'class="visual-gallery"' /tmp/opportunita.html &&
+               grep -q 'Beach_of_Catanzaro_Lido_17.jpg' /tmp/opportunita.html &&
+               grep -q 'Tramonto_a_Catanzaro_Lido.JPG' /tmp/opportunita.html &&
+               grep -q 'class="step-icon"' /tmp/opportunita.html &&
+               grep -q 'prefers-reduced-motion:reduce' /tmp/opportunita.html &&
                grep -q 'class="heading-accent"' /tmp/opportunita.html &&
                ! grep -q 'Instrument+Serif' /tmp/opportunita.html &&
                ! grep -q '<em>' /tmp/opportunita.html &&

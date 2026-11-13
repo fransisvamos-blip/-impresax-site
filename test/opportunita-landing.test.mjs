@@ -36,11 +36,18 @@ test("different section identities support reading and conversion",()=>{
  assert.match(css,/\.questions\{[^}]*background:#eaf1f5/);
  assert.match(css,/\.end\{[^}]*background:var\(--navy-dark\)/);
 });
-test("real location photograph has honest caption and attribution",()=>{
- assert.equal((html.match(/<img\b/g)||[]).length,1);
+test("three authentic Catanzaro Lido context photos are credited and never presented as venue",()=>{
+ assert.equal((html.match(/<img\b/g)||[]).length,3);
  assert.match(html,/File:Catanzarolidolandscape\.jpg/);
  assert.match(html,/Foto aerea:.*Wikimedia Commons/);
  assert.match(html,/Non è una fotografia del lounge bar/);
+ assert.match(html,/Beach_of_Catanzaro_Lido_17\.jpg\?width=1100/);
+ assert.match(html,/Tramonto_a_Catanzaro_Lido\.JPG\?width=900/);
+ assert.match(html,/non gli spazi del lounge bar/);
+ assert.match(html,/CC BY-SA 4\.0/);
+ assert.match(html,/CC BY-SA 3\.0/);
+ assert.equal((html.match(/loading="lazy"/g)||[]).length,2);
+ assert.equal((html.match(/<figcaption>/g)||[]).length,2);
 });
 test("business claims stay grounded and commercially clear",()=>{
  for(const fact of ["7 anni","clientela fidelizzata","Catanzaro Lido","Attività lounge bar","Cessione · Gestione","Non compreso nella vendita"]){
@@ -99,4 +106,39 @@ test("important text uses upright Manrope type without italic or decorative seri
   ".end h2 .heading-accent"
  ]) assert.ok(css.includes(selector+"{"),"missing upright heading style: "+selector);
  assert.match(css,/\.hero h1 \.emphasis\{[^}]*text-transform:uppercase/);
+});
+
+
+test("hand-drawn icons, realistic gallery and original graphic compositions exist",()=>{
+ assert.match(html,/class="visual-gallery"/);
+ assert.match(html,/id="visual-gallery-title"/);
+ assert.equal((html.match(/class="step-icon"/g)||[]).length,3);
+ assert.equal((html.match(/class="formula-emblem"/g)||[]).length,2);
+ assert.match(html,/class="end-waves"/);
+ assert.match(html,/class="gallery-coastal-wave"/);
+ assert.match(css,/VISUAL ENRICHMENT V3/);
+ assert.match(css,/\.gallery-layout\{display:grid/);
+ assert.match(css,/\.gallery-photos\{display:grid/);
+ assert.match(css,/\.formula-emblem\{position:absolute/);
+ assert.match(css,/\.step-icon\{display:grid/);
+ assert.match(css,/\.end-waves\{position:absolute/);
+ assert.match(html,/href="#iniziamo" class="gallery-link"/);
+});
+test("mobile gallery composition, responsive image srcset and low-motion accessibility",()=>{
+ assert.match(css,/@media\(max-width:1040px\)/);
+ assert.match(css,/@media\(max-width:820px\)/);
+ assert.match(css,/@media\(max-width:575px\)/);
+ assert.match(css,/@media\(max-width:390px\)/);
+ assert.equal((html.match(/srcset="/g)||[]).length,2);
+ assert.match(css,/\.gallery-photo-main \.gallery-frame\{aspect-ratio:/);
+ assert.match(css,/\.gallery-photo-sunset \.gallery-frame\{aspect-ratio:/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(css,/\.motion-on \.reveal-on-scroll:not\(\.is-revealed\)/);
+ const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
+ assert.equal(scripts.length,2);
+ scripts.forEach((script,i)=>new Script(script,{filename:"landing-inline-"+i+".js"}));
+ assert.match(scripts[1],/IntersectionObserver/);
+ assert.match(scripts[1],/prefers-reduced-motion: reduce/);
+ assert.match(scripts[1],/if\(!\('IntersectionObserver' in window\)/);
+ assert.doesNotMatch(css,/\bitalic\b/i);
 });

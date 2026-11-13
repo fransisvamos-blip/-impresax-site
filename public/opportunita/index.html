@@ -377,6 +377,140 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button,.choice-option,.hero-visual img{transition:none!important}.hero-visual:hover img{transform:none}}
 
+
+/* VISUAL ENRICHMENT V3 — verified real local images, custom iconography and light motion */
+.hero-visual:after{background:linear-gradient(180deg,#051b2c0d,#051b2c00 41%,#052c46bb)}
+.hero-visual .photo-top{box-shadow:0 7px 18px #06304a17}
+.hero-copy .pill{gap:12px}
+.value-card{transition:transform .32s ease,box-shadow .32s ease}
+.value-card:hover{transform:translateY(-5px);box-shadow:0 22px 37px #16405c15}
+.value-card .value-icon{box-shadow:0 0 0 6px #ffffff17}
+.deal-sheet{transition:box-shadow .25s ease}
+.deal-sheet:hover{box-shadow:0 23px 49px #133b5814}
+/* Composition: two factual images, never shown as if they were the venue */
+.visual-gallery{position:relative;isolation:isolate;overflow:hidden;padding:100px 0 103px;background:#f5f9fc}
+.visual-gallery:before{content:"";position:absolute;pointer-events:none;z-index:-1;left:-180px;top:-270px;width:590px;height:590px;border:1px solid #bfdce84a;border-radius:50%;box-shadow:0 0 0 64px #d1e8ee40,0 0 0 125px #d1e8ee25}
+.gallery-layout{display:grid;grid-template-columns:.77fr 1.23fr;gap:clamp(46px,5vw,88px);align-items:center}
+.gallery-narrative{position:relative;z-index:2}
+.gallery-narrative h2{font:800 clamp(37px,4.1vw,58px)/1.13 var(--display);letter-spacing:-.06em;margin:19px 0 18px;color:var(--navy);max-width:540px}
+.gallery-narrative h2 span{display:block;color:#d6621f}
+.gallery-narrative>p{font:500 15px/1.91 var(--text);color:#647989;max-width:460px;margin:0 0 29px}
+.gallery-key{display:flex;align-items:center;gap:13px;border-top:1px solid #cadce5;padding:21px 0 0;margin-bottom:32px}
+.gallery-key-symbol{display:grid;place-items:center;width:47px;height:47px;background:#deecf3;color:#2b607e;border-radius:13px;flex:none}
+.gallery-key-symbol svg{width:25px;height:25px}
+.gallery-key strong{display:block;font:800 12px/1.45 var(--display)}
+.gallery-key small{display:block;color:#7a8e99;font:500 11px/1.6 var(--text);margin-top:3px}
+.gallery-link{display:inline-flex;align-items:center;justify-content:space-between;gap:21px;min-height:52px;padding:14px 19px;border-radius:9px;background:var(--navy);color:white;text-decoration:none;font:800 11px/1.4 var(--display);transition:background .2s,transform .2s}
+.gallery-link:hover{background:#1e5375;transform:translateY(-2px)}
+.gallery-photos{display:grid;grid-template-columns:1.05fr .78fr;gap:17px;align-items:end;position:relative;z-index:2}
+.gallery-photo{margin:0;min-width:0}
+.gallery-photo-main{transform:translateY(-16px)}
+.gallery-photo-sunset{transform:translateY(24px)}
+.gallery-frame{position:relative;overflow:hidden;border-radius:18px;background:#d5e4ea;box-shadow:0 15px 30px #153f5a18}
+.gallery-photo-main .gallery-frame{aspect-ratio:.85}
+.gallery-photo-sunset .gallery-frame{aspect-ratio:.79}
+.gallery-frame img{width:100%;height:100%;object-fit:cover;transition:transform .75s ease}
+.gallery-photo:hover img{transform:scale(1.055)}
+.gallery-frame:after{content:"";pointer-events:none;position:absolute;inset:0;background:linear-gradient(180deg,transparent 56%,#092b46a8)}
+.gallery-photo-label{position:absolute;z-index:2;bottom:17px;left:17px;right:8px;color:#fff;font:800 10px/1.45 var(--display);letter-spacing:.065em}
+.gallery-photo figcaption{color:#72848f;font:500 10px/1.6 var(--text);margin-top:12px}
+.gallery-photo figcaption a{color:#2d607f;text-underline-offset:2px}
+.gallery-coastal-wave{position:absolute;z-index:0;left:0;bottom:-5px;width:100%;height:105px;opacity:.11;color:#2682ac;pointer-events:none}
+/* Formulas: original purpose-built iconography, not generic library decoration */
+.formula-card{position:relative;isolation:isolate;transition:transform .3s ease,box-shadow .3s ease}
+.formula-card:hover{transform:translateY(-4px);box-shadow:0 20px 37px #11364a1c}
+.formula-card:before{content:"";position:absolute;pointer-events:none;z-index:-1;width:245px;height:245px;right:-135px;bottom:-154px;border:1px solid #cf9b794c;border-radius:50%;box-shadow:0 0 0 45px #cf9b7912}
+.formula-card.highlight:before{border-color:#8cc5e526;box-shadow:0 0 0 45px #a3daec0c}
+.formula-emblem{position:absolute;right:37px;top:32px;display:grid;place-items:center;width:53px;height:53px;border:1px solid #e9c5a8;border-radius:50%;color:#bd642e;background:#fff2e7}
+.formula-card.highlight .formula-emblem{color:#d5eefa;border-color:#7398a9;background:#ffffff12}
+.formula-emblem svg{width:31px;height:31px}
+/* Three handmade step illustrations and an unobtrusive connected timeline */
+.step{padding-top:29px;transition:transform .25s ease}
+.step:hover{transform:translateY(-3px)}
+.step-icon{display:grid;place-items:center;width:65px;height:65px;border-radius:17px;background:#eaf2f7;border:1px solid #d1e3ec;color:#1b5272;margin-bottom:22px}
+.step:nth-child(2) .step-icon{color:#c56533;background:#fff0e6;border-color:#fae0cf}
+.step:nth-child(3) .step-icon{color:#365f73;background:#eef3f2;border-color:#dce9e5}
+.step-icon svg{width:40px;height:40px}
+.step h3{margin-top:17px}
+.steps-section{position:relative;isolation:isolate}
+.steps-section:before{content:"";position:absolute;pointer-events:none;z-index:-1;right:0;top:4%;width:350px;height:350px;background:radial-gradient(circle,#f8ddc53b,transparent 69%);border-radius:50%}
+/* FAQ + button depth & keyboard interaction */
+.faq{transition:border-color .25s ease}
+.faq:hover{border-bottom-color:#9fc6db}
+.faq summary{transition:color .2s ease}
+.faq summary:hover{color:#d66b2f}
+.faq summary:focus-visible,.gallery-link:focus-visible,.formula-link:focus-visible,.button:focus-visible,.mobilebar a:focus-visible{outline:3px solid #ef9b59;outline-offset:4px}
+.faq summary:after{transition:transform .2s,color .2s}
+.faq[open] summary:after{transform:rotate(90deg)}
+.faq[open] p{animation:faq-appear .28s ease both}
+@keyframes faq-appear{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+/* Closing graphic: custom coastal lines, no extra image download */
+.end-waves{position:absolute;right:-170px;top:-40px;width:min(62%,720px);height:400px;color:#7dbad5;opacity:.21;pointer-events:none}
+.end-grid{z-index:2}
+/* Progressive enhancement: content remains visible when JS or observer is unavailable */
+.motion-on .reveal-on-scroll:not(.is-revealed){opacity:0;transform:translateY(18px)}
+.motion-on .reveal-on-scroll{transition:opacity .58s ease,transform .58s cubic-bezier(.2,.72,.25,1)}
+.motion-on .gallery-photo-main.is-revealed{transform:translateY(-16px)}
+.motion-on .gallery-photo-sunset.is-revealed{transform:translateY(24px)}
+@media(min-width:821px){
+ .value-card:nth-child(2),.formula-card:nth-child(2),.step:nth-child(2),.gallery-photo-sunset{transition-delay:.065s}
+ .value-card:nth-child(3),.step:nth-child(3){transition-delay:.12s}
+}
+@media(max-width:1040px){
+ .visual-gallery{padding:83px 0 90px}
+ .gallery-layout{grid-template-columns:.83fr 1.17fr;gap:30px}
+ .gallery-photos{gap:10px}
+ .gallery-narrative h2{font-size:clamp(34px,4vw,45px)}
+ .gallery-key{margin-bottom:23px}
+ .formula-emblem{width:47px;height:47px;right:28px;top:28px}
+}
+@media(max-width:820px){
+ .gallery-layout{grid-template-columns:1fr;gap:35px}
+ .gallery-narrative h2{font-size:clamp(37px,6vw,52px);max-width:710px}
+ .gallery-narrative>p{max-width:700px}
+ .gallery-photos{grid-template-columns:1.15fr .85fr;gap:15px;max-width:720px}
+ .gallery-photo-main .gallery-frame{aspect-ratio:1.05}
+ .gallery-photo-sunset .gallery-frame{aspect-ratio:.9}
+ .visual-gallery{padding:75px 0 84px}
+ .formula-emblem{width:50px;height:50px;right:31px;top:31px}
+ .step-icon{margin-bottom:15px}
+ .end-waves{width:75%;right:-130px;opacity:.15}
+}
+@media(max-width:575px){
+ .visual-gallery{padding:69px 0 75px}
+ .gallery-narrative h2{font-size:clamp(33px,8.3vw,43px)}
+ .gallery-narrative>p{font-size:14px;margin-bottom:23px}
+ .gallery-photos{grid-template-columns:1.05fr .85fr;gap:10px}
+ .gallery-photo-main .gallery-frame{aspect-ratio:.82}
+ .gallery-photo-sunset .gallery-frame{aspect-ratio:.78}
+ .gallery-photo-main{transform:translateY(-8px)}
+ .gallery-photo-sunset{transform:translateY(15px)}
+ .gallery-photo figcaption{font-size:9px}
+ .gallery-photo-label{font-size:8px;bottom:11px;left:10px}
+ .motion-on .gallery-photo-main.is-revealed{transform:translateY(-8px)}
+ .motion-on .gallery-photo-sunset.is-revealed{transform:translateY(15px)}
+ .gallery-key{align-items:flex-start}
+ .gallery-link{width:100%}
+ .formula-emblem{width:45px;height:45px;right:22px;top:21px}
+ .formula-emblem svg{width:28px;height:28px}
+ .formula-card .tag{padding-right:50px}
+ .step-icon{width:58px;height:58px}
+ .step-icon svg{width:34px;height:34px}
+ .end-waves{width:110%;right:-140px;top:-40px}
+}
+@media(max-width:390px){
+ .hero h1 .emphasis{font-size:clamp(30px,8.9vw,35px);padding-inline:11px}
+ .gallery-photos{grid-template-columns:1fr 1fr}
+ .gallery-photo figcaption{line-height:1.55}
+ .photo-top{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .motion-on .reveal-on-scroll,.motion-on .reveal-on-scroll:not(.is-revealed){opacity:1;transform:none;transition:none}
+ .gallery-frame img,.formula-card,.value-card,.step,.faq summary:after,.gallery-link{transition:none!important}
+ .formula-card:hover,.value-card:hover,.step:hover,.gallery-photo:hover img{transform:none!important}
+ .faq[open] p{animation:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -416,7 +550,7 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
     </div>
     <div>
       <div class="hero-visual">
-        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Catanzarolidolandscape.jpg?width=1600" alt="Panorama aereo di Catanzaro Lido, fotografia dell'area e non dell'attività commerciale" fetchpriority="high">
+        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Catanzarolidolandscape.jpg?width=1600" width="3181" height="3561" alt="Panorama aereo di Catanzaro Lido, fotografia dell'area e non dell'attività commerciale" fetchpriority="high" decoding="async">
         <div class="photo-top"><span class="photo-dot" aria-hidden="true"></span> CALABRIA / CATANZARO LIDO</div>
         <div class="photo-caption"><div class="photo-caption-rule" aria-hidden="true"></div><span class="photo-collection">CATANZARO LIDO · CALABRIA</span><strong>Una posizione che conta.</strong><span>Il contesto di Catanzaro Lido. Non è una fotografia del lounge bar.</span></div>
       </div>
@@ -483,11 +617,11 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
       <p>Il punto di partenza è già concreto: una posizione riconosciuta, sette anni di attività e una struttura pronta a essere valutata da chi vuole proseguire il progetto.</p>
     </div>
     <div class="value-grid">
-      <article class="value-card"><span class="value-num">01 / POSIZIONE</span><span class="value-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h3>Nel cuore della movida.</h3><p>Una delle piazze più frequentate di Catanzaro Lido, nel contesto della vita serale e universitaria della città.</p></article>
-      <article class="value-card"><span class="value-num">02 / CONTINUITÀ</span><span class="value-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M2 20v-2c0-4 3-6 6-6s6 2 6 6v2M17 5a3 3 0 0 1 0 6M17 14c3 0 5 2 5 5v1"/></svg></span><h3>Sette anni alle spalle.</h3><p>Un lounge bar già operativo con clientela fidelizzata, secondo quanto comunicato dai titolari.</p></article>
-      <article class="value-card"><span class="value-num">03 / SPAZI</span><span class="value-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18M5 11v9M19 11v9M8 7c0-3 8-3 8 0v4M8 20h8"/></svg></span><h3>Una piazza da vivere.</h3><p>Locale arredato, tavolini e sedie all'esterno. Possibilità di eventi e serate a tema nei limiti delle autorizzazioni.</p></article>
+      <article class="value-card reveal-on-scroll"><span class="value-num">01 / POSIZIONE</span><span class="value-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h3>Nel cuore della movida.</h3><p>Una delle piazze più frequentate di Catanzaro Lido, nel contesto della vita serale e universitaria della città.</p></article>
+      <article class="value-card reveal-on-scroll"><span class="value-num">02 / CONTINUITÀ</span><span class="value-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M2 20v-2c0-4 3-6 6-6s6 2 6 6v2M17 5a3 3 0 0 1 0 6M17 14c3 0 5 2 5 5v1"/></svg></span><h3>Sette anni alle spalle.</h3><p>Un lounge bar già operativo con clientela fidelizzata, secondo quanto comunicato dai titolari.</p></article>
+      <article class="value-card reveal-on-scroll"><span class="value-num">03 / SPAZI</span><span class="value-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18M5 11v9M19 11v9M8 7c0-3 8-3 8 0v4M8 20h8"/></svg></span><h3>Una piazza da vivere.</h3><p>Locale arredato, tavolini e sedie all'esterno. Possibilità di eventi e serate a tema nei limiti delle autorizzazioni.</p></article>
     </div>
-    <div class="deal-sheet" aria-label="Perimetro della proposta">
+    <div class="deal-sheet reveal-on-scroll" aria-label="Perimetro della proposta">
   <div class="deal-sheet-header"><span class="deal-monogram" aria-hidden="true">07</span><div><span class="deal-overline">SCHEDA DELL'OPERAZIONE</span><strong>Una proposta da approfondire.</strong></div><span class="deal-sheet-ref">RISERVATO</span></div>
   <div class="deal-sheet-grid">
     <div><span>01 / OGGETTO</span><strong>Attività lounge bar</strong></div>
@@ -501,6 +635,47 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
   </div>
 </section>
 
+
+<section class="visual-gallery" id="contesto" aria-labelledby="visual-gallery-title">
+  <div class="container gallery-layout">
+    <div class="gallery-narrative reveal-on-scroll">
+      <div class="section-tag">IL CONTESTO / CATANZARO LIDO</div>
+      <h2 id="visual-gallery-title">Una posizione da conoscere. <span>Un'opportunità da valutare.</span></h2>
+      <p>Il quartiere marinaro, la costa ionica e la vita della città fanno parte del contesto in cui opera l'attività. Le immagini raccontano la località, non gli spazi del lounge bar.</p>
+      <div class="gallery-key">
+        <span class="gallery-key-symbol" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 29s10-8 10-17a10 10 0 0 0-20 0c0 9 10 17 10 17Z" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="12" r="3.5" stroke="currentColor" stroke-width="1.7"/></svg></span>
+        <span><strong>Località: Catanzaro Lido</strong><small>Indirizzo e nome del locale comunicati soltanto nella trattativa riservata.</small></span>
+      </div>
+      <a href="#iniziamo" class="gallery-link">Scopri le modalità di subentro <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="gallery-photos" aria-label="Fotografie reali del contesto di Catanzaro Lido">
+      <figure class="gallery-photo gallery-photo-main reveal-on-scroll">
+        <div class="gallery-frame">
+          <img loading="lazy" decoding="async" width="4160" height="3120"
+            src="https://commons.wikimedia.org/wiki/Special:FilePath/Beach_of_Catanzaro_Lido_17.jpg?width=1100"
+            srcset="https://commons.wikimedia.org/wiki/Special:FilePath/Beach_of_Catanzaro_Lido_17.jpg?width=640 640w, https://commons.wikimedia.org/wiki/Special:FilePath/Beach_of_Catanzaro_Lido_17.jpg?width=1100 1100w"
+            sizes="(max-width: 680px) 100vw, (max-width: 1080px) 55vw, 420px"
+            alt="Scorcio reale della spiaggia e del mare di Catanzaro Lido fotografati nel 2024; non raffigura il lounge bar">
+          <span class="gallery-photo-label">01 / LA COSTA IONICA</span>
+        </div>
+        <figcaption>Catanzaro Lido, 2024 · <a href="https://commons.wikimedia.org/wiki/File:Beach_of_Catanzaro_Lido_17.jpg" target="_blank" rel="noopener noreferrer">Nicholas Gemini</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Ritaglio di impaginazione.</figcaption>
+      </figure>
+      <figure class="gallery-photo gallery-photo-sunset reveal-on-scroll">
+        <div class="gallery-frame">
+          <img loading="lazy" decoding="async" width="4000" height="3000"
+            src="https://commons.wikimedia.org/wiki/Special:FilePath/Tramonto_a_Catanzaro_Lido.JPG?width=900"
+            srcset="https://commons.wikimedia.org/wiki/Special:FilePath/Tramonto_a_Catanzaro_Lido.JPG?width=480 480w, https://commons.wikimedia.org/wiki/Special:FilePath/Tramonto_a_Catanzaro_Lido.JPG?width=900 900w"
+            sizes="(max-width: 680px) 90vw, (max-width: 1080px) 40vw, 330px"
+            alt="Tramonto fotografato a Catanzaro Lido nel 2013; immagine del territorio e non del lounge bar">
+          <span class="gallery-photo-label">02 / LE ORE DEL TRAMONTO</span>
+        </div>
+        <figcaption>Catanzaro Lido, 2013 · <a href="https://commons.wikimedia.org/wiki/File:Tramonto_a_Catanzaro_Lido.JPG" target="_blank" rel="noopener noreferrer">Nicholas Gemini</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>. Ritaglio di impaginazione.</figcaption>
+      </figure>
+    </div>
+  </div>
+  <svg class="gallery-coastal-wave" viewBox="0 0 1600 130" preserveAspectRatio="none" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M-50 45c235-91 384 91 628 1s387-12 603 43 321-42 469-82M-50 88c235-91 384 91 628 1s387-12 603 43 321-42 469-82" stroke="currentColor" stroke-width="1.5"/></svg>
+</section>
+
 <section class="formula-section" id="formule">
   <div class="container">
     <div class="section-top">
@@ -508,8 +683,8 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
       <p>I titolari valutano sia la cessione dell'attività sia formule di gestione, anche graduali. Potrai approfondire condizioni e modalità durante un confronto riservato.</p>
     </div>
     <div class="formula-row">
-      <article class="formula-card highlight"><span class="tag">Opzione 01 · Cessione</span><h3>Vuoi rilevare l'attività?</h3><p>Valuta l'acquisto di un lounge bar già avviato e la possibilità di proseguirne il percorso. L'immobile non è in vendita.</p><button class="formula-link" type="button" data-choice="cessione">Mi interessa acquistare <span aria-hidden="true">↗</span></button></article>
-      <article class="formula-card"><span class="tag">Opzione 02 · Gestione</span><h3>Preferisci gestirla?</h3><p>Valuta con i titolari un accordo di gestione, anche con condizioni progressive da definire insieme.</p><button class="formula-link" type="button" data-choice="gestione">Mi interessa la gestione <span aria-hidden="true">↗</span></button></article>
+      <article class="formula-card highlight reveal-on-scroll"><span class="tag">Opzione 01 · Cessione</span><span class="formula-emblem" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M6 18.5h28M8 18.5v14h24v-14M10 18.5l3-10h14l3 10M17 32.5V23h6v9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>Vuoi rilevare l'attività?</h3><p>Valuta l'acquisto di un lounge bar già avviato e la possibilità di proseguirne il percorso. L'immobile non è in vendita.</p><button class="formula-link" type="button" data-choice="cessione">Mi interessa acquistare <span aria-hidden="true">↗</span></button></article>
+      <article class="formula-card reveal-on-scroll"><span class="tag">Opzione 02 · Gestione</span><span class="formula-emblem" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M10 14 18 7l7 7M24 8l7 7-7 7M7 21l9 9 9-9M13 17l10 10M19 31l3 3 4-4M25 30l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>Preferisci gestirla?</h3><p>Valuta con i titolari un accordo di gestione, anche con condizioni progressive da definire insieme.</p><button class="formula-link" type="button" data-choice="gestione">Mi interessa la gestione <span aria-hidden="true">↗</span></button></article>
     </div>
   </div>
 </section>
@@ -528,9 +703,9 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
       <p>Non servono documenti, appuntamenti o decisioni immediate per iniziare. Il primo passo è una semplice conversazione.</p>
     </div>
     <div class="steps">
-      <div class="step"><span>01 / SCEGLI</span><h3>Ci dici cosa cerchi.</h3><p>Indichi se ti interessa l'acquisto, la gestione o entrambe le formule.</p></div>
-      <div class="step"><span>02 / CI SENTIAMO</span><h3>Ti ricontattiamo.</h3><p>Parliamo del tuo interesse, dei tempi e dei possibili accordi.</p></div>
-      <div class="step"><span>03 / APPROFONDIAMO</span><h3>Valuti i dettagli riservati.</h3><p>Se c'è interesse concreto, i titolari potranno condividere nome, condizioni e documenti pertinenti.</p></div>
+      <div class="step reveal-on-scroll"><div class="step-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="m15 7 20 17-11 2-5 12-5-31Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m26 26 9 10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></div><span>01 / SCEGLI</span><h3>Ci dici cosa cerchi.</h3><p>Indichi se ti interessa l'acquisto, la gestione o entrambe le formule.</p></div>
+      <div class="step reveal-on-scroll"><div class="step-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><rect x="12" y="4.5" width="24" height="39" rx="4" stroke="currentColor" stroke-width="2.2"/><path d="M20 9h8M22 38h4M16 15h16M17 24h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><span>02 / CI SENTIAMO</span><h3>Ti ricontattiamo.</h3><p>Parliamo del tuo interesse, dei tempi e dei possibili accordi.</p></div>
+      <div class="step reveal-on-scroll"><div class="step-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M11 5h19l7 7v30H11V5Z" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/><path d="M29 5v9h8M17 22h14M17 28h14M17 34h9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg></div><span>03 / APPROFONDIAMO</span><h3>Valuti i dettagli riservati.</h3><p>Se c'è interesse concreto, i titolari potranno condividere nome, condizioni e documenti pertinenti.</p></div>
     </div>
   </div>
 </section>
@@ -548,7 +723,7 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
   </div>
 </section>
 
-<section class="end">
+<section class="end"><svg class="end-waves" viewBox="0 0 720 390" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M-200 130C-55 24 25 24 170 130s226 106 371 0 226-106 371 0M-200 175C-55 69 25 69 170 175s226 106 371 0 226-106 371 0M-200 220C-55 114 25 114 170 220s226 106 371 0 226-106 371 0M-200 265C-55 159 25 159 170 265s226 106 371 0 226-106 371 0" stroke="currentColor" stroke-width="1.1"/></svg>
   <div class="container end-grid">
     <div><div class="section-tag">IL PRIMO PASSO È SEMPLICE</div><h2>Vuoi capire se è l’attività giusta <span class="heading-accent">per te?</span></h2></div>
     <div class="end-actions"><a href="#iniziamo" class="button button-primary">Ricevi i dettagli riservati <span class="arrow" aria-hidden="true">↗</span></a><a href="tel:+393294582962">Oppure chiama 329 458 2962</a></div>
@@ -632,6 +807,27 @@ footer p{max-width:650px;margin:11px 0 0;color:#a6bfcc;font:500 11px/1.88 var(--
       button.disabled=false;button.textContent='Riprova l’invio ↗';
     }finally{clearTimeout(timer)}
   });
+})();
+</script>
+
+<script>
+/* Non-blocking progressive enhancement: fallback is fully visible without JavaScript. */
+(function(){
+  if(!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var elements=Array.prototype.slice.call(document.querySelectorAll('.reveal-on-scroll'));
+  if(!elements.length)return;
+  var observer=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting)return;
+      entry.target.classList.add('is-revealed');
+      observer.unobserve(entry.target);
+    });
+  },{threshold:0.06,rootMargin:'0px 0px -25px 0px'});
+  elements.forEach(function(el){
+    if(el.getBoundingClientRect().top < window.innerHeight*0.85)el.classList.add('is-revealed');
+    observer.observe(el);
+  });
+  document.documentElement.classList.add('motion-on');
 })();
 </script>
 </body>
