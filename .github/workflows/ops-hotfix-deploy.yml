@@ -15,12 +15,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: exclusive editorial landing released. All ImpresaX automatic deployments remain disabled.
 # OWNER PAUSE: Gallery 07 published; all automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: Gallery 08 successfully released; no automatic ImpresaX deploys or recurring triggers.
+# Owner authorized one-time Atelier 01 release. No recurring triggers.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-off, restore pause immediately after
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -38,20 +42,19 @@ jobs:
         run: node --test test/opportunita-landing.test.mjs
       - name: Deploy production worker
         run: npx wrangler deploy --config wrangler.jsonc
-      - name: Verify live lounge landing without TinyFish
+      - name: Verify the new Atelier design on live site (zero TinyFish)
         run: |
           set -euo pipefail
           for attempt in {1..6}; do
             if curl -fsSL --max-time 18 "https://opportunita.impresax.org/" -o /tmp/lido-landing.html &&
                grep -q 'IN CESSIONE<br>O GESTIONE.' /tmp/lido-landing.html &&
-               grep -q -- '--paper:#f6f4ee' /tmp/lido-landing.html &&
+               grep -q -- '--silk:#f9f8f5' /tmp/lido-landing.html &&
+               grep -q 'ATELIER 01' /tmp/lido-landing.html &&
+               grep -q 'id="wizard-step-two" hidden' /tmp/lido-landing.html &&
                grep -q 'class="deal-sheet"' /tmp/lido-landing.html &&
-               grep -q 'GALLERY 08' /tmp/lido-landing.html &&
-               grep -q 'class="hero-signature"' /tmp/lido-landing.html &&
-               grep -q 'class="contents-strip"' /tmp/lido-landing.html &&
-               grep -q -- 'background:#1c2128' /tmp/lido-landing.html &&
+               ! grep -q 'class="contents-strip"' /tmp/lido-landing.html &&
                curl -fsSL --max-time 18 "https://opportunita.impresax.org/privacy" -o /tmp/lido-privacy.html; then
-              echo "Landing and privacy verified live"
+              echo "Atelier landing and privacy verified live"
               exit 0
             fi
             sleep 5
