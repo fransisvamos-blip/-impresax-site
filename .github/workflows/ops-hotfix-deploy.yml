@@ -30,12 +30,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.8 full landing upgrade published and verified; no automatic ImpresaX deploys.
 # OWNER PAUSE: V3.9 landing upgrade published; all ImpresaX automatic triggers stay disabled.
 # OWNER PAUSE: premium V4 published and share preview verified; all recurring and push-based ImpresaX jobs remain disabled.
+# ONE-TIME OWNER REQUEST: restore exact V3.9 site plus V5 matching OG; immediately re-pause after verified release.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.restore-approved-20261114-v5'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-time owner-requested V3.9 restoration
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -47,33 +51,35 @@ jobs:
         with:
           node-version: "22"
       - run: npm install --no-audit --no-fund
-      - name: Build first-party premium WhatsApp cover
+      - name: Build original-design white/navy/orange WhatsApp cover
         run: |
           npm install --no-save --no-audit --no-fund sharp
           node scripts/build-opportunity-share.mjs
-          test -s public/opportunita/og-social-v4.jpg
+          test -s public/opportunita/og-social-v5.jpg
       - name: Render preview contract test
         run: node --test test/render-preview.test.mjs
       - name: Test the lounge landing without browser credits
         run: node --test test/opportunita-landing.test.mjs
       - name: Deploy production worker
         run: npx wrangler deploy --config wrangler.jsonc
-      - name: Verify premium V4 site, social JPEG and privacy live
+      - name: Verify original V3.9 restored and matching WhatsApp image live
         run: |
           set -euo pipefail
           for attempt in {1..8}; do
             html=$(curl -fsSL --max-time 18 'https://opportunita.impresax.org/' || true)
-            if [[ "$html" == *'PREMIUM EDITION V4'* ]] &&
-               [[ "$html" == *'og-social-v4.jpg'* ]] &&
+            if [[ "$html" == *'REFERENCE V3'* ]] &&
+               [[ "$html" == *'V3.9 — targeted polish'* ]] &&
+               [[ "$html" != *'PREMIUM EDITION V4'* ]] &&
+               [[ "$html" == *'og-social-v5.jpg'* ]] &&
                [[ "$html" == *'RICHIEDI<br>I DETTAGLI.'* ]] &&
                [[ "$html" == *'CESSIONE O GESTIONE?'* ]] &&
                [[ "$html" == *'CATANZARO LIDO.'* ]] &&
                [[ "$html" == *"fetch('/api/interesse'"* ]] &&
-               curl -fsS --max-time 18 'https://opportunita.impresax.org/og-social-v4.jpg' -o /tmp/opportunita-og-v4.jpg &&
-               test "$(wc -c </tmp/opportunita-og-v4.jpg)" -gt 12000 &&
+               curl -fsS --max-time 18 'https://opportunita.impresax.org/og-social-v5.jpg' -o /tmp/opportunita-og-v5.jpg &&
+               test "$(wc -c </tmp/opportunita-og-v5.jpg)" -gt 12000 &&
                curl -fsS --max-time 18 'https://opportunita.impresax.org/privacy' | grep -q 'Informativa sulla privacy'; then
-              node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('/tmp/opportunita-og-v4.jpg').metadata();if(m.width!==1200||m.height!==630||m.format!=='jpeg')process.exit(1);console.log('OG',m.width,m.height,m.format)})"
-              echo 'Premium V4 and 1200x630 WhatsApp card live'
+              node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('/tmp/opportunita-og-v5.jpg').metadata();if(m.width!==1200||m.height!==630||m.format!=='jpeg')process.exit(1);console.log('OG',m.width,m.height,m.format)})"
+              echo 'Approved V3.9 fully restored and matching 1200x630 OG card live'
               exit 0
             fi
             sleep 5
