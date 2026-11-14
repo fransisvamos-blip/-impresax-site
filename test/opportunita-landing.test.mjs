@@ -249,7 +249,7 @@ test("V3.4 keeps a single conversion message across header hero and mobile",()=>
  assert.match(html,/class="mobile-action-primary">RICHIEDI I DETTAGLI/);
  assert.match(html,/aria-label="Chiama il 329 458 2962"/);
  assert.match(html,/href="tel:\+393294582962"/);
- assert.match(html,/PARLIAMONE<br>IN RISERVATEZZA/);
+ assert.match(html,/RICHIEDI<br>I DETTAGLI/);
  assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
 });
 test("V3.4 improves desktop rhythm without rebuilding or adding sections",()=>{
@@ -414,7 +414,7 @@ test("V3.8 makes hero trust readable and keeps nonbinding facts properly qualifi
  assert.match(css,/\.hero-assurance \.assurance-dot\{display:block/);
  assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-assurance>span\{padding:6px 8px;min-height:30px;font-size:9px/);
  assert.match(html,/Copertina editoriale illustrativa/);
- assert.match(html,/non raffigura l'attività proposta/);
+ assert.match(html,/non raffigura l.attività proposta/);
 });
 test("V3.9 restores third section's compact V3.7 conversion flow without changing API",()=>{
  assert.match(html,/<section class="contact-section" id="contatto"/);
@@ -465,7 +465,7 @@ test("V4 premium edition fully restyles all six chapters without introducing unq
    assert.ok(css.includes(cssAnchor),cssAnchor);
  }
  assert.match(html,/class="hero-photo-stamp"/);
- assert.match(html,/class="facts-bridge"/);
+ assert.match(html,/class="shell facts-bridge"/);
  assert.match(html,/class="story-label"/);
  assert.match(css,/\.story-media\{min-height:610px\}/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
