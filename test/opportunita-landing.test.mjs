@@ -169,13 +169,13 @@ test("V3.2 keeps the approved six chapters and adds only a narrow facts ribbon",
  assert.doesNotMatch(html,/immobile in vendita|guadagni garantiti|ROI garantito/i);
 });
 test("small screens get full-size readable vertical benefits and steps",()=>{
- assert.match(css,/@media\(max-width:540px\)/);
+ assert.match(css,/@media\(max-width:670px\)/);
  assert.match(css,/\.why-layout\{grid-template-columns:1fr;gap:10px\}/);
  assert.match(css,/\.why-item\{min-height:0;padding:15px 17px;display:grid/);
- assert.match(css,/\.why-item p\{grid-column:2;grid-row:2;font:500 12px/);
+ assert.match(css,/\.why-item p\{grid-column:2;grid-row:2;font:500 13px/);
  assert.match(css,/\.steps-layout\{grid-template-columns:1fr;gap:10px\}/);
- assert.match(css,/\.step h3\{grid-column:2;grid-row:1;font:800 14px/);
- assert.match(css,/\.step p\{grid-column:2;grid-row:2;font:500 12px/);
+ assert.match(css,/\.step h3\{grid-column:2;grid-row:1;font:800 15px/);
+ assert.match(css,/\.step p\{grid-column:2;grid-row:2;font:500 13px/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 test("offer selection is accessible and stays synchronized with final form",()=>{
@@ -213,7 +213,7 @@ test("V3.3 makes the promised next step and deal terms understandable immediatel
  assert.match(html,/I dettagli economici e le condizioni vengono discussi/);
  assert.match(html,/senza acquisto dell'immobile/);
  assert.match(html,/con condizioni da concordare/);
- assert.match(html,/RICHIEDI INFORMAZIONI RISERVATE/);
+ assert.match(html,/RICHIEDI I DETTAGLI/);
  assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
  assert.match(html,/Nome e cellulare sono gli unici recapiti obbligatori/);
 });
@@ -239,4 +239,51 @@ test("mobile conversion polish does not bring back duplicate forms or extra sect
  assert.equal((html.match(/class="interest-chip"/g)||[]).length,3);
  assert.equal((html.match(/class="mobile-action"/g)||[]).length,1);
  assert.match(css,/prefers-reduced-motion/);
+});
+
+test("V3.4 keeps a single conversion message across header hero and mobile",()=>{
+ const buttonLabels=[...html.matchAll(/RICHIEDI I DETTAGLI/g)];
+ assert.ok(buttonLabels.length>=3,"header, hero and mobile all use the same action");
+ assert.match(html,/class="hero-actions"/);
+ assert.match(html,/class="hero-phone" href="tel:\+393294582962"/);
+ assert.match(html,/class="mobile-action-primary">RICHIEDI I DETTAGLI/);
+ assert.match(html,/aria-label="Chiama il 329 458 2962"/);
+ assert.match(html,/href="tel:\+393294582962"/);
+ assert.match(html,/RICHIEDI<br>I DETTAGLI/);
+ assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
+});
+test("V3.4 improves desktop rhythm without rebuilding or adding sections",()=>{
+ assert.match(css,/\.offer-section\{[^}]*padding:54px 0 61px/);
+ assert.match(css,/\.why-section\{[^}]*padding:56px 0 58px/);
+ assert.match(css,/\.steps-section\{[^}]*padding:57px 0 61px/);
+ assert.match(css,/\.story-media\{[^}]*min-height:402px/);
+ assert.match(css,/\.contact-panel\{[^}]*padding:47px/);
+ assert.match(css,/\.hero h1\{[^}]*letter-spacing:-\.064em/);
+ assert.match(css,/\.offer-intro p\{[^}]*font:500 14px/);
+ assert.match(css,/\.why-item p\{[^}]*font:500 13px/);
+ assert.match(css,/\.step p\{[^}]*font:500 13px/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+});
+test("V3.4 gives fields and buttons usable minimum touch dimensions",()=>{
+ assert.match(css,/\.primary-cta\{[^}]*min-height:56px/);
+ assert.match(css,/\.mobile-action-primary\{[^}]*min-height:52px/);
+ assert.match(css,/\.mobile-action-call\{[^}]*flex:0 0 54px/);
+ assert.match(css,/\.form-input\{[^}]*min-height:51px/);
+ assert.match(css,/\.submit-button\{[^}]*min-height:55px/);
+ assert.match(css,/\.agreement input\{[^}]*width:19px;height:19px/);
+ assert.match(css,/\.interest-chip\{[^}]*padding:10px 14px/);
+ assert.match(css,/\.hero-phone\{[^}]*min-height:44px/);
+ assert.match(css,/\.contact-phone\{[^}]*min-height:43px/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
+test("V3.4 mobile prose stays readable, with no 3-column microtype at phone width",()=>{
+ assert.doesNotMatch(css,/@media\(max-width:540px\)/);
+ assert.match(css,/@media\(max-width:670px\)/);
+ assert.match(css,/\.why-layout\{grid-template-columns:1fr;gap:10px\}/);
+ assert.match(css,/\.steps-layout\{grid-template-columns:1fr;gap:10px\}/);
+ assert.match(css,/\.why-item p\{grid-column:2;grid-row:2;font:500 13px/);
+ assert.match(css,/\.step p\{grid-column:2;grid-row:2;font:500 13px/);
+ assert.match(css,/\.offer-section\{padding:31px 0 42px\}/);
+ assert.match(css,/\.steps-section\{padding:34px 0 45px\}/);
 });

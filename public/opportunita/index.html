@@ -21,18 +21,18 @@
 <style>
 /* REFERENCE V3 — desktop + mobile. Single cohesive system, no legacy CSS. */
 :root{--navy:#102c41;--navy2:#073149;--orange:#f26520;--orange-dark:#d85411;--warm:#fbfaf8;--paper:#fffefa;--peach:#fce6d7;--pale:#f5f4f1;--gray:#586572;--line:#d8dad8;--font:'Manrope',system-ui,sans-serif;--body:'DM Sans',system-ui,sans-serif}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}body{margin:0;background:var(--warm);color:var(--navy);font:500 15px/1.65 var(--body);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}a{color:inherit}img{display:block;width:100%}::selection{background:#facdaf;color:#0a283b}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}body{margin:0;background:var(--warm);color:var(--navy);font:500 16px/1.7 var(--body);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}a{color:inherit}img{display:block;width:100%}::selection{background:#facdaf;color:#0a283b}
 .shell{width:min(1208px,calc(100% - 78px));margin-inline:auto}
 .site-header{position:relative;z-index:40;background:rgba(255,254,251,.98);border-bottom:1px solid #ebebe8}
-.header-inner{display:flex;align-items:center;justify-content:space-between;min-height:67px;gap:24px}
+.header-inner{display:flex;align-items:center;justify-content:space-between;min-height:74px;gap:24px}
 .brand{display:flex;align-items:center;gap:11px;font:800 13px/1.16 var(--font);text-decoration:none;letter-spacing:-.035em}
 .brand-line{display:block;width:25px;height:3px;background:var(--orange);flex:0 0 25px}
 .brand strong,.brand span{display:block}
 .brand span{font-weight:500}
 .desktop-nav{display:flex;align-items:center;gap:clamp(17px,2.5vw,35px)}
-.desktop-nav>a{text-decoration:none;font:800 10px/1.3 var(--font);white-space:nowrap}
+.desktop-nav>a{text-decoration:none;font:800 11px/1.4 var(--font);white-space:nowrap}
 .desktop-nav>a:not(.header-cta):hover{color:var(--orange)}
-.desktop-nav .header-cta{background:var(--orange);color:white;display:inline-flex;align-items:center;gap:12px;border-radius:9px;padding:13px 17px;font-size:11px;box-shadow:0 6px 12px #bd5b2b15}
+.desktop-nav .header-cta{background:var(--orange);color:white;display:inline-flex;align-items:center;gap:12px;border-radius:9px;min-height:44px;padding:13px 18px;font-size:11px;box-shadow:0 6px 12px #bd5b2b15}
 .desktop-nav .header-cta:hover{background:var(--orange-dark)}
 .menu-toggle{display:none;background:transparent;border:0;padding:9px;color:var(--navy)}
 .menu-toggle svg{width:25px;height:25px;display:block}
@@ -48,96 +48,103 @@
 .hero-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#fbfaf8 0%,#fbfaf8f5 7%,#fbfaf8c4 22%,#fbfaf81c 46%,transparent 65%),linear-gradient(0deg,#07213617,transparent 30%)}
 .hero-inner{position:relative;z-index:1;display:flex;align-items:center;min-height:570px}
 .hero-content{width:min(59%,700px);padding:34px 0 45px;position:relative;z-index:3}
-.hero h1{font:800 clamp(48px,5.7vw,79px)/.98 var(--font);letter-spacing:-.077em;margin:17px 0 10px;text-transform:uppercase;color:#09263a}
+.hero h1{font:800 clamp(48px,5.7vw,79px)/1.015 var(--font);letter-spacing:-.064em;margin:17px 0 10px;text-transform:uppercase;color:#09263a}
 .hero h1 span{display:block}
-.offer-ribbon{display:inline-block;background:var(--orange);color:white;font:800 clamp(23px,2.58vw,35px)/1.18 var(--font);letter-spacing:-.065em;padding:6px 12px 8px;margin:0 0 12px;text-transform:uppercase}
+.offer-ribbon{display:inline-block;background:var(--orange);color:white;font:800 clamp(23px,2.58vw,35px)/1.18 var(--font);letter-spacing:-.045em;padding:6px 12px 8px;margin:0 0 12px;text-transform:uppercase}
 .hero p{max-width:440px;margin:0 0 21px;font:500 16px/1.65 var(--body);color:#203547}
-.primary-cta{display:inline-flex;align-items:center;justify-content:center;gap:23px;min-height:49px;padding:14px 22px;background:var(--orange);border:0;border-radius:8px;color:white;font:800 12px/1.35 var(--font);text-decoration:none;white-space:nowrap;transition:background .2s ease,transform .2s ease}
+.primary-cta{display:inline-flex;align-items:center;justify-content:center;gap:23px;min-height:56px;padding:16px 23px;background:var(--orange);border:0;border-radius:8px;color:white;font:800 13px/1.35 var(--font);text-decoration:none;white-space:nowrap;transition:background .2s ease,transform .2s ease}
 .primary-cta:hover{background:var(--orange-dark);transform:translateY(-2px)}
 .primary-cta svg{width:19px;height:19px}
+.hero-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px}
+.hero-phone{display:inline-flex;align-items:center;gap:4px;min-height:44px;color:#31516a;text-decoration:none;font:700 12px/1.45 var(--body);white-space:nowrap}
+.hero-phone strong{color:var(--navy);text-decoration:underline;text-underline-offset:3px;font-weight:800}
+.hero-phone:hover,.hero-phone:focus-visible{color:var(--orange)}
+.hero-phone:focus-visible{outline:3px solid #f49a65;outline-offset:3px}
+.contact-phone strong{color:#fff;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+
 .hero-image-note{position:absolute;z-index:3;right:20px;bottom:10px;font:600 9px/1.5 var(--body);color:#fff;background:#0f2939ac;padding:5px 9px;border-radius:4px;text-decoration:none}
 .hero-image-note:hover{text-decoration:underline}
 /* TWO OPTIONS — left editorial title and two large horizontal blocks */
-.offer-section{background:#fff;padding:36px 0 43px;border-bottom:1px solid #ededea}
+.offer-section{background:#fff;padding:54px 0 61px;border-bottom:1px solid #ededea}
 .offer-layout{display:grid;grid-template-columns:.93fr 1fr 1fr;gap:17px;align-items:stretch}
 .offer-intro{padding:10px 20px 8px 0}
-.offer-intro h2{font:800 clamp(32px,3.1vw,46px)/1.02 var(--font);letter-spacing:-.069em;text-transform:uppercase;margin:0 0 13px}
-.offer-intro p{font:500 13px/1.63 var(--body);margin:0;max-width:280px;color:#24384a}
-.offer-card{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;position:relative;min-height:197px;overflow:hidden;padding:28px 30px;border:0;border-radius:18px;text-align:left;text-decoration:none;transition:transform .2s,box-shadow .2s}
+.offer-intro h2{font:800 clamp(32px,3.1vw,46px)/1.075 var(--font);letter-spacing:-.056em;text-transform:uppercase;margin:0 0 17px}
+.offer-intro p{font:500 14px/1.68 var(--body);margin:0;max-width:280px;color:#24384a}
+.offer-card{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;position:relative;min-height:216px;overflow:hidden;padding:30px 31px;border:0;border-radius:20px;text-align:left;text-decoration:none;transition:transform .2s,box-shadow .2s}
 .offer-card:hover{transform:translateY(-4px);box-shadow:0 14px 24px #0b324b16}
-.offer-card h3{font:800 clamp(28px,3vw,40px)/1.05 var(--font);letter-spacing:-.065em;margin:0;position:relative;z-index:2}
-.offer-card p{font:500 13px/1.6 var(--body);max-width:270px;margin:9px 38px 0 0;position:relative;z-index:2}
+.offer-card h3{font:800 clamp(28px,3vw,40px)/1.05 var(--font);letter-spacing:-.052em;margin:0;position:relative;z-index:2}
+.offer-card p{font:500 14px/1.65 var(--body);max-width:270px;margin:9px 38px 0 0;position:relative;z-index:2}
 .offer-card--buy{background:radial-gradient(ellipse at 25% 2%,#376685 0%,#153d5b 55%,#082b42 100%);color:white}
 .offer-card--manage{background:linear-gradient(145deg,#fdf0e8 0%,#fbe0cf 100%);color:var(--navy)}
 .offer-card .round-arrow{position:absolute;right:22px;bottom:23px;width:38px;height:38px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;opacity:.9}
 .offer-card .round-arrow svg{width:19px;height:19px}
 .offer-subchoice{display:flex;justify-content:flex-end;margin-top:10px}
-.offer-subchoice button{border:0;background:transparent;color:#547080;font:700 11px var(--body);text-decoration:underline;text-underline-offset:3px;padding:8px 0}
+.offer-subchoice button{border:0;background:transparent;color:#547080;font:700 12px var(--body);text-decoration:underline;text-underline-offset:3px;padding:12px 0}
 .offer-subchoice button:hover{color:var(--orange)}
 /* WHY — no three repetitive cards */
-.why-section{background:#f7f7f6;padding:39px 0 47px}
+.why-section{background:#f7f7f6;padding:56px 0 58px}
 .why-layout{display:grid;grid-template-columns:1.2fr repeat(3,.85fr);align-items:start;gap:0}
 .why-heading{padding:4px 28px 0 0}
-.why-heading h2{margin:0 0 12px;font:800 clamp(34px,3vw,44px)/1.05 var(--font);letter-spacing:-.067em;text-transform:uppercase}
-.why-heading p{max-width:310px;font:500 13px/1.63 var(--body);margin:0;color:#4d5a65}
-.why-item{min-height:125px;border-left:1px solid #bfc5c8;padding:9px 20px 8px 28px}
+.why-heading h2{margin:0 0 12px;font:800 clamp(34px,3vw,44px)/1.05 var(--font);letter-spacing:-.055em;text-transform:uppercase}
+.why-heading p{max-width:310px;font:500 14px/1.68 var(--body);margin:0;color:#4d5a65}
+.why-item{min-height:143px;border-left:1px solid #bfc5c8;padding:13px 22px 12px 27px}
 .why-icon{display:none}
-.why-item h3{color:var(--orange);font:800 clamp(14px,1.4vw,18px)/1.15 var(--font);letter-spacing:-.035em;text-transform:uppercase;margin:0 0 12px}
-.why-item p{font:500 12px/1.55 var(--body);margin:0;color:#314151;max-width:210px}
+.why-item h3{color:var(--orange);font:800 clamp(15px,1.4vw,18px)/1.2 var(--font);letter-spacing:-.035em;text-transform:uppercase;margin:0 0 12px}
+.why-item p{font:500 13px/1.62 var(--body);margin:0;color:#314151;max-width:210px}
 /* HISTORY — one honest illustrative beverage image, text opposite */
 .story-section{display:grid;grid-template-columns:1fr 1fr;background:#fffcf9}
-.story-media{position:relative;min-height:328px;overflow:hidden;background:#1c1712}
+.story-media{position:relative;min-height:402px;overflow:hidden;background:#1c1712}
 .story-media img{height:100%;width:100%;object-fit:cover;object-position:50% 52%;filter:saturate(.96)}
 .story-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 73%,#fffcf9 100%)}
 .story-photo-note{position:absolute;left:14px;bottom:11px;z-index:2;background:#081b27a8;color:white;border-radius:3px;padding:4px 8px;font:600 9px var(--body);text-decoration:none}
 .story-photo-note:hover{text-decoration:underline}
-.story-copy{padding:31px clamp(35px,6vw,95px) 31px clamp(30px,5vw,78px);display:flex;flex-direction:column;justify-content:center}
-.story-copy h2{margin:0 0 12px;font:800 clamp(34px,3.4vw,48px)/1.03 var(--font);letter-spacing:-.064em;text-transform:uppercase}
+.story-copy{padding:50px clamp(35px,6vw,95px) 50px clamp(30px,5vw,78px);display:flex;flex-direction:column;justify-content:center}
+.story-copy h2{margin:0 0 12px;font:800 clamp(34px,3.4vw,48px)/1.03 var(--font);letter-spacing:-.055em;text-transform:uppercase}
 .anniversary{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;padding:3px 14px 5px 9px;background:#fbe2d2;border-radius:7px;color:var(--navy);font:800 16px/1.2 var(--font);margin-bottom:13px}
 .anniversary b{color:var(--orange);font:800 48px/.92 var(--font);letter-spacing:-.07em}
-.story-copy p{font:500 13px/1.65 var(--body);max-width:440px;margin:0;color:#253847}
-.story-copy p+p{margin-top:7px}
+.story-copy p{font:500 14px/1.72 var(--body);max-width:440px;margin:0;color:#253847}
+.story-copy p+p{margin-top:12px}
 /* STEPS — three simple numbered checkpoints */
-.steps-section{background:#fff;padding:41px 0 48px}
+.steps-section{background:#fff;padding:57px 0 61px}
 .steps-layout{display:grid;grid-template-columns:1.15fr repeat(3,.86fr);gap:0;align-items:start}
 .steps-intro{padding:3px 27px 0 0}
-.steps-intro h2{margin:0 0 11px;font:800 clamp(32px,3.1vw,46px)/1.05 var(--font);letter-spacing:-.065em;text-transform:uppercase}
-.steps-intro p{max-width:310px;margin:0;font:500 13px/1.68 var(--body)}
-.step{min-height:152px;padding:0 25px 0 30px;border-left:1px solid #c5c9cd;position:relative}
+.steps-intro h2{margin:0 0 11px;font:800 clamp(32px,3.1vw,46px)/1.05 var(--font);letter-spacing:-.053em;text-transform:uppercase}
+.steps-intro p{max-width:310px;margin:0;font:500 14px/1.7 var(--body)}
+.step{min-height:160px;padding:0 25px 0 30px;border-left:1px solid #c5c9cd;position:relative}
 .step-index{display:grid;place-items:center;width:38px;height:38px;border:1.5px solid var(--orange);border-radius:50%;color:var(--orange);font:800 14px var(--font);margin-bottom:15px}
 .step-icon{display:none}
-.step h3{margin:0 0 10px;text-transform:uppercase;font:800 16px/1.12 var(--font);letter-spacing:-.036em}
-.step p{margin:0;max-width:210px;font:500 12px/1.55 var(--body);color:#3b4954}
+.step h3{margin:0 0 10px;text-transform:uppercase;font:800 17px/1.22 var(--font);letter-spacing:-.036em}
+.step p{margin:0;max-width:210px;font:500 13px/1.65 var(--body);color:#3b4954}
 /* MAIN CONVERSION FORM — same endpoint and strict privacy consent */
 .contact-section{background:#fff;padding:0 16px 22px}
-.contact-panel{position:relative;isolation:isolate;overflow:hidden;max-width:1330px;margin:auto;display:grid;grid-template-columns:.92fr 1.08fr;gap:30px;min-height:305px;align-items:center;background:radial-gradient(circle at 34% 8%,#255676 0%,#0b354e 39%,#092c44 78%);border-radius:19px;color:white;padding:35px clamp(30px,4.7vw,68px)}
+.contact-panel{position:relative;isolation:isolate;overflow:hidden;max-width:1330px;margin:auto;display:grid;grid-template-columns:.92fr 1.08fr;gap:37px;min-height:334px;align-items:center;background:radial-gradient(circle at 34% 8%,#255676 0%,#0b354e 39%,#092c44 78%);border-radius:21px;color:white;padding:47px clamp(30px,4.7vw,68px)}
 .contact-panel:after{position:absolute;z-index:-1;right:-90px;top:-190px;width:440px;height:440px;border:1px solid #accbda1c;border-radius:50%;box-shadow:0 0 0 70px #accbda0a,0 0 0 150px #accbda07;content:""}
 .contact-intro .index-line{color:white;margin-bottom:19px}
-.contact-intro h2{font:800 clamp(34px,3.65vw,52px)/1.02 var(--font);letter-spacing:-.063em;text-transform:uppercase;margin:0 0 14px;max-width:470px}
-.contact-intro p{font:500 13px/1.67 var(--body);margin:0;color:#e1edf3;max-width:380px}
-.contact-phone{display:inline-block;font:700 11px var(--body);color:#bcd5e3;text-decoration:none;margin-top:20px}
+.contact-intro h2{font:800 clamp(34px,3.65vw,52px)/1.02 var(--font);letter-spacing:-.054em;text-transform:uppercase;margin:0 0 14px;max-width:470px}
+.contact-intro p{font:500 14px/1.74 var(--body);margin:0;color:#e1edf3;max-width:380px}
+.contact-phone{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px;min-height:43px;font:700 13px/1.5 var(--body);color:#bcd5e3;text-decoration:none;margin-top:20px}
 .contact-phone:hover{text-decoration:underline}
-.contact-form{display:grid;grid-template-columns:1fr;gap:9px}
+.contact-form{display:grid;grid-template-columns:1fr;gap:12px}
 .interest-selection{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
 .interest-selection>span{font:700 10px var(--body);color:#c8dce8;margin-right:5px}
-.interest-chip{border:1px solid #a8c2d15a;border-radius:50px;padding:5px 11px;background:#ffffff11;color:#fff;font:800 10px/1.45 var(--font);transition:background .2s,border-color .2s}
+.interest-chip{border:1px solid #a8c2d15a;border-radius:50px;padding:10px 14px;background:#ffffff11;color:#fff;font:800 11px/1.45 var(--font);transition:background .2s,border-color .2s}
 .interest-chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange)}
 .interest-chip:hover{border-color:#e2b8a4}
-.form-input{display:flex;align-items:center;gap:10px;background:#fff;color:#143044;border:1px solid #e8eef1;border-radius:8px;padding:0 12px;min-height:42px}
+.form-input{display:flex;align-items:center;gap:10px;background:#fff;color:#143044;border:1px solid #e8eef1;border-radius:8px;padding:0 12px;min-height:51px}
 .form-input svg{width:18px;height:18px;flex:none;stroke:var(--navy);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.form-input input{display:block;min-width:0;flex:1;outline:0;border:0;background:transparent;padding:11px 4px;color:#102f43;font:600 12px var(--body)}
+.form-input input{display:block;min-width:0;flex:1;outline:0;border:0;background:transparent;padding:11px 4px;color:#102f43;font:600 14px var(--body)}
 .form-input input::placeholder{color:#425664;opacity:1}
 .form-input:focus-within{outline:3px solid #6cc1ec8c;outline-offset:1px}
-.agreement{display:flex;gap:9px;align-items:flex-start;color:#e6f0f5;font:500 10px/1.55 var(--body);cursor:pointer;margin:2px 0 0}
-.agreement input{width:16px;height:16px;margin:1px 0 0;accent-color:var(--orange);flex:none}
+.agreement{display:flex;gap:9px;align-items:flex-start;color:#e6f0f5;font:500 11.5px/1.6 var(--body);cursor:pointer;margin:2px 0 0}
+.agreement input{width:19px;height:19px;margin:1px 0 0;accent-color:var(--orange);flex:none}
 .agreement a{color:#fff;text-underline-offset:3px}
-.submit-button{border:0;min-height:45px;border-radius:8px;background:var(--orange);color:white;font:800 12px/1.3 var(--font);padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:15px;transition:background .2s}
+.submit-button{border:0;min-height:55px;border-radius:8px;background:var(--orange);color:white;font:800 13px/1.3 var(--font);padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:15px;transition:background .2s}
 .submit-button:hover{background:var(--orange-dark)}.submit-button:disabled{opacity:.6;cursor:wait}
 .form-feedback{display:none;margin:0;padding:9px 11px;background:#eaf8eb;color:#215332;border-radius:6px;font:700 11px/1.5 var(--body)}
 .form-feedback.visible{display:block}.form-feedback.error{background:#ffebe6;color:#8b2e21}
-.form-note{text-align:center;color:#cbdde7;font:500 10px/1.5 var(--body);margin:0}
+.form-note{text-align:center;color:#cbdde7;font:500 11px/1.55 var(--body);margin:0}
 .honeypot{position:absolute!important;left:-10000px!important;opacity:0!important;pointer-events:none!important}
-.privacy-strip{display:flex;justify-content:space-between;gap:25px;padding:21px 0 26px;font:500 10px/1.65 var(--body);color:#74828a}
+.privacy-strip{display:flex;justify-content:space-between;gap:25px;padding:21px 0 26px;font:500 11.5px/1.75 var(--body);color:#74828a}
 .privacy-strip p{margin:0;max-width:690px}.privacy-strip a{text-underline-offset:3px}
 .legal-links{display:flex;gap:16px;align-items:flex-start;white-space:nowrap}
 .mobile-action{display:none}
@@ -200,12 +207,12 @@
  .hero h1{font-size:clamp(44px,9.7vw,69px);line-height:1.02;margin:14px 0 15px}
  .offer-ribbon{font-size:clamp(21px,5.45vw,36px);padding:7px 11px;margin-bottom:12px}
  .hero p{font-size:15px;line-height:1.56;max-width:530px;margin-bottom:19px}
- .hero .primary-cta{width:auto;min-height:52px;padding-inline:21px;font-size:13px}
+ .hero .primary-cta{width:auto;min-height:56px;padding-inline:21px;font-size:13px}
  .hero-media{order:1;position:relative;z-index:1;width:100%;height:325px;margin-top:16px;overflow:hidden;clip-path:ellipse(79% 100% at 50% 0%)}
  .hero-media img{object-position:50% 51%}
  .hero-media:after{background:linear-gradient(0deg,#0a203d20,transparent 45%)}
  .hero-image-note{right:17px;bottom:15px;font-size:8px}
- .offer-section{padding:17px 0 35px}
+ .offer-section{padding:31px 0 42px}
  .offer-layout{grid-template-columns:1fr;gap:11px}
  .offer-intro{padding:0 0 5px;grid-column:1}
  .offer-intro h2{font-size:clamp(27px,6.6vw,38px);margin-bottom:7px}
@@ -217,7 +224,7 @@
  .offer-card p{font-size:12px;max-width:340px;margin:5px 50px 0 0}
  .offer-card .round-arrow{top:50%;bottom:auto;transform:translateY(-50%);right:15px;width:35px;height:35px}
  .offer-subchoice{margin-top:2px}
- .why-section{padding:22px 0 29px}
+ .why-section{padding:36px 0 40px}
  .why-layout{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
  .why-heading{grid-column:1/-1;padding:0 0 4px}
  .why-heading h2{font-size:clamp(27px,6.7vw,37px);margin-bottom:7px}
@@ -229,13 +236,13 @@
  .why-item p{font-size:clamp(9px,2.2vw,11px);line-height:1.3}
  .story-section{display:block;background:#fff}
  .story-media{display:none}
- .story-copy{padding:31px 20px 34px}
+ .story-copy{padding:40px 20px 44px}
  .story-copy h2{font-size:clamp(29px,7.1vw,40px)}
  .anniversary{align-self:stretch;justify-content:center;border-radius:17px;padding:20px 9px;gap:12px;margin:5px 0 18px;font-size:21px;background:linear-gradient(135deg,#fff4e8,#fce7d8)}
  .anniversary b{font-size:67px}
  .story-copy p{font-size:13px}
  .story-copy p+p{margin-top:15px;padding-top:12px;border-top:1px solid #f2ae82}
- .steps-section{padding:20px 0 34px}
+ .steps-section{padding:34px 0 45px}
  .steps-layout{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
  .steps-intro{grid-column:1/-1;padding:0 0 6px}
  .steps-intro h2{font-size:clamp(29px,7vw,40px);margin-bottom:6px}
@@ -247,7 +254,7 @@
  .step h3{font-size:clamp(10px,2.65vw,14px);line-height:1.17;margin:0 0 7px}
  .step p{font-size:clamp(9px,2.2vw,11px);line-height:1.36}
  .contact-section{padding:7px 0 0;background:#fff}
- .contact-panel{border-radius:28px 28px 0 0;min-height:0;grid-template-columns:1fr;gap:18px;padding:29px 19px 35px}
+ .contact-panel{border-radius:28px 28px 0 0;min-height:0;grid-template-columns:1fr;gap:18px;padding:32px 19px 39px}
  .contact-intro .index-line{margin-bottom:14px}
  .contact-intro h2{font-size:clamp(34px,9vw,53px);margin:0 0 11px}
  .contact-intro p{font-size:14px;max-width:490px}
@@ -256,11 +263,11 @@
  .interest-selection>span{color:#506573;flex:0 0 100%;margin:0 0 3px}
  .interest-chip{background:#f8f5f0;color:#18364b;border-color:#d8dadc}
  .interest-chip[aria-pressed="true"]{color:#fff}
- .form-input{border:1px solid #c7cdd1;background:#fff;border-radius:11px;min-height:47px}
- .form-input input{font-size:13px}
+ .form-input{border:1px solid #c7cdd1;background:#fff;border-radius:11px;min-height:52px}
+ .form-input input{font-size:14px}
  .agreement{color:#263c4c;font-size:11px}
  .agreement a{color:var(--navy)}
- .submit-button{min-height:51px;font-size:13px}
+ .submit-button{min-height:56px;font-size:13px}
  .form-note{color:#60727e}
  .privacy-strip{display:block;padding:24px 20px 30px;background:#fff}
  .privacy-strip p{margin-bottom:10px}
@@ -280,7 +287,7 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.offer-card,.primary-cta,.submit-button{transition:none}.offer-card:hover,.primary-cta:hover{transform:none}}
 
 /* V3.1 — art-direction polish, not another structural rebuild. */
-.hero-assurance{display:flex;align-items:center;gap:9px;margin-top:19px;font:800 9px/1.6 var(--font);letter-spacing:.04em;color:#536574}
+.hero-assurance{display:flex;align-items:center;gap:9px;margin-top:19px;font:800 10px/1.6 var(--font);letter-spacing:.04em;color:#536574}
 .assurance-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--orange);box-shadow:0 0 0 4px #f265201a}
 .hero-assurance i{display:inline-block;margin-inline:9px;color:#b2bbbe;font-style:normal}
 .primary-cta:focus-visible,.offer-card:focus-visible,.offer-subchoice button:focus-visible,.interest-chip:focus-visible,.submit-button:focus-visible,.menu-toggle:focus-visible,.desktop-nav a:focus-visible,.mobile-action a:focus-visible{outline:3px solid #f49a65;outline-offset:3px}
@@ -317,14 +324,16 @@
  .form-kicker{color:#597183;font-size:9px}
  .mobile-action{display:flex;align-items:stretch;gap:9px;position:fixed;z-index:85;bottom:0;left:0;right:0;padding:9px 12px calc(9px + env(safe-area-inset-bottom));background:#fffefaed;border-top:1px solid #d8dfe1;box-shadow:0 -9px 26px #0629401a;transform:translateY(112%);opacity:0;pointer-events:none;transition:transform .26s ease,opacity .24s ease}
  body.mobile-action-visible .mobile-action{transform:translateY(0);opacity:1;pointer-events:auto}
- .mobile-action-primary{display:flex;flex:1;justify-content:center;align-items:center;gap:12px;text-decoration:none;min-height:46px;background:var(--orange);border-radius:9px;color:white;font:800 11px var(--font)}
+ .mobile-action-primary{display:flex;flex:1;justify-content:center;align-items:center;gap:12px;text-decoration:none;min-height:52px;background:var(--orange);border-radius:9px;color:white;font:800 12px var(--font)}
  .mobile-action-primary span{font-size:19px}
- .mobile-action-call{display:grid;place-items:center;flex:0 0 49px;background:var(--navy);color:white;border-radius:9px;text-decoration:none}
+ .mobile-action-call{display:grid;place-items:center;flex:0 0 54px;background:var(--navy);color:white;border-radius:9px;text-decoration:none}
  .mobile-action-call svg{height:23px;width:23px}
- .interest-chip{min-height:36px}
+ .hero-actions{gap:5px 14px}
+ .hero-phone{font-size:12px;min-height:38px}
+ .interest-chip{min-height:43px}
 }
 @media(max-width:385px){
- .mobile-action-primary{font-size:10px}
+ .mobile-action-primary{font-size:11px}
  .hero-assurance{font-size:7.5px}
  .offer-card-art{display:none}
 }
@@ -371,24 +380,24 @@
  .proposal-fact strong{font-size:12px}
  .interest-help{color:#678091}
 }
-@media(max-width:540px){
+@media(max-width:670px){
  .why-layout{grid-template-columns:1fr;gap:10px}
  .why-heading{grid-column:1;padding-bottom:3px}
  .why-item{min-height:0;padding:15px 17px;display:grid;grid-template-columns:49px minmax(0,1fr);grid-template-rows:auto auto;column-gap:13px;row-gap:3px;align-items:center;text-align:left;border:1px solid #f2e8df;border-radius:15px;background:#f9f3ed}
  .why-item:before{display:none}
  .why-icon{grid-row:1/3;grid-column:1;display:grid;place-items:center;height:44px;width:44px;border-radius:11px;background:#fff3e9;color:var(--orange)}
  .why-icon svg{width:29px;height:29px}
- .why-item h3{grid-column:2;grid-row:1;font:800 14px/1.19 var(--font);letter-spacing:-.025em;text-align:left;margin:0}
+ .why-item h3{grid-column:2;grid-row:1;font:800 15px/1.23 var(--font);letter-spacing:-.025em;text-align:left;margin:0}
  .why-item h3 br{display:none}
- .why-item p{grid-column:2;grid-row:2;font:500 12px/1.5 var(--body);text-align:left;max-width:none;margin:0}
+ .why-item p{grid-column:2;grid-row:2;font:500 13px/1.6 var(--body);text-align:left;max-width:none;margin:0}
  .steps-layout{grid-template-columns:1fr;gap:10px}
  .steps-intro{grid-column:1;padding-bottom:6px}
  .step{min-height:0;display:grid;grid-template-columns:47px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:15px;row-gap:3px;padding:17px 18px;border-radius:15px;background:#fff8ef;border:1px solid #f5e9db;text-align:left}
  .step-index{grid-column:1;grid-row:1/3;width:42px;height:42px;margin:0;font:800 15px var(--font);box-shadow:0 0 0 4px #f2652014}
  .step-icon{display:none}
- .step h3{grid-column:2;grid-row:1;font:800 14px/1.2 var(--font);margin:0;text-align:left}
+ .step h3{grid-column:2;grid-row:1;font:800 15px/1.23 var(--font);margin:0;text-align:left}
  .step h3 br{display:none}
- .step p{grid-column:2;grid-row:2;font:500 12px/1.5 var(--body);margin:0;max-width:none;text-align:left}
+ .step p{grid-column:2;grid-row:2;font:500 13px/1.6 var(--body);margin:0;max-width:none;text-align:left}
  .contact-intro h2{font-size:clamp(33px,8.8vw,45px)}
  .offer-card[aria-pressed="true"]{outline-width:2px;outline-offset:2px}
 }
@@ -404,7 +413,7 @@
 .contact-intro p{max-width:430px}
 .contact-form .form-kicker{letter-spacing:.042em}
 .optional-email{border-radius:8px;background:#ffffff12;border:1px solid #ffffff40;padding:9px 12px}
-.optional-email summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;color:#d5e5ef;font:700 11px/1.5 var(--body)}
+.optional-email summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;color:#d5e5ef;font:700 12px/1.55 var(--body)}
 .optional-email summary::-webkit-details-marker{display:none}
 .optional-email summary:after{content:"+";margin-left:auto;font:800 18px/1 var(--font);color:#ffd6bf}
 .optional-email[open] summary:after{content:"−"}
@@ -412,7 +421,7 @@
 .optional-email .form-input{margin-top:11px}
 .optional-email summary:focus-visible{outline:3px solid #fca36e;outline-offset:4px}
 .contact-form .interest-selection{margin-bottom:0}
-.contact-form .form-note{font-size:10px;line-height:1.55}
+.contact-form .form-note{font-size:11px;line-height:1.55}
 .form-feedback.visible{outline:1px solid #95c8a5}
 .form-feedback.error{outline-color:#ecad95}
 @media(max-width:810px){.hero p{max-width:470px}}
@@ -424,13 +433,13 @@
  .optional-email summary{color:#28536c}
  .optional-email summary span{color:#76909e}
  .optional-email summary:after{color:var(--orange)}
- .contact-form .form-note{font-size:10px;color:#506b7a}
+ .contact-form .form-note{font-size:11px;color:#506b7a}
  .contact-panel{scroll-margin-top:18px}
 }
 @media(max-width:390px){
  .hero-assurance{font-size:7.4px}
  .offer-intro p{max-width:none}
- .optional-email summary{font-size:10px}
+ .optional-email summary{font-size:11px}
 }
 
 </style>
@@ -444,7 +453,7 @@
     </button>
     <nav class="desktop-nav" id="main-nav" aria-label="Navigazione principale">
       <a href="#top">L'OPPORTUNITÀ</a><a href="#formule">FORMULE</a><a href="#vantaggi">VANTAGGI</a><a href="#come-funziona">COME FUNZIONA</a>
-      <a class="header-cta" href="#contatto">RICHIEDI INFORMAZIONI <span aria-hidden="true">➜</span></a>
+      <a class="header-cta" href="#contatto">RICHIEDI I DETTAGLI <span aria-hidden="true">➜</span></a>
     </nav>
   </div>
 </header>
@@ -455,9 +464,10 @@
     <h1 id="hero-title"><span>LOUNGE BAR</span><span>A CATANZARO</span><span>LIDO.</span></h1>
     <div class="offer-ribbon">IN CESSIONE O GESTIONE.</div>
     <p>Un lounge bar operativo da 7 anni, secondo i titolari. Puoi valutare la cessione dell’attività o la sua gestione, con condizioni da approfondire in privato.</p>
-    <a href="#contatto" class="primary-cta">RICHIEDI INFORMAZIONI RISERVATE
+    <div class="hero-actions"><a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
     </a>
+    <a class="hero-phone" href="tel:+393294582962" aria-label="Chiama il 329 458 2962 per informazioni">Oppure chiama <strong>329 458 2962</strong></a></div>
     <div class="hero-assurance"><span class="assurance-dot" aria-hidden="true"></span><span>SCEGLI LA FORMULA <i aria-hidden="true">·</i> BASTANO NOME E CELLULARE <i aria-hidden="true">·</i> NESSUN IMPEGNO</span></div>
   </div></div>
   <div class="hero-media">
@@ -493,17 +503,17 @@
     <div class="why-heading">
       <div class="index-line"><b>03</b><span class="line"></span></div>
       <h2 id="why-heading">PERCHÉ<br>VALUTARLA.</h2>
-      <p>Un'attività concreta, da conoscere attraverso un confronto e le verifiche necessarie.</p>
+      <p>Un’attività già avviata: questi sono i principali elementi dichiarati dai titolari, da approfondire.</p>
     </div>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 37S32 25 32 16a12 12 0 0 0-24 0c0 9 12 21 12 21Z"/><circle cx="20" cy="16" r="4"/></svg></span>
       <h3>POSIZIONE<br>STRATEGICA</h3>
-      <p>In una delle aree più frequentate di Catanzaro Lido, secondo i titolari.</p>
+      <p>A Catanzaro Lido, nella zona della movida, secondo quanto indicato dai titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="12" r="6"/><path d="M8 32v-4c0-6 5-9 12-9s12 3 12 9v4M7 18a5 5 0 0 0-4 5v9M33 18a5 5 0 0 1 4 5v9"/></svg></span>
       <h3>CLIENTELA<br>FIDELIZZATA</h3>
-      <p>Un'attività operativa da sette anni con una propria clientela, secondo i titolari.</p>
+      <p>Sette anni di attività e una clientela costruita nel tempo, secondo i titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M7 33V23h6v10M18 33V17h6v16M29 33V10h6v23M5 16l10-6 9 3 11-9M28 4h7v7"/></svg></span>
@@ -530,8 +540,8 @@
     <div class="index-line"><b>04</b><span class="line"></span></div>
     <h2 id="story-heading">LA STORIA<br>DELL'ATTIVITÀ.</h2>
     <div class="anniversary"><b>7</b><span>ANNI DI ATTIVITÀ</span></div>
-    <p>Un lounge bar già operativo, con una presenza costruita nel tempo e una clientela fidelizzata, secondo quanto comunicato dai titolari.</p>
-    <p><strong>PERCHÉ È DISPONIBILE?</strong> I titolari valutano un passaggio per dedicarsi a un nuovo progetto imprenditoriale. L'immobile non è in vendita: si propone la cessione dell'attività oppure la sua gestione.</p>
+    <p>Il lounge bar è operativo da sette anni e dispone di una propria clientela, secondo quanto comunicato dai titolari.</p>
+    <p><strong>PERCHÉ È DISPONIBILE?</strong> I titolari valutano un passaggio per dedicarsi a un nuovo progetto. L'immobile non è in vendita: l'opportunità riguarda esclusivamente l'attività, in cessione o gestione.</p>
   </div>
 </section>
 <section class="steps-section" id="come-funziona" aria-labelledby="steps-heading">
@@ -544,17 +554,17 @@
     <div class="step">
       <span class="step-index">01</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M11 5h15l5 6v24H11V5Z"/><path d="M25 5v8h6M16 20h10M16 25h10M16 30h7"/></svg></span>
-      <h3>RICHIEDI<br>INFORMAZIONI</h3><p>Selezioni la formula e lasci i tuoi recapiti.</p>
+      <h3>SCEGLI<br>LA FORMULA</h3><p>Indica acquisto, gestione o entrambe e lascia i tuoi recapiti.</p>
     </div>
     <div class="step">
       <span class="step-index">02</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="7" y="8" width="26" height="25" rx="3"/><path d="M7 15h26M14 5v6M26 5v6M14 21h3m5 0h3m-11 6h3m5 0h3"/></svg></span>
-      <h3>PRIMO<br>CONFRONTO</h3><p>Ci sentiamo per approfondire il tuo interesse.</p>
+      <h3>PRIMO<br>CONTATTO</h3><p>Ti ricontattiamo per capire cosa desideri approfondire.</p>
     </div>
     <div class="step">
       <span class="step-index">03</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="m4 17 10-8 7 6 6-5 9 8-9 11-7-7-7 7L4 17Z"/><path d="M15 15 7 23M25 15l9 8M15 28l4 4 4-4"/></svg></span>
-      <h3>VALUTA<br>L'OPPORTUNITÀ</h3><p>Ricevi le informazioni pertinenti per una valutazione riservata.</p>
+      <h3>VALUTA<br>I DETTAGLI</h3><p>Approfondisci le informazioni disponibili, senza impegno.</p>
     </div>
   </div>
 </section>
@@ -563,8 +573,8 @@
     <div class="contact-intro">
       <div class="index-line orange"><b>06</b><span class="line"></span></div>
       <h2 id="contact-heading">RICHIEDI<br>I DETTAGLI.</h2>
-      <p>Scegli la formula e lascia nome e cellulare. Ti ricontatteremo per un primo confronto sui dettagli dell'attività, senza impegno a procedere.</p>
-      <a class="contact-phone" href="tel:+393294582962">Preferisci chiamare? 329 458 2962</a>
+      <p>Per iniziare bastano nome e cellulare. Ti ricontatteremo per un confronto riservato, senza impegno a procedere.</p>
+      <a class="contact-phone" href="tel:+393294582962">Preferisci parlare direttamente? <strong>329 458 2962</strong></a>
     </div>
     <form class="contact-form" id="lead-form" novalidate>
       <p class="form-kicker"><span class="form-kicker-dot" aria-hidden="true"></span> RICHIESTA RISERVATA · SOLO I DATI NECESSARI</p>
@@ -603,7 +613,7 @@
   </div>
   <div class="shell privacy-strip">
     <p>Proposta riservata di cessione o gestione di attività commerciale, non dell'immobile. Le dichiarazioni dei titolari su durata, clientela, condizioni e autorizzazioni richiedono verifica documentale. Le fotografie sono illustrative e non rappresentano il locale.</p>
-    <div class="legal-links"><a href="/privacy">Privacy</a><a href="mailto:info@impresax.org">Email</a><a href="tel:+393294582962">Telefono</a></div>
+    <div class="legal-links"><a href="/privacy">Privacy</a><a href="mailto:info@impresax.org">Email</a><a href="tel:+393294582962" aria-label="Chiama il 329 458 2962">329 458 2962</a></div>
   </div>
 </section>
 </main>
