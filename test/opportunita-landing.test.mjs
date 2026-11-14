@@ -72,8 +72,8 @@ test("two real commercial-use licensed atmosphere images never misrepresent the 
 });
 test("claims are factual and consent text is accurate",()=>{
  assert.match(html,/secondo quanto comunicato dai titolari/);
- assert.match(html,/L'immobile non è in vendita/);
- assert.match(html,/verifica documentale/);
+ assert.match(html,/non la vendita dell'immobile/);
+ assert.match(html,/richiedono verifica/);
  assert.doesNotMatch(html,/(?:300[., ]?000|300000|€\s*300)/);
  assert.doesNotMatch(html,/fatturato garantito|redditività garantita|documenti verificati/i);
  assert.match(html,/Privacy|privacy/);
@@ -347,8 +347,8 @@ test("V3.6 puts two full-size commercial paths at the center of block 02",()=>{
 test("V3.6 communicates transaction scope without inventing finance or commitment",()=>{
  assert.match(html,/Cessione dell'attività, non dell'immobile/);
  assert.match(html,/Formula e condizioni da definire con i titolari/);
- assert.match(html,/non stai prendendo alcun impegno/);
- assert.match(html,/Nessun impegno ad acquistare o gestire/);
+ assert.match(html,/senza impegno/);
+ assert.match(html,/Non costituisce un impegno/);
  assert.match(html,/Un primo confronto riservato/);
  assert.match(html,/Le condizioni economiche e contrattuali vengono approfondite privatamente/);
  assert.doesNotMatch(html,/guadagno garantito|canone garantito|fatturato garantito/i);
