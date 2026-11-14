@@ -22,12 +22,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: faithful approved V3 reference deployed; all automatic ImpresaX workflows remain disabled.
 # OWNER PAUSE: V3.1 visual refinement released; ImpresaX automatic deployments remain disabled.
 # OWNER PAUSE: V3.2 released and verified; no automatic ImpresaX deployments.
+# One-time owner-authorized conversion optimization V3.3; recurring activity stays off.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # restore owner pause immediately afterward
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -53,6 +57,10 @@ jobs:
                grep -q 'REFERENCE V3' /tmp/opportunita.html &&
                grep -q 'V3.1' /tmp/opportunita.html &&
                grep -q 'V3.2' /tmp/opportunita.html &&
+               grep -q 'V3.3' /tmp/opportunita.html &&
+               grep -q 'class="optional-email" id="optional-email"' /tmp/opportunita.html &&
+               grep -q 'RICHIEDI INFORMAZIONI RISERVATE' /tmp/opportunita.html &&
+               grep -q 'RICHIEDI<br>I DETTAGLI.' /tmp/opportunita.html &&
                grep -q 'class="shell proposal-facts"' /tmp/opportunita.html &&
                grep -q '@media(max-width:540px)' /tmp/opportunita.html &&
                grep -q 'aria-describedby="interest-help"' /tmp/opportunita.html &&
@@ -60,7 +68,7 @@ jobs:
                grep -q 'class="mobile-action"' /tmp/opportunita.html &&
                grep -q 'class="offer-card-art"' /tmp/opportunita.html &&
                grep -q 'srcset="https://images.unsplash.com/' /tmp/opportunita.html &&
-               grep -q '7 ANNI DI ATTIVITÀ DICHIARATI' /tmp/opportunita.html &&
+               grep -q 'BASTANO NOME E CELLULARE' /tmp/opportunita.html &&
                grep -q 'IN CESSIONE O GESTIONE.' /tmp/opportunita.html &&
                grep -q 'class="offer-card offer-card--buy"' /tmp/opportunita.html &&
                grep -q 'class="offer-card offer-card--manage"' /tmp/opportunita.html &&

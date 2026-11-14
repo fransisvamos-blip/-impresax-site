@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fbfaf8">
-<meta name="description" content="Lounge bar avviato a Catanzaro Lido: un'opportunità riservata in cessione o gestione. Sette anni di attività secondo i titolari. Richiedi un primo contatto.">
+<meta name="description" content="Lounge bar avviato a Catanzaro Lido, disponibile per cessione o gestione. Scegli la formula e richiedi un primo confronto riservato.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Opportunità · Catanzaro Lido">
 <meta property="og:title" content="Lounge bar a Catanzaro Lido | Cessione o gestione">
@@ -396,6 +396,43 @@
  .offer-card[aria-pressed="true"],.contact-form .interest-chip[aria-pressed="true"]{transition:none}
 }
 
+
+/* V3.3 — conversion-focused polish: straightforward copy and two essential contact fields */
+.hero p{max-width:500px}
+.hero-assurance{font-weight:700;letter-spacing:.013em}
+.offer-intro p{max-width:335px}
+.contact-intro p{max-width:430px}
+.contact-form .form-kicker{letter-spacing:.042em}
+.optional-email{border-radius:8px;background:#ffffff12;border:1px solid #ffffff40;padding:9px 12px}
+.optional-email summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;color:#d5e5ef;font:700 11px/1.5 var(--body)}
+.optional-email summary::-webkit-details-marker{display:none}
+.optional-email summary:after{content:"+";margin-left:auto;font:800 18px/1 var(--font);color:#ffd6bf}
+.optional-email[open] summary:after{content:"−"}
+.optional-email summary span{font:600 10px/1.3 var(--body);color:#b1c9d7;margin-left:auto}
+.optional-email .form-input{margin-top:11px}
+.optional-email summary:focus-visible{outline:3px solid #fca36e;outline-offset:4px}
+.contact-form .interest-selection{margin-bottom:0}
+.contact-form .form-note{font-size:10px;line-height:1.55}
+.form-feedback.visible{outline:1px solid #95c8a5}
+.form-feedback.error{outline-color:#ecad95}
+@media(max-width:810px){.hero p{max-width:470px}}
+@media(max-width:670px){
+ .hero-media{height:clamp(218px,54vw,278px)}
+ .hero p{font-size:14px}
+ .hero-assurance{font-size:8px;max-width:390px}
+ .optional-email{background:#f5f8fa;border-color:#dce5e9}
+ .optional-email summary{color:#28536c}
+ .optional-email summary span{color:#76909e}
+ .optional-email summary:after{color:var(--orange)}
+ .contact-form .form-note{font-size:10px;color:#506b7a}
+ .contact-panel{scroll-margin-top:18px}
+}
+@media(max-width:390px){
+ .hero-assurance{font-size:7.4px}
+ .offer-intro p{max-width:none}
+ .optional-email summary{font-size:10px}
+}
+
 </style>
 </head>
 <body>
@@ -414,14 +451,14 @@
 <main>
 <section class="hero" id="top" aria-labelledby="hero-title">
   <div class="shell hero-inner"><div class="hero-content">
-    <div class="eyebrow">OPPORTUNITÀ ESCLUSIVA</div>
+    <div class="eyebrow">OPPORTUNITÀ RISERVATA · CATANZARO LIDO</div>
     <h1 id="hero-title"><span>LOUNGE BAR</span><span>A CATANZARO</span><span>LIDO.</span></h1>
     <div class="offer-ribbon">IN CESSIONE O GESTIONE.</div>
-    <p>Attività avviata in una delle zone più vive e frequentate della costa catanzarese. Due formule da valutare con riservatezza.</p>
-    <a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI RISERVATI
+    <p>Un lounge bar operativo da 7 anni, secondo i titolari. Puoi valutare la cessione dell’attività o la sua gestione, con condizioni da approfondire in privato.</p>
+    <a href="#contatto" class="primary-cta">RICHIEDI INFORMAZIONI RISERVATE
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
     </a>
-    <div class="hero-assurance"><span class="assurance-dot" aria-hidden="true"></span><span>7 ANNI DI ATTIVITÀ DICHIARATI <i aria-hidden="true">/</i> PRIMO CONTATTO SENZA IMPEGNO</span></div>
+    <div class="hero-assurance"><span class="assurance-dot" aria-hidden="true"></span><span>SCEGLI LA FORMULA <i aria-hidden="true">·</i> BASTANO NOME E CELLULARE <i aria-hidden="true">·</i> NESSUN IMPEGNO</span></div>
   </div></div>
   <div class="hero-media">
     <img src="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85"
@@ -437,14 +474,14 @@
       <div class="offer-intro">
         <div class="index-line"><b>02</b><span class="line"></span></div>
         <h2 id="offer-heading">CESSIONE<br>O GESTIONE.</h2>
-        <p>Due possibilità per proseguire un'attività già avviata. Scegli quella più adatta al tuo progetto.</p>
+        <p>Due modalità da approfondire. I dettagli economici e le condizioni vengono discussi soltanto nel primo confronto riservato.</p>
       </div>
       <button type="button" class="offer-card offer-card--buy" data-choice="cessione" aria-pressed="false">
-        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M20 52h111M29 52l11-31h72l11 31M33 52v53h84V52M63 105V69h24v36M21 105h111M49 38h12M89 38h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>ACQUISTARE.</h3><p>Rileva l'attività e prosegui con la tua gestione.</p>
+        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M20 52h111M29 52l11-31h72l11 31M33 52v53h84V52M63 105V69h24v36M21 105h111M49 38h12M89 38h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>ACQUISTARE.</h3><p>Valuta la cessione dell'attività, senza acquisto dell'immobile.</p>
         <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span>
       </button>
       <button type="button" class="offer-card offer-card--manage" data-choice="gestione" aria-pressed="false">
-        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M17 75 49 44l19 14 15-13 42 33-31 30-27-22-25 21-25-32Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m52 70 26 26M67 61l29 28M53 85l16 16M83 67l23 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><h3>GESTIRE.</h3><p>Valuta un accordo per condurre l'attività senza acquistarla.</p>
+        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M17 75 49 44l19 14 15-13 42 33-31 30-27-22-25 21-25-32Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m52 70 26 26M67 61l29 28M53 85l16 16M83 67l23 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><h3>GESTIRE.</h3><p>Valuta un accordo di gestione, con condizioni da concordare.</p>
         <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span>
       </button>
     </div>
@@ -525,12 +562,12 @@
   <div class="contact-panel">
     <div class="contact-intro">
       <div class="index-line orange"><b>06</b><span class="line"></span></div>
-      <h2 id="contact-heading">TRATTATIVA<br>RISERVATA.</h2>
-      <p>Richiedi i dettagli dell'attività. Ti ricontatteremo per un primo confronto riservato, senza impegno.</p>
+      <h2 id="contact-heading">RICHIEDI<br>I DETTAGLI.</h2>
+      <p>Scegli la formula e lascia nome e cellulare. Ti ricontatteremo per un primo confronto sui dettagli dell'attività, senza impegno a procedere.</p>
       <a class="contact-phone" href="tel:+393294582962">Preferisci chiamare? 329 458 2962</a>
     </div>
     <form class="contact-form" id="lead-form" novalidate>
-      <p class="form-kicker"><span class="form-kicker-dot" aria-hidden="true"></span> ACCESSO AL PRIMO CONFRONTO RISERVATO</p>
+      <p class="form-kicker"><span class="form-kicker-dot" aria-hidden="true"></span> RICHIESTA RISERVATA · SOLO I DATI NECESSARI</p>
       <div class="interest-selection" role="group" aria-label="Formula di interesse" aria-describedby="interest-help">
         <span>MI INTERESSA:</span>
         <button class="interest-chip" type="button" data-choice="cessione" aria-pressed="false">ACQUISTARE</button>
@@ -547,18 +584,21 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3H4C3 3 3 4 3 5c0 10 8 16 16 16 1 0 2-1 2-2v-3l-5-2-2 3c-3-1-6-4-7-7l3-2-3-5Z"/></svg>
         <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="35" placeholder="Numero di cellulare *" aria-label="Numero di cellulare obbligatorio">
       </label>
-      <label class="form-input">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-        <input id="email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="Email (facoltativa)" aria-label="Email facoltativa">
-      </label>
+      <details class="optional-email" id="optional-email">
+        <summary>Vuoi aggiungere anche un'email? <span>Facoltativo</span></summary>
+        <label class="form-input">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <input id="email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="Indirizzo email (facoltativo)" aria-label="Indirizzo email facoltativo">
+        </label>
+      </details>
       <input class="honeypot" name="company_site" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
       <label class="agreement">
         <input type="checkbox" id="privacy_accepted" name="privacy_accepted" required>
         <span>Ho letto l'<a href="/privacy" target="_blank" rel="noopener">informativa privacy</a> e chiedo di essere ricontattato per questa opportunità.</span>
       </label>
-      <button id="send-btn" class="submit-button" type="submit">RICHIEDI I DETTAGLI <span aria-hidden="true">➜</span></button>
+      <button id="send-btn" class="submit-button" type="submit">INVIA LA RICHIESTA RISERVATA <span aria-hidden="true">➜</span></button>
       <p id="form-feedback" class="form-feedback" role="status" aria-live="polite"></p>
-      <p class="form-note">Solo per il primo contatto riservato. Nessun impegno.</p>
+      <p class="form-note">Nome e cellulare sono gli unici recapiti obbligatori. Nessun impegno.</p>
     </form>
   </div>
   <div class="shell privacy-strip">
@@ -643,6 +683,8 @@
       return;
     }
     if(!form.checkValidity()){
+      var optionalEmail=document.getElementById('optional-email');
+      if(!document.getElementById('email').checkValidity())optionalEmail.open=true;
       form.reportValidity();
       return;
     }
@@ -685,6 +727,7 @@
       transaction.value='';
       document.querySelectorAll('.interest-chip,.offer-card[data-choice]').forEach(function(b){b.setAttribute('aria-pressed','false')});
       document.getElementById('interest-help').textContent='Richiesta inviata. Grazie.';
+      document.getElementById('optional-email').open=false;
       submitButton.textContent='RICHIESTA INVIATA ✓';
     }catch(error){
       setFeedback('Impossibile inviare la richiesta. Riprova oppure chiama il 329 458 2962.',true);

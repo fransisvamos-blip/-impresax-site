@@ -12,7 +12,7 @@ test("faithful V3 rendering: correct desktop chapter sequence and headline",()=>
  assert.match(css,/REFERENCE V3/);
  assert.match(html,/id="hero-title"[^>]*><span>LOUNGE BAR<\/span><span>A CATANZARO<\/span><span>LIDO\.<\/span>/);
  assert.match(html,/IN CESSIONE O GESTIONE\./);
- assert.match(html,/TRATTATIVA<br>RISERVATA\./);
+ assert.match(html,/RICHIEDI<br>I DETTAGLI\./);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  const sections=["id=\"top\"","id=\"formule\"","id=\"vantaggi\"","id=\"storia\"","id=\"come-funziona\"","id=\"contatto\""];
  const locations=sections.map(x=>html.indexOf(x));
@@ -120,8 +120,8 @@ test("privacy and official contact routes remain reachable",()=>{
 test("V3.1 adds original vector detail and clear trust cues without changing structure",()=>{
  assert.match(css,/V3\.1 — art-direction polish/);
  assert.equal((html.match(/class="offer-card-art"/g)||[]).length,2);
- assert.match(html,/7 ANNI DI ATTIVITÀ DICHIARATI/);
- assert.match(html,/ACCESSO AL PRIMO CONFRONTO RISERVATO/);
+ assert.match(html,/BASTANO NOME E CELLULARE/);
+ assert.match(html,/RICHIESTA RISERVATA · SOLO I DATI NECESSARI/);
  assert.match(css,/\.hero-assurance\{display:flex/);
  assert.match(css,/\.form-input:focus-within\{border-color:/);
  assert.match(css,/\.offer-card-art\{position:absolute/);
@@ -204,4 +204,39 @@ test("privacy is aligned with actual external resources, values and consent sema
  assert.match(privacy,/--orange:#f26520/);
  assert.match(privacy,/titolare effettivo del trattamento/);
  assert.match(privacy,/Non sono integrati pixel pubblicitari/);
+});
+
+test("V3.3 makes the promised next step and deal terms understandable immediately",()=>{
+ assert.match(css,/V3\.3 — conversion-focused polish/);
+ assert.match(html,/OPPORTUNITÀ RISERVATA · CATANZARO LIDO/);
+ assert.match(html,/Un lounge bar operativo da 7 anni, secondo i titolari/);
+ assert.match(html,/I dettagli economici e le condizioni vengono discussi/);
+ assert.match(html,/senza acquisto dell'immobile/);
+ assert.match(html,/con condizioni da concordare/);
+ assert.match(html,/RICHIEDI INFORMAZIONI RISERVATE/);
+ assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
+ assert.match(html,/Nome e cellulare sono gli unici recapiti obbligatori/);
+});
+test("compact form starts with required phone and name, optional email is disclosed only on demand",()=>{
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.match(html,/<details class="optional-email" id="optional-email">/);
+ assert.match(html,/<summary>Vuoi aggiungere anche un'email\? <span>Facoltativo<\/span><\/summary>/);
+ assert.match(html,/id="email" name="email" type="email"/);
+ assert.doesNotMatch(html,/id="email"[^>]*required/);
+ assert.match(html,/id="full_name"[^>]*required/);
+ assert.match(html,/id="phone"[^>]*required/);
+ assert.match(html,/id="privacy_accepted"[^>]*required/);
+ assert.match(js,/if\(!document\.getElementById\('email'\)\.checkValidity\(\)\)optionalEmail\.open=true/);
+ assert.match(js,/document\.getElementById\('optional-email'\)\.open=false/);
+ new Script(js,{filename:"conversion-v3-3.js"});
+});
+test("mobile conversion polish does not bring back duplicate forms or extra sections",()=>{
+ assert.match(css,/\.hero-media\{height:clamp\(218px,54vw,278px\)\}/);
+ assert.match(css,/\.optional-email\{background:#f5f8fa/);
+ assert.match(css,/@media\(max-width:390px\)/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ assert.equal((html.match(/class="offer-card offer-card--/g)||[]).length,2);
+ assert.equal((html.match(/class="interest-chip"/g)||[]).length,3);
+ assert.equal((html.match(/class="mobile-action"/g)||[]).length,1);
+ assert.match(css,/prefers-reduced-motion/);
 });
