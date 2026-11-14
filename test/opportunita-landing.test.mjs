@@ -34,7 +34,7 @@ test("clean modern system: white navy orange peach, no italics or inherited CSS"
  assert.match(css,/\.offer-card--manage\{[^}]*background:linear-gradient/);
 });
 test("visual hierarchy matches desktop render: options, editorial benefits, story and three steps",()=>{
- assert.match(css,/\.offer-layout\{display:grid;grid-template-columns:\.93fr 1fr 1fr/);
+ assert.match(css,/\.offer-layout\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/\.why-layout\{display:grid;grid-template-columns:1\.2fr repeat\(3,\.85fr\)/);
  assert.match(css,/\.story-section\{display:grid;grid-template-columns:1fr 1fr/);
  assert.match(css,/\.steps-layout\{display:grid;grid-template-columns:1\.15fr repeat\(3,\.86fr\)/);
@@ -51,7 +51,7 @@ test("mobile is purpose-designed, with nav, curved image, stacked cards and form
  assert.match(css,/@media\(max-width:385px\)/);
  assert.match(css,/\.hero-media\{order:1;position:relative/);
  assert.match(css,/clip-path:ellipse\(79% 100% at 50% 0%\)/);
- assert.match(css,/\.offer-layout\{grid-template-columns:1fr;gap:11px\}/);
+ assert.match(css,/\.offer-layout\{grid-template-columns:1fr;gap:12px\}/);
  assert.match(css,/\.why-layout\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.match(css,/\.steps-layout\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.match(css,/\.story-media\{display:none\}/);
@@ -184,7 +184,7 @@ test("offer selection is accessible and stays synchronized with final form",()=>
  assert.match(html,/id="interest-help" class="interest-help"/);
  assert.match(html,/aria-describedby="interest-help"/);
  assert.match(css,/\.offer-card\[aria-pressed="true"\]/);
- assert.match(js,/querySelectorAll\('\.interest-chip,\.offer-card\[data-choice\]'\)/);
+ assert.match(js,/querySelectorAll\('\.interest-chip,\.offer-card\[data-choice\],\.offer-both\[data-choice\]'\)/);
  assert.match(js,/help\.textContent=choice==='cessione'/);
 });
 test("funnel events contain only stage and formula and have no network collection",()=>{
@@ -210,9 +210,9 @@ test("V3.3 makes the promised next step and deal terms understandable immediatel
  assert.match(css,/V3\.3 — conversion-focused polish/);
  assert.match(html,/OPPORTUNITÀ RISERVATA · CATANZARO LIDO/);
  assert.match(html,/Un lounge bar operativo da 7 anni, secondo i titolari/);
- assert.match(html,/I dettagli economici vengono approfonditi in privato/);
- assert.match(html,/senza acquisto dell'immobile/);
- assert.match(html,/con condizioni da concordare/);
+ assert.match(html,/Le condizioni economiche e contrattuali vengono approfondite privatamente/);
+ assert.match(html,/Cessione dell'attività, non dell'immobile/);
+ assert.match(html,/termini e condizioni da concordare/);
  assert.match(html,/RICHIEDI I DETTAGLI/);
  assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
  assert.match(html,/Nome e cellulare sono gli unici recapiti obbligatori/);
@@ -253,13 +253,13 @@ test("V3.4 keeps a single conversion message across header hero and mobile",()=>
  assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
 });
 test("V3.4 improves desktop rhythm without rebuilding or adding sections",()=>{
- assert.match(css,/\.offer-section\{[^}]*padding:54px 0 38px/);
+ assert.match(css,/\.offer-section\{[^}]*padding:64px 0 43px/);
  assert.match(css,/\.why-section\{[^}]*padding:56px 0 58px/);
  assert.match(css,/\.steps-section\{[^}]*padding:57px 0 61px/);
  assert.match(css,/\.story-media\{[^}]*min-height:402px/);
  assert.match(css,/\.contact-panel\{[^}]*padding:47px/);
  assert.match(css,/\.hero h1\{[^}]*letter-spacing:-\.064em/);
- assert.match(css,/\.offer-intro p\{[^}]*font:500 14px/);
+ assert.match(css,/\.offer-intro p\{[^}]*font:500 15px/);
  assert.match(css,/\.why-item p\{[^}]*font:500 13px/);
  assert.match(css,/\.step p\{[^}]*font:500 13px/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
@@ -284,7 +284,7 @@ test("V3.4 mobile prose stays readable, with no 3-column microtype at phone widt
  assert.match(css,/\.steps-layout\{grid-template-columns:1fr;gap:10px\}/);
  assert.match(css,/\.why-item p\{grid-column:2;grid-row:2;font:500 13px/);
  assert.match(css,/\.step p\{grid-column:2;grid-row:2;font:500 13px/);
- assert.match(css,/\.offer-section\{padding-bottom:17px\}/);
+ assert.match(css,/\.offer-section\{padding:34px 0 22px\}/);
  assert.match(css,/\.steps-section\{padding:34px 0 45px\}/);
 });
 
@@ -326,4 +326,54 @@ test("V3.5 preserves form endpoint, privacy, and choice interactions while chang
  assert.match(css,/@media\(max-width:670px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  new Script(js,{filename:"structural-v3-5.js"});
+});
+
+
+test("V3.6 puts two full-size commercial paths at the center of block 02",()=>{
+ assert.match(css,/BLOCK 02 \/ PREMIUM DECISION SYSTEM V3\.6/);
+ assert.match(html,/id="offer-heading">CESSIONE<br>O GESTIONE\./);
+ assert.match(html,/class="offer-heading-row"/);
+ assert.match(html,/class="offer-guidance"/);
+ assert.match(css,/\.offer-layout\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.equal((html.match(/class="offer-card offer-card--/g)||[]).length,2);
+ assert.match(html,/VOGLIO<br>ACQUISTARE\./);
+ assert.match(html,/VOGLIO<br>GESTIRE\./);
+ assert.match(css,/\.offer-card\{[^}]*min-height:354px/);
+ assert.match(css,/\.offer-card-title\{display:block;font:800/);
+ assert.match(css,/\.offer-card-bottom\{position:relative/);
+ assert.match(html,/class="offer-card-kicker"/);
+ assert.match(html,/class="offer-card-action"/);
+});
+test("V3.6 communicates transaction scope without inventing finance or commitment",()=>{
+ assert.match(html,/Cessione dell'attività, non dell'immobile/);
+ assert.match(html,/Formula e condizioni da definire con i titolari/);
+ assert.match(html,/non stai prendendo alcun impegno/);
+ assert.match(html,/Nessun impegno ad acquistare o gestire/);
+ assert.match(html,/Un primo confronto riservato/);
+ assert.match(html,/Le condizioni economiche e contrattuali vengono approfondite privatamente/);
+ assert.doesNotMatch(html,/guadagno garantito|canone garantito|fatturato garantito/i);
+ assert.match(html,/il modulo è subito qui sotto/);
+});
+test("V3.6 preserves preselection of all three routes and leads to one working form",()=>{
+ assert.match(html,/class="offer-card offer-card--buy" data-choice="cessione" aria-pressed="false" aria-controls="lead-form"/);
+ assert.match(html,/class="offer-card offer-card--manage" data-choice="gestione" aria-pressed="false" aria-controls="lead-form"/);
+ assert.match(html,/class="offer-both" type="button" data-choice="entrambe" aria-pressed="false" aria-controls="lead-form"/);
+ assert.match(js,/querySelectorAll\('\.interest-chip,\.offer-card\[data-choice\],\.offer-both\[data-choice\]'\)/);
+ assert.match(js,/contact\.scrollIntoView/);
+ assert.match(css,/\.offer-card\[aria-pressed="true"\]/);
+ assert.match(css,/\.offer-both:hover,\.offer-both\[aria-pressed="true"\]/);
+ assert.equal((html.match(/id="lead-form"/g)||[]).length,1);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+});
+test("V3.6 avoids cramped mobile cards and motion-dependent functionality",()=>{
+ assert.match(css,/@media\(max-width:1100px\)/);
+ assert.match(css,/@media\(max-width:810px\)/);
+ assert.match(css,/@media\(max-width:670px\)/);
+ assert.match(css,/@media\(max-width:390px\)/);
+ assert.match(css,/\.offer-card\{min-height:255px;border-radius:17px/);
+ assert.match(css,/\.offer-both\{width:100%;min-height:47px/);
+ assert.match(css,/\.offer-subchoice\{flex-direction:column;align-items:stretch/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(css,/\.offer-card,.offer-both,.offer-card-art,.offer-card \.round-arrow\{transition:none\}/);
+ assert.doesNotMatch(css,/\.offer-layout\{grid-template-columns:\.83fr 1fr 1fr/);
 });

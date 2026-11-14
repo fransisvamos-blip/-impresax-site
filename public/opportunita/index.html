@@ -65,22 +65,52 @@
 .hero-image-note{position:absolute;z-index:3;right:20px;bottom:10px;font:600 9px/1.5 var(--body);color:#fff;background:#0f2939ac;padding:5px 9px;border-radius:4px;text-decoration:none}
 .hero-image-note:hover{text-decoration:underline}
 /* TWO OPTIONS — left editorial title and two large horizontal blocks */
-.offer-section{background:#fff;padding:54px 0 38px;border-bottom:0}
-.offer-layout{display:grid;grid-template-columns:.93fr 1fr 1fr;gap:17px;align-items:stretch}
-.offer-intro{padding:10px 20px 8px 0}
-.offer-intro h2{font:800 clamp(32px,3.1vw,46px)/1.075 var(--font);letter-spacing:-.056em;text-transform:uppercase;margin:0 0 17px}
-.offer-intro p{font:500 14px/1.68 var(--body);margin:0;max-width:280px;color:#24384a}
-.offer-card{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;position:relative;min-height:216px;overflow:hidden;padding:30px 31px;border:0;border-radius:20px;text-align:left;text-decoration:none;transition:transform .2s,box-shadow .2s}
-.offer-card:hover{transform:translateY(-4px);box-shadow:0 14px 24px #0b324b16}
-.offer-card h3{font:800 clamp(28px,3vw,40px)/1.05 var(--font);letter-spacing:-.052em;margin:0;position:relative;z-index:2}
-.offer-card p{font:500 14px/1.65 var(--body);max-width:270px;margin:9px 38px 0 0;position:relative;z-index:2}
-.offer-card--buy{background:radial-gradient(ellipse at 25% 2%,#376685 0%,#153d5b 55%,#082b42 100%);color:white}
-.offer-card--manage{background:linear-gradient(145deg,#fdf0e8 0%,#fbe0cf 100%);color:var(--navy)}
-.offer-card .round-arrow{position:absolute;right:22px;bottom:23px;width:38px;height:38px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;opacity:.9}
+
+/* BLOCK 02 / PREMIUM DECISION SYSTEM V3.6 — single source of styles */
+.offer-section{background:#fff;padding:64px 0 43px;border-bottom:0}
+.offer-heading-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,350px);align-items:end;gap:clamp(30px,5vw,72px);margin-bottom:29px}
+.offer-intro{max-width:780px}
+.offer-intro .index-line{margin-bottom:13px}
+.offer-intro h2{font:800 clamp(40px,5.1vw,68px)/1.025 var(--font);letter-spacing:-.062em;text-transform:uppercase;margin:0 0 15px;color:#102c41}
+.offer-intro p{font:500 15px/1.73 var(--body);margin:0;max-width:570px;color:#486071}
+.offer-guidance{display:flex;align-items:flex-start;gap:13px;padding:19px 20px;background:#f4f7f7;border:1px solid #e5eaed;border-radius:14px}
+.offer-guidance-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:12px;color:#37637b;background:#e3eef2}
+.offer-guidance-icon svg{width:23px;height:23px}
+.offer-guidance strong{display:block;font:800 12px/1.42 var(--font);letter-spacing:-.02em;color:#183b50}
+.offer-guidance span:not(.offer-guidance-icon){display:block;margin-top:5px;font:500 11px/1.59 var(--body);color:#5c7483}
+.offer-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:stretch}
+.offer-card{display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;gap:0;position:relative;min-width:0;min-height:354px;overflow:hidden;padding:30px 32px 25px;border:1px solid transparent;border-radius:19px;text-align:left;text-decoration:none;isolation:isolate;cursor:pointer;transition:transform .23s ease,box-shadow .23s ease,border-color .23s ease}
+.offer-card:hover{transform:translateY(-4px);box-shadow:0 23px 38px #0b324b19}
+.offer-card--buy{background:radial-gradient(ellipse at 18% 4%,#376685 0%,#153d5b 54%,#082b42 100%);color:#fff}
+.offer-card--manage{background:linear-gradient(145deg,#fff0e5 0%,#f8ddc9 100%);color:#16374b}
+.offer-card-kicker{position:relative;z-index:2;display:block;font:800 10px/1.5 var(--font);letter-spacing:.11em;opacity:.84}
+.offer-card-kicker i{font-style:normal;margin:0 7px;opacity:.7}
+.offer-card-main{position:relative;z-index:2;display:block;padding:27px 130px 24px 0}
+.offer-card-title{display:block;font:800 clamp(36px,4.2vw,52px)/1.01 var(--font);letter-spacing:-.066em}
+.offer-card-description{display:block;margin-top:17px;max-width:435px;font:500 14px/1.7 var(--body)}
+.offer-card-bottom{position:relative;z-index:2;display:flex;align-items:end;justify-content:space-between;gap:14px;padding-top:17px;border-top:1px solid #fff5}
+.offer-card--manage .offer-card-bottom{border-color:#c18d743b}
+.offer-card-detail{font:600 11px/1.45 var(--body);max-width:260px;opacity:.84}
+.offer-card-action{display:inline-flex;align-items:center;justify-content:flex-end;gap:11px;flex:0 0 auto;font:800 10px/1.4 var(--font);letter-spacing:.04em;white-space:nowrap}
+.offer-card .round-arrow{position:static;display:grid;place-items:center;flex:none;width:38px;height:38px;border:1px solid currentColor;border-radius:50%;opacity:.9;transition:transform .2s ease,background .2s ease}
 .offer-card .round-arrow svg{width:19px;height:19px}
-.offer-subchoice{display:flex;justify-content:flex-end;margin-top:10px}
-.offer-subchoice button{border:0;background:transparent;color:#547080;font:700 12px var(--body);text-decoration:underline;text-underline-offset:3px;padding:12px 0}
-.offer-subchoice button:hover{color:var(--orange)}
+.offer-card:hover .round-arrow{transform:translateX(3px);background:#ffffff22}
+.offer-card--manage:hover .round-arrow{background:#ffffff92}
+.offer-card-art{position:absolute;pointer-events:none;right:6px;top:48px;width:185px;height:162px;color:currentColor;opacity:.12;transform:rotate(-5deg);transition:transform .36s ease,opacity .36s ease}
+.offer-card-art svg{display:block;width:100%;height:100%}
+.offer-card:hover .offer-card-art{transform:translate(-7px,3px) rotate(0);opacity:.2}
+.offer-card[aria-pressed="true"]{outline:3px solid var(--orange);outline-offset:4px}
+.offer-card[aria-pressed="true"] .round-arrow{background:var(--orange);border-color:var(--orange);color:#fff}
+.offer-card[aria-pressed="true"]:after{content:"✓";position:absolute;top:22px;right:22px;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--orange);color:white;font:800 15px var(--font)}
+.offer-subchoice{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:15px}
+.offer-subchoice p{font:600 11px/1.6 var(--body);color:#607583;margin:0}
+.offer-subchoice p span{color:#b65c2b;font-size:13px;margin-right:3px}
+.offer-both{border:1px solid #cbd9df;background:#f7fafb;color:#1e4a64;border-radius:30px;min-height:44px;padding:10px 16px;font:700 11px/1.45 var(--font);display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;transition:border-color .2s ease,background .2s ease}
+.offer-both strong{font-weight:800}
+.offer-both>span{color:#e37333;font-size:18px;margin-left:5px}
+.offer-both:hover,.offer-both[aria-pressed="true"]{background:#e5f0f5;border-color:#aac9d7}
+.offer-card:focus-visible,.offer-both:focus-visible{outline:3px solid #f49a65;outline-offset:4px}
+
 /* WHY — no three repetitive cards */
 .why-section{background:#f7f7f6;padding:56px 0 58px}
 .why-layout{display:grid;grid-template-columns:1.2fr repeat(3,.85fr);align-items:start;gap:0}
@@ -157,8 +187,6 @@
  .hero-inner,.hero{min-height:515px}
  .hero-media{width:66%}
  .hero-content{width:62%}
- .offer-card{padding:24px;min-height:190px}
- .offer-layout{grid-template-columns:.83fr 1fr 1fr}
  .why-layout,.steps-layout{grid-template-columns:1fr repeat(3,.85fr)}
  .why-item{padding-left:17px;padding-right:10px}
  .contact-panel{padding:34px}
@@ -172,10 +200,6 @@
  .offer-ribbon{font-size:clamp(22px,2.85vw,27px)}
  .hero-content{width:66%}
  .hero-media{width:68%}
- .offer-layout{grid-template-columns:1fr 1fr;gap:12px}
- .offer-intro{grid-column:1/-1}
- .offer-intro p{max-width:600px}
- .offer-card{min-height:172px}
  .why-layout{grid-template-columns:repeat(3,1fr);gap:11px}
  .why-heading{grid-column:1/-1;padding-bottom:12px}
  .why-heading p{max-width:600px}
@@ -212,18 +236,8 @@
  .hero-media img{object-position:50% 51%}
  .hero-media:after{background:linear-gradient(0deg,#0a203d20,transparent 45%)}
  .hero-image-note{right:17px;bottom:15px;font-size:8px}
- .offer-section{padding:31px 0 42px}
- .offer-layout{grid-template-columns:1fr;gap:11px}
- .offer-intro{padding:0 0 5px;grid-column:1}
- .offer-intro h2{font-size:clamp(27px,6.6vw,38px);margin-bottom:7px}
- .offer-intro p{font-size:13px;max-width:440px}
  .index-line{font-size:13px;margin-bottom:8px;color:var(--orange)}
  .index-line .line{width:42px}
- .offer-card{min-height:100px;padding:16px 20px;display:block;border-radius:18px}
- .offer-card h3{font-size:clamp(22px,5.9vw,30px)}
- .offer-card p{font-size:12px;max-width:340px;margin:5px 50px 0 0}
- .offer-card .round-arrow{top:50%;bottom:auto;transform:translateY(-50%);right:15px;width:35px;height:35px}
- .offer-subchoice{margin-top:2px}
  .why-section{padding:36px 0 40px}
  .why-layout{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
  .why-heading{grid-column:1/-1;padding:0 0 4px}
@@ -291,12 +305,6 @@
 .assurance-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--orange);box-shadow:0 0 0 4px #f265201a}
 .hero-assurance i{display:inline-block;margin-inline:9px;color:#b2bbbe;font-style:normal}
 .primary-cta:focus-visible,.offer-card:focus-visible,.offer-subchoice button:focus-visible,.interest-chip:focus-visible,.submit-button:focus-visible,.menu-toggle:focus-visible,.desktop-nav a:focus-visible,.mobile-action a:focus-visible{outline:3px solid #f49a65;outline-offset:3px}
-.offer-card-art{position:absolute;pointer-events:none;right:-20px;top:13px;width:175px;height:155px;color:currentColor;opacity:.075;transform:rotate(-5deg);transition:transform .36s ease,opacity .36s ease}
-.offer-card-art svg{display:block;width:100%;height:100%}
-.offer-card:hover .offer-card-art{transform:translate(-8px,3px) rotate(0deg);opacity:.14}
-.offer-card .round-arrow{transition:background .22s ease,transform .22s ease}
-.offer-card:hover .round-arrow{transform:translateX(4px);background:#ffffff25}
-.offer-card--manage:hover .round-arrow{background:#fffcf9a3}
 .why-item{position:relative}
 .why-item:before{content:"";position:absolute;top:0;left:-1px;width:3px;height:29px;background:var(--orange);opacity:.86}
 .story-media img{transition:transform .8s ease}
@@ -312,14 +320,11 @@
 .mobile-action{display:none}
 /* Screen-specific adjustments: avoid accidental single-line overflow */
 @media(max-width:1100px){
- .offer-card-art{width:145px;right:-30px}
  .hero-assurance{max-width:460px;flex-wrap:wrap}
 }
 @media(max-width:670px){
  .hero-assurance{font-size:8px;line-height:1.45;margin-top:14px;max-width:340px}
  .hero-assurance i{margin-inline:5px}
- .offer-card-art{width:119px;height:110px;top:0;right:31px;opacity:.07}
- .offer-card:hover .round-arrow{transform:translateY(-50%)}
  .why-item:before{left:50%;transform:translateX(-50%);top:0;width:27px;height:3px}
  .form-kicker{color:#597183;font-size:9px}
  .mobile-action{display:flex;align-items:stretch;gap:9px;position:fixed;z-index:85;bottom:0;left:0;right:0;padding:9px 12px calc(9px + env(safe-area-inset-bottom));background:#fffefaed;border-top:1px solid #d8dfe1;box-shadow:0 -9px 26px #0629401a;transform:translateY(112%);opacity:0;pointer-events:none;transition:transform .26s ease,opacity .24s ease}
@@ -335,11 +340,8 @@
 @media(max-width:385px){
  .mobile-action-primary{font-size:11px}
  .hero-assurance{font-size:7.5px}
- .offer-card-art{display:none}
 }
 @media(prefers-reduced-motion:reduce){
- .offer-card-art,.offer-card .round-arrow,.story-media img,.submit-button,.mobile-action{transition:none!important}
- .offer-card:hover .offer-card-art,.story-media:hover img,.submit-button:hover{transform:none!important}
 }
 
 
@@ -351,8 +353,6 @@
 }
 .hero .eyebrow{letter-spacing:.16em}
 .hero-image-note{backdrop-filter:blur(6px)}
-.offer-card[aria-pressed="true"]{outline:3px solid var(--orange);outline-offset:4px}
-.offer-card[aria-pressed="true"] .round-arrow{background:var(--orange);border-color:var(--orange);color:#fff}
 .proposal-facts{display:grid;grid-template-columns:1.2fr repeat(4,1fr);gap:0;align-items:stretch;margin-top:31px;border-top:1px solid #d4dadd;border-bottom:1px solid #d4dadd;padding:17px 0 16px}
 .proposal-facts-label,.proposal-fact{display:flex;flex-direction:column;gap:5px;padding:5px 14px 5px 0}
 .proposal-facts-label span{font:800 11px var(--font);color:var(--orange);letter-spacing:.09em}
@@ -399,17 +399,14 @@
  .step h3 br{display:none}
  .step p{grid-column:2;grid-row:2;font:500 13px/1.6 var(--body);margin:0;max-width:none;text-align:left}
  .contact-intro h2{font-size:clamp(33px,8.8vw,45px)}
- .offer-card[aria-pressed="true"]{outline-width:2px;outline-offset:2px}
 }
 @media(prefers-reduced-motion:reduce){
- .offer-card[aria-pressed="true"],.contact-form .interest-chip[aria-pressed="true"]{transition:none}
 }
 
 
 /* V3.3 — conversion-focused polish: straightforward copy and two essential contact fields */
 .hero p{max-width:500px}
 .hero-assurance{font-weight:700;letter-spacing:.013em}
-.offer-intro p{max-width:335px}
 .contact-intro p{max-width:430px}
 .contact-form .form-kicker{letter-spacing:.042em}
 .optional-email{border-radius:8px;background:#ffffff12;border:1px solid #ffffff40;padding:9px 12px}
@@ -438,7 +435,6 @@
 }
 @media(max-width:390px){
  .hero-assurance{font-size:7.4px}
- .offer-intro p{max-width:none}
  .optional-email summary{font-size:11px}
 }
 
@@ -465,7 +461,6 @@
 @media(max-width:670px){
  .contact-section{padding:22px 12px 36px}
  .contact-panel{border-radius:24px}
- .offer-section{padding-bottom:17px}
  .closing-cta{display:block;margin-top:30px;padding:23px 19px;border-radius:17px}
  .closing-cta-copy h3{font-size:23px;line-height:1.18}
  .closing-cta-copy p{font-size:13px;line-height:1.6}
@@ -476,6 +471,72 @@
 @media(prefers-reduced-motion:reduce){
  .closing-cta-button{transition:none}
  .closing-cta-button:hover{transform:none}
+}
+
+
+/* Block 02 responsive composition, consolidated after original media rules */
+@media(max-width:1100px){
+ .offer-section{padding:51px 0 35px}
+ .offer-heading-row{grid-template-columns:minmax(0,1fr) minmax(215px,295px);gap:26px}
+ .offer-intro h2{font-size:clamp(37px,4.7vw,55px)}
+ .offer-card{min-height:340px;padding:25px 25px 22px}
+ .offer-card-main{padding-right:95px}
+ .offer-card-title{font-size:clamp(32px,4vw,44px)}
+ .offer-card-art{right:-35px;top:57px;width:160px}
+ .offer-card-bottom{align-items:flex-start}
+ .offer-card-action{font-size:9px}
+}
+@media(max-width:810px){
+ .offer-heading-row{grid-template-columns:1fr;gap:18px;margin-bottom:22px}
+ .offer-intro h2{font-size:clamp(38px,6vw,52px)}
+ .offer-intro p{font-size:14px;max-width:690px}
+ .offer-guidance{max-width:620px;padding:14px 16px}
+ .offer-card{min-height:335px;padding:22px 21px}
+ .offer-card-main{padding:25px 35px 19px 0}
+ .offer-card-title{font-size:clamp(32px,5vw,42px)}
+ .offer-card-art{opacity:.07;right:-47px;top:55px}
+ .offer-card-description{font-size:13px;line-height:1.65}
+ .offer-card-bottom{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+ .offer-card-action{align-self:stretch;justify-content:space-between;font-size:10px}
+ .offer-subchoice{align-items:flex-start}
+}
+@media(max-width:670px){
+ .offer-section{padding:34px 0 22px}
+ .offer-heading-row{gap:15px;margin-bottom:18px}
+ .offer-intro h2{font-size:clamp(32px,8vw,46px);line-height:1.07;margin-bottom:12px}
+ .offer-intro p{font-size:14px;line-height:1.64}
+ .offer-guidance{align-items:center;padding:12px 13px;gap:10px}
+ .offer-guidance-icon{flex-basis:36px;width:36px;height:36px;border-radius:9px}
+ .offer-guidance-icon svg{width:20px;height:20px}
+ .offer-guidance strong{font-size:11px}
+ .offer-guidance span:not(.offer-guidance-icon){font-size:10px}
+ .offer-layout{grid-template-columns:1fr;gap:12px}
+ .offer-card{min-height:255px;border-radius:17px;padding:19px 21px 17px}
+ .offer-card-main{padding:15px 82px 20px 0}
+ .offer-card-title{font-size:clamp(30px,7.4vw,41px)}
+ .offer-card-description{font-size:13px;line-height:1.55;margin-top:11px}
+ .offer-card-art{right:-8px;top:29px;width:118px;height:108px;opacity:.09}
+ .offer-card-bottom{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding-top:13px}
+ .offer-card-detail{font-size:10px;max-width:180px}
+ .offer-card-action{align-self:auto;justify-content:flex-end;font-size:9px;gap:7px}
+ .offer-card .round-arrow{width:32px;height:32px}
+ .offer-card .round-arrow svg{width:16px;height:16px}
+ .offer-subchoice{flex-direction:column;align-items:stretch;gap:9px;margin-top:12px}
+ .offer-subchoice p{font-size:11px}
+ .offer-both{width:100%;min-height:47px;white-space:normal;flex-wrap:wrap;text-align:center;gap:5px;padding:10px}
+}
+@media(max-width:390px){
+ .offer-card-main{padding-right:57px}
+ .offer-card-art{right:-24px;opacity:.06}
+ .offer-card{padding:18px 17px 15px}
+ .offer-card-title{font-size:30px}
+ .offer-card-description{font-size:12px}
+ .offer-card-detail{font-size:9px}
+ .offer-card-action{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .offer-card,.offer-both,.offer-card-art,.offer-card .round-arrow{transition:none}
+ .offer-card:hover,.offer-card:hover .offer-card-art,.offer-card:hover .round-arrow{transform:none}
 }
 </style>
 </head>
@@ -515,22 +576,35 @@
 </section>
 <section class="offer-section" id="formule" aria-labelledby="offer-heading">
   <div class="shell">
-    <div class="offer-layout">
+    <div class="offer-heading-row">
       <div class="offer-intro">
         <div class="index-line"><b>02</b><span class="line"></span></div>
         <h2 id="offer-heading">CESSIONE<br>O GESTIONE.</h2>
-        <p>Seleziona la formula che ti interessa: il modulo è subito qui sotto. I dettagli economici vengono approfonditi in privato.</p>
+        <p>Come vorresti entrare in questa attività? Scegli la formula da approfondire: il modulo è subito qui sotto e non stai prendendo alcun impegno.</p>
       </div>
-      <button type="button" class="offer-card offer-card--buy" data-choice="cessione" aria-pressed="false">
-        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M20 52h111M29 52l11-31h72l11 31M33 52v53h84V52M63 105V69h24v36M21 105h111M49 38h12M89 38h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>ACQUISTARE.</h3><p>Valuta la cessione dell'attività, senza acquisto dell'immobile.</p>
-        <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span>
+      <div class="offer-guidance">
+        <span class="offer-guidance-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14V9a7 7 0 0 1 14 0v5M8 14h16v13H8zM16 19v4"/></svg></span>
+        <div><strong>Un primo confronto riservato</strong><span>Le condizioni economiche e contrattuali vengono approfondite privatamente.</span></div>
+      </div>
+    </div>
+    <div class="offer-layout" role="group" aria-label="Scegli la formula da approfondire">
+      <button type="button" class="offer-card offer-card--buy" data-choice="cessione" aria-pressed="false" aria-controls="lead-form">
+        <span class="offer-card-kicker">01 <i aria-hidden="true">/</i> CESSIONE DELL'ATTIVITÀ</span>
+        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M20 52h111M29 52l11-31h72l11 31M33 52v53h84V52M63 105V69h24v36M21 105h111M49 38h12M89 38h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="offer-card-main"><span class="offer-card-title">VOGLIO<br>ACQUISTARE.</span><span class="offer-card-description">Per chi desidera rilevare il lounge bar e proseguire l'attività con un proprio progetto imprenditoriale.</span></span>
+        <span class="offer-card-bottom"><span class="offer-card-detail">Cessione dell'attività, non dell'immobile.</span><span class="offer-card-action">SCELGO LA CESSIONE <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span></span></span>
       </button>
-      <button type="button" class="offer-card offer-card--manage" data-choice="gestione" aria-pressed="false">
-        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M17 75 49 44l19 14 15-13 42 33-31 30-27-22-25 21-25-32Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m52 70 26 26M67 61l29 28M53 85l16 16M83 67l23 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><h3>GESTIRE.</h3><p>Valuta un accordo di gestione, con condizioni da concordare.</p>
-        <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span>
+      <button type="button" class="offer-card offer-card--manage" data-choice="gestione" aria-pressed="false" aria-controls="lead-form">
+        <span class="offer-card-kicker">02 <i aria-hidden="true">/</i> GESTIONE DELL'ATTIVITÀ</span>
+        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M17 75 49 44l19 14 15-13 42 33-31 30-27-22-25 21-25-32Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m52 70 26 26M67 61l29 28M53 85l16 16M83 67l23 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+        <span class="offer-card-main"><span class="offer-card-title">VOGLIO<br>GESTIRE.</span><span class="offer-card-description">Per chi preferisce valutare un accordo per la gestione del locale, con termini e condizioni da concordare.</span></span>
+        <span class="offer-card-bottom"><span class="offer-card-detail">Formula e condizioni da definire con i titolari.</span><span class="offer-card-action">SCELGO LA GESTIONE <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span></span></span>
       </button>
     </div>
-    <div class="offer-subchoice"><button type="button" data-choice="entrambe">Preferisco valutare entrambe le formule →</button></div>
+    <div class="offer-subchoice">
+      <p><span aria-hidden="true">✓</span> Nessun impegno ad acquistare o gestire: stai solo chiedendo informazioni.</p>
+      <button class="offer-both" type="button" data-choice="entrambe" aria-pressed="false" aria-controls="lead-form">NON HAI ANCORA DECISO? <strong>VALUTA ENTRAMBE</strong><span aria-hidden="true">↗</span></button>
+    </div>
   </div>
 </section>
 <section class="contact-section" id="contatto" aria-labelledby="contact-heading">
@@ -710,7 +784,7 @@
   function pick(choice,scroll){
     if(choices.indexOf(choice)<0)return;
     transaction.value=choice;
-    document.querySelectorAll('.interest-chip,.offer-card[data-choice]').forEach(function(button){
+    document.querySelectorAll('.interest-chip,.offer-card[data-choice],.offer-both[data-choice]').forEach(function(button){
       button.setAttribute('aria-pressed',button.getAttribute('data-choice')===choice?'true':'false');
     });
     var help=document.getElementById('interest-help');
@@ -785,7 +859,7 @@
       emitFunnel('richiesta_completata',transaction.value);
       form.reset();
       transaction.value='';
-      document.querySelectorAll('.interest-chip,.offer-card[data-choice]').forEach(function(b){b.setAttribute('aria-pressed','false')});
+      document.querySelectorAll('.interest-chip,.offer-card[data-choice],.offer-both[data-choice]').forEach(function(b){b.setAttribute('aria-pressed','false')});
       document.getElementById('interest-help').textContent='Richiesta inviata. Grazie.';
       document.getElementById('optional-email').open=false;
       submitButton.textContent='RICHIESTA INVIATA ✓';
