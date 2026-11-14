@@ -35,7 +35,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.restore-approved-20261114-v5'
+      - 'public/opportunita/.restore-approved-20261114-v5b'
 
 jobs:
   deploy:
