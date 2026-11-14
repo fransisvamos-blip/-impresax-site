@@ -210,7 +210,7 @@ test("V3.3 makes the promised next step and deal terms understandable immediatel
  assert.match(css,/V3\.3 — conversion-focused polish/);
  assert.match(html,/OPPORTUNITÀ RISERVATA · CATANZARO LIDO/);
  assert.match(html,/Un lounge bar operativo da 7 anni, secondo i titolari/);
- assert.match(html,/I dettagli economici e le condizioni vengono discussi/);
+ assert.match(html,/I dettagli economici vengono approfonditi in privato/);
  assert.match(html,/senza acquisto dell'immobile/);
  assert.match(html,/con condizioni da concordare/);
  assert.match(html,/RICHIEDI I DETTAGLI/);
