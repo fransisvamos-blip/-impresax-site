@@ -486,3 +486,11 @@ test("V5 WhatsApp preview uses first-party image while preserving original hero 
  assert.match(html,/photo-1774806245018-a2bdd2eb620b/);
  assert.doesNotMatch(html,/commons\.wikimedia\.org/);
 });
+
+test("Header identity uses requested opportunity wording without touching approved landing",()=>{
+ assert.match(html,/<a class="brand"[^>]*><i class="brand-line"[^>]*><\/i><div><strong>OPPORTUNITÀ IMPRENDITORIALE<\/strong><span>CATANZARO LIDO<\/span>/);
+ assert.match(html,/aria-label="Opportunità imprenditoriale Catanzaro Lido, torna all'inizio"/);
+ assert.match(css,/V3\.9 — targeted polish/);
+ assert.doesNotMatch(css,/PREMIUM EDITION V4/);
+ assert.match(html,/og-social-v5\.jpg/);
+});
