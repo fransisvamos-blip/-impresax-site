@@ -12,7 +12,7 @@ test("faithful V3 rendering: correct desktop chapter sequence and headline",()=>
  assert.match(css,/REFERENCE V3/);
  assert.match(html,/id="hero-title"[^>]*><span>LOUNGE BAR A<\/span><span class="hero-city-line">CATANZARO LIDO\.<\/span>/);
  assert.match(html,/IN CESSIONE O GESTIONE\./);
- assert.match(html,/RICHIEDI<br>I DETTAGLI\./);
+ assert.match(html,/PARLIAMONE<br>IN RISERVATEZZA\./);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  const sections=["id=\"top\"","id=\"formule\"","id=\"contatto\"","id=\"vantaggi\"","id=\"storia\"","id=\"come-funziona\""];
  const locations=sections.map(x=>html.indexOf(x));
@@ -120,7 +120,7 @@ test("privacy and official contact routes remain reachable",()=>{
 test("V3.1 adds original vector detail and clear trust cues without changing structure",()=>{
  assert.match(css,/V3\.1 — art-direction polish/);
  assert.equal((html.match(/class="offer-card-art"/g)||[]).length,2);
- assert.match(html,/BASTANO NOME E CELLULARE/);
+ assert.match(html,/NOME E CELLULARE/);
  assert.match(html,/RICHIESTA RISERVATA · SOLO I DATI NECESSARI/);
  assert.match(css,/\.hero-assurance\{display:flex/);
  assert.match(css,/\.form-input:focus-within\{border-color:/);
@@ -209,7 +209,7 @@ test("privacy is aligned with actual external resources, values and consent sema
 test("V3.3 makes the promised next step and deal terms understandable immediately",()=>{
  assert.match(css,/V3\.3 — conversion-focused polish/);
  assert.match(html,/OPPORTUNITÀ RISERVATA · CATANZARO LIDO/);
- assert.match(html,/Un lounge bar operativo da 7 anni, secondo i titolari/);
+ assert.match(html,/Un lounge bar avviato da sette anni a Catanzaro Lido, secondo i titolari/);
  assert.match(html,/Le condizioni economiche e contrattuali vengono approfondite privatamente/);
  assert.match(html,/Cessione dell'attività, non dell'immobile/);
  assert.match(html,/termini e condizioni da concordare/);
@@ -249,7 +249,7 @@ test("V3.4 keeps a single conversion message across header hero and mobile",()=>
  assert.match(html,/class="mobile-action-primary">RICHIEDI I DETTAGLI/);
  assert.match(html,/aria-label="Chiama il 329 458 2962"/);
  assert.match(html,/href="tel:\+393294582962"/);
- assert.match(html,/RICHIEDI<br>I DETTAGLI/);
+ assert.match(html,/PARLIAMONE<br>IN RISERVATEZZA/);
  assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
 });
 test("V3.4 improves desktop rhythm without rebuilding or adding sections",()=>{
@@ -304,11 +304,11 @@ test("V3.5 closes with a persuasive yet truthful CTA and real legal footer",()=>
  const close=html.indexOf('class="shell closing-cta"');
  const footer=html.indexOf('<footer class="site-footer">');
  assert.ok(lastChapter<close&&close<footer);
- assert.match(html,/VUOI APPROFONDIRE L'OPPORTUNITÀ\?/);
+ assert.match(html,/IL PROSSIMO PASSO È TUO\./);
  assert.match(html,/class="closing-cta-button">RICHIEDI I DETTAGLI/);
  assert.match(html,/class="closing-cta-phone">Oppure chiama il 329 458 2962/);
  assert.equal((html.match(/class="shell privacy-strip"/g)||[]).length,1);
- assert.match(html,/Proposta riservata di cessione o gestione di attività commerciale/);
+ assert.match(html,/Proposta riguardante la cessione o gestione di un'attività commerciale/);
  assert.match(html,/href="\/privacy"/);
  assert.match(css,/STRUCTURE V3\.5/);
  assert.match(css,/\.site-footer\{background:#fff/);
@@ -392,4 +392,68 @@ test("V3.7 keeps CESSIONE O GESTIONE? on one line on desktop and mobile",()=>{
  assert.match(css,/\.offer-intro h2\{font-size:clamp\(22px,5\.8vw,38px\)/);
  assert.equal((html.match(/<form\b/g)||[]).length,1);
  assert.match(js,/fetch\('\/api\/interesse'/);
+});
+
+test("V3.8 upgrades all six chapters without adding a new funnel step",()=>{
+ assert.match(css,/V3\.8 — comprehensive but restrained six-chapter design and CRO upgrade/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.match(html,/class="hero-city-line">CATANZARO LIDO\./);
+ assert.match(html,/id="offer-heading">CESSIONE O GESTIONE\?/);
+ assert.match(html,/id="contact-heading">PARLIAMONE<br>IN RISERVATEZZA/);
+ assert.match(html,/id="story-heading">UN PERCORSO<br>GIÀ AVVIATO/);
+ assert.match(html,/id="steps-heading">COME<br>FUNZIONA/);
+ assert.match(html,/IL PROSSIMO PASSO È TUO/);
+});
+test("V3.8 makes hero trust readable and keeps nonbinding facts properly qualified",()=>{
+ assert.match(html,/SETTE ANNI DICHIARATI/);
+ assert.match(html,/NOME E CELLULARE/);
+ assert.match(html,/SENZA IMPEGNO/);
+ assert.match(css,/\.hero-assurance>span\{display:inline-flex/);
+ assert.match(css,/\.hero-assurance \.assurance-dot\{display:block/);
+ assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-assurance>span\{padding:6px 8px;min-height:30px;font-size:9px/);
+ assert.match(html,/Panorama illustrativo di Catanzaro Lido/);
+ assert.match(html,/non raffigura l'attività proposta/);
+});
+test("V3.8 form uses cohesive white card, visibly named steps and stable privacy flow",()=>{
+ assert.match(html,/class="form-section-label"><span>01<\/span> QUAL È LA FORMULA CHE TI INTERESSA\?/);
+ assert.match(html,/class="form-section-label form-section-label--contact"><span>02<\/span> COME POSSIAMO RICONTATTARTI\?/);
+ assert.match(html,/class="form-next-step"/);
+ assert.match(css,/\.contact-form\{background:#fffefa;color:var\(--navy\)/);
+ assert.match(css,/\.contact-form \.interest-chip\[aria-pressed="true"\]\{background:var\(--orange\);border-color:var\(--orange\);color:#fff\}/);
+ assert.match(css,/\.contact-form \.agreement\{color:#364c5c/);
+ assert.match(css,/\.contact-form \.form-next-step\{display:flex/);
+ assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ new Script(js,{filename:"opportunita-v3-8.js"});
+});
+test("V3.8 benefit facts are honest, legible and not financial promises",()=>{
+ assert.match(html,/id="why-heading">PERCHÉ<br>VALUTARLA/);
+ assert.match(html,/CATANZARO<br>LIDO/);
+ assert.match(html,/ATTIVITÀ<br>GIÀ AVVIATA/);
+ assert.match(html,/DUE MODALITÀ<br>DI INGRESSO/);
+ assert.match(html,/informazioni comunicate dai titolari|Informazioni comunicate dai titolari/);
+ assert.match(html,/richiedono verifica/);
+ assert.match(css,/\.why-item \.why-icon\{display:grid/);
+ assert.match(css,/\.proposal-facts\{background:#fff;box-shadow:/);
+ assert.doesNotMatch(html,/fatturato garantito|utile garantito|ROI certo/i);
+});
+test("V3.8 story and closing give an unambiguous nonbinding path",()=>{
+ assert.match(html,/La proposta riguarda l'attività commerciale, non la proprietà dell'immobile/);
+ assert.match(html,/secondo quanto comunicato dai titolari/);
+ assert.match(html,/IL PROSSIMO PASSO È TUO/);
+ assert.match(html,/decidi liberamente se proseguire/);
+ assert.match(html,/Non devi decidere ora/);
+ assert.match(css,/\.story-copy p\+p\{margin-top:19px;padding:12px/);
+ assert.match(css,/\.closing-cta\{background:linear-gradient/);
+ assert.match(html,/class="closing-cta-button">RICHIEDI I DETTAGLI/);
+});
+test("V3.8 accessible mobile composition and sticky navigation remain usable",()=>{
+ assert.match(css,/\.site-header\{position:sticky;top:0/);
+ assert.match(css,/\.contact-form\{padding:19px 16px;border-radius:19px/);
+ assert.match(css,/\.why-item\{display:grid;min-height:0;grid-template-columns:49px minmax\(0,1fr\)/);
+ assert.match(css,/@media\(max-width:670px\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(html,/id="menu-toggle"[^>]*aria-label="Apri menu"/);
+ assert.match(html,/class="mobile-action" role="navigation" aria-label="Contatto rapido"/);
 });

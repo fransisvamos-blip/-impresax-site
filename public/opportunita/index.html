@@ -11,6 +11,7 @@
 <meta property="og:description" content="Un'attività avviata, due modalità da valutare e una trattativa riservata.">
 <meta property="og:url" content="https://opportunita.impresax.org/">
 <meta property="og:image" content="https://commons.wikimedia.org/wiki/Special:FilePath/Catanzarolidolandscape.jpg?width=1200">
+<meta property="og:image:alt" content="Panorama illustrativo di Catanzaro Lido; non raffigura l'attività proposta">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://opportunita.impresax.org/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +24,7 @@
 :root{--navy:#102c41;--navy2:#073149;--orange:#f26520;--orange-dark:#d85411;--warm:#fbfaf8;--paper:#fffefa;--peach:#fce6d7;--pale:#f5f4f1;--gray:#586572;--line:#d8dad8;--font:'Manrope',system-ui,sans-serif;--body:'DM Sans',system-ui,sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}body{margin:0;background:var(--warm);color:var(--navy);font:500 16px/1.7 var(--body);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}a{color:inherit}img{display:block;width:100%}::selection{background:#facdaf;color:#0a283b}
 .shell{width:min(1208px,calc(100% - 78px));margin-inline:auto}
-.site-header{position:relative;z-index:40;background:rgba(255,254,251,.98);border-bottom:1px solid #ebebe8}
+ .site-header{position:sticky;top:0;z-index:40;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(255,254,251,.98);border-bottom:1px solid #ebebe8}
 .header-inner{display:flex;align-items:center;justify-content:space-between;min-height:74px;gap:24px}
 .brand{display:flex;align-items:center;gap:11px;font:800 13px/1.16 var(--font);text-decoration:none;letter-spacing:-.035em}
 .brand-line{display:block;width:25px;height:3px;background:var(--orange);flex:0 0 25px}
@@ -47,12 +48,12 @@
 .hero-media img{height:100%;width:100%;object-fit:cover;object-position:52% 50%;filter:saturate(.87) contrast(1.04)}
 .hero-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#fbfaf8 0%,#fbfaf8f5 7%,#fbfaf8c4 22%,#fbfaf81c 46%,transparent 65%),linear-gradient(0deg,#07213617,transparent 30%)}
 .hero-inner{position:relative;z-index:1;display:flex;align-items:center;min-height:570px}
-.hero-content{width:min(59%,700px);padding:34px 0 45px;position:relative;z-index:3}
+.hero-content{width:min(61%,710px);padding:37px 0 46px;position:relative;z-index:3}
 .hero h1{font:800 clamp(48px,5.7vw,79px)/1.015 var(--font);letter-spacing:-.064em;margin:17px 0 10px;text-transform:uppercase;color:#09263a}
 .hero h1 span{display:block}
 .hero h1 .hero-city-line{font-size:.82em;letter-spacing:-.055em;white-space:nowrap}
 .offer-ribbon{display:inline-block;background:var(--orange);color:white;font:800 clamp(23px,2.58vw,35px)/1.18 var(--font);letter-spacing:-.045em;padding:6px 12px 8px;margin:0 0 12px;text-transform:uppercase}
-.hero p{max-width:440px;margin:0 0 21px;font:500 16px/1.65 var(--body);color:#203547}
+.hero p{max-width:485px;margin:0 0 23px;font:500 16px/1.75 var(--body);color:#203547}
 .primary-cta{display:inline-flex;align-items:center;justify-content:center;gap:23px;min-height:56px;padding:16px 23px;background:var(--orange);border:0;border-radius:8px;color:white;font:800 13px/1.35 var(--font);text-decoration:none;white-space:nowrap;transition:background .2s ease,transform .2s ease}
 .primary-cta:hover{background:var(--orange-dark);transform:translateY(-2px)}
 .primary-cta svg{width:19px;height:19px}
@@ -215,7 +216,7 @@
 }
 @media(max-width:670px){
  html{scroll-padding-top:66px}
- .site-header{position:relative}
+ .site-header{position:sticky;top:0}
  .header-inner{min-height:73px}
  .brand{font-size:13px}
  .brand-line{width:24px}
@@ -302,9 +303,9 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.offer-card,.primary-cta,.submit-button{transition:none}.offer-card:hover,.primary-cta:hover{transform:none}}
 
 /* V3.1 — art-direction polish, not another structural rebuild. */
-.hero-assurance{display:flex;align-items:center;gap:9px;margin-top:19px;font:800 10px/1.6 var(--font);letter-spacing:.04em;color:#536574}
-.assurance-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--orange);box-shadow:0 0 0 4px #f265201a}
-.hero-assurance i{display:inline-block;margin-inline:9px;color:#b2bbbe;font-style:normal}
+
+
+
 .primary-cta:focus-visible,.offer-card:focus-visible,.offer-subchoice button:focus-visible,.interest-chip:focus-visible,.submit-button:focus-visible,.menu-toggle:focus-visible,.desktop-nav a:focus-visible,.mobile-action a:focus-visible{outline:3px solid #f49a65;outline-offset:3px}
 .why-item{position:relative}
 .why-item:before{content:"";position:absolute;top:0;left:-1px;width:3px;height:29px;background:var(--orange);opacity:.86}
@@ -321,11 +322,11 @@
 .mobile-action{display:none}
 /* Screen-specific adjustments: avoid accidental single-line overflow */
 @media(max-width:1100px){
- .hero-assurance{max-width:460px;flex-wrap:wrap}
+
 }
 @media(max-width:670px){
- .hero-assurance{font-size:8px;line-height:1.45;margin-top:14px;max-width:340px}
- .hero-assurance i{margin-inline:5px}
+
+
  .why-item:before{left:50%;transform:translateX(-50%);top:0;width:27px;height:3px}
  .form-kicker{color:#597183;font-size:9px}
  .mobile-action{display:flex;align-items:stretch;gap:9px;position:fixed;z-index:85;bottom:0;left:0;right:0;padding:9px 12px calc(9px + env(safe-area-inset-bottom));background:#fffefaed;border-top:1px solid #d8dfe1;box-shadow:0 -9px 26px #0629401a;transform:translateY(112%);opacity:0;pointer-events:none;transition:transform .26s ease,opacity .24s ease}
@@ -340,7 +341,7 @@
 }
 @media(max-width:385px){
  .mobile-action-primary{font-size:11px}
- .hero-assurance{font-size:7.5px}
+
 }
 @media(prefers-reduced-motion:reduce){
 }
@@ -407,7 +408,7 @@
 
 /* V3.3 — conversion-focused polish: straightforward copy and two essential contact fields */
 .hero p{max-width:500px}
-.hero-assurance{font-weight:700;letter-spacing:.013em}
+
 .contact-intro p{max-width:430px}
 .contact-form .form-kicker{letter-spacing:.042em}
 .optional-email{border-radius:8px;background:#ffffff12;border:1px solid #ffffff40;padding:9px 12px}
@@ -426,7 +427,7 @@
 @media(max-width:670px){
  .hero-media{height:clamp(218px,54vw,278px)}
  .hero p{font-size:14px}
- .hero-assurance{font-size:8px;max-width:390px}
+
  .optional-email{background:#f5f8fa;border-color:#dce5e9}
  .optional-email summary{color:#28536c}
  .optional-email summary span{color:#76909e}
@@ -435,7 +436,7 @@
  .contact-panel{scroll-margin-top:18px}
 }
 @media(max-width:390px){
- .hero-assurance{font-size:7.4px}
+
  .optional-email summary{font-size:11px}
 }
 
@@ -539,6 +540,142 @@
  .offer-card,.offer-both,.offer-card-art,.offer-card .round-arrow{transition:none}
  .offer-card:hover,.offer-card:hover .offer-card-art,.offer-card:hover .round-arrow{transform:none}
 }
+
+/* V3.8 — comprehensive but restrained six-chapter design and CRO upgrade */
+
+/* Header: sticky but calm; anchor targets stay visible when navigating */
+.site-header{box-shadow:0 3px 15px #0d2b410a}
+.desktop-nav a{transition:color .15s ease,background .15s ease}
+.desktop-nav a:not(.header-cta):focus-visible{outline:2px solid var(--orange);outline-offset:4px}
+#top,#formule,#contatto,#vantaggi,#storia,#come-funziona{scroll-margin-top:80px}
+
+/* 01 / HERO — readable commitment cues, not microtext */
+.hero-content{padding-top:52px;padding-bottom:54px}
+.hero p strong{font-weight:800;color:#14374e}
+.hero-assurance{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:22px;max-width:600px}
+.hero-assurance>span{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;min-height:34px;border:1px solid #d9e1df;background:#ffffffb8;border-radius:40px;color:#345367;font:800 10px/1.35 var(--font);letter-spacing:.015em}
+.hero-assurance .assurance-dot{display:block;flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:var(--orange)}
+.hero-image-note{right:17px;bottom:14px;line-height:1.5}
+.hero .primary-cta{box-shadow:0 9px 21px #e66b2840}
+
+/* 02 / FORMULA — clear selection and sufficient visual distinction */
+.offer-guidance{box-shadow:0 6px 18px #17354a08}
+.offer-card-description{line-height:1.72}
+.offer-card-action{font-size:11px}
+.offer-both{min-height:48px;padding-inline:20px;font-size:11px}
+.offer-card[aria-pressed="true"]{box-shadow:0 0 0 5px #f2652019,0 18px 34px #0c304523}
+
+/* 03 / FORM — equal-quality desktop and mobile experience */
+.contact-section{padding-top:36px;padding-bottom:62px}
+.contact-panel{grid-template-columns:.92fr 1.08fr;gap:clamp(24px,4vw,55px);padding:clamp(32px,4.5vw,58px);align-items:center}
+.contact-intro h2{font-size:clamp(30px,3.4vw,47px);line-height:1.055;letter-spacing:-.056em}
+.contact-intro p{font-size:14px;line-height:1.78}
+.contact-phone{margin-top:21px}
+.contact-form{background:#fffefa;color:var(--navy);border:1px solid #e8ecec;border-radius:20px;padding:clamp(21px,2.5vw,29px);gap:11px;box-shadow:0 18px 42px #031a2c32}
+.contact-form .form-kicker{color:#315b73;font-size:10px;letter-spacing:.047em}
+.contact-form .form-section-label{display:flex;align-items:center;gap:9px;margin:7px 0 1px;font:800 10px/1.4 var(--font);color:#39596d;letter-spacing:.04em}
+.contact-form .form-section-label span{display:inline-grid;place-items:center;width:23px;height:23px;flex:none;border-radius:50%;background:#f9e6d8;color:#d85d1e;font:800 10px/1 var(--font)}
+.contact-form .form-section-label--contact{padding-top:15px;margin-top:8px;border-top:1px solid #e6ebee}
+.contact-form .interest-selection>span{color:#536b7b;font-size:10px}
+.contact-form .interest-chip{border-color:#d0dce0;background:#f2f6f7;color:#17384e;min-height:40px;padding:8px 13px}
+.contact-form .interest-chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#fff}
+.contact-form .interest-help{color:#658095;font-size:11px;margin:0}
+.contact-form .form-input{min-height:53px;border:1px solid #cdd8dc;border-radius:10px}
+.contact-form .form-input:focus-within{outline:2px solid #f4a57555;outline-offset:1px}
+.contact-form .agreement{color:#364c5c;font-size:11px;line-height:1.65}
+.contact-form .agreement a{color:#173d58}
+.contact-form .optional-email{background:#f6f8f8;border-color:#dfe7e9;border-radius:10px}
+.contact-form .optional-email summary{color:#28536c}
+.contact-form .optional-email summary span{color:#60798a}
+.contact-form .optional-email summary:after{color:var(--orange)}
+.contact-form .form-note{color:#526a79;font-size:11px}
+.contact-form .submit-button{border-radius:10px;min-height:56px}
+.contact-form .form-next-step{display:flex;align-items:flex-start;gap:8px;margin:0;padding:10px 11px;border:1px solid #ece6df;background:#faf7f2;border-radius:9px;color:#546574;font:600 10.5px/1.55 var(--body)}
+.contact-form .form-next-step span{color:#c76b35;font-weight:800}
+
+/* 04 / KEY FACTS — visible, grounded, useful */
+.why-heading p{max-width:315px;line-height:1.75}
+.why-item{display:flex;flex-direction:column;align-items:flex-start;min-height:174px}
+.why-item .why-icon{display:grid;place-items:center;flex:none;width:42px;height:42px;margin-bottom:15px;color:#d96728;background:#fff4e9;border-radius:12px}
+.why-item .why-icon svg{width:29px;height:29px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.why-item h3{margin-bottom:9px;line-height:1.25}
+.why-item p{font-size:13px;line-height:1.7}
+.proposal-facts{background:#fff;box-shadow:0 8px 24px #193d5009;border:1px solid #e0e7e8;border-radius:15px;padding:20px 18px;margin-top:34px}
+.proposal-facts-label span{font-size:11px}
+.proposal-fact strong{font-size:13px}
+
+/* 05 / BUSINESS STORY — editorial focus rather than repeated sales claims */
+.story-media img{filter:saturate(.92) contrast(1.035)}
+.story-copy h2{max-width:660px}
+.story-copy p{line-height:1.82}
+.story-copy p+p{margin-top:19px;padding:12px 0 0 16px;border-left:3px solid var(--orange);border-top:0}
+.story-copy .anniversary{margin-bottom:20px;box-shadow:0 5px 18px #a15f3020}
+
+/* 06 / THREE STEPS — continuity and conclusive action */
+.steps-section{padding-top:62px;padding-bottom:70px}
+.steps-intro p{line-height:1.78}
+.step{min-height:170px}
+.step-index{background:#fff5ec;box-shadow:0 0 0 3px #f8dfce}
+.step h3{line-height:1.25}
+.step p{line-height:1.7}
+.closing-cta{background:linear-gradient(115deg,#fff0e4 0%,#fce0cd 100%);border-color:#f3d4bb;padding:33px 36px;box-shadow:0 12px 25px #5224090a}
+.closing-cta-copy h3{font-size:clamp(22px,2.4vw,30px);max-width:590px}
+.closing-cta-copy p{font-size:13.5px;line-height:1.7}
+.closing-cta-button{min-height:56px;box-shadow:0 10px 20px #c4592923}
+
+/* Footer: disclosure remains prominent but not visually overwhelming */
+.site-footer{background:#fcfcfa}
+.site-footer .privacy-strip{gap:26px;padding-top:30px;padding-bottom:33px}
+.site-footer .privacy-strip p{max-width:860px}
+.site-footer .legal-links a{font-weight:700;text-underline-offset:3px}
+@media(max-width:1100px){
+ .contact-panel{padding:33px;gap:23px}
+ .contact-form{padding:21px}
+ .contact-intro h2{font-size:clamp(30px,3.3vw,39px)}
+ .offer-card-action{font-size:10px}
+}
+@media(max-width:810px){
+ .hero-content{padding-top:35px;padding-bottom:40px}
+ .hero-assurance>span{font-size:9px}
+ .contact-panel{grid-template-columns:.83fr 1.17fr;padding:27px;gap:18px}
+ .contact-form{padding:19px}
+ .contact-intro h2{font-size:34px}
+ .why-item{min-height:170px}
+ .why-item .why-icon{margin-bottom:10px}
+ .proposal-facts{padding:15px}
+ .closing-cta{padding:27px}
+}
+@media(max-width:670px){
+ #top,#formule,#contatto,#vantaggi,#storia,#come-funziona{scroll-margin-top:72px}
+ .hero-content{padding-top:30px;padding-bottom:8px}
+ .hero-assurance{gap:6px;margin-top:15px;max-width:none}
+ .hero-assurance>span{padding:6px 8px;min-height:30px;font-size:9px;line-height:1.3}
+ .contact-section{padding-top:20px;padding-bottom:36px}
+ .contact-panel{display:grid;grid-template-columns:1fr;padding:28px 17px 31px;gap:18px}
+ .contact-intro h2{font-size:clamp(31px,8.5vw,43px)}
+ .contact-form{padding:19px 16px;border-radius:19px;gap:10px}
+ .contact-form .form-section-label{font-size:10px}
+ .contact-form .form-next-step{font-size:10px}
+ .why-item{display:grid;min-height:0;grid-template-columns:49px minmax(0,1fr);grid-template-rows:auto auto;gap:4px 13px;align-items:center;padding:16px}
+ .why-item .why-icon{grid-column:1;grid-row:1/3;width:43px;height:43px;margin:0}
+ .why-item h3{grid-column:2;grid-row:1;margin:0;font-size:15px}
+ .why-item p{grid-column:2;grid-row:2;margin:0;font-size:12.5px;line-height:1.55}
+ .proposal-facts{padding:13px;margin-top:24px}
+ .story-copy p+p{padding:12px 0 0 14px;border-top:0;border-left:3px solid var(--orange)}
+ .steps-section{padding-top:38px;padding-bottom:48px}
+ .step{min-height:0}
+ .closing-cta{padding:25px 19px;margin-top:32px}
+ .closing-cta-copy h3{font-size:23px}
+ .site-footer .privacy-strip{padding:24px 0 31px}
+}
+@media(max-width:390px){
+ .hero-assurance>span{font-size:8.5px;padding:6px 7px}
+ .contact-form{padding:15px 12px}
+ .contact-intro h2{font-size:31px}
+ .contact-form .interest-chip{padding:7px 10px;font-size:10px}
+ .why-item{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){.desktop-nav a{transition:none}}
 </style>
 </head>
 <body>
@@ -549,7 +686,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <nav class="desktop-nav" id="main-nav" aria-label="Navigazione principale">
-      <a href="#top">L'OPPORTUNITÀ</a><a href="#formule">FORMULE</a><a href="#vantaggi">VANTAGGI</a><a href="#come-funziona">COME FUNZIONA</a>
+      <a href="#top">L'OPPORTUNITÀ</a><a href="#formule">FORMULE</a><a href="#vantaggi">PUNTI CHIAVE</a><a href="#come-funziona">COME FUNZIONA</a>
       <a class="header-cta" href="#contatto">RICHIEDI I DETTAGLI <span aria-hidden="true">➜</span></a>
     </nav>
   </div>
@@ -560,12 +697,12 @@
     <div class="eyebrow">OPPORTUNITÀ RISERVATA · CATANZARO LIDO</div>
     <h1 id="hero-title"><span>LOUNGE BAR A</span><span class="hero-city-line">CATANZARO LIDO.</span></h1>
     <div class="offer-ribbon">IN CESSIONE O GESTIONE.</div>
-    <p>Un lounge bar operativo da 7 anni, secondo i titolari. Puoi valutare la cessione dell’attività o la sua gestione, con condizioni da approfondire in privato.</p>
+    <p>Un lounge bar avviato da sette anni a Catanzaro Lido, secondo i titolari. Due possibilità da approfondire: <strong>cessione dell’attività oppure gestione</strong>.</p>
     <div class="hero-actions"><a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
     </a>
     <a class="hero-phone" href="tel:+393294582962" aria-label="Chiama il 329 458 2962 per informazioni">Oppure chiama <strong>329 458 2962</strong></a></div>
-    <div class="hero-assurance"><span class="assurance-dot" aria-hidden="true"></span><span>SCEGLI LA FORMULA <i aria-hidden="true">·</i> BASTANO NOME E CELLULARE <i aria-hidden="true">·</i> NESSUN IMPEGNO</span></div>
+    <div class="hero-assurance" aria-label="Modalità della richiesta"><span><i class="assurance-dot" aria-hidden="true"></i> SETTE ANNI DICHIARATI</span><span><i class="assurance-dot" aria-hidden="true"></i> NOME E CELLULARE</span><span><i class="assurance-dot" aria-hidden="true"></i> SENZA IMPEGNO</span></div>
   </div></div>
   <div class="hero-media">
     <img src="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85"
@@ -581,7 +718,7 @@
       <div class="offer-intro">
         <div class="index-line"><b>02</b><span class="line"></span></div>
         <h2 id="offer-heading">CESSIONE O GESTIONE?</h2>
-        <p>Come vorresti entrare in questa attività? Scegli la formula da approfondire: il modulo è subito qui sotto e non stai prendendo alcun impegno.</p>
+        <p>Come vorresti proseguire questa attività? Confronta le due formule e scegli quella che vuoi approfondire: il modulo è subito qui sotto, senza impegno.</p>
       </div>
       <div class="offer-guidance">
         <span class="offer-guidance-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14V9a7 7 0 0 1 14 0v5M8 14h16v13H8zM16 19v4"/></svg></span>
@@ -603,7 +740,7 @@
       </button>
     </div>
     <div class="offer-subchoice">
-      <p><span aria-hidden="true">✓</span> Nessun impegno ad acquistare o gestire: stai solo chiedendo informazioni.</p>
+      <p><span aria-hidden="true">✓</span> Questa scelta serve solo a indirizzare la richiesta. Non costituisce un impegno.</p>
       <button class="offer-both" type="button" data-choice="entrambe" aria-pressed="false" aria-controls="lead-form">NON HAI ANCORA DECISO? <strong>VALUTA ENTRAMBE</strong><span aria-hidden="true">↗</span></button>
     </div>
   </div>
@@ -612,12 +749,13 @@
   <div class="contact-panel">
     <div class="contact-intro">
       <div class="index-line orange"><b>03</b><span class="line"></span></div>
-      <h2 id="contact-heading">RICHIEDI<br>I DETTAGLI.</h2>
-      <p>Per iniziare bastano nome e cellulare. Ti ricontatteremo per un confronto riservato, senza impegno a procedere.</p>
+      <h2 id="contact-heading">PARLIAMONE<br>IN RISERVATEZZA.</h2>
+      <p>Lascia un recapito e indica la formula che vuoi conoscere. Ti ricontatteremo per un primo confronto: nessun obbligo di procedere.</p>
       <a class="contact-phone" href="tel:+393294582962">Preferisci parlare direttamente? <strong>329 458 2962</strong></a>
     </div>
     <form class="contact-form" id="lead-form" novalidate>
       <p class="form-kicker"><span class="form-kicker-dot" aria-hidden="true"></span> RICHIESTA RISERVATA · SOLO I DATI NECESSARI</p>
+      <div class="form-section-label"><span>01</span> QUAL È LA FORMULA CHE TI INTERESSA?</div>
       <div class="interest-selection" role="group" aria-label="Formula di interesse" aria-describedby="interest-help">
         <span>MI INTERESSA:</span>
         <button class="interest-chip" type="button" data-choice="cessione" aria-pressed="false">ACQUISTARE</button>
@@ -626,6 +764,7 @@
       </div>
       <p id="interest-help" class="interest-help">Seleziona una formula prima di inviare la richiesta.</p>
       <input type="hidden" id="transaction_interest" name="transaction_interest">
+      <div class="form-section-label form-section-label--contact"><span>02</span> COME POSSIAMO RICONTATTARTI?</div>
       <label class="form-input">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M4.5 21v-2c0-4 3-6 7.5-6s7.5 2 7.5 6v2"/></svg>
         <input id="full_name" name="full_name" type="text" autocomplete="name" required minlength="3" maxlength="120" placeholder="Nome e cognome *" aria-label="Nome e cognome obbligatorio">
@@ -648,7 +787,8 @@
       </label>
       <button id="send-btn" class="submit-button" type="submit">INVIA LA RICHIESTA RISERVATA <span aria-hidden="true">➜</span></button>
       <p id="form-feedback" class="form-feedback" role="status" aria-live="polite"></p>
-      <p class="form-note">Nome e cellulare sono gli unici recapiti obbligatori. Nessun impegno.</p>
+      <p class="form-note">Nome e cellulare sono gli unici recapiti obbligatori.</p>
+      <p class="form-next-step"><span aria-hidden="true">✓</span> Dopo l'invio: primo contatto per approfondire la tua richiesta, senza impegno.</p>
     </form>
   </div>
 </section>
@@ -657,26 +797,26 @@
     <div class="why-heading">
       <div class="index-line"><b>04</b><span class="line"></span></div>
       <h2 id="why-heading">PERCHÉ<br>VALUTARLA.</h2>
-      <p>Un’attività già avviata: questi sono i principali elementi dichiarati dai titolari, da approfondire.</p>
+      <p>Contesto, percorso e possibilità: tre elementi per capire se vale la pena approfondire questa proposta.</p>
     </div>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 37S32 25 32 16a12 12 0 0 0-24 0c0 9 12 21 12 21Z"/><circle cx="20" cy="16" r="4"/></svg></span>
-      <h3>POSIZIONE<br>STRATEGICA</h3>
-      <p>A Catanzaro Lido, nella zona della movida, secondo quanto indicato dai titolari.</p>
+      <h3>CATANZARO<br>LIDO</h3>
+      <p>Il locale opera a Catanzaro Lido, in una zona di frequentazione serale secondo i titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="12" r="6"/><path d="M8 32v-4c0-6 5-9 12-9s12 3 12 9v4M7 18a5 5 0 0 0-4 5v9M33 18a5 5 0 0 1 4 5v9"/></svg></span>
-      <h3>CLIENTELA<br>FIDELIZZATA</h3>
-      <p>Sette anni di attività e una clientela costruita nel tempo, secondo i titolari.</p>
+      <h3>ATTIVITÀ<br>GIÀ AVVIATA</h3>
+      <p>Sette anni di operatività e una clientela sviluppata nel tempo, secondo i titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M7 33V23h6v10M18 33V17h6v16M29 33V10h6v23M5 16l10-6 9 3 11-9M28 4h7v7"/></svg></span>
-      <h3>FORMAT<br>VERSATILE</h3>
-      <p>Spazi per aperitivi e iniziative, nel rispetto delle autorizzazioni disponibili.</p>
+      <h3>DUE MODALITÀ<br>DI INGRESSO</h3>
+      <p>Puoi valutare la cessione o la gestione; termini e condizioni restano da concordare.</p>
     </article>
   </div>
   <div class="shell proposal-facts" aria-label="Scheda sintetica della proposta">
-    <div class="proposal-facts-label"><span>IN SINTESI</span><small>Informazioni comunicate dai titolari, da verificare</small></div>
+    <div class="proposal-facts-label"><span>LA PROPOSTA</span><small>Informazioni comunicate dai titolari, da verificare</small></div>
     <div class="proposal-fact"><span>ATTIVITÀ</span><strong>Lounge bar avviato</strong></div>
     <div class="proposal-fact"><span>LOCALITÀ</span><strong>Catanzaro Lido</strong></div>
     <div class="proposal-fact"><span>OPPORTUNITÀ</span><strong>Cessione o gestione</strong></div>
@@ -692,10 +832,10 @@
   </div>
   <div class="story-copy">
     <div class="index-line"><b>05</b><span class="line"></span></div>
-    <h2 id="story-heading">LA STORIA<br>DELL'ATTIVITÀ.</h2>
+    <h2 id="story-heading">UN PERCORSO<br>GIÀ AVVIATO.</h2>
     <div class="anniversary"><b>7</b><span>ANNI DI ATTIVITÀ</span></div>
-    <p>Il lounge bar è operativo da sette anni e dispone di una propria clientela, secondo quanto comunicato dai titolari.</p>
-    <p><strong>PERCHÉ È DISPONIBILE?</strong> I titolari valutano un passaggio per dedicarsi a un nuovo progetto. L'immobile non è in vendita: l'opportunità riguarda esclusivamente l'attività, in cessione o gestione.</p>
+    <p>Il lounge bar opera da sette anni e ha costruito una propria clientela, secondo quanto comunicato dai titolari. Un punto di partenza da valutare con le verifiche del caso.</p>
+    <p><strong>PERCHÉ È DISPONIBILE?</strong> I titolari valutano di dedicarsi a un nuovo progetto. La proposta riguarda l'attività commerciale, non la proprietà dell'immobile. Le condizioni saranno approfondite in privato.</p>
   </div>
 </section>
 <section class="steps-section" id="come-funziona" aria-labelledby="steps-heading">
@@ -703,30 +843,30 @@
     <div class="steps-intro">
       <div class="index-line"><b>06</b><span class="line"></span></div>
       <h2 id="steps-heading">COME<br>FUNZIONA.</h2>
-      <p>Tre passaggi chiari, anche se vuoi prima conoscere meglio l'attività.</p>
+      <p>Dal primo interesse alla valutazione: un percorso semplice, senza obbligo di proseguire.</p>
     </div>
     <div class="step">
       <span class="step-index">01</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M11 5h15l5 6v24H11V5Z"/><path d="M25 5v8h6M16 20h10M16 25h10M16 30h7"/></svg></span>
-      <h3>SCEGLI<br>LA FORMULA</h3><p>Indica acquisto, gestione o entrambe e lascia i tuoi recapiti.</p>
+      <h3>SCEGLI<br>LA FORMULA</h3><p>Indica se vuoi acquistare, gestire o conoscere entrambe le possibilità.</p>
     </div>
     <div class="step">
       <span class="step-index">02</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="7" y="8" width="26" height="25" rx="3"/><path d="M7 15h26M14 5v6M26 5v6M14 21h3m5 0h3m-11 6h3m5 0h3"/></svg></span>
-      <h3>PRIMO<br>CONTATTO</h3><p>Ti ricontattiamo per capire cosa desideri approfondire.</p>
+      <h3>PRIMO<br>CONTATTO</h3><p>Lascia nome e cellulare: ti ricontattiamo per un primo chiarimento.</p>
     </div>
     <div class="step">
       <span class="step-index">03</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="m4 17 10-8 7 6 6-5 9 8-9 11-7-7-7 7L4 17Z"/><path d="M15 15 7 23M25 15l9 8M15 28l4 4 4-4"/></svg></span>
-      <h3>VALUTA<br>I DETTAGLI</h3><p>Approfondisci le informazioni disponibili, senza impegno.</p>
+      <h3>VALUTA<br>I DETTAGLI</h3><p>Valuti le informazioni e decidi liberamente se proseguire.</p>
     </div>
   </div>
 
   <div class="shell closing-cta">
     <div class="closing-cta-copy">
       <span>IL PROSSIMO PASSO È SEMPLICE</span>
-      <h3>VUOI APPROFONDIRE L'OPPORTUNITÀ?</h3>
-      <p>Richiedi un primo confronto riservato. Puoi valutare l'acquisto, la gestione o entrambe le formule, senza impegno.</p>
+      <h3>IL PROSSIMO PASSO È TUO.</h3>
+      <p>Se ti interessa capire meglio questa proposta, scegli la formula e richiedi un contatto riservato. Non devi decidere ora.</p>
     </div>
     <div class="closing-cta-actions">
       <a href="#contatto" class="closing-cta-button">RICHIEDI I DETTAGLI <span aria-hidden="true">➜</span></a>
@@ -738,7 +878,7 @@
 </main>
 <footer class="site-footer">
   <div class="shell privacy-strip">
-    <p>Proposta riservata di cessione o gestione di attività commerciale, non dell'immobile. Le dichiarazioni dei titolari su durata, clientela, condizioni e autorizzazioni richiedono verifica documentale. Le fotografie sono illustrative e non rappresentano il locale.</p>
+    <p>Proposta riguardante la cessione o gestione di un'attività commerciale, non la vendita dell'immobile. I dati su durata, clientela e condizioni provengono dai titolari e richiedono verifica. Le fotografie sono illustrative: non mostrano il locale.</p>
     <div class="legal-links"><a href="/privacy">Privacy</a><a href="mailto:info@impresax.org">Email</a><a href="tel:+393294582962" aria-label="Chiama il 329 458 2962">329 458 2962</a></div>
   </div>
 </footer>
