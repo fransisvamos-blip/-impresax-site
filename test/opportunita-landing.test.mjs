@@ -114,7 +114,7 @@ test("privacy and official contact routes remain reachable",()=>{
  assert.match(html,/id="form-feedback" class="form-feedback" role="status" aria-live="polite"/);
  assert.match(privacy,/Informativa sulla privacy/);
  assert.match(privacy,/info@impresax\.org/);
- assert.match(privacy,/titolare del trattamento/);
+ assert.match(privacy,/titolare (?:effettivo |o responsabile )?del trattamento/);
 });
 
 test("V3.1 adds original vector detail and clear trust cues without changing structure",()=>{
