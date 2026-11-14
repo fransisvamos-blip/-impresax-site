@@ -67,13 +67,13 @@ export async function serveOpportunity(request,env) {
   if(url.pathname==="/api/interesse") return handleOpportunityLead(request,env);
   if(request.method!=="GET"&&request.method!=="HEAD") return response({ok:false,error:"METHOD_NOT_ALLOWED"},405);
   // Cloudflare Assets canonicalizes index.html and *.html to directory/extensionless URLs.
-  const paths={"/":"/opportunita/","/privacy":"/opportunita/privacy","/privacy/":"/opportunita/privacy","/og-social-v4.jpg":"/opportunita/og-social-v4.jpg"};
+  const paths={"/":"/opportunita/","/privacy":"/opportunita/privacy","/privacy/":"/opportunita/privacy","/og-social-v4.jpg":"/opportunita/og-social-v5.jpg","/og-social-v5.jpg":"/opportunita/og-social-v5.jpg"};
   const target=paths[url.pathname];
   if(!target) return response({ok:false,error:"NOT_FOUND"},404);
   const assetUrl=new URL(target,request.url);
   const out=await env.ASSETS.fetch(new Request(assetUrl,request));
   const headers=new Headers(out.headers);
-  headers.set("Cache-Control",url.pathname==="/og-social-v4.jpg"?"public, max-age=86400, immutable":"public, max-age=300");
+  headers.set("Cache-Control",(url.pathname==="/og-social-v4.jpg"||url.pathname==="/og-social-v5.jpg")?"public, max-age=86400, immutable":"public, max-age=300");
   headers.set("X-Content-Type-Options","nosniff");
   headers.set("Referrer-Policy","strict-origin-when-cross-origin");
   headers.set("X-Frame-Options","DENY");
