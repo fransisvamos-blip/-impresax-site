@@ -565,34 +565,7 @@
 .offer-both{min-height:48px;padding-inline:20px;font-size:11px}
 .offer-card[aria-pressed="true"]{box-shadow:0 0 0 5px #f2652019,0 18px 34px #0c304523}
 
-/* 03 / FORM — equal-quality desktop and mobile experience */
-.contact-section{padding-top:36px;padding-bottom:62px}
-.contact-panel{grid-template-columns:.92fr 1.08fr;gap:clamp(24px,4vw,55px);padding:clamp(32px,4.5vw,58px);align-items:center}
-.contact-intro h2{font-size:clamp(30px,3.4vw,47px);line-height:1.055;letter-spacing:-.056em}
-.contact-intro p{font-size:14px;line-height:1.78}
-.contact-phone{margin-top:21px}
-.contact-form{background:#fffefa;color:var(--navy);border:1px solid #e8ecec;border-radius:20px;padding:clamp(21px,2.5vw,29px);gap:11px;box-shadow:0 18px 42px #031a2c32}
-.contact-form .form-kicker{color:#315b73;font-size:10px;letter-spacing:.047em}
-.contact-form .form-section-label{display:flex;align-items:center;gap:9px;margin:7px 0 1px;font:800 10px/1.4 var(--font);color:#39596d;letter-spacing:.04em}
-.contact-form .form-section-label span{display:inline-grid;place-items:center;width:23px;height:23px;flex:none;border-radius:50%;background:#f9e6d8;color:#d85d1e;font:800 10px/1 var(--font)}
-.contact-form .form-section-label--contact{padding-top:15px;margin-top:8px;border-top:1px solid #e6ebee}
-.contact-form .interest-selection>span{color:#536b7b;font-size:10px}
-.contact-form .interest-chip{border-color:#d0dce0;background:#f2f6f7;color:#17384e;min-height:40px;padding:8px 13px}
-.contact-form .interest-chip[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#fff}
-.contact-form .interest-help{color:#658095;font-size:11px;margin:0}
-.contact-form .form-input{min-height:53px;border:1px solid #cdd8dc;border-radius:10px}
-.contact-form .form-input:focus-within{outline:2px solid #f4a57555;outline-offset:1px}
-.contact-form .agreement{color:#364c5c;font-size:11px;line-height:1.65}
-.contact-form .agreement a{color:#173d58}
-.contact-form .optional-email{background:#f6f8f8;border-color:#dfe7e9;border-radius:10px}
-.contact-form .optional-email summary{color:#28536c}
-.contact-form .optional-email summary span{color:#60798a}
-.contact-form .optional-email summary:after{color:var(--orange)}
-.contact-form .form-note{color:#526a79;font-size:11px}
-.contact-form .submit-button{border-radius:10px;min-height:56px}
-.contact-form .form-next-step{display:flex;align-items:flex-start;gap:8px;margin:0;padding:10px 11px;border:1px solid #ece6df;background:#faf7f2;border-radius:9px;color:#546574;font:600 10.5px/1.55 var(--body)}
-.contact-form .form-next-step span{color:#c76b35;font-weight:800}
-
+/* 03 / FORM — restored V3.7 composition by owner preference */
 /* 04 / KEY FACTS — visible, grounded, useful */
 .why-heading p{max-width:315px;line-height:1.75}
 .why-item{display:flex;flex-direction:column;align-items:flex-start;min-height:174px}
@@ -629,17 +602,11 @@
 .site-footer .privacy-strip p{max-width:860px}
 .site-footer .legal-links a{font-weight:700;text-underline-offset:3px}
 @media(max-width:1100px){
- .contact-panel{padding:33px;gap:23px}
- .contact-form{padding:21px}
- .contact-intro h2{font-size:clamp(30px,3.3vw,39px)}
  .offer-card-action{font-size:10px}
 }
 @media(max-width:810px){
  .hero-content{padding-top:35px;padding-bottom:40px}
  .hero-assurance>span{font-size:9px}
- .contact-panel{grid-template-columns:.83fr 1.17fr;padding:27px;gap:18px}
- .contact-form{padding:19px}
- .contact-intro h2{font-size:34px}
  .why-item{min-height:170px}
  .why-item .why-icon{margin-bottom:10px}
  .proposal-facts{padding:15px}
@@ -650,12 +617,6 @@
  .hero-content{padding-top:30px;padding-bottom:8px}
  .hero-assurance{gap:6px;margin-top:15px;max-width:none}
  .hero-assurance>span{padding:6px 8px;min-height:30px;font-size:9px;line-height:1.3}
- .contact-section{padding-top:20px;padding-bottom:36px}
- .contact-panel{display:grid;grid-template-columns:1fr;padding:28px 17px 31px;gap:18px}
- .contact-intro h2{font-size:clamp(31px,8.5vw,43px)}
- .contact-form{padding:19px 16px;border-radius:19px;gap:10px}
- .contact-form .form-section-label{font-size:10px}
- .contact-form .form-next-step{font-size:10px}
  .why-item{display:grid;min-height:0;grid-template-columns:49px minmax(0,1fr);grid-template-rows:auto auto;gap:4px 13px;align-items:center;padding:16px}
  .why-item .why-icon{grid-column:1;grid-row:1/3;width:43px;height:43px;margin:0}
  .why-item h3{grid-column:2;grid-row:1;margin:0;font-size:15px}
@@ -670,12 +631,49 @@
 }
 @media(max-width:390px){
  .hero-assurance>span{font-size:8.5px;padding:6px 7px}
- .contact-form{padding:15px 12px}
- .contact-intro h2{font-size:31px}
- .contact-form .interest-chip{padding:7px 10px;font-size:10px}
  .why-item{padding:14px}
 }
 @media(prefers-reduced-motion:reduce){.desktop-nav a{transition:none}}
+
+/* V3.9 — targeted polish to chapters 01, 02, 04, 05 and 06; chapter 03 intentionally remains V3.7 */
+:where(a,button,summary,input):focus-visible{outline:3px solid #ee8b4a;outline-offset:3px}
+.hero .primary-cta,.closing-cta-button,.offer-card{will-change:auto}
+.offer-card-description{max-width:460px}
+.offer-card-action{letter-spacing:0}
+.offer-subchoice p{max-width:630px}
+.why-heading p{max-width:335px}
+.why-item p{max-width:255px}
+.story-copy p{max-width:520px}
+.steps-intro p{max-width:335px}
+.step p{max-width:250px}
+.closing-cta-copy>span{letter-spacing:.095em}
+@media(min-width:811px){
+ .why-item{padding-right:clamp(14px,2.1vw,28px)}
+ .step{padding-right:clamp(16px,2.1vw,28px)}
+}
+@media(max-width:810px){
+ .offer-heading-row{gap:17px}
+ .offer-subchoice p{line-height:1.65}
+ .why-item p,.step p{max-width:none}
+}
+@media(max-width:670px){
+ .offer-intro h2{font-size:clamp(22px,5.6vw,36px)}
+ .offer-card-main{padding-right:62px}
+ .offer-card-description{font-size:13px;line-height:1.6}
+ .offer-card-action{font-size:10px}
+ .why-item p,.step p{font-size:13px;line-height:1.6}
+ .closing-cta-copy p{max-width:560px}
+}
+@media(max-width:390px){
+ .hero h1 .hero-city-line{font-size:.76em}
+ .offer-intro h2{font-size:clamp(20px,5.5vw,24px)}
+ .offer-card-main{padding-right:45px}
+ .offer-card-action{font-size:9px}
+ .offer-both{font-size:10.5px}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero .primary-cta,.closing-cta-button,.offer-card{transition:none}
+}
 </style>
 </head>
 <body>
@@ -749,13 +747,12 @@
   <div class="contact-panel">
     <div class="contact-intro">
       <div class="index-line orange"><b>03</b><span class="line"></span></div>
-      <h2 id="contact-heading">PARLIAMONE<br>IN RISERVATEZZA.</h2>
-      <p>Lascia un recapito e indica la formula che vuoi conoscere. Ti ricontatteremo per un primo confronto: nessun obbligo di procedere.</p>
+      <h2 id="contact-heading">RICHIEDI<br>I DETTAGLI.</h2>
+      <p>Per iniziare bastano nome e cellulare. Ti ricontatteremo per un confronto riservato, senza impegno a procedere.</p>
       <a class="contact-phone" href="tel:+393294582962">Preferisci parlare direttamente? <strong>329 458 2962</strong></a>
     </div>
     <form class="contact-form" id="lead-form" novalidate>
       <p class="form-kicker"><span class="form-kicker-dot" aria-hidden="true"></span> RICHIESTA RISERVATA · SOLO I DATI NECESSARI</p>
-      <div class="form-section-label"><span>01</span> QUAL È LA FORMULA CHE TI INTERESSA?</div>
       <div class="interest-selection" role="group" aria-label="Formula di interesse" aria-describedby="interest-help">
         <span>MI INTERESSA:</span>
         <button class="interest-chip" type="button" data-choice="cessione" aria-pressed="false">ACQUISTARE</button>
@@ -764,7 +761,6 @@
       </div>
       <p id="interest-help" class="interest-help">Seleziona una formula prima di inviare la richiesta.</p>
       <input type="hidden" id="transaction_interest" name="transaction_interest">
-      <div class="form-section-label form-section-label--contact"><span>02</span> COME POSSIAMO RICONTATTARTI?</div>
       <label class="form-input">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M4.5 21v-2c0-4 3-6 7.5-6s7.5 2 7.5 6v2"/></svg>
         <input id="full_name" name="full_name" type="text" autocomplete="name" required minlength="3" maxlength="120" placeholder="Nome e cognome *" aria-label="Nome e cognome obbligatorio">
@@ -787,8 +783,7 @@
       </label>
       <button id="send-btn" class="submit-button" type="submit">INVIA LA RICHIESTA RISERVATA <span aria-hidden="true">➜</span></button>
       <p id="form-feedback" class="form-feedback" role="status" aria-live="polite"></p>
-      <p class="form-note">Nome e cellulare sono gli unici recapiti obbligatori.</p>
-      <p class="form-next-step"><span aria-hidden="true">✓</span> Dopo l'invio: primo contatto per approfondire la tua richiesta, senza impegno.</p>
+      <p class="form-note">Nome e cellulare sono gli unici recapiti obbligatori. Nessun impegno.</p>
     </form>
   </div>
 </section>
@@ -797,12 +792,12 @@
     <div class="why-heading">
       <div class="index-line"><b>04</b><span class="line"></span></div>
       <h2 id="why-heading">PERCHÉ<br>VALUTARLA.</h2>
-      <p>Contesto, percorso e possibilità: tre elementi per capire se vale la pena approfondire questa proposta.</p>
+      <p>Tre elementi essenziali per capire se questa opportunità merita un primo confronto.</p>
     </div>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 37S32 25 32 16a12 12 0 0 0-24 0c0 9 12 21 12 21Z"/><circle cx="20" cy="16" r="4"/></svg></span>
       <h3>CATANZARO<br>LIDO</h3>
-      <p>Il locale opera a Catanzaro Lido, in una zona di frequentazione serale secondo i titolari.</p>
+      <p>A Catanzaro Lido, in una zona di frequentazione serale secondo quanto comunicato dai titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="12" r="6"/><path d="M8 32v-4c0-6 5-9 12-9s12 3 12 9v4M7 18a5 5 0 0 0-4 5v9M33 18a5 5 0 0 1 4 5v9"/></svg></span>
@@ -834,7 +829,7 @@
     <div class="index-line"><b>05</b><span class="line"></span></div>
     <h2 id="story-heading">UN PERCORSO<br>GIÀ AVVIATO.</h2>
     <div class="anniversary"><b>7</b><span>ANNI DI ATTIVITÀ</span></div>
-    <p>Il lounge bar opera da sette anni e ha costruito una propria clientela, secondo quanto comunicato dai titolari. Un punto di partenza da valutare con le verifiche del caso.</p>
+    <p>Il lounge bar opera da sette anni e ha costruito una propria clientela, secondo quanto comunicato dai titolari. Un'attività già avviata da conoscere da vicino e valutare attraverso le informazioni disponibili.</p>
     <p><strong>PERCHÉ È DISPONIBILE?</strong> I titolari valutano di dedicarsi a un nuovo progetto. La proposta riguarda l'attività commerciale, non la proprietà dell'immobile. Le condizioni saranno approfondite in privato.</p>
   </div>
 </section>
@@ -864,9 +859,9 @@
 
   <div class="shell closing-cta">
     <div class="closing-cta-copy">
-      <span>IL PROSSIMO PASSO È SEMPLICE</span>
+      <span>UN PRIMO CONFRONTO, SENZA IMPEGNO</span>
       <h3>IL PROSSIMO PASSO È TUO.</h3>
-      <p>Se ti interessa capire meglio questa proposta, scegli la formula e richiedi un contatto riservato. Non devi decidere ora.</p>
+      <p>Scegli se approfondire la cessione, la gestione o entrambe. Richiedi un contatto riservato: non devi decidere ora.</p>
     </div>
     <div class="closing-cta-actions">
       <a href="#contatto" class="closing-cta-button">RICHIEDI I DETTAGLI <span aria-hidden="true">➜</span></a>
