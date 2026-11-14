@@ -683,40 +683,92 @@
  .hero .primary-cta,.closing-cta-button,.offer-card{transition:none}
 }
 
-/* Hero key facts: three owner-supplied strengths, above the first CTA. Retains approved V3.9 art direction. */
-.hero-keyfacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(640px,100%);margin:3px 0 19px}
-.hero-keyfact{display:flex;align-items:flex-start;gap:9px;min-width:0;padding:12px 12px 13px;border:1px solid #dbe2e4;border-top:3px solid var(--orange);border-radius:8px;background:#fffefaed;box-shadow:0 5px 13px #082d4010}
-.hero-keyfact-number{flex:0 0 21px;color:var(--orange);font:800 10px/1.7 var(--font)}
-.hero-keyfact>span:last-child{min-width:0}
-.hero-keyfact strong{display:block;color:var(--navy);font:800 11px/1.32 var(--font);letter-spacing:-.025em}
-.hero-keyfact small{display:block;margin-top:5px;color:#4a6675;font:600 11px/1.4 var(--body)}
+
+/* EDITORIAL HERO V3.10 — narrative lead, oversized tenure and recognizable terrace motif.
+   Owner-supplied facts; V3.9 visual system, palette and all other sections preserved. */
+.brand{min-width:0;flex-shrink:0;letter-spacing:-.025em}
+.brand strong{display:block;font:800 clamp(11px,1.1vw,13px)/1.18 var(--font);letter-spacing:-.038em;white-space:nowrap}
+@media(min-width:811px){
+ .hero,.hero-inner{min-height:668px}
+ .hero-content{padding-top:38px;padding-bottom:45px}
+}
+.hero-editorial{width:min(590px,100%);margin:11px 0 15px;color:var(--navy)}
+.hero-editorial-place{position:relative;border-left:4px solid var(--orange);padding:5px 0 12px 20px}
+.hero-editorial-kicker{display:flex;align-items:center;gap:9px;margin:0 0 5px;color:#657783;font:800 10px/1.4 var(--font);letter-spacing:.16em}
+.hero-editorial-dash{width:19px;height:1px;display:inline-block;background:#c5a18a}
+.hero-editorial-headline{display:block;max-width:540px;font:800 clamp(24px,2.7vw,37px)/1.11 var(--font);letter-spacing:-.06em;text-wrap:balance;color:#112f43}
+.hero-editorial-headline span{color:var(--orange);display:block}
+.hero-editorial-evidence{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:center;border-top:1px solid #ccd6db;border-bottom:1px solid #ccd6db;margin-top:14px;padding:14px 0 12px}
+.hero-editorial-years,.hero-editorial-piazza{display:flex;align-items:center;min-width:0;gap:14px}
+.hero-editorial-years{padding-right:17px}
+.hero-editorial-piazza{border-left:1px solid #d7e0e4;padding-left:19px}
+.hero-editorial-seven{display:flex;align-items:baseline;gap:4px;white-space:nowrap;color:var(--orange);font:800 clamp(58px,6.5vw,88px)/.93 var(--font);letter-spacing:-.085em}
+.hero-editorial-seven span{font:800 11px/1.18 var(--font);letter-spacing:.04em;writing-mode:vertical-rl;transform:rotate(180deg);align-self:center}
+.hero-editorial-description{display:flex;flex-direction:column;gap:5px;min-width:0}
+.hero-editorial-description b{font:800 clamp(11px,1.16vw,14px)/1.3 var(--font);color:#16374b;letter-spacing:-.035em}
+.hero-editorial-description small{font:600 12px/1.48 var(--body);color:#576d7b}
+.hero-editorial-terrace{width:56px;height:56px;flex:0 0 56px;display:grid;place-items:center;color:var(--orange)}
+.hero-editorial-terrace svg{width:49px;height:49px}
+.hero-editorial-source{font:500 10px/1.5 var(--body);color:#657581;margin-top:7px}
+.hero .hero-editorial-intro{margin:0 0 17px;max-width:565px;color:#294459;font:500 13px/1.65 var(--body)}
+.hero .hero-editorial-intro strong{font-weight:800}
+.hero-actions{position:relative;z-index:2}
+@media(max-width:1100px) and (min-width:671px){
+ .hero-editorial{width:100%}
+ .hero-editorial-headline{font-size:clamp(22px,2.7vw,31px)}
+ .hero-editorial-years,.hero-editorial-piazza{gap:8px}
+ .hero-editorial-piazza{padding-left:12px}
+ .hero-editorial-years{padding-right:10px}
+ .hero-editorial-seven{font-size:clamp(52px,6vw,69px)}
+ .hero-editorial-seven span{font-size:9px}
+ .hero-editorial-description b{font-size:11px}
+ .hero-editorial-description small{font-size:10px}
+ .hero-editorial-terrace{width:41px;height:45px;flex-basis:41px}
+ .hero-editorial-terrace svg{width:38px;height:38px}
+}
 @media(max-width:810px) and (min-width:671px){
- .hero-keyfacts{gap:6px}
- .hero-keyfact{padding:9px 8px;gap:5px}
- .hero-keyfact-number{flex-basis:16px;font-size:9px}
- .hero-keyfact strong{font-size:9px}
- .hero-keyfact small{font-size:10px}
+ .hero,.hero-inner{min-height:640px}
+ .hero-content{padding-top:28px;padding-bottom:28px}
 }
 @media(max-width:670px){
- .hero-keyfacts{grid-template-columns:1fr;gap:0;width:100%;margin:6px 0 14px;border:1px solid #dce3e5;border-radius:11px;overflow:hidden;background:#fffefa}
- .hero-keyfact{display:grid;grid-template-columns:25px minmax(0,1fr);align-items:center;gap:8px;border:0;border-radius:0;border-top:1px solid #e3e9e9;box-shadow:none;background:transparent;padding:9px 13px}
- .hero-keyfact:first-child{border-top:0}
- .hero-keyfact-number{font-size:10px}
- .hero-keyfact>span:last-child{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
- .hero-keyfact strong{font-size:11px}
- .hero-keyfact small{font-size:11px;margin:0}
- .hero-content .hero-keyfacts+p{margin-bottom:16px}
+ .brand{flex-shrink:1}
+ .brand strong{font-size:clamp(10px,3.25vw,13px);white-space:normal;max-width:246px;line-height:1.22}
+ .hero-content{padding-top:27px}
+ .hero-editorial{margin:9px 0 13px;width:100%}
+ .hero-editorial-place{padding:2px 0 8px 13px;border-left-width:3px}
+ .hero-editorial-kicker{font-size:9px;margin-bottom:6px}
+ .hero-editorial-headline{font-size:clamp(25px,6.6vw,36px);line-height:1.09;letter-spacing:-.064em;max-width:600px}
+ .hero-editorial-evidence{margin-top:13px;padding:13px 0 12px;gap:0}
+ .hero-editorial-years,.hero-editorial-piazza{gap:7px}
+ .hero-editorial-years{padding-right:8px}
+ .hero-editorial-piazza{padding-left:10px}
+ .hero-editorial-seven{font-size:clamp(46px,12.8vw,67px)}
+ .hero-editorial-seven span{font-size:8px;letter-spacing:0}
+ .hero-editorial-description b{font-size:clamp(10px,2.8vw,12px);line-height:1.26}
+ .hero-editorial-description small{font-size:clamp(9px,2.5vw,11px);line-height:1.35}
+ .hero-editorial-terrace{width:35px;height:40px;flex-basis:35px}
+ .hero-editorial-terrace svg{width:34px;height:34px}
+ .hero-editorial-source{font-size:9px;line-height:1.4}
+ .hero .hero-editorial-intro{font-size:13px;line-height:1.55;margin-bottom:14px}
+ .hero-assurance{margin-top:12px}
 }
-@media(max-width:385px){
- .hero-keyfact>span:last-child{display:block}
- .hero-keyfact small{margin-top:2px}
+@media(max-width:375px){
+ .brand strong{font-size:10px;max-width:190px}
+ .hero-editorial-evidence{grid-template-columns:1fr;gap:10px}
+ .hero-editorial-years{padding-right:0}
+ .hero-editorial-piazza{padding-left:0;padding-top:10px;border-left:0;border-top:1px solid #d7e0e4}
+ .hero-editorial-description b{font-size:12px}
+ .hero-editorial-description small{font-size:11px}
+ .hero-editorial-seven{font-size:55px}
+ .hero-editorial-terrace{width:43px;flex-basis:43px}
+ .hero-editorial-terrace svg{width:40px;height:40px}
 }
 </style>
 </head>
 <body>
 <header class="site-header">
   <div class="shell header-inner">
-    <a class="brand" href="#top" aria-label="Opportunità imprenditoriale Catanzaro Lido, torna all'inizio"><i class="brand-line" aria-hidden="true"></i><div><strong>OPPORTUNITÀ IMPRENDITORIALE</strong><span>CATANZARO LIDO</span></div></a>
+    <a class="brand" href="#top" aria-label="Opportunità imprenditoriale, torna all'inizio"><i class="brand-line" aria-hidden="true"></i><strong>OPPORTUNITÀ IMPRENDITORIALE</strong></a>
     <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Apri menu" aria-controls="main-nav" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
@@ -732,17 +784,29 @@
     <div class="eyebrow">OPPORTUNITÀ RISERVATA · CATANZARO LIDO</div>
     <h1 id="hero-title"><span>LOUNGE BAR A</span><span class="hero-city-line">CATANZARO LIDO.</span></h1>
     <div class="offer-ribbon">IN CESSIONE O GESTIONE.</div>
-    <div class="hero-keyfacts" aria-label="I tre punti di forza dell'attività">
-      <div class="hero-keyfact"><span class="hero-keyfact-number" aria-hidden="true">01</span><span><strong>NEL CUORE DELLA MOVIDA UNIVERSITARIA</strong><small>Catanzaro Lido</small></span></div>
-      <div class="hero-keyfact"><span class="hero-keyfact-number" aria-hidden="true">02</span><span><strong>7 ANNI DI ATTIVITÀ</strong><small>Clientela fidelizzata</small></span></div>
-      <div class="hero-keyfact"><span class="hero-keyfact-number" aria-hidden="true">03</span><span><strong>PIAZZA CONSOLIDATA</strong><small>Con sedie e tavolini</small></span></div>
+    <div class="hero-editorial" aria-label="I punti di forza dell'attività">
+      <div class="hero-editorial-place">
+        <span class="hero-editorial-kicker"><span class="hero-editorial-dash" aria-hidden="true"></span> IL CONTESTO</span>
+        <strong class="hero-editorial-headline">NEL CUORE DELLA <span>MOVIDA UNIVERSITARIA.</span></strong>
+      </div>
+      <div class="hero-editorial-evidence">
+        <div class="hero-editorial-years">
+          <strong class="hero-editorial-seven">7<span> ANNI</span></strong>
+          <span class="hero-editorial-description"><b>DI ATTIVITÀ</b><small>Con clientela fidelizzata</small></span>
+        </div>
+        <div class="hero-editorial-piazza">
+          <span class="hero-editorial-terrace" aria-hidden="true"><svg viewBox="0 0 62 62" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="31" cy="24" rx="15" ry="5.5"/><path d="M31 30v22m-11 0h22M7 21v27h11V21M44 21v27h11V21M7 48h11m26 0h11"/></svg></span>
+          <span class="hero-editorial-description"><b>UNA PIAZZA CONSOLIDATA</b><small>Con sedie e tavolini</small></span>
+        </div>
+      </div>
+      <div class="hero-editorial-source">Informazioni fornite dai titolari, da verificare in fase di approfondimento.</div>
     </div>
-    <p>Un lounge bar avviato da sette anni a Catanzaro Lido, secondo i titolari. Due possibilità da approfondire: <strong>cessione dell’attività oppure gestione</strong>.</p>
+    <p class="hero-editorial-intro">Cessione dell’attività oppure gestione: <strong>due formule da approfondire in riservatezza</strong>, senza impegno.</p>
     <div class="hero-actions"><a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
     </a>
     <a class="hero-phone" href="tel:+393294582962" aria-label="Chiama il 329 458 2962 per informazioni">Oppure chiama <strong>329 458 2962</strong></a></div>
-    <div class="hero-assurance" aria-label="Modalità della richiesta"><span><i class="assurance-dot" aria-hidden="true"></i> SETTE ANNI DICHIARATI</span><span><i class="assurance-dot" aria-hidden="true"></i> NOME E CELLULARE</span><span><i class="assurance-dot" aria-hidden="true"></i> SENZA IMPEGNO</span></div>
+    <div class="hero-assurance" aria-label="Modalità della richiesta"><span><i class="assurance-dot" aria-hidden="true"></i> PRIMO CONFRONTO RISERVATO</span><span><i class="assurance-dot" aria-hidden="true"></i> NOME E CELLULARE</span><span><i class="assurance-dot" aria-hidden="true"></i> SENZA IMPEGNO</span></div>
   </div></div>
   <div class="hero-media">
     <img src="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85"
