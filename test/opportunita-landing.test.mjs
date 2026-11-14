@@ -10,7 +10,7 @@ const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??"";
 
 test("faithful V3 rendering: correct desktop chapter sequence and headline",()=>{
  assert.match(css,/REFERENCE V3/);
- assert.match(html,/id="hero-title"[^>]*><span>LOUNGE BAR<\/span><span>A CATANZARO<\/span><span>LIDO\.<\/span>/);
+ assert.match(html,/id="hero-title"[^>]*><span>LOUNGE BAR A<\/span><span class="hero-city-line">CATANZARO LIDO\.<\/span>/);
  assert.match(html,/IN CESSIONE O GESTIONE\./);
  assert.match(html,/RICHIEDI<br>I DETTAGLI\./);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
@@ -331,7 +331,7 @@ test("V3.5 preserves form endpoint, privacy, and choice interactions while chang
 
 test("V3.6 puts two full-size commercial paths at the center of block 02",()=>{
  assert.match(css,/BLOCK 02 \/ PREMIUM DECISION SYSTEM V3\.6/);
- assert.match(html,/id="offer-heading">CESSIONE<br>O GESTIONE\./);
+ assert.match(html,/id="offer-heading">CESSIONE O GESTIONE\?<\/h2>/);
  assert.match(html,/class="offer-heading-row"/);
  assert.match(html,/class="offer-guidance"/);
  assert.match(css,/\.offer-layout\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
@@ -376,4 +376,20 @@ test("V3.6 avoids cramped mobile cards and motion-dependent functionality",()=>{
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.match(css,/\.offer-card,.offer-both,.offer-card-art,.offer-card \.round-arrow\{transition:none\}/);
  assert.doesNotMatch(css,/\.offer-layout\{grid-template-columns:\.83fr 1fr 1fr/);
+});
+
+
+test("V3.7 keeps Catanzaro Lido together in the hero at all widths",()=>{
+ assert.match(html,/<span class="hero-city-line">CATANZARO LIDO\.<\/span>/);
+ assert.match(html,/<span>LOUNGE BAR A<\/span>/);
+ assert.doesNotMatch(html,/<span>A CATANZARO<\/span><span>LIDO\.<\/span>/);
+ assert.match(css,/\.hero h1 \.hero-city-line\{font-size:\.82em;letter-spacing:-\.055em;white-space:nowrap\}/);
+});
+test("V3.7 keeps CESSIONE O GESTIONE? on one line on desktop and mobile",()=>{
+ assert.match(html,/<h2 id="offer-heading">CESSIONE O GESTIONE\?<\/h2>/);
+ assert.doesNotMatch(html,/CESSIONE<br>O GESTIONE/);
+ assert.match(css,/\.offer-intro h2\{[^}]*white-space:nowrap/);
+ assert.match(css,/\.offer-intro h2\{font-size:clamp\(22px,5\.8vw,38px\)/);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.match(js,/fetch\('\/api\/interesse'/);
 });

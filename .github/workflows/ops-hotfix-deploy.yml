@@ -26,12 +26,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.4 premium landing refinements deployed and verified; no scheduled or push deployments.
 # OWNER PAUSE: V3.5 early-form landing released, all ImpresaX deploy triggers disabled.
 # OWNER PAUSE: block 02 V3.6 published and verified; no automatic or scheduled ImpresaX deploys.
+# One-time owner-requested heading-line corrections V3.7.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-shot: restore pause afterward
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -60,6 +64,9 @@ jobs:
                grep -q 'V3.3' /tmp/opportunita.html &&
                grep -q 'STRUCTURE V3.5' /tmp/opportunita.html &&
                grep -q 'BLOCK 02 / PREMIUM DECISION SYSTEM V3.6' /tmp/opportunita.html &&
+               grep -q '<span class="hero-city-line">CATANZARO LIDO.</span>' /tmp/opportunita.html &&
+               grep -q 'id="offer-heading">CESSIONE O GESTIONE?' /tmp/opportunita.html &&
+               ! grep -q 'CESSIONE<br>O GESTIONE.' /tmp/opportunita.html &&
                grep -q 'VOGLIO<br>ACQUISTARE.' /tmp/opportunita.html &&
                grep -q 'VOGLIO<br>GESTIRE.' /tmp/opportunita.html &&
                grep -q 'class="offer-heading-row"' /tmp/opportunita.html &&

@@ -50,6 +50,7 @@
 .hero-content{width:min(59%,700px);padding:34px 0 45px;position:relative;z-index:3}
 .hero h1{font:800 clamp(48px,5.7vw,79px)/1.015 var(--font);letter-spacing:-.064em;margin:17px 0 10px;text-transform:uppercase;color:#09263a}
 .hero h1 span{display:block}
+.hero h1 .hero-city-line{font-size:.82em;letter-spacing:-.055em;white-space:nowrap}
 .offer-ribbon{display:inline-block;background:var(--orange);color:white;font:800 clamp(23px,2.58vw,35px)/1.18 var(--font);letter-spacing:-.045em;padding:6px 12px 8px;margin:0 0 12px;text-transform:uppercase}
 .hero p{max-width:440px;margin:0 0 21px;font:500 16px/1.65 var(--body);color:#203547}
 .primary-cta{display:inline-flex;align-items:center;justify-content:center;gap:23px;min-height:56px;padding:16px 23px;background:var(--orange);border:0;border-radius:8px;color:white;font:800 13px/1.35 var(--font);text-decoration:none;white-space:nowrap;transition:background .2s ease,transform .2s ease}
@@ -71,7 +72,7 @@
 .offer-heading-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,350px);align-items:end;gap:clamp(30px,5vw,72px);margin-bottom:29px}
 .offer-intro{max-width:780px}
 .offer-intro .index-line{margin-bottom:13px}
-.offer-intro h2{font:800 clamp(40px,5.1vw,68px)/1.025 var(--font);letter-spacing:-.062em;text-transform:uppercase;margin:0 0 15px;color:#102c41}
+.offer-intro h2{font:800 clamp(30px,3.7vw,46px)/1.07 var(--font);letter-spacing:-.058em;text-transform:uppercase;white-space:nowrap;margin:0 0 15px;color:#102c41}
 .offer-intro p{font:500 15px/1.73 var(--body);margin:0;max-width:570px;color:#486071}
 .offer-guidance{display:flex;align-items:flex-start;gap:13px;padding:19px 20px;background:#f4f7f7;border:1px solid #e5eaed;border-radius:14px}
 .offer-guidance-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;border-radius:12px;color:#37637b;background:#e3eef2}
@@ -478,7 +479,7 @@
 @media(max-width:1100px){
  .offer-section{padding:51px 0 35px}
  .offer-heading-row{grid-template-columns:minmax(0,1fr) minmax(215px,295px);gap:26px}
- .offer-intro h2{font-size:clamp(37px,4.7vw,55px)}
+ .offer-intro h2{font-size:clamp(29px,3.75vw,44px)}
  .offer-card{min-height:340px;padding:25px 25px 22px}
  .offer-card-main{padding-right:95px}
  .offer-card-title{font-size:clamp(32px,4vw,44px)}
@@ -488,7 +489,7 @@
 }
 @media(max-width:810px){
  .offer-heading-row{grid-template-columns:1fr;gap:18px;margin-bottom:22px}
- .offer-intro h2{font-size:clamp(38px,6vw,52px)}
+ .offer-intro h2{font-size:clamp(29px,4.55vw,41px)}
  .offer-intro p{font-size:14px;max-width:690px}
  .offer-guidance{max-width:620px;padding:14px 16px}
  .offer-card{min-height:335px;padding:22px 21px}
@@ -503,7 +504,7 @@
 @media(max-width:670px){
  .offer-section{padding:34px 0 22px}
  .offer-heading-row{gap:15px;margin-bottom:18px}
- .offer-intro h2{font-size:clamp(32px,8vw,46px);line-height:1.07;margin-bottom:12px}
+ .offer-intro h2{font-size:clamp(22px,5.8vw,38px);line-height:1.1;margin-bottom:12px}
  .offer-intro p{font-size:14px;line-height:1.64}
  .offer-guidance{align-items:center;padding:12px 13px;gap:10px}
  .offer-guidance-icon{flex-basis:36px;width:36px;height:36px;border-radius:9px}
@@ -557,7 +558,7 @@
 <section class="hero" id="top" aria-labelledby="hero-title">
   <div class="shell hero-inner"><div class="hero-content">
     <div class="eyebrow">OPPORTUNITÀ RISERVATA · CATANZARO LIDO</div>
-    <h1 id="hero-title"><span>LOUNGE BAR</span><span>A CATANZARO</span><span>LIDO.</span></h1>
+    <h1 id="hero-title"><span>LOUNGE BAR A</span><span class="hero-city-line">CATANZARO LIDO.</span></h1>
     <div class="offer-ribbon">IN CESSIONE O GESTIONE.</div>
     <p>Un lounge bar operativo da 7 anni, secondo i titolari. Puoi valutare la cessione dell’attività o la sua gestione, con condizioni da approfondire in privato.</p>
     <div class="hero-actions"><a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI
@@ -579,7 +580,7 @@
     <div class="offer-heading-row">
       <div class="offer-intro">
         <div class="index-line"><b>02</b><span class="line"></span></div>
-        <h2 id="offer-heading">CESSIONE<br>O GESTIONE.</h2>
+        <h2 id="offer-heading">CESSIONE O GESTIONE?</h2>
         <p>Come vorresti entrare in questa attività? Scegli la formula da approfondire: il modulo è subito qui sotto e non stai prendendo alcun impegno.</p>
       </div>
       <div class="offer-guidance">
