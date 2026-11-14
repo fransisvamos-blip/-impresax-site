@@ -156,3 +156,52 @@ test("telephone front-end validation matches the real lead endpoint before POST"
  assert.match(js,/fetch\('\/api\/interesse'/);
  new Script(js,{filename:"opportunita-v3-1.js"});
 });
+
+test("V3.2 keeps the approved six chapters and adds only a narrow facts ribbon",()=>{
+ assert.match(css,/V3\.2 — restrained photographic art direction/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ assert.match(html,/class="shell proposal-facts"/);
+ assert.equal((html.match(/class="proposal-fact"/g)||[]).length,4);
+ assert.match(html,/Informazioni comunicate dai titolari, da verificare/);
+ for(const fact of ["Lounge bar avviato","Catanzaro Lido","Cessione o gestione","Non in vendita"]){
+   assert.ok(html.includes(fact),fact);
+ }
+ assert.doesNotMatch(html,/immobile in vendita|guadagni garantiti|ROI garantito/i);
+});
+test("small screens get full-size readable vertical benefits and steps",()=>{
+ assert.match(css,/@media\(max-width:540px\)/);
+ assert.match(css,/\.why-layout\{grid-template-columns:1fr;gap:10px\}/);
+ assert.match(css,/\.why-item\{min-height:0;padding:15px 17px;display:grid/);
+ assert.match(css,/\.why-item p\{grid-column:2;grid-row:2;font:500 12px/);
+ assert.match(css,/\.steps-layout\{grid-template-columns:1fr;gap:10px\}/);
+ assert.match(css,/\.step h3\{grid-column:2;grid-row:1;font:800 14px/);
+ assert.match(css,/\.step p\{grid-column:2;grid-row:2;font:500 12px/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
+test("offer selection is accessible and stays synchronized with final form",()=>{
+ assert.match(html,/class="offer-card offer-card--buy" data-choice="cessione" aria-pressed="false"/);
+ assert.match(html,/class="offer-card offer-card--manage" data-choice="gestione" aria-pressed="false"/);
+ assert.match(html,/id="interest-help" class="interest-help"/);
+ assert.match(html,/aria-describedby="interest-help"/);
+ assert.match(css,/\.offer-card\[aria-pressed="true"\]/);
+ assert.match(js,/querySelectorAll\('\.interest-chip,\.offer-card\[data-choice\]'\)/);
+ assert.match(js,/help\.textContent=choice==='cessione'/);
+});
+test("funnel events contain only stage and formula and have no network collection",()=>{
+ assert.match(js,/new CustomEvent\('opportunita:funnel',\{detail:\{stage:stage,formula:choice\|\|null\}\}\)/);
+ assert.match(js,/emitFunnel\('formula_selezionata',choice\)/);
+ assert.match(js,/emitFunnel\('richiesta_completata',transaction\.value\)/);
+ assert.doesNotMatch(js,/sendBeacon|gtag|fbq|analytics\.track/);
+ assert.match(html,/chiedo di essere ricontattato per questa opportunità/);
+ assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
+});
+test("privacy is aligned with actual external resources, values and consent semantics",()=>{
+ assert.match(privacy,/Ultimo aggiornamento: 14 novembre 2026/);
+ assert.match(privacy,/fotografie illustrative.*Unsplash/);
+ assert.match(privacy,/Google Fonts/);
+ assert.doesNotMatch(privacy,/Wikimedia Commons|eventuale esperienza nel settore/);
+ assert.match(privacy,/--navy:#102c41/);
+ assert.match(privacy,/--orange:#f26520/);
+ assert.match(privacy,/titolare effettivo del trattamento/);
+ assert.match(privacy,/Non sono integrati pixel pubblicitari/);
+});

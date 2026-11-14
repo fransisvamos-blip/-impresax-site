@@ -21,12 +21,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: Visual Enrichment V3 successfully published. ImpresaX automatic deploys remain disabled.
 # OWNER PAUSE: faithful approved V3 reference deployed; all automatic ImpresaX workflows remain disabled.
 # OWNER PAUSE: V3.1 visual refinement released; ImpresaX automatic deployments remain disabled.
+# One-time owner-authorized V3.2 conversion + privacy refinement; no recurring schedule.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-shot, restore pause upon completion
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -51,6 +55,11 @@ jobs:
             if curl -fsSL --max-time 18 'https://opportunita.impresax.org/' -o /tmp/opportunita.html &&
                grep -q 'REFERENCE V3' /tmp/opportunita.html &&
                grep -q 'V3.1' /tmp/opportunita.html &&
+               grep -q 'V3.2' /tmp/opportunita.html &&
+               grep -q 'class="shell proposal-facts"' /tmp/opportunita.html &&
+               grep -q '@media(max-width:540px)' /tmp/opportunita.html &&
+               grep -q 'aria-describedby="interest-help"' /tmp/opportunita.html &&
+               grep -q "opportunita:funnel" /tmp/opportunita.html &&
                grep -q 'class="mobile-action"' /tmp/opportunita.html &&
                grep -q 'class="offer-card-art"' /tmp/opportunita.html &&
                grep -q 'srcset="https://images.unsplash.com/' /tmp/opportunita.html &&
@@ -67,10 +76,23 @@ jobs:
                grep -q '@media(max-width:670px)' /tmp/opportunita.html &&
                ! grep -q 'VISUAL ENRICHMENT V3' /tmp/opportunita.html &&
                curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' -o /tmp/opportunita-privacy.html &&
-               grep -q 'Informativa sulla privacy' /tmp/opportunita-privacy.html; then
+               grep -q 'Informativa sulla privacy' /tmp/opportunita-privacy.html &&
+               grep -q '14 novembre 2026' /tmp/opportunita-privacy.html &&
+               grep -q 'Unsplash' /tmp/opportunita-privacy.html &&
+               ! grep -q 'Wikimedia Commons' /tmp/opportunita-privacy.html; then
               echo 'V3 reference site and privacy confirmed live'
               exit 0
             fi
             sleep 5
           done
           exit 1
+      - name: Verify validation-only POST does not insert a fake lead
+        run: |
+          set -euo pipefail
+          status=$(curl -sS --max-time 18 -o /tmp/opportunita-invalid.json -w '%{http_code}' \
+            -X POST 'https://opportunita.impresax.org/api/interesse' \
+            -H 'Content-Type: application/json' \
+            --data '{"full_name":"QA","phone":"000","email":"","transaction_interest":"cessione","privacy_accepted":false}')
+          test "$status" = '422'
+          grep -q '"error":"DATI_NON_VALIDI"' /tmp/opportunita-invalid.json
+          echo 'Live invalid-lead rejection verified; no database write occurred'
