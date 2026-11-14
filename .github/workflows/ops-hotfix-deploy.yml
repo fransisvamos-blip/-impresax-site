@@ -27,16 +27,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.5 early-form landing released, all ImpresaX deploy triggers disabled.
 # OWNER PAUSE: block 02 V3.6 published and verified; no automatic or scheduled ImpresaX deploys.
 # OWNER PAUSE: V3.7 heading corrections live, automatic ImpresaX deployments remain disabled.
-# One-time owner-authorized full landing V3.8 upgrade, no recurring triggers.
+# OWNER PAUSE: V3.8 full landing upgrade published and verified; no automatic ImpresaX deploys.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-20261112'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # one-shot; restore owner pause after release
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
