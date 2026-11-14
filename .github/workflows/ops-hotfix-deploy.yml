@@ -28,12 +28,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: block 02 V3.6 published and verified; no automatic or scheduled ImpresaX deploys.
 # OWNER PAUSE: V3.7 heading corrections live, automatic ImpresaX deployments remain disabled.
 # OWNER PAUSE: V3.8 full landing upgrade published and verified; no automatic ImpresaX deploys.
+# ONE-TIME V3.9: restore preferred block 03; release marker only; disable trigger after release.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261114-v39'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-time V3.9 only
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -63,8 +67,10 @@ jobs:
                grep -q 'STRUCTURE V3.5' /tmp/opportunita.html &&
                grep -q 'BLOCK 02 / PREMIUM DECISION SYSTEM V3.6' /tmp/opportunita.html &&
                grep -q 'V3.8 — comprehensive' /tmp/opportunita.html &&
-               grep -q 'class="form-section-label"' /tmp/opportunita.html &&
-               grep -q 'class="form-next-step"' /tmp/opportunita.html &&
+               grep -q 'V3.9 — targeted polish' /tmp/opportunita.html &&
+               grep -q '<h2 id="contact-heading">RICHIEDI<br>I DETTAGLI.</h2>' /tmp/opportunita.html &&
+               ! grep -q 'class="form-section-label"' /tmp/opportunita.html &&
+               ! grep -q 'class="form-next-step"' /tmp/opportunita.html &&
                grep -q 'id="story-heading">UN PERCORSO<br>GIÀ AVVIATO.' /tmp/opportunita.html &&
                grep -q 'IL PROSSIMO PASSO È TUO.' /tmp/opportunita.html &&
                grep -q 'Panorama illustrativo di Catanzaro Lido' /tmp/opportunita.html &&
