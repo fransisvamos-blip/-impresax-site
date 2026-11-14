@@ -209,7 +209,7 @@ test("privacy is aligned with actual external resources, values and consent sema
 test("V3.3 makes the promised next step and deal terms understandable immediately",()=>{
  assert.match(css,/V3\.3 — conversion-focused polish/);
  assert.match(html,/OPPORTUNITÀ RISERVATA · CATANZARO LIDO/);
- assert.match(html,/Un lounge bar avviato da sette anni a Catanzaro Lido, secondo i titolari/);
+ assert.match(html,/Cessione dell’attività oppure gestione/);
  assert.match(html,/Le condizioni economiche e contrattuali vengono approfondite privatamente/);
  assert.match(html,/Cessione dell'attività, non dell'immobile/);
  assert.match(html,/termini e condizioni da concordare/);
@@ -407,7 +407,7 @@ test("V3.9 preserves all six chapters with owner-approved previous third block",
  assert.match(html,/IL PROSSIMO PASSO È TUO/);
 });
 test("V3.8 makes hero trust readable and keeps nonbinding facts properly qualified",()=>{
- assert.match(html,/SETTE ANNI DICHIARATI/);
+ assert.match(html,/PRIMO CONFRONTO RISERVATO/);
  assert.match(html,/NOME E CELLULARE/);
  assert.match(html,/SENZA IMPEGNO/);
  assert.match(css,/\.hero-assurance>span\{display:inline-flex/);
@@ -488,23 +488,27 @@ test("V5 WhatsApp preview uses first-party image while preserving original hero 
 });
 
 test("Header identity uses requested opportunity wording without touching approved landing",()=>{
- assert.match(html,/<a class="brand"[^>]*><i class="brand-line"[^>]*><\/i><div><strong>OPPORTUNITÀ IMPRENDITORIALE<\/strong><span>CATANZARO LIDO<\/span>/);
- assert.match(html,/aria-label="Opportunità imprenditoriale Catanzaro Lido, torna all'inizio"/);
+ assert.match(html,/<a class="brand"[^>]*><i class="brand-line"[^>]*><\/i><strong>OPPORTUNITÀ IMPRENDITORIALE<\/strong><\/a>/);
+ assert.match(html,/aria-label="Opportunità imprenditoriale, torna all'inizio"/);
  assert.match(css,/V3\.9 — targeted polish/);
  assert.doesNotMatch(css,/PREMIUM EDITION V4/);
  assert.match(html,/og-social-v5\.jpg/);
 });
 
-test("Three owner-provided selling points appear in the first hero before inquiry CTA",()=>{
- const pos=s=>html.indexOf(s);
- const facts=['NEL CUORE DELLA MOVIDA UNIVERSITARIA','7 ANNI DI ATTIVITÀ','Clientela fidelizzata','PIAZZA CONSOLIDATA','Con sedie e tavolini'];
- for(const phrase of facts)assert.ok(pos(phrase)>0,phrase);
- assert.ok(pos('class="hero-keyfacts"')<pos('class="hero-actions"'));
+test("Owner-supplied location, seven-year tenure and established piazza form an editorial funnel",()=>{
+ const pos=phrase=>html.indexOf(phrase);
+ assert.ok(pos('class="hero-editorial"')>0);
+ for(const phrase of ['NEL CUORE DELLA','MOVIDA UNIVERSITARIA','Con clientela fidelizzata','UNA PIAZZA CONSOLIDATA','Con sedie e tavolini','Informazioni fornite dai titolari'])assert.ok(pos(phrase)>0,phrase);
+ assert.match(html,/class="hero-editorial-seven">7<span> ANNI/);
+ assert.ok(pos('class="hero-editorial"')<pos('class="hero-actions"'));
  assert.ok(pos('class="hero-actions"')<pos('class="hero-assurance"'));
- assert.equal((html.match(/class="hero-keyfact"/g)||[]).length,3);
- assert.match(css,/\.hero-keyfacts\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
- assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-keyfacts\{grid-template-columns:1fr/);
- assert.match(html,/OPPORTUNITÀ IMPRENDITORIALE/);
+ assert.match(html,/class="hero-editorial-terrace"[^>]*><svg/);
+ assert.match(css,/\.hero-editorial-headline\{display:block/);
+ assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-editorial-evidence\{/);
+ assert.match(css,/@media\(max-width:375px\)/);
+ assert.doesNotMatch(html,/class="hero-keyfacts"|class="hero-keyfact"/);
+ assert.match(html,/OPPORTUNITÀ IMPRENDITORIALE<\/strong><\/a>/);
+ assert.doesNotMatch(html,/<span>CATANZARO LIDO<\/span><\/div><\/a>/);
  assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
  assert.doesNotMatch(css,/PREMIUM EDITION V4/);
 });
