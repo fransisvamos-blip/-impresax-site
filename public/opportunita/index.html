@@ -278,6 +278,61 @@
  .contact-form{padding:13px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.offer-card,.primary-cta,.submit-button{transition:none}.offer-card:hover,.primary-cta:hover{transform:none}}
+
+/* V3.1 — art-direction polish, not another structural rebuild. */
+.hero-assurance{display:flex;align-items:center;gap:9px;margin-top:19px;font:800 9px/1.6 var(--font);letter-spacing:.04em;color:#536574}
+.assurance-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--orange);box-shadow:0 0 0 4px #f265201a}
+.hero-assurance i{display:inline-block;margin-inline:9px;color:#b2bbbe;font-style:normal}
+.primary-cta:focus-visible,.offer-card:focus-visible,.offer-subchoice button:focus-visible,.interest-chip:focus-visible,.submit-button:focus-visible,.menu-toggle:focus-visible,.desktop-nav a:focus-visible,.mobile-action a:focus-visible{outline:3px solid #f49a65;outline-offset:3px}
+.offer-card-art{position:absolute;pointer-events:none;right:-20px;top:13px;width:175px;height:155px;color:currentColor;opacity:.075;transform:rotate(-5deg);transition:transform .36s ease,opacity .36s ease}
+.offer-card-art svg{display:block;width:100%;height:100%}
+.offer-card:hover .offer-card-art{transform:translate(-8px,3px) rotate(0deg);opacity:.14}
+.offer-card .round-arrow{transition:background .22s ease,transform .22s ease}
+.offer-card:hover .round-arrow{transform:translateX(4px);background:#ffffff25}
+.offer-card--manage:hover .round-arrow{background:#fffcf9a3}
+.why-item{position:relative}
+.why-item:before{content:"";position:absolute;top:0;left:-1px;width:3px;height:29px;background:var(--orange);opacity:.86}
+.story-media img{transition:transform .8s ease}
+.story-media:hover img{transform:scale(1.035)}
+.form-kicker{display:flex;align-items:center;gap:8px;color:#cfe3ed;margin:0 0 1px;font:800 10px/1.4 var(--font);letter-spacing:.07em}
+.form-kicker-dot{display:block;flex:none;width:7px;height:7px;background:var(--orange);border-radius:50%}
+.contact-form{position:relative}
+.submit-button{transition:background .2s ease,transform .2s ease,box-shadow .2s ease}
+.submit-button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 10px 19px #f2652040}
+.interest-chip:focus-visible{outline:3px solid #ffb780;outline-offset:2px}
+.form-input{transition:box-shadow .2s ease,border-color .2s ease}
+.form-input:focus-within{border-color:#f0a06d;box-shadow:0 0 0 4px #f2652013}
+.mobile-action{display:none}
+/* Screen-specific adjustments: avoid accidental single-line overflow */
+@media(max-width:1100px){
+ .offer-card-art{width:145px;right:-30px}
+ .hero-assurance{max-width:460px;flex-wrap:wrap}
+}
+@media(max-width:670px){
+ .hero-assurance{font-size:8px;line-height:1.45;margin-top:14px;max-width:340px}
+ .hero-assurance i{margin-inline:5px}
+ .offer-card-art{width:119px;height:110px;top:0;right:31px;opacity:.07}
+ .offer-card:hover .round-arrow{transform:translateY(-50%)}
+ .why-item:before{left:50%;transform:translateX(-50%);top:0;width:27px;height:3px}
+ .form-kicker{color:#597183;font-size:9px}
+ .mobile-action{display:flex;align-items:stretch;gap:9px;position:fixed;z-index:85;bottom:0;left:0;right:0;padding:9px 12px calc(9px + env(safe-area-inset-bottom));background:#fffefaed;border-top:1px solid #d8dfe1;box-shadow:0 -9px 26px #0629401a;transform:translateY(112%);opacity:0;pointer-events:none;transition:transform .26s ease,opacity .24s ease}
+ body.mobile-action-visible .mobile-action{transform:translateY(0);opacity:1;pointer-events:auto}
+ .mobile-action-primary{display:flex;flex:1;justify-content:center;align-items:center;gap:12px;text-decoration:none;min-height:46px;background:var(--orange);border-radius:9px;color:white;font:800 11px var(--font)}
+ .mobile-action-primary span{font-size:19px}
+ .mobile-action-call{display:grid;place-items:center;flex:0 0 49px;background:var(--navy);color:white;border-radius:9px;text-decoration:none}
+ .mobile-action-call svg{height:23px;width:23px}
+ .interest-chip{min-height:36px}
+}
+@media(max-width:385px){
+ .mobile-action-primary{font-size:10px}
+ .hero-assurance{font-size:7.5px}
+ .offer-card-art{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .offer-card-art,.offer-card .round-arrow,.story-media img,.submit-button,.mobile-action{transition:none!important}
+ .offer-card:hover .offer-card-art,.story-media:hover img,.submit-button:hover{transform:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -303,9 +358,13 @@
     <a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI RISERVATI
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
     </a>
+    <div class="hero-assurance"><span class="assurance-dot" aria-hidden="true"></span><span>7 ANNI DI ATTIVITÀ DICHIARATI <i aria-hidden="true">/</i> PRIMO CONTATTO SENZA IMPEGNO</span></div>
   </div></div>
   <div class="hero-media">
-    <img src="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85" width="1800" height="1300" decoding="async" fetchpriority="high" alt="Terrazza di ristorazione serale usata come immagine di atmosfera; non raffigura il lounge bar in cessione">
+    <img src="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85"
+      srcset="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=600&amp;q=78 600w, https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=960&amp;q=82 960w, https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1400&amp;q=85 1400w, https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85 1800w"
+      sizes="(max-width:670px) 100vw, (max-width:1100px) 68vw, 64vw"
+      width="1800" height="1300" decoding="async" fetchpriority="high" alt="Terrazza di ristorazione serale usata come immagine di atmosfera; non raffigura il lounge bar in cessione">
   </div>
   <a class="hero-image-note" href="https://unsplash.com/photos/rooftop-restaurant-terrace-with-tables-and-chairs-CL7YekNfTTA" target="_blank" rel="noopener noreferrer">Foto illustrativa · Monaz Nazary / Unsplash · non è il locale</a>
 </section>
@@ -318,11 +377,11 @@
         <p>Due possibilità per proseguire un'attività già avviata. Scegli quella più adatta al tuo progetto.</p>
       </div>
       <button type="button" class="offer-card offer-card--buy" data-choice="cessione">
-        <h3>ACQUISTARE.</h3><p>Rileva l'attività e prosegui con la tua gestione.</p>
+        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M20 52h111M29 52l11-31h72l11 31M33 52v53h84V52M63 105V69h24v36M21 105h111M49 38h12M89 38h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>ACQUISTARE.</h3><p>Rileva l'attività e prosegui con la tua gestione.</p>
         <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span>
       </button>
       <button type="button" class="offer-card offer-card--manage" data-choice="gestione">
-        <h3>GESTIRE.</h3><p>Valuta un accordo per condurre l'attività senza acquistarla.</p>
+        <span class="offer-card-art" aria-hidden="true"><svg viewBox="0 0 150 125" fill="none"><path d="M17 75 49 44l19 14 15-13 42 33-31 30-27-22-25 21-25-32Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m52 70 26 26M67 61l29 28M53 85l16 16M83 67l23 22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span><h3>GESTIRE.</h3><p>Valuta un accordo per condurre l'attività senza acquistarla.</p>
         <span class="round-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></span>
       </button>
     </div>
@@ -355,7 +414,9 @@
 </section>
 <section class="story-section" id="storia" aria-labelledby="story-heading">
   <div class="story-media">
-    <img loading="lazy" decoding="async" width="1500" height="1200" src="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85" alt="Cocktail arancione su bancone, fotografia illustrativa non scattata nel lounge bar in trattativa">
+    <img loading="lazy" decoding="async" width="1500" height="1200" src="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85"
+      srcset="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=620&amp;q=78 620w, https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=960&amp;q=82 960w, https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85 1500w"
+      sizes="(max-width:670px) 1px, (max-width:1100px) 50vw, 50vw" alt="Cocktail arancione su bancone, fotografia illustrativa non scattata nel lounge bar in trattativa">
     <a class="story-photo-note" href="https://unsplash.com/photos/orange-cocktail-with-rosemary-and-dried-lime-0kWsgBYEhPw" target="_blank" rel="noopener noreferrer">Foto di atmosfera · Diego Arenas de Rodrigo / Unsplash · non è il locale</a>
   </div>
   <div class="story-copy">
@@ -399,6 +460,7 @@
       <a class="contact-phone" href="tel:+393294582962">Preferisci chiamare? 329 458 2962</a>
     </div>
     <form class="contact-form" id="lead-form" novalidate>
+      <p class="form-kicker"><span class="form-kicker-dot" aria-hidden="true"></span> ACCESSO AL PRIMO CONFRONTO RISERVATO</p>
       <div class="interest-selection" role="group" aria-label="Formula di interesse">
         <span>MI INTERESSA:</span>
         <button class="interest-chip" type="button" data-choice="cessione" aria-pressed="false">ACQUISTARE</button>
@@ -434,6 +496,10 @@
   </div>
 </section>
 </main>
+<div class="mobile-action" role="navigation" aria-label="Contatto rapido">
+  <a href="#contatto" class="mobile-action-primary">RICHIEDI I DETTAGLI <span aria-hidden="true">➜</span></a>
+  <a href="tel:+393294582962" class="mobile-action-call" aria-label="Chiama per informazioni"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4C3 3 3 4 3 5c0 10 8 16 16 16 1 0 2-1 2-2v-3l-5-2-2 3c-3-1-6-4-7-7l3-2-3-5Z"/></svg></a>
+</div>
 <script>
 (function(){
   'use strict';
@@ -447,6 +513,21 @@
   var urlParams=new URLSearchParams(window.location.search);
   var contact=document.getElementById('contatto');
   var scrolling=window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+  // Opt-in conversion affordance: appears only after hero; disappears at contact form.
+  if('IntersectionObserver' in window){
+    var heroVisible=true,contactVisible=false;
+    function updateMobileAction(){
+      document.body.classList.toggle('mobile-action-visible',!heroVisible&&!contactVisible);
+    }
+    var heroObserver=new IntersectionObserver(function(entries){
+      heroVisible=entries[0].isIntersecting;updateMobileAction();
+    },{threshold:0,rootMargin:'0px 0px -30px 0px'});
+    var contactObserver=new IntersectionObserver(function(entries){
+      contactVisible=entries[0].isIntersecting;updateMobileAction();
+    },{threshold:0,rootMargin:'0px 0px 40px 0px'});
+    heroObserver.observe(document.getElementById('top'));
+    contactObserver.observe(contact);
+  }
   function setFeedback(message,isError){
     feedback.textContent=message;
     feedback.className='form-feedback visible'+(isError?' error':'');
@@ -507,7 +588,7 @@
       utm_term:urlParams.get('utm_term')||''
     };
     var phoneDigits=payload.phone.replace(/\D/g,'');
-    if(phoneDigits.length<8 || phoneDigits.length>15){
+    if(!/^\+?[\d\s().-]{8,35}$/.test(payload.phone) || phoneDigits.length<8){
       setFeedback('Inserisci un numero di telefono valido.',true);
       document.getElementById('phone').focus();
       return;

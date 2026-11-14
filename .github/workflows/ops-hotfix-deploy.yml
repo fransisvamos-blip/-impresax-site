@@ -20,12 +20,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: final typography corrections live; ImpresaX automatic deployments remain disabled.
 # OWNER PAUSE: Visual Enrichment V3 successfully published. ImpresaX automatic deploys remain disabled.
 # OWNER PAUSE: faithful approved V3 reference deployed; all automatic ImpresaX workflows remain disabled.
+# Owner-approved one-time visual refinement V3.1; no recurring triggers.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-shot, restore owner pause after verification
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -49,6 +53,11 @@ jobs:
           for attempt in {1..6}; do
             if curl -fsSL --max-time 18 'https://opportunita.impresax.org/' -o /tmp/opportunita.html &&
                grep -q 'REFERENCE V3' /tmp/opportunita.html &&
+               grep -q 'V3.1' /tmp/opportunita.html &&
+               grep -q 'class="mobile-action"' /tmp/opportunita.html &&
+               grep -q 'class="offer-card-art"' /tmp/opportunita.html &&
+               grep -q 'srcset="https://images.unsplash.com/' /tmp/opportunita.html &&
+               grep -q '7 ANNI DI ATTIVITÀ DICHIARATI' /tmp/opportunita.html &&
                grep -q 'IN CESSIONE O GESTIONE.' /tmp/opportunita.html &&
                grep -q 'class="offer-card offer-card--buy"' /tmp/opportunita.html &&
                grep -q 'class="offer-card offer-card--manage"' /tmp/opportunita.html &&

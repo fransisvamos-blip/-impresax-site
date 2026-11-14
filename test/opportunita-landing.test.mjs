@@ -116,3 +116,43 @@ test("privacy and official contact routes remain reachable",()=>{
  assert.match(privacy,/info@impresax\.org/);
  assert.match(privacy,/titolare del trattamento/);
 });
+
+test("V3.1 adds original vector detail and clear trust cues without changing structure",()=>{
+ assert.match(css,/V3\.1 — art-direction polish/);
+ assert.equal((html.match(/class="offer-card-art"/g)||[]).length,2);
+ assert.match(html,/7 ANNI DI ATTIVITÀ DICHIARATI/);
+ assert.match(html,/ACCESSO AL PRIMO CONFRONTO RISERVATO/);
+ assert.match(css,/\.hero-assurance\{display:flex/);
+ assert.match(css,/\.form-input:focus-within\{border-color:/);
+ assert.match(css,/\.offer-card-art\{position:absolute/);
+ assert.match(css,/\.offer-card:focus-visible/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+});
+test("responsive image sizes and efficient original imagery",()=>{
+ assert.equal((html.match(/srcset="/g)||[]).length,2);
+ assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 68vw, 64vw"/);
+ assert.match(html,/sizes="\(max-width:670px\) 1px, \(max-width:1100px\) 50vw, 50vw"/);
+ assert.match(html,/fetchpriority="high"/);
+ assert.match(html,/loading="lazy"/);
+ assert.equal((html.match(/<img\b/g)||[]).length,2);
+});
+test("mobile sticky action is progressive, hides over contact and has accessible quick call",()=>{
+ assert.match(html,/class="mobile-action" role="navigation" aria-label="Contatto rapido"/);
+ assert.match(html,/class="mobile-action-primary"/);
+ assert.match(html,/class="mobile-action-call" aria-label="Chiama per informazioni"/);
+ assert.match(css,/\.mobile-action\{display:none\}/);
+ assert.match(css,/body\.mobile-action-visible \.mobile-action/);
+ assert.match(js,/if\('IntersectionObserver' in window\)/);
+ assert.match(js,/heroObserver\.observe\(document\.getElementById\('top'\)\)/);
+ assert.match(js,/contactObserver\.observe\(contact\)/);
+ assert.match(js,/!heroVisible&&!contactVisible/);
+});
+test("telephone front-end validation matches the real lead endpoint before POST",()=>{
+ assert.match(js,/phoneDigits=payload\.phone\.replace\(\/\\D\/g,''\)/);
+ assert.match(js,/phoneDigits\.length<8/);
+ assert.match(js,/\.test\(payload\.phone\)/);
+ assert.match(js,/setFeedback\('Inserisci un numero di telefono valido\.'/);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ new Script(js,{filename:"opportunita-v3-1.js"});
+});
