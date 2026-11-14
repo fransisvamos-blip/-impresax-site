@@ -459,35 +459,30 @@ test("V3.9 keeps readable small-screen cards and the restored form",()=>{
  assert.match(html,/class="mobile-action" role="navigation" aria-label="Contatto rapido"/);
 });
 
-test("V4 premium edition fully restyles all six chapters without introducing unqualified claims",()=>{
- assert.match(css,/PREMIUM EDITION V4/);
- for (const cssAnchor of [".hero",".offer-section",".contact-section",".why-section",".story-section",".steps-section",".site-footer"]) {
-   assert.ok(css.includes(cssAnchor),cssAnchor);
- }
- assert.match(html,/class="hero-photo-stamp"/);
- assert.match(html,/class="shell facts-bridge"/);
- assert.match(html,/class="story-label"/);
- assert.match(css,/\.story-media\{min-height:610px\}/);
+test("Restored owner-approved V3.9 remains intact and has zero V4 restyling",()=>{
+ assert.match(css,/REFERENCE V3/);
+ assert.match(css,/V3\.9 — targeted polish/);
+ assert.match(html,/class="offer-card offer-card--buy"/);
+ assert.match(html,/class="offer-card offer-card--manage"/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.match(html,/id="hero-title"[^>]*><span>LOUNGE BAR A<\/span><span class="hero-city-line">CATANZARO LIDO\.<\/span>/);
+ assert.match(html,/id="offer-heading">CESSIONE O GESTIONE\?/);
+ assert.match(html,/class="shell proposal-facts"/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
- assert.equal((html.match(/<form\b/g)||[]).length,1);
- assert.doesNotMatch(html,/fatturato garantito|utile garantito|ROI garantito|prezzo di vendita: €/i);
+ assert.doesNotMatch(css,/PREMIUM EDITION V4|premium-brass|premium-linen/);
+ assert.doesNotMatch(html,/hero-photo-stamp|facts-bridge|story-label/);
+ assert.match(html,/<meta name="theme-color" content="#fbfaf8">/);
 });
-test("V4 social card is a first-party versioned JPEG with full WhatsApp Open Graph tags",()=>{
- assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v4\.jpg">/);
- assert.match(html,/<meta property="og:image:secure_url"/);
+test("V5 WhatsApp preview uses first-party image while preserving original hero and visuals",()=>{
+ assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v5\.jpg">/);
+ assert.match(html,/<meta property="og:image:secure_url" content="https:\/\/opportunita\.impresax\.org\/og-social-v5\.jpg">/);
  assert.match(html,/<meta property="og:image:type" content="image\/jpeg">/);
  assert.match(html,/<meta property="og:image:width" content="1200">/);
  assert.match(html,/<meta property="og:image:height" content="630">/);
  assert.match(html,/<meta property="og:locale" content="it_IT">/);
- assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v4\.jpg">/);
- assert.match(html,/non raffigura l’attività proposta/);
-});
-test("V4 keeps earlier preferred fast-contact funnel and responsive bottom CTA",()=>{
- assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
- assert.doesNotMatch(html,/class="form-next-step"/);
- assert.match(html,/id="phone" name="phone" type="tel"/);
- assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
- assert.match(css,/@media\(max-width:670px\)/);
- assert.match(js,/fetch\('\/api\/interesse'/);
- new Script(js,{filename:"opportunita-premium-v4.js"});
+ assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v5\.jpg">/);
+ assert.match(html,/non mostra il locale reale/);
+ assert.match(html,/photo-1767878032664-cd1d61f0e076/);
+ assert.match(html,/photo-1774806245018-a2bdd2eb620b/);
+ assert.doesNotMatch(html,/commons\.wikimedia\.org/);
 });
