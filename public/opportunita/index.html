@@ -682,6 +682,35 @@
 @media(prefers-reduced-motion:reduce){
  .hero .primary-cta,.closing-cta-button,.offer-card{transition:none}
 }
+
+/* Hero key facts: three owner-supplied strengths, above the first CTA. Retains approved V3.9 art direction. */
+.hero-keyfacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(640px,100%);margin:3px 0 19px}
+.hero-keyfact{display:flex;align-items:flex-start;gap:9px;min-width:0;padding:12px 12px 13px;border:1px solid #dbe2e4;border-top:3px solid var(--orange);border-radius:8px;background:#fffefaed;box-shadow:0 5px 13px #082d4010}
+.hero-keyfact-number{flex:0 0 21px;color:var(--orange);font:800 10px/1.7 var(--font)}
+.hero-keyfact>span:last-child{min-width:0}
+.hero-keyfact strong{display:block;color:var(--navy);font:800 11px/1.32 var(--font);letter-spacing:-.025em}
+.hero-keyfact small{display:block;margin-top:5px;color:#4a6675;font:600 11px/1.4 var(--body)}
+@media(max-width:810px) and (min-width:671px){
+ .hero-keyfacts{gap:6px}
+ .hero-keyfact{padding:9px 8px;gap:5px}
+ .hero-keyfact-number{flex-basis:16px;font-size:9px}
+ .hero-keyfact strong{font-size:9px}
+ .hero-keyfact small{font-size:10px}
+}
+@media(max-width:670px){
+ .hero-keyfacts{grid-template-columns:1fr;gap:0;width:100%;margin:6px 0 14px;border:1px solid #dce3e5;border-radius:11px;overflow:hidden;background:#fffefa}
+ .hero-keyfact{display:grid;grid-template-columns:25px minmax(0,1fr);align-items:center;gap:8px;border:0;border-radius:0;border-top:1px solid #e3e9e9;box-shadow:none;background:transparent;padding:9px 13px}
+ .hero-keyfact:first-child{border-top:0}
+ .hero-keyfact-number{font-size:10px}
+ .hero-keyfact>span:last-child{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
+ .hero-keyfact strong{font-size:11px}
+ .hero-keyfact small{font-size:11px;margin:0}
+ .hero-content .hero-keyfacts+p{margin-bottom:16px}
+}
+@media(max-width:385px){
+ .hero-keyfact>span:last-child{display:block}
+ .hero-keyfact small{margin-top:2px}
+}
 </style>
 </head>
 <body>
@@ -703,6 +732,11 @@
     <div class="eyebrow">OPPORTUNITÀ RISERVATA · CATANZARO LIDO</div>
     <h1 id="hero-title"><span>LOUNGE BAR A</span><span class="hero-city-line">CATANZARO LIDO.</span></h1>
     <div class="offer-ribbon">IN CESSIONE O GESTIONE.</div>
+    <div class="hero-keyfacts" aria-label="I tre punti di forza dell'attività">
+      <div class="hero-keyfact"><span class="hero-keyfact-number" aria-hidden="true">01</span><span><strong>NEL CUORE DELLA MOVIDA UNIVERSITARIA</strong><small>Catanzaro Lido</small></span></div>
+      <div class="hero-keyfact"><span class="hero-keyfact-number" aria-hidden="true">02</span><span><strong>7 ANNI DI ATTIVITÀ</strong><small>Clientela fidelizzata</small></span></div>
+      <div class="hero-keyfact"><span class="hero-keyfact-number" aria-hidden="true">03</span><span><strong>PIAZZA CONSOLIDATA</strong><small>Con sedie e tavolini</small></span></div>
+    </div>
     <p>Un lounge bar avviato da sette anni a Catanzaro Lido, secondo i titolari. Due possibilità da approfondire: <strong>cessione dell’attività oppure gestione</strong>.</p>
     <div class="hero-actions"><a href="#contatto" class="primary-cta">RICHIEDI I DETTAGLI
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h16m-7-7 7 7-7 7"/></svg>
