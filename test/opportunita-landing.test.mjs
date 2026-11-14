@@ -12,7 +12,7 @@ test("faithful V3 rendering: correct desktop chapter sequence and headline",()=>
  assert.match(css,/REFERENCE V3/);
  assert.match(html,/id="hero-title"[^>]*><span>LOUNGE BAR A<\/span><span class="hero-city-line">CATANZARO LIDO\.<\/span>/);
  assert.match(html,/IN CESSIONE O GESTIONE\./);
- assert.match(html,/PARLIAMONE<br>IN RISERVATEZZA\./);
+ assert.match(html,/RICHIEDI<br>I DETTAGLI\./);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  const sections=["id=\"top\"","id=\"formule\"","id=\"contatto\"","id=\"vantaggi\"","id=\"storia\"","id=\"come-funziona\""];
  const locations=sections.map(x=>html.indexOf(x));
