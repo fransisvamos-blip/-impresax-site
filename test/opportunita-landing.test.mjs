@@ -413,7 +413,7 @@ test("V3.8 makes hero trust readable and keeps nonbinding facts properly qualifi
  assert.match(css,/\.hero-assurance>span\{display:inline-flex/);
  assert.match(css,/\.hero-assurance \.assurance-dot\{display:block/);
  assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-assurance>span\{padding:6px 8px;min-height:30px;font-size:9px/);
- assert.match(html,/Panorama illustrativo di Catanzaro Lido/);
+ assert.match(html,/Copertina editoriale illustrativa/);
  assert.match(html,/non raffigura l'attività proposta/);
 });
 test("V3.9 restores third section's compact V3.7 conversion flow without changing API",()=>{
@@ -457,4 +457,37 @@ test("V3.9 keeps readable small-screen cards and the restored form",()=>{
  assert.match(css,/\.hero h1 \.hero-city-line\{font-size:\.76em\}/);
  assert.match(html,/id="menu-toggle"[^>]*aria-label="Apri menu"/);
  assert.match(html,/class="mobile-action" role="navigation" aria-label="Contatto rapido"/);
+});
+
+test("V4 premium edition fully restyles all six chapters without introducing unqualified claims",()=>{
+ assert.match(css,/PREMIUM EDITION V4/);
+ for (const cssAnchor of [".hero",".offer-section",".contact-section",".why-section",".story-section",".steps-section",".site-footer"]) {
+   assert.ok(css.includes(cssAnchor),cssAnchor);
+ }
+ assert.match(html,/class="hero-photo-stamp"/);
+ assert.match(html,/class="facts-bridge"/);
+ assert.match(html,/class="story-label"/);
+ assert.match(css,/\.story-media\{min-height:610px\}/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.doesNotMatch(html,/fatturato garantito|utile garantito|ROI garantito|prezzo di vendita: €/i);
+});
+test("V4 social card is a first-party versioned JPEG with full WhatsApp Open Graph tags",()=>{
+ assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v4\.jpg">/);
+ assert.match(html,/<meta property="og:image:secure_url"/);
+ assert.match(html,/<meta property="og:image:type" content="image\/jpeg">/);
+ assert.match(html,/<meta property="og:image:width" content="1200">/);
+ assert.match(html,/<meta property="og:image:height" content="630">/);
+ assert.match(html,/<meta property="og:locale" content="it_IT">/);
+ assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v4\.jpg">/);
+ assert.match(html,/non raffigura l’attività proposta/);
+});
+test("V4 keeps earlier preferred fast-contact funnel and responsive bottom CTA",()=>{
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.doesNotMatch(html,/class="form-next-step"/);
+ assert.match(html,/id="phone" name="phone" type="tel"/);
+ assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
+ assert.match(css,/@media\(max-width:670px\)/);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ new Script(js,{filename:"opportunita-premium-v4.js"});
 });
