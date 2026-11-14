@@ -413,7 +413,7 @@ test("V3.8 makes hero trust readable and keeps nonbinding facts properly qualifi
  assert.match(css,/\.hero-assurance>span\{display:inline-flex/);
  assert.match(css,/\.hero-assurance \.assurance-dot\{display:block/);
  assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-assurance>span\{padding:6px 8px;min-height:30px;font-size:9px/);
- assert.match(html,/Copertina editoriale illustrativa/);
+ assert.match(html,/Copertina Lounge Bar Catanzaro Lido su fondo bianco/);
  assert.match(html,/non raffigura l.attività proposta/);
 });
 test("V3.9 restores third section's compact V3.7 conversion flow without changing API",()=>{
