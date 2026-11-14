@@ -394,13 +394,14 @@ test("V3.7 keeps CESSIONE O GESTIONE? on one line on desktop and mobile",()=>{
  assert.match(js,/fetch\('\/api\/interesse'/);
 });
 
-test("V3.8 upgrades all six chapters without adding a new funnel step",()=>{
+test("V3.9 preserves all six chapters with owner-approved previous third block",()=>{
  assert.match(css,/V3\.8 — comprehensive but restrained six-chapter design and CRO upgrade/);
+ assert.match(css,/V3\.9 — targeted polish/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
  assert.equal((html.match(/<form\b/g)||[]).length,1);
  assert.match(html,/class="hero-city-line">CATANZARO LIDO\./);
  assert.match(html,/id="offer-heading">CESSIONE O GESTIONE\?/);
- assert.match(html,/id="contact-heading">PARLIAMONE<br>IN RISERVATEZZA/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
  assert.match(html,/id="story-heading">UN PERCORSO<br>GIÀ AVVIATO/);
  assert.match(html,/id="steps-heading">COME<br>FUNZIONA/);
  assert.match(html,/IL PROSSIMO PASSO È TUO/);
@@ -415,17 +416,16 @@ test("V3.8 makes hero trust readable and keeps nonbinding facts properly qualifi
  assert.match(html,/Panorama illustrativo di Catanzaro Lido/);
  assert.match(html,/non raffigura l'attività proposta/);
 });
-test("V3.8 form uses cohesive white card, visibly named steps and stable privacy flow",()=>{
- assert.match(html,/class="form-section-label"><span>01<\/span> QUAL È LA FORMULA CHE TI INTERESSA\?/);
- assert.match(html,/class="form-section-label form-section-label--contact"><span>02<\/span> COME POSSIAMO RICONTATTARTI\?/);
- assert.match(html,/class="form-next-step"/);
- assert.match(css,/\.contact-form\{background:#fffefa;color:var\(--navy\)/);
- assert.match(css,/\.contact-form \.interest-chip\[aria-pressed="true"\]\{background:var\(--orange\);border-color:var\(--orange\);color:#fff\}/);
- assert.match(css,/\.contact-form \.agreement\{color:#364c5c/);
- assert.match(css,/\.contact-form \.form-next-step\{display:flex/);
+test("V3.9 restores third section's compact V3.7 conversion flow without changing API",()=>{
+ assert.match(html,/<section class="contact-section" id="contatto"/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.doesNotMatch(html,/class="form-section-label"|class="form-next-step"/);
+ assert.match(css,/03 \/ FORM — restored V3\.7 composition/);
+ assert.match(css,/\.contact-form\{display:grid;grid-template-columns:1fr;gap:12px\}/);
+ assert.match(css,/\.contact-panel\{position:relative;isolation:isolate;overflow:hidden/);
  assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
  assert.match(js,/fetch\('\/api\/interesse'/);
- new Script(js,{filename:"opportunita-v3-8.js"});
+ new Script(js,{filename:"opportunita-v3-9.js"});
 });
 test("V3.8 benefit facts are honest, legible and not financial promises",()=>{
  assert.match(html,/id="why-heading">PERCHÉ<br>VALUTARLA/);
@@ -448,12 +448,13 @@ test("V3.8 story and closing give an unambiguous nonbinding path",()=>{
  assert.match(css,/\.closing-cta\{background:linear-gradient/);
  assert.match(html,/class="closing-cta-button">RICHIEDI I DETTAGLI/);
 });
-test("V3.8 accessible mobile composition and sticky navigation remain usable",()=>{
+test("V3.9 keeps readable small-screen cards and the restored form",()=>{
  assert.match(css,/\.site-header\{position:sticky;top:0/);
- assert.match(css,/\.contact-form\{padding:19px 16px;border-radius:19px/);
+ assert.match(css,/\.contact-form\{background:#fff;color:var\(--navy\);padding:18px/);
  assert.match(css,/\.why-item\{display:grid;min-height:0;grid-template-columns:49px minmax\(0,1fr\)/);
  assert.match(css,/@media\(max-width:670px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(css,/\.hero h1 \.hero-city-line\{font-size:\.76em\}/);
  assert.match(html,/id="menu-toggle"[^>]*aria-label="Apri menu"/);
  assert.match(html,/class="mobile-action" role="navigation" aria-label="Contatto rapido"/);
 });
