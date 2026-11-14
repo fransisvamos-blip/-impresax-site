@@ -32,11 +32,14 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: premium V4 published and share preview verified; all recurring and push-based ImpresaX jobs remain disabled.
 # OWNER PAUSE: V3.9 visually restored and matching white/navy/orange WhatsApp card verified live; no automatic deploy triggers.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-header-20261114'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-time authorized branding fix
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -66,6 +69,7 @@ jobs:
             html=$(curl -fsSL --max-time 18 'https://opportunita.impresax.org/' || true)
             if [[ "$html" == *'REFERENCE V3'* ]] &&
                [[ "$html" == *'V3.9 — targeted polish'* ]] &&
+               [[ "$html" == *'OPPORTUNITÀ IMPRENDITORIALE'* ]] &&
                [[ "$html" != *'PREMIUM EDITION V4'* ]] &&
                [[ "$html" == *'og-social-v5.jpg'* ]] &&
                [[ "$html" == *'RICHIEDI<br>I DETTAGLI.'* ]] &&
