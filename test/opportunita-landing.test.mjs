@@ -14,7 +14,7 @@ test("faithful V3 rendering: correct desktop chapter sequence and headline",()=>
  assert.match(html,/IN CESSIONE O GESTIONE\./);
  assert.match(html,/RICHIEDI<br>I DETTAGLI\./);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
- const sections=["id=\"top\"","id=\"formule\"","id=\"vantaggi\"","id=\"storia\"","id=\"come-funziona\"","id=\"contatto\""];
+ const sections=["id=\"top\"","id=\"formule\"","id=\"contatto\"","id=\"vantaggi\"","id=\"storia\"","id=\"come-funziona\""];
  const locations=sections.map(x=>html.indexOf(x));
  assert.ok(locations.every(x=>x>0));
  assert.deepEqual(locations,[...locations].sort((a,b)=>a-b));
@@ -55,7 +55,7 @@ test("mobile is purpose-designed, with nav, curved image, stacked cards and form
  assert.match(css,/\.why-layout\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.match(css,/\.steps-layout\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.match(css,/\.story-media\{display:none\}/);
- assert.match(css,/\.contact-panel\{border-radius:28px 28px 0 0/);
+ assert.match(css,/\.contact-panel\{border-radius:24px;min-height:0/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(html,/id="menu-toggle"[^>]*aria-label="Apri menu"[^>]*aria-controls="main-nav"[^>]*aria-expanded="false"/);
 });
@@ -253,7 +253,7 @@ test("V3.4 keeps a single conversion message across header hero and mobile",()=>
  assert.match(html,/INVIA LA RICHIESTA RISERVATA/);
 });
 test("V3.4 improves desktop rhythm without rebuilding or adding sections",()=>{
- assert.match(css,/\.offer-section\{[^}]*padding:54px 0 61px/);
+ assert.match(css,/\.offer-section\{[^}]*padding:54px 0 38px/);
  assert.match(css,/\.why-section\{[^}]*padding:56px 0 58px/);
  assert.match(css,/\.steps-section\{[^}]*padding:57px 0 61px/);
  assert.match(css,/\.story-media\{[^}]*min-height:402px/);
@@ -284,6 +284,46 @@ test("V3.4 mobile prose stays readable, with no 3-column microtype at phone widt
  assert.match(css,/\.steps-layout\{grid-template-columns:1fr;gap:10px\}/);
  assert.match(css,/\.why-item p\{grid-column:2;grid-row:2;font:500 13px/);
  assert.match(css,/\.step p\{grid-column:2;grid-row:2;font:500 13px/);
- assert.match(css,/\.offer-section\{padding:31px 0 42px\}/);
+ assert.match(css,/\.offer-section\{padding-bottom:17px\}/);
  assert.match(css,/\.steps-section\{padding:34px 0 45px\}/);
+});
+
+test("V3.5 shows the lead form immediately after formula selection, not after long content",()=>{
+ const ids=["top","formule","contatto","vantaggi","storia","come-funziona"];
+ const positions=ids.map(id=>html.indexOf('id="'+id+'"'));
+ assert.ok(positions.every(x=>x>=0));
+ assert.deepEqual(positions,[...positions].sort((a,b)=>a-b));
+ assert.ok(html.indexOf('id="lead-form"')<html.indexOf('id="vantaggi"'));
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.equal((html.match(/id="contatto"/g)||[]).length,1);
+ assert.match(html,/il modulo è subito qui sotto/);
+ assert.match(html,/class="contact-section" id="contatto"/);
+});
+test("V3.5 closes with a persuasive yet truthful CTA and real legal footer",()=>{
+ const lastChapter=html.indexOf('id="come-funziona"');
+ const close=html.indexOf('class="shell closing-cta"');
+ const footer=html.indexOf('<footer class="site-footer">');
+ assert.ok(lastChapter<close&&close<footer);
+ assert.match(html,/VUOI APPROFONDIRE L'OPPORTUNITÀ\?/);
+ assert.match(html,/class="closing-cta-button">RICHIEDI I DETTAGLI/);
+ assert.match(html,/class="closing-cta-phone">Oppure chiama il 329 458 2962/);
+ assert.equal((html.match(/class="shell privacy-strip"/g)||[]).length,1);
+ assert.match(html,/Proposta riservata di cessione o gestione di attività commerciale/);
+ assert.match(html,/href="\/privacy"/);
+ assert.match(css,/STRUCTURE V3\.5/);
+ assert.match(css,/\.site-footer\{background:#fff/);
+ assert.match(css,/\.contact-section\{scroll-margin-top:18px/);
+});
+test("V3.5 preserves form endpoint, privacy, and choice interactions while changing layout",()=>{
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ assert.match(js,/contact\.scrollIntoView/);
+ assert.match(js,/contactObserver\.observe\(contact\)/);
+ assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
+ assert.match(html,/id="email" name="email" type="email"/);
+ assert.match(html,/id="full_name" name="full_name" type="text"/);
+ assert.match(html,/id="phone" name="phone" type="tel"/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ assert.match(css,/@media\(max-width:670px\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ new Script(js,{filename:"structural-v3-5.js"});
 });

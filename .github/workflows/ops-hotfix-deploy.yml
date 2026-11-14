@@ -24,12 +24,16 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.2 released and verified; no automatic ImpresaX deployments.
 # OWNER PAUSE: V3.3 conversion-focused landing released; no scheduled or push deployments.
 # OWNER PAUSE: V3.4 premium landing refinements deployed and verified; no scheduled or push deployments.
+# Single owner-directed V3.5 structural conversion release only.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-20261112'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-time deployment; restore pause immediately
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -56,6 +60,10 @@ jobs:
                grep -q 'V3.1' /tmp/opportunita.html &&
                grep -q 'V3.2' /tmp/opportunita.html &&
                grep -q 'V3.3' /tmp/opportunita.html &&
+               grep -q 'STRUCTURE V3.5' /tmp/opportunita.html &&
+               grep -q 'class="shell closing-cta"' /tmp/opportunita.html &&
+               grep -q '<footer class="site-footer">' /tmp/opportunita.html &&
+               grep -q 'il modulo è subito qui sotto' /tmp/opportunita.html &&
                grep -q 'class="hero-actions"' /tmp/opportunita.html &&
                grep -q 'class="hero-phone"' /tmp/opportunita.html &&
                grep -q 'min-height:56px;padding:16px 23px' /tmp/opportunita.html &&
