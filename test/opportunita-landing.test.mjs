@@ -494,3 +494,17 @@ test("Header identity uses requested opportunity wording without touching approv
  assert.doesNotMatch(css,/PREMIUM EDITION V4/);
  assert.match(html,/og-social-v5\.jpg/);
 });
+
+test("Three owner-provided selling points appear in the first hero before inquiry CTA",()=>{
+ const pos=s=>html.indexOf(s);
+ const facts=['NEL CUORE DELLA MOVIDA UNIVERSITARIA','7 ANNI DI ATTIVITÀ','Clientela fidelizzata','PIAZZA CONSOLIDATA','Con sedie e tavolini'];
+ for(const phrase of facts)assert.ok(pos(phrase)>0,phrase);
+ assert.ok(pos('class="hero-keyfacts"')<pos('class="hero-actions"'));
+ assert.ok(pos('class="hero-actions"')<pos('class="hero-assurance"'));
+ assert.equal((html.match(/class="hero-keyfact"/g)||[]).length,3);
+ assert.match(css,/\.hero-keyfacts\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-width:670px\)[\s\S]*\.hero-keyfacts\{grid-template-columns:1fr/);
+ assert.match(html,/OPPORTUNITÀ IMPRENDITORIALE/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.doesNotMatch(css,/PREMIUM EDITION V4/);
+});
