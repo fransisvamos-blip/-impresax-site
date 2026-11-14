@@ -33,11 +33,14 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.9 visually restored and matching white/navy/orange WhatsApp card verified live; no automatic deploy triggers.
 # OWNER PAUSE: approved header label OPPORTUNITÀ IMPRENDITORIALE released once; automated deploys remain disabled.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-hero-20261114'
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # single release
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
