@@ -30,16 +30,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.8 full landing upgrade published and verified; no automatic ImpresaX deploys.
 # OWNER PAUSE: V3.9 landing upgrade published; all ImpresaX automatic triggers stay disabled.
 # OWNER PAUSE: premium V4 published and share preview verified; all recurring and push-based ImpresaX jobs remain disabled.
-# ONE-TIME OWNER REQUEST: restore exact V3.9 site plus V5 matching OG; immediately re-pause after verified release.
+# OWNER PAUSE: V3.9 visually restored and matching white/navy/orange WhatsApp card verified live; no automatic deploy triggers.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.restore-approved-20261114-v5c'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # one-time owner-requested V3.9 restoration
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
