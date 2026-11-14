@@ -34,7 +34,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-20261114-v4'
+      - 'public/opportunita/.release-20261114-v4b'
 
 jobs:
   deploy:
