@@ -1,14 +1,11 @@
 name: Opportunity Visual Photo QA — One Time
 # Temporary, owner-authorized, read-only image-load verification.
-# This workflow never deploys and must be disabled immediately after this single run.
+# The one-time verification succeeded. No deploy and no further automatic jobs.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.verify-story-image-v312'
+  workflow_dispatch:
 jobs:
   verify:
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ false }} # owner pause after successful read-only image scroll verification
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
