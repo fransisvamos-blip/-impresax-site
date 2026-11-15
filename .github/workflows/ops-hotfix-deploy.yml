@@ -35,11 +35,17 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.11 mobile-only optimization published and verified; no automatic deploy triggers.
 # OWNER PAUSE: V3.12 all-section legibility fixes verified in Chromium at eight widths; recurring deployments remain disabled.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-venue-hero-20261115'
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
-    if: ${{ false }} # owner pause
+    if: ${{ github.event_name == 'push' }} # one-time authorized venue hero import
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -56,6 +62,31 @@ jobs:
           npm install --no-save --no-audit --no-fund sharp
           node scripts/build-opportunity-share.mjs
           test -s public/opportunita/og-social-v5.jpg
+      - name: Import and permanently commit venue photo to first-party repository
+        run: |
+          node --input-type=module <<'NODE'
+          import sharp from 'sharp';
+          import {writeFile} from 'node:fs/promises';
+          const url='https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-lounge-bar-catanzaro-hero-transfer.jpg?v=1794742880';
+          const res=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0'}});
+          if(!res.ok) throw new Error('Temporary transfer unavailable: '+res.status);
+          const bytes=Buffer.from(await res.arrayBuffer());
+          const meta=await sharp(bytes).metadata();
+          if(meta.width<1200||meta.height<1200||bytes.length<200000)throw new Error('Invalid venue image from transfer');
+          await writeFile('public/opportunita/hero-lounge-scene-v1.jpg',bytes);
+          await sharp(bytes).webp({quality:85,effort:5}).toFile('public/opportunita/hero-lounge-desktop-v1.webp');
+          await sharp(bytes).resize({width:900,withoutEnlargement:true}).webp({quality:83,effort:5}).toFile('public/opportunita/hero-lounge-mobile-v1.webp');
+          for(const p of ['scene-v1.jpg','desktop-v1.webp','mobile-v1.webp']){
+            const path='public/opportunita/hero-lounge-'+p;
+            const m=await sharp(path).metadata();
+            console.log('First-party venue asset:',path,m.width,m.height,m.format);
+          }
+          NODE
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/opportunita/hero-lounge-scene-v1.jpg public/opportunita/hero-lounge-desktop-v1.webp public/opportunita/hero-lounge-mobile-v1.webp
+          git commit -m "assets(opportunita): first-party venue-derived hero imagery" 
+          git push origin HEAD:main
       - name: Render preview contract test
         run: node --test test/render-preview.test.mjs
       - name: Test the lounge landing without browser credits
@@ -73,6 +104,10 @@ jobs:
                [[ "$html" == *'V3.9 — targeted polish'* ]] &&
                [[ "$html" == *'V3.11 MOBILE-ONLY FIT & FUNNEL'* ]] &&
                [[ "$html" == *'V3.12 READABILITY AUDIT'* ]] &&
+               [[ "$html" == *'hero-lounge-desktop-v1.webp'* ]] &&
+               [[ "$html" == *'Immagine rielaborata digitalmente'* ]] &&
+               curl -fsS --max-time 18 'https://opportunita.impresax.org/hero-lounge-desktop-v1.webp' -o /tmp/venue-hero-desktop.webp &&
+               test "$(wc -c </tmp/venue-hero-desktop.webp)" -gt 60000 &&
                [[ "$html" == *'OPPORTUNITÀ IMPRENDITORIALE'* ]] &&
                [[ "$html" == *'MOVIDA UNIVERSITARIA'* ]] &&
                [[ "$html" == *'Con clientela fidelizzata'* ]] &&
