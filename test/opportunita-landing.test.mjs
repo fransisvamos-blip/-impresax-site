@@ -429,9 +429,9 @@ test("V3.9 restores third section's compact V3.7 conversion flow without changin
 });
 test("V3.8 benefit facts are honest, legible and not financial promises",()=>{
  assert.match(html,/id="why-heading">PERCHÉ<br>VALUTARLA/);
- assert.match(html,/CATANZARO<br>LIDO/);
- assert.match(html,/ATTIVITÀ<br>GIÀ AVVIATA/);
- assert.match(html,/DUE MODALITÀ<br>DI INGRESSO/);
+ assert.match(html,/CATANZARO<br> LIDO/);
+ assert.match(html,/ATTIVITÀ<br> GIÀ AVVIATA/);
+ assert.match(html,/DUE MODALITÀ<br> DI INGRESSO/);
  assert.match(html,/informazioni comunicate dai titolari|Informazioni comunicate dai titolari/);
  assert.match(html,/richiedono verifica/);
  assert.match(css,/\.why-item \.why-icon\{display:grid/);
@@ -548,4 +548,29 @@ test("V3.11 mobile CTA, no zoom inputs, card tap targets and compact decision fu
  assert.match(html,/og-social-v5\.jpg/);
  assert.match(js,/fetch\('\/api\/interesse'/);
  new Script(js,{filename:"opportunita-v3-11-mobile.js"});
+});
+
+test("V3.12 contrast repair keeps circular step numbers dark and readable at every breakpoint",()=>{
+ const cssEnd=css.slice(css.indexOf('V3.12 READABILITY AUDIT'));
+ assert.ok(cssEnd.length>2400);
+ assert.match(cssEnd,/\.step-index\{[^}]*background:#102c41;color:#fff/);
+ assert.match(cssEnd,/@media\(max-width:670px\)\{[\s\S]*\.step-index\{[^}]*background:#102c41;color:#fff/);
+ assert.match(cssEnd,/:root\{--cta-accessible:#bc4912;--cta-accessible-hover:#9a380c\}/);
+ assert.match(cssEnd,/\.proposal-fact span\{color:#4b5e69;font-size:10px/);
+ assert.match(html,/<h3>PRIMO<br> CONTATTO<\/h3>/);
+ assert.match(html,/<h3>SCEGLI<br> LA FORMULA<\/h3>/);
+ assert.match(html,/<h3>VALUTA<br> I DETTAGLI<\/h3>/);
+ assert.doesNotMatch(html,/<h3>PRIMO<br>CONTATTO<\/h3>/);
+ assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 50vw, 50vw"/);
+});
+test("V3.12 sticky bottom bar yields to closing CTA and footer; owners' approved lead flow remains intact",()=>{
+ assert.match(js,/closingVisible=false,footerVisible=false/);
+ assert.match(js,/!heroVisible&&!contactVisible&&!closingVisible&&!footerVisible/);
+ assert.match(js,/querySelector\('\.closing-cta'\)/);
+ assert.match(js,/querySelector\('\.site-footer'\)/);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ assert.match(html,/id="privacy_accepted" name="privacy_accepted" required/);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+ new Script(js,{filename:"opportunita-v3.12.js"});
 });
