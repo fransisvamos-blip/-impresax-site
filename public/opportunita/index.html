@@ -911,6 +911,71 @@
  .contact-form{padding:16px 12px}
 }
 
+
+
+/* V3.12 READABILITY AUDIT: objective contrast and legibility fixes, preserving approved art direction. */
+:root{--cta-accessible:#bc4912;--cta-accessible-hover:#9a380c}
+.primary-cta,.desktop-nav .header-cta,.closing-cta-button,.submit-button,.mobile-action-primary{background:var(--cta-accessible);color:#fff}
+.primary-cta:hover,.desktop-nav .header-cta:hover,.closing-cta-button:hover,.submit-button:not(:disabled):hover{background:var(--cta-accessible-hover)}
+.interest-chip[aria-pressed="true"],.contact-form .interest-chip[aria-pressed="true"]{background:var(--cta-accessible);border-color:var(--cta-accessible);color:#fff}
+.index-line:not(.orange) b{color:#a84313}
+.proposal-fact span{color:#4b5e69;font-size:10px;letter-spacing:.055em}
+.proposal-facts-label small{color:#536774;font-size:11px;line-height:1.5}
+.hero-editorial-source{color:#4d5e68}
+.closing-cta-copy>span{color:#934015}
+.step-index{position:relative;isolation:isolate;display:grid;place-items:center;flex:none;width:43px;height:43px;border-radius:50%;border:2px solid #eaa06c;background:#102c41;color:#fff;font:800 15px/1 var(--font);letter-spacing:.02em;text-shadow:none;opacity:1;box-shadow:0 0 0 4px #f8e9db;margin-bottom:17px}
+.step h3{letter-spacing:-.025em;word-spacing:.05em;line-height:1.27}
+.step p{line-height:1.68}
+.why-item h3{letter-spacing:-.025em;word-spacing:.04em}
+.why-item p{line-height:1.7}
+.closing-cta-copy h3{text-wrap:balance;overflow-wrap:break-word;line-height:1.14}
+.closing-cta-copy p{line-height:1.72}
+.form-feedback{overflow-wrap:anywhere}
+@media(min-width:811px){
+ .steps-layout{column-gap:0}
+ .step{padding-left:clamp(22px,2.2vw,34px);padding-right:clamp(13px,1.8vw,27px);border-left-color:#ccd6db}
+ .step-index{margin-bottom:18px}
+ .why-item{padding-left:clamp(18px,2vw,30px);padding-right:clamp(15px,2vw,29px)}
+ .closing-cta{gap:30px}
+ .closing-cta-copy{max-width:680px}
+}
+@media(min-width:671px) and (max-width:810px){
+ .steps-layout{gap:13px}
+ .step{border:0;border-top:2px solid #f1c8a9;padding:17px 14px;background:#fff8f1;border-radius:14px;min-height:235px}
+ .step-index{width:42px;height:42px;font-size:14px}
+ .step h3{font-size:15px;line-height:1.3}
+ .step p{font-size:12.5px}
+ .why-item{min-height:205px}
+ .why-item h3{font-size:15px}
+ .why-item p{font-size:12.5px}
+}
+@media(max-width:670px){
+ .index-line:not(.orange) b{color:#a84313}
+ .step{display:grid;grid-template-columns:50px minmax(0,1fr);align-items:center;column-gap:15px;row-gap:5px;min-height:106px;background:#fff8f0;border:1px solid #efd8c4;border-radius:15px;padding:17px 16px;box-shadow:0 4px 13px #6a4c2810}
+ .step-index{grid-column:1;grid-row:1/3;width:47px;height:47px;min-width:47px;min-height:47px;margin:0;border:2px solid #e99b67;background:#102c41;color:#fff;font:800 16px/1 var(--font);box-shadow:0 0 0 4px #f5e3d2}
+ .step h3{grid-column:2;grid-row:1;font-size:15px;line-height:1.32;letter-spacing:-.02em;word-spacing:.04em;margin:0}
+ .step p{grid-column:2;grid-row:2;font-size:13px;line-height:1.62;margin:0;color:#344857}
+ .why-item{min-height:102px;grid-template-columns:49px minmax(0,1fr);column-gap:14px}
+ .why-item h3{letter-spacing:-.025em;word-spacing:.06em;line-height:1.32}
+ .why-item p{color:#354a58}
+ .proposal-facts-label small{font-size:11px}
+ .proposal-fact span{font-size:10px;color:#4b5e69}
+ .offer-guidance span:not(.offer-guidance-icon){color:#415c6a}
+ .contact-form .interest-help{color:#476373}
+ .contact-form .form-kicker{color:#445f6f}
+ .contact-form .form-note{color:#4d6471}
+ .closing-cta-copy h3{font-size:clamp(22px,6vw,30px);line-height:1.16;letter-spacing:-.043em}
+ .closing-cta-copy p{font-size:13px;line-height:1.72}
+ .closing-cta-copy>span{font-size:10px;letter-spacing:.085em}
+ .hero-assurance>span{color:#26485e}
+ .site-footer .privacy-strip{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+}
+@media(max-width:360px){
+ .step{grid-template-columns:45px minmax(0,1fr);column-gap:12px;padding:16px 12px}
+ .step-index{width:43px;height:43px;min-width:43px;min-height:43px;font-size:15px}
+ .step h3{font-size:14px}
+ .step p{font-size:12.5px}
+}
 </style>
 </head>
 <body>
@@ -1050,17 +1115,17 @@
     </div>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 37S32 25 32 16a12 12 0 0 0-24 0c0 9 12 21 12 21Z"/><circle cx="20" cy="16" r="4"/></svg></span>
-      <h3>CATANZARO<br>LIDO</h3>
+      <h3>CATANZARO<br> LIDO</h3>
       <p>A Catanzaro Lido, in una zona di frequentazione serale secondo quanto comunicato dai titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="12" r="6"/><path d="M8 32v-4c0-6 5-9 12-9s12 3 12 9v4M7 18a5 5 0 0 0-4 5v9M33 18a5 5 0 0 1 4 5v9"/></svg></span>
-      <h3>ATTIVITÀ<br>GIÀ AVVIATA</h3>
+      <h3>ATTIVITÀ<br> GIÀ AVVIATA</h3>
       <p>Sette anni di operatività e una clientela sviluppata nel tempo, secondo i titolari.</p>
     </article>
     <article class="why-item">
       <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M7 33V23h6v10M18 33V17h6v16M29 33V10h6v23M5 16l10-6 9 3 11-9M28 4h7v7"/></svg></span>
-      <h3>DUE MODALITÀ<br>DI INGRESSO</h3>
+      <h3>DUE MODALITÀ<br> DI INGRESSO</h3>
       <p>Puoi valutare la cessione o la gestione; termini e condizioni restano da concordare.</p>
     </article>
   </div>
@@ -1076,7 +1141,7 @@
   <div class="story-media">
     <img loading="lazy" decoding="async" width="1500" height="1200" src="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85"
       srcset="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=620&amp;q=78 620w, https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=960&amp;q=82 960w, https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85 1500w"
-      sizes="(max-width:670px) 1px, (max-width:1100px) 50vw, 50vw" alt="Cocktail arancione su bancone, fotografia illustrativa non scattata nel lounge bar in trattativa">
+      sizes="(max-width:670px) 100vw, (max-width:1100px) 50vw, 50vw" alt="Cocktail arancione su bancone, fotografia illustrativa non scattata nel lounge bar in trattativa">
     <a class="story-photo-note" href="https://unsplash.com/photos/orange-cocktail-with-rosemary-and-dried-lime-0kWsgBYEhPw" target="_blank" rel="noopener noreferrer">Foto di atmosfera · Diego Arenas de Rodrigo / Unsplash · non è il locale</a>
   </div>
   <div class="story-copy">
@@ -1097,17 +1162,17 @@
     <div class="step">
       <span class="step-index">01</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M11 5h15l5 6v24H11V5Z"/><path d="M25 5v8h6M16 20h10M16 25h10M16 30h7"/></svg></span>
-      <h3>SCEGLI<br>LA FORMULA</h3><p>Indica se vuoi acquistare, gestire o conoscere entrambe le possibilità.</p>
+      <h3>SCEGLI<br> LA FORMULA</h3><p>Indica se vuoi acquistare, gestire o conoscere entrambe le possibilità.</p>
     </div>
     <div class="step">
       <span class="step-index">02</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="7" y="8" width="26" height="25" rx="3"/><path d="M7 15h26M14 5v6M26 5v6M14 21h3m5 0h3m-11 6h3m5 0h3"/></svg></span>
-      <h3>PRIMO<br>CONTATTO</h3><p>Lascia nome e cellulare: ti ricontattiamo per un primo chiarimento.</p>
+      <h3>PRIMO<br> CONTATTO</h3><p>Lascia nome e cellulare: ti ricontattiamo per un primo chiarimento.</p>
     </div>
     <div class="step">
       <span class="step-index">03</span>
       <span class="step-icon" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="m4 17 10-8 7 6 6-5 9 8-9 11-7-7-7 7L4 17Z"/><path d="M15 15 7 23M25 15l9 8M15 28l4 4 4-4"/></svg></span>
-      <h3>VALUTA<br>I DETTAGLI</h3><p>Valuti le informazioni e decidi liberamente se proseguire.</p>
+      <h3>VALUTA<br> I DETTAGLI</h3><p>Valuti le informazioni e decidi liberamente se proseguire.</p>
     </div>
   </div>
 
@@ -1150,9 +1215,9 @@
   var scrolling=window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
   // Opt-in conversion affordance: appears only after hero; disappears at contact form.
   if('IntersectionObserver' in window){
-    var heroVisible=true,contactVisible=false;
+    var heroVisible=true,contactVisible=false,closingVisible=false,footerVisible=false;
     function updateMobileAction(){
-      document.body.classList.toggle('mobile-action-visible',!heroVisible&&!contactVisible);
+      document.body.classList.toggle('mobile-action-visible',!heroVisible&&!contactVisible&&!closingVisible&&!footerVisible);
     }
     var heroObserver=new IntersectionObserver(function(entries){
       heroVisible=entries[0].isIntersecting;updateMobileAction();
@@ -1162,6 +1227,18 @@
     },{threshold:0,rootMargin:'0px 0px 40px 0px'});
     heroObserver.observe(document.getElementById('top'));
     contactObserver.observe(contact);
+    var closingCta=document.querySelector('.closing-cta');
+    if(closingCta){
+      new IntersectionObserver(function(entries){
+        closingVisible=entries[0].isIntersecting;updateMobileAction();
+      },{threshold:0,rootMargin:'0px 0px -8px 0px'}).observe(closingCta);
+    }
+    var footer=document.querySelector('.site-footer');
+    if(footer){
+      new IntersectionObserver(function(entries){
+        footerVisible=entries[0].isIntersecting;updateMobileAction();
+      },{threshold:0}).observe(footer);
+    }
   }
   function setFeedback(message,isError){
     feedback.textContent=message;
