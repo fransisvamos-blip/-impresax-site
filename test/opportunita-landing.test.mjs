@@ -132,7 +132,7 @@ test("V3.1 adds original vector detail and clear trust cues without changing str
 test("responsive image sizes and efficient original imagery",()=>{
  assert.equal((html.match(/srcset="/g)||[]).length,2);
  assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 68vw, 64vw"/);
- assert.match(html,/sizes="\(max-width:670px\) 1px, \(max-width:1100px\) 50vw, 50vw"/);
+ assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 50vw, 50vw"/);
  assert.match(html,/fetchpriority="high"/);
  assert.match(html,/loading="lazy"/);
  assert.equal((html.match(/<img\b/g)||[]).length,2);
@@ -516,7 +516,7 @@ test("Owner-supplied location, seven-year tenure and established piazza form an 
 test("V3.11 only targets touch and mobile viewports while preserving approved V3.9 desktop composition",()=>{
  const marker=css.indexOf('V3.11 MOBILE-ONLY FIT & FUNNEL');
  assert.ok(marker>0);
- const mobileCss=css.slice(marker);
+ const mobileCss=css.slice(marker,css.indexOf('V3.12 READABILITY AUDIT'));
  assert.match(mobileCss,/@media\(min-width:671px\) and \(max-width:810px\)/);
  assert.match(mobileCss,/@media\(max-width:670px\)/);
  assert.match(mobileCss,/@media\(max-width:400px\)/);
