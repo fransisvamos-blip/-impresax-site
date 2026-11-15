@@ -36,18 +36,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.12 all-section legibility fixes verified in Chromium at eight widths; recurring deployments remain disabled.
 # OWNER PAUSE: Venue-derived hero images now stored in repo and live Cloudflare; all automatic deploys stay disabled.
 # OWNER PAUSE: Chapter 05 venue celebration image released and verified; no recurring or push deployments.
+# OWNER PAUSE: Story photo v2 with light face blur published, temporary transfer step removed; no automatic deployments.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-story-faceblur-v2c'
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # one-time light face blur update
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -64,44 +59,6 @@ jobs:
           npm install --no-save --no-audit --no-fund sharp
           node scripts/build-opportunity-share.mjs
           test -s public/opportunita/og-social-v5.jpg
-      - name: Import precisely face-blurred venue photo as first-party assets v2
-        run: |
-          node --input-type=module <<'NODE'
-          import sharp from 'sharp';
-          import {writeFile} from 'node:fs/promises';
-          const urls=[
-            'https://titanoautomotive.myshopify.com/cdn/shop/files/impresax-serata-privacy-soft-face-blur-20261115.jpg',
-            'https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-serata-privacy-soft-face-blur-20261115.jpg?v=1794744343',
-            'https://titanoautomotive.myshopify.com/cdn/shop/files/impresax-serata-volti-sfocati-v2-transfer.jpg',
-            'https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-serata-volti-sfocati-v2-transfer.jpg?v=1794744086'
-          ];
-          let bytes=null;
-          for(const url of urls){
-            try{
-              const res=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Safari/537.36','Accept':'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'},redirect:'follow'});
-              console.log('Transfer status:',res.status,new URL(url).hostname);
-              if(res.ok&&res.headers.get('Content-Type')?.startsWith('image/')){bytes=Buffer.from(await res.arrayBuffer());break;}
-            }catch(e){console.warn('Transfer option failed',String(e).slice(0,120));}
-          }
-          if(!bytes)throw new Error('No publicly accessible venue photo transfer URL');
-          const m=await sharp(bytes).metadata();
-          console.log('Transfer image metadata:',m.width,m.height,m.format,bytes.length);
-          if(m.width<1200||m.height<780||bytes.length<60000)throw new Error('Unexpected image from public CDN');
-          const jpeg=await sharp(bytes).jpeg({quality:91,mozjpeg:true}).toBuffer();
-          await writeFile('public/opportunita/story-serata-locale-v2.jpg',jpeg);
-          await sharp(bytes).webp({quality:85,effort:5}).toFile('public/opportunita/story-serata-desktop-v2.webp');
-          await sharp(bytes).resize({width:900,withoutEnlargement:true}).webp({quality:83,effort:5}).toFile('public/opportunita/story-serata-mobile-v2.webp');
-          for(const p of ['locale-v2.jpg','desktop-v2.webp','mobile-v2.webp']){
-            const path='public/opportunita/story-serata-'+p;
-            const meta=await sharp(path).metadata();
-            console.log('Updated story asset:',path,meta.width,meta.height,meta.format);
-          }
-          NODE
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/opportunita/story-serata-locale-v2.jpg public/opportunita/story-serata-desktop-v2.webp public/opportunita/story-serata-mobile-v2.webp
-          git commit -m "assets(opportunita): light localized face blur for venue evening photo"
-          git push origin HEAD:main
       - name: Render preview contract test
         run: node --test test/render-preview.test.mjs
       - name: Test the lounge landing without browser credits
