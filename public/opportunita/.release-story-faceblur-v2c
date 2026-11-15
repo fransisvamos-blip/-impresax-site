@@ -1,0 +1,1 @@
+One-time production release of only face-localized blurred photo v2, accepts Shopify optimized image format, normalizes first party JPG/WebP, verifies all viewports, and re-pauses deployment workflow.
