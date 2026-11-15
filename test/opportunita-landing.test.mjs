@@ -59,7 +59,7 @@ test("mobile is purpose-designed, with nav, curved image, stacked cards and form
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(html,/id="menu-toggle"[^>]*aria-label="Apri menu"[^>]*aria-controls="main-nav"[^>]*aria-expanded="false"/);
 });
-test("source-based reconstructed hero and illustrative cocktail are clearly labeled",()=>{
+test("both featured photographs are transparently labeled digital reconstructions of venue-supplied source images",()=>{
  assert.equal((html.match(/<img\b/g)||[]).length,2);
  assert.match(html,/<picture class="hero-photo">/);
  assert.match(html,/src="\/hero-lounge-scene-v1\.jpg"/);
@@ -67,11 +67,13 @@ test("source-based reconstructed hero and illustrative cocktail are clearly labe
  assert.match(html,/srcset="\/hero-lounge-desktop-v1\.webp"/);
  assert.match(html,/alt="Rielaborazione digitale da una fotografia del locale/);
  assert.match(html,/Immagine rielaborata digitalmente · dettagli illustrativi/);
- assert.match(html,/La vista della piazza è una rielaborazione digitale/);
- assert.match(html,/photo-1774806245018-a2bdd2eb620b/);
- assert.match(html,/alt="Cocktail[^"]*fotografia illustrativa/);
- assert.match(html,/non è il locale/);
- assert.match(html,/Unsplash/);
+ assert.match(html,/<picture class="story-photo">/);
+ assert.match(html,/src="\/story-serata-locale-v1\.jpg"/);
+ assert.match(html,/srcset="\/story-serata-mobile-v1\.webp"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v1\.webp"/);
+ assert.match(html,/Scena di festa notturna rielaborata digitalmente/);
+ assert.match(html,/Serata al locale · immagine rielaborata digitalmente/);
+ assert.match(html,/dettagli e volti possono differire dalla realtà/);
  assert.match(html,/loading="lazy"/);
  assert.match(html,/fetchpriority="high"/);
 });
@@ -134,12 +136,14 @@ test("V3.1 adds original vector detail and clear trust cues without changing str
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
 });
-test("responsive hero supports WebP variants with first-party JPEG fallback",()=>{
- assert.equal((html.match(/srcset="/g)||[]).length,3);
+test("responsive image system uses first-party JPG fallback and WebP on both hero and story",()=>{
+ assert.equal((html.match(/srcset="/g)||[]).length,4);
  assert.match(html,/media="\(max-width:670px\)" srcset="\/hero-lounge-mobile-v1\.webp"/);
  assert.match(html,/srcset="\/hero-lounge-desktop-v1\.webp"/);
  assert.match(html,/src="\/hero-lounge-scene-v1\.jpg"/);
- assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 50vw, 50vw"/);
+ assert.match(html,/media="\(max-width:670px\)" type="image\/webp" srcset="\/story-serata-mobile-v1\.webp"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v1\.webp"/);
+ assert.match(html,/src="\/story-serata-locale-v1\.jpg"/);
  assert.match(html,/fetchpriority="high"/);
  assert.match(html,/loading="lazy"/);
  assert.equal((html.match(/<img\b/g)||[]).length,2);
@@ -204,7 +208,7 @@ test("funnel events contain only stage and formula and have no network collectio
 });
 test("privacy is aligned with actual external resources, values and consent semantics",()=>{
  assert.match(privacy,/Ultimo aggiornamento: 14 novembre 2026/);
- assert.match(privacy,/fotografie illustrative.*Unsplash/);
+ assert.match(privacy,/immagini rielaborate digitalmente.*fotografie fornite/);
  assert.match(privacy,/Google Fonts/);
  assert.doesNotMatch(privacy,/Wikimedia Commons|eventuale esperienza nel settore/);
  assert.match(privacy,/--navy:#102c41/);
@@ -490,7 +494,7 @@ test("V5 WhatsApp preview uses first-party image while preserving original hero 
  assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v5\.jpg">/);
  assert.match(html,/non mostra il locale reale/);
  assert.match(html,/hero-lounge-desktop-v1\.webp/);
- assert.match(html,/photo-1774806245018-a2bdd2eb620b/);
+ assert.match(html,/story-serata-desktop-v1\.webp/);
  assert.doesNotMatch(html,/commons\.wikimedia\.org/);
 });
 
@@ -591,6 +595,21 @@ test("venue-derived hero photo preserves all six sections, disclosure and Cloudf
  assert.match(html,/Immagine rielaborata digitalmente · dettagli illustrativi/);
  assert.match(html,/dettagli non corrispondono necessariamente alla realtà/);
  assert.match(html,/class="hero-editorial"/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.match(html,/og-social-v5\.jpg/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+});
+
+test("venue party image is owned as first-party site asset and preserves approved funnel and privacy",()=>{
+ const router=readFileSync(new URL("../src/opportunity.js",import.meta.url),"utf8");
+ for(const asset of ["story-serata-locale-v1.jpg","story-serata-desktop-v1.webp","story-serata-mobile-v1.webp"]){
+   assert.ok(html.includes("/"+asset),asset+" referenced");
+   assert.ok(router.includes("/"+asset),asset+" Cloudflare route");
+ }
+ assert.match(html,/alt="Scena di festa notturna rielaborata digitalmente/);
+ assert.match(html,/Serata al locale · immagine rielaborata digitalmente/);
+ assert.match(privacy,/immagini rielaborate digitalmente/);
+ assert.doesNotMatch(html,/photo-1774806245018-a2bdd2eb620b/);
  assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
  assert.match(html,/og-social-v5\.jpg/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
