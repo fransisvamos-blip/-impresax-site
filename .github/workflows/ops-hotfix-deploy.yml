@@ -35,15 +35,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.11 mobile-only optimization published and verified; no automatic deploy triggers.
 # OWNER PAUSE: V3.12 all-section legibility fixes verified in Chromium at eight widths; recurring deployments remain disabled.
 # OWNER PAUSE: Venue-derived hero images now stored in repo and live Cloudflare; all automatic deploys stay disabled.
+# OWNER PAUSE: Chapter 05 venue celebration image released and verified; no recurring or push deployments.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-story-serata-v1b'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # owner-authorized one-time local venue party photo release
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
