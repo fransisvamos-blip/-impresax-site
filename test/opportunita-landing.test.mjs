@@ -572,7 +572,8 @@ test("V3.12 contrast repair keeps circular step numbers dark and readable at eve
  assert.match(html,/<h3>SCEGLI<br> LA FORMULA<\/h3>/);
  assert.match(html,/<h3>VALUTA<br> I DETTAGLI<\/h3>/);
  assert.doesNotMatch(html,/<h3>PRIMO<br>CONTATTO<\/h3>/);
- assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 50vw, 50vw"/);
+ assert.match(html,/srcset="\/story-serata-mobile-v1\.webp"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v1\.webp"/);
 });
 test("V3.12 sticky bottom bar yields to closing CTA and footer; owners' approved lead flow remains intact",()=>{
  assert.match(js,/closingVisible=false,footerVisible=false/);
