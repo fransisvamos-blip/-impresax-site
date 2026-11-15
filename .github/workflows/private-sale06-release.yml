@@ -1,17 +1,14 @@
 name: Private Sale 06 — Owner-Authorized One-Time Release
-# ONE-TIME only: stage QA, publish approved site, real visual QA, never recurring.
+# OWNER PAUSE: Private Sale 06 released and verified; no automatic or recurring release runs.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-private-sale-06-20261115'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ false }} # owner pause after verified one-time Private Sale 06 production release
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
