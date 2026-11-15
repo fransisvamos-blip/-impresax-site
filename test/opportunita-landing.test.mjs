@@ -68,9 +68,9 @@ test("both featured photographs are transparently labeled digital reconstruction
  assert.match(html,/alt="Rielaborazione digitale da una fotografia del locale/);
  assert.match(html,/Immagine rielaborata digitalmente · dettagli illustrativi/);
  assert.match(html,/<picture class="story-photo">/);
- assert.match(html,/src="\/story-serata-locale-v1\.jpg"/);
- assert.match(html,/srcset="\/story-serata-mobile-v1\.webp"/);
- assert.match(html,/srcset="\/story-serata-desktop-v1\.webp"/);
+ assert.match(html,/src="\/story-serata-locale-v2\.jpg"/);
+ assert.match(html,/srcset="\/story-serata-mobile-v2\.webp"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v2\.webp"/);
  assert.match(html,/Scena di festa notturna rielaborata digitalmente/);
  assert.match(html,/Serata al locale · immagine rielaborata digitalmente/);
  assert.match(html,/dettagli e volti possono differire dalla realtà/);
@@ -141,9 +141,9 @@ test("responsive image system uses first-party JPG fallback and WebP on both her
  assert.match(html,/media="\(max-width:670px\)" srcset="\/hero-lounge-mobile-v1\.webp"/);
  assert.match(html,/srcset="\/hero-lounge-desktop-v1\.webp"/);
  assert.match(html,/src="\/hero-lounge-scene-v1\.jpg"/);
- assert.match(html,/media="\(max-width:670px\)" type="image\/webp" srcset="\/story-serata-mobile-v1\.webp"/);
- assert.match(html,/srcset="\/story-serata-desktop-v1\.webp"/);
- assert.match(html,/src="\/story-serata-locale-v1\.jpg"/);
+ assert.match(html,/media="\(max-width:670px\)" type="image\/webp" srcset="\/story-serata-mobile-v2\.webp"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v2\.webp"/);
+ assert.match(html,/src="\/story-serata-locale-v2\.jpg"/);
  assert.match(html,/fetchpriority="high"/);
  assert.match(html,/loading="lazy"/);
  assert.equal((html.match(/<img\b/g)||[]).length,2);
@@ -494,7 +494,7 @@ test("V5 WhatsApp preview uses first-party image while preserving original hero 
  assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v5\.jpg">/);
  assert.match(html,/non mostra il locale reale/);
  assert.match(html,/hero-lounge-desktop-v1\.webp/);
- assert.match(html,/story-serata-desktop-v1\.webp/);
+ assert.match(html,/story-serata-desktop-v2\.webp/);
  assert.doesNotMatch(html,/commons\.wikimedia\.org/);
 });
 
@@ -572,8 +572,8 @@ test("V3.12 contrast repair keeps circular step numbers dark and readable at eve
  assert.match(html,/<h3>SCEGLI<br> LA FORMULA<\/h3>/);
  assert.match(html,/<h3>VALUTA<br> I DETTAGLI<\/h3>/);
  assert.doesNotMatch(html,/<h3>PRIMO<br>CONTATTO<\/h3>/);
- assert.match(html,/srcset="\/story-serata-mobile-v1\.webp"/);
- assert.match(html,/srcset="\/story-serata-desktop-v1\.webp"/);
+ assert.match(html,/srcset="\/story-serata-mobile-v2\.webp"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v2\.webp"/);
 });
 test("V3.12 sticky bottom bar yields to closing CTA and footer; owners' approved lead flow remains intact",()=>{
  assert.match(js,/closingVisible=false,footerVisible=false/);
@@ -603,7 +603,7 @@ test("venue-derived hero photo preserves all six sections, disclosure and Cloudf
 
 test("venue party image is owned as first-party site asset and preserves approved funnel and privacy",()=>{
  const router=readFileSync(new URL("../src/opportunity.js",import.meta.url),"utf8");
- for(const asset of ["story-serata-locale-v1.jpg","story-serata-desktop-v1.webp","story-serata-mobile-v1.webp"]){
+ for(const asset of ["story-serata-locale-v2.jpg","story-serata-desktop-v2.webp","story-serata-mobile-v2.webp"]){
    assert.ok(html.includes("/"+asset),asset+" referenced");
    assert.ok(router.includes("/"+asset),asset+" Cloudflare route");
  }
@@ -613,5 +613,14 @@ test("venue party image is owned as first-party site asset and preserves approve
  assert.doesNotMatch(html,/photo-1774806245018-a2bdd2eb620b/);
  assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
  assert.match(html,/og-social-v5\.jpg/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+});
+
+test("Story photo v2 lightly blurs only faces without changing approved sections",()=>{
+ assert.match(html,/src="\/story-serata-locale-v2\.jpg"/);
+ assert.match(html,/srcset="\/story-serata-desktop-v2\.webp"/);
+ assert.match(html,/srcset="\/story-serata-mobile-v2\.webp"/);
+ assert.match(html,/id="story-heading">UN PERCORSO<br>GIÀ AVVIATO/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
 });
