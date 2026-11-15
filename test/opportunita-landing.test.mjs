@@ -59,11 +59,16 @@ test("mobile is purpose-designed, with nav, curved image, stacked cards and form
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(html,/id="menu-toggle"[^>]*aria-label="Apri menu"[^>]*aria-controls="main-nav"[^>]*aria-expanded="false"/);
 });
-test("two real commercial-use licensed atmosphere images never misrepresent the venue",()=>{
+test("source-based reconstructed hero and illustrative cocktail are clearly labeled",()=>{
  assert.equal((html.match(/<img\b/g)||[]).length,2);
- assert.match(html,/photo-1767878032664-cd1d61f0e076/);
+ assert.match(html,/<picture class="hero-photo">/);
+ assert.match(html,/src="\/hero-lounge-scene-v1\.jpg"/);
+ assert.match(html,/srcset="\/hero-lounge-mobile-v1\.webp"/);
+ assert.match(html,/srcset="\/hero-lounge-desktop-v1\.webp"/);
+ assert.match(html,/alt="Rielaborazione digitale da una fotografia del locale/);
+ assert.match(html,/Immagine rielaborata digitalmente · dettagli illustrativi/);
+ assert.match(html,/La vista della piazza è una rielaborazione digitale/);
  assert.match(html,/photo-1774806245018-a2bdd2eb620b/);
- assert.match(html,/alt="Terrazza[^"]*non raffigura il lounge bar/);
  assert.match(html,/alt="Cocktail[^"]*fotografia illustrativa/);
  assert.match(html,/non è il locale/);
  assert.match(html,/Unsplash/);
@@ -129,9 +134,11 @@ test("V3.1 adds original vector detail and clear trust cues without changing str
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
 });
-test("responsive image sizes and efficient original imagery",()=>{
- assert.equal((html.match(/srcset="/g)||[]).length,2);
- assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 68vw, 64vw"/);
+test("responsive hero supports WebP variants with first-party JPEG fallback",()=>{
+ assert.equal((html.match(/srcset="/g)||[]).length,3);
+ assert.match(html,/media="\(max-width:670px\)" srcset="\/hero-lounge-mobile-v1\.webp"/);
+ assert.match(html,/srcset="\/hero-lounge-desktop-v1\.webp"/);
+ assert.match(html,/src="\/hero-lounge-scene-v1\.jpg"/);
  assert.match(html,/sizes="\(max-width:670px\) 100vw, \(max-width:1100px\) 50vw, 50vw"/);
  assert.match(html,/fetchpriority="high"/);
  assert.match(html,/loading="lazy"/);
@@ -482,7 +489,7 @@ test("V5 WhatsApp preview uses first-party image while preserving original hero 
  assert.match(html,/<meta property="og:locale" content="it_IT">/);
  assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v5\.jpg">/);
  assert.match(html,/non mostra il locale reale/);
- assert.match(html,/photo-1767878032664-cd1d61f0e076/);
+ assert.match(html,/hero-lounge-desktop-v1\.webp/);
  assert.match(html,/photo-1774806245018-a2bdd2eb620b/);
  assert.doesNotMatch(html,/commons\.wikimedia\.org/);
 });
@@ -573,4 +580,18 @@ test("V3.12 sticky bottom bar yields to closing CTA and footer; owners' approved
  assert.equal((html.match(/<form\b/g)||[]).length,1);
  assert.equal((html.match(/<section\b/g)||[]).length,6);
  new Script(js,{filename:"opportunita-v3.12.js"});
+});
+
+test("venue-derived hero photo preserves all six sections, disclosure and Cloudflare routes",()=>{
+ const router=readFileSync(new URL("../src/opportunity.js",import.meta.url),"utf8");
+ for(const asset of ["hero-lounge-scene-v1.jpg","hero-lounge-desktop-v1.webp","hero-lounge-mobile-v1.webp"]){
+   assert.ok(html.includes("/"+asset),asset);
+   assert.ok(router.includes("/"+asset),asset+" is routed");
+ }
+ assert.match(html,/Immagine rielaborata digitalmente · dettagli illustrativi/);
+ assert.match(html,/dettagli non corrispondono necessariamente alla realtà/);
+ assert.match(html,/class="hero-editorial"/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.match(html,/og-social-v5\.jpg/);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
 });
