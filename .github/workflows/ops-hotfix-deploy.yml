@@ -40,7 +40,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-story-faceblur-v2b'
+      - 'public/opportunita/.release-story-faceblur-v2c'
 
 permissions:
   contents: write
@@ -85,8 +85,10 @@ jobs:
           }
           if(!bytes)throw new Error('No publicly accessible venue photo transfer URL');
           const m=await sharp(bytes).metadata();
-          if(m.width!==1536||m.height!==1024||m.format!=='jpeg'||bytes.length<160000)throw new Error('Invalid image');
-          await writeFile('public/opportunita/story-serata-locale-v2.jpg',bytes);
+          console.log('Transfer image metadata:',m.width,m.height,m.format,bytes.length);
+          if(m.width<1200||m.height<780||bytes.length<60000)throw new Error('Unexpected image from public CDN');
+          const jpeg=await sharp(bytes).jpeg({quality:91,mozjpeg:true}).toBuffer();
+          await writeFile('public/opportunita/story-serata-locale-v2.jpg',jpeg);
           await sharp(bytes).webp({quality:85,effort:5}).toFile('public/opportunita/story-serata-desktop-v2.webp');
           await sharp(bytes).resize({width:900,withoutEnlargement:true}).webp({quality:83,effort:5}).toFile('public/opportunita/story-serata-mobile-v2.webp');
           for(const p of ['locale-v2.jpg','desktop-v2.webp','mobile-v2.webp']){
