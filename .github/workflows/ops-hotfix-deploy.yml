@@ -39,10 +39,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-story-serata-v1'
-
-permissions:
-  contents: write
+      - 'public/opportunita/.release-story-serata-v1b'
 
 jobs:
   deploy:
@@ -63,31 +60,6 @@ jobs:
           npm install --no-save --no-audit --no-fund sharp
           node scripts/build-opportunity-share.mjs
           test -s public/opportunita/og-social-v5.jpg
-      - name: Import venue party photo as first-party responsive assets
-        run: |
-          node --input-type=module <<'NODE'
-          import sharp from 'sharp';
-          import {writeFile} from 'node:fs/promises';
-          const url='https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-lounge-serata-illustration-transfer-v1.jpg?v=1794743472';
-          const res=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0'}});
-          if(!res.ok)throw new Error('Venue party transfer unavailable: HTTP '+res.status);
-          const bytes=Buffer.from(await res.arrayBuffer());
-          const meta=await sharp(bytes).metadata();
-          if(meta.width<1400||meta.height<900||bytes.length<150000)throw new Error('Venue party image dimensions/bytes unexpected');
-          await writeFile('public/opportunita/story-serata-locale-v1.jpg',bytes);
-          await sharp(bytes).webp({quality:85,effort:5}).toFile('public/opportunita/story-serata-desktop-v1.webp');
-          await sharp(bytes).resize({width:900,withoutEnlargement:true}).webp({quality:83,effort:5}).toFile('public/opportunita/story-serata-mobile-v1.webp');
-          for(const p of ['locale-v1.jpg','desktop-v1.webp','mobile-v1.webp']){
-            const path='public/opportunita/story-serata-'+p;
-            const m=await sharp(path).metadata();
-            console.log('First-party story photo:',path,m.width,m.height,m.format);
-          }
-          NODE
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/opportunita/story-serata-locale-v1.jpg public/opportunita/story-serata-desktop-v1.webp public/opportunita/story-serata-mobile-v1.webp
-          git commit -m "assets(opportunita): first-party venue party photo replacing stock cocktail"
-          git push origin HEAD:main
       - name: Render preview contract test
         run: node --test test/render-preview.test.mjs
       - name: Test the lounge landing without browser credits
