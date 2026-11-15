@@ -37,7 +37,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-full-qa-v312'
+      - 'public/opportunita/.release-full-qa-v312b'
 
 jobs:
   deploy:
