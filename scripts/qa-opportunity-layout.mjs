@@ -51,6 +51,20 @@ try{
    if(width<=670&&audit.inputFontSize<16)faults.push('iOS zoom risk: input '+audit.inputFontSize);
    if(!audit.hero?.includes('MOVIDA UNIVERSITARIA'))faults.push('Missing editorial proof');
    if(width===390||width===1440){
+    // Full-page screenshots do not necessarily trigger native lazy-loading.
+    // Mimic a real reader scrolling to chapter 05 and verify that image actually loads.
+    const story=page.locator('.story-media img');
+    await story.scrollIntoViewIfNeeded({timeout:8000});
+    try{
+      await page.waitForFunction(()=>{
+        const img=document.querySelector('.story-media img');
+        return Boolean(img&&img.complete&&img.naturalWidth>0);
+      },null,{timeout:18000});
+    }catch(e){
+      const imageState=await story.evaluate(img=>({url:img.currentSrc,complete:img.complete,naturalWidth:img.naturalWidth}));
+      faults.push('Chapter 05 illustration failed to load on scroll: '+JSON.stringify(imageState));
+    }
+    await page.evaluate(()=>window.scrollTo(0,0));
     await page.screenshot({path:capture+'/viewport-'+width+'.png',fullPage:true,animations:'disabled',timeout:30000});
    }
    if(width<=810){
