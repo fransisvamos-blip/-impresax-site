@@ -1,0 +1,30 @@
+name: Opportunity Visual Photo QA — One Time
+# Temporary, owner-authorized, read-only image-load verification.
+# This workflow never deploys and must be disabled immediately after this single run.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.verify-story-image-v312'
+jobs:
+  verify:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify real browser sees all chapters and lazy image after scroll
+        run: |
+          npm install --no-save --no-audit --no-fund playwright-core
+          node scripts/qa-opportunity-layout.mjs
+      - name: Upload 390px and 1440px screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opportunity-story-image-after-scroll
+          path: /tmp/opportunita-visual-qa/*.png
+          if-no-files-found: ignore
+          retention-days: 7
