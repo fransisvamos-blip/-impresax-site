@@ -40,7 +40,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-story-faceblur-v2'
+      - 'public/opportunita/.release-story-faceblur-v2b'
 
 permissions:
   contents: write
@@ -69,10 +69,21 @@ jobs:
           node --input-type=module <<'NODE'
           import sharp from 'sharp';
           import {writeFile} from 'node:fs/promises';
-          const url='https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-serata-volti-sfocati-v2-transfer.jpg?v=1794744086';
-          const res=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0'}});
-          if(!res.ok)throw new Error('Temporary transfer HTTP '+res.status);
-          const bytes=Buffer.from(await res.arrayBuffer());
+          const urls=[
+            'https://titanoautomotive.myshopify.com/cdn/shop/files/impresax-serata-privacy-soft-face-blur-20261115.jpg',
+            'https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-serata-privacy-soft-face-blur-20261115.jpg?v=1794744343',
+            'https://titanoautomotive.myshopify.com/cdn/shop/files/impresax-serata-volti-sfocati-v2-transfer.jpg',
+            'https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax-serata-volti-sfocati-v2-transfer.jpg?v=1794744086'
+          ];
+          let bytes=null;
+          for(const url of urls){
+            try{
+              const res=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Safari/537.36','Accept':'image/avif,image/webp,image/apng,image/*,*/*;q=0.8'},redirect:'follow'});
+              console.log('Transfer status:',res.status,new URL(url).hostname);
+              if(res.ok&&res.headers.get('Content-Type')?.startsWith('image/')){bytes=Buffer.from(await res.arrayBuffer());break;}
+            }catch(e){console.warn('Transfer option failed',String(e).slice(0,120));}
+          }
+          if(!bytes)throw new Error('No publicly accessible venue photo transfer URL');
           const m=await sharp(bytes).metadata();
           if(m.width!==1536||m.height!==1024||m.format!=='jpeg'||bytes.length<160000)throw new Error('Invalid image');
           await writeFile('public/opportunita/story-serata-locale-v2.jpg',bytes);
