@@ -976,6 +976,18 @@
  .step h3{font-size:14px}
  .step p{font-size:12.5px}
 }
+
+/* Hero venue photo — source-derived digital reconstruction, not a documentary photograph */
+.hero-photo{display:block;width:100%;height:100%;overflow:hidden}
+.hero-photo img{width:100%;height:100%;object-fit:cover;object-position:54% 54%;filter:saturate(.93) contrast(1.025);display:block}
+.hero-image-note{max-width:min(420px,55%);font-size:10px;line-height:1.45;text-align:right;background:#102c41c9;color:#fff;cursor:default}
+@media(min-width:811px){
+ .hero-photo img{object-position:56% 51%}
+}
+@media(max-width:670px){
+ .hero-photo img{object-position:51% 63%}
+ .hero-image-note{max-width:calc(100% - 24px);font-size:9px;line-height:1.35;right:12px;bottom:10px;padding:5px 8px}
+}
 </style>
 </head>
 <body>
@@ -1022,12 +1034,15 @@
     <div class="hero-assurance" aria-label="Modalità della richiesta"><span><i class="assurance-dot" aria-hidden="true"></i> PRIMO CONFRONTO RISERVATO</span><span><i class="assurance-dot" aria-hidden="true"></i> NOME E CELLULARE</span><span><i class="assurance-dot" aria-hidden="true"></i> SENZA IMPEGNO</span></div>
   </div></div>
   <div class="hero-media">
-    <img src="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85"
-      srcset="https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=600&amp;q=78 600w, https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=960&amp;q=82 960w, https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1400&amp;q=85 1400w, https://images.unsplash.com/photo-1767878032664-cd1d61f0e076?auto=format&amp;fit=crop&amp;w=1800&amp;q=85 1800w"
-      sizes="(max-width:670px) 100vw, (max-width:1100px) 68vw, 64vw"
-      width="1800" height="1300" decoding="async" fetchpriority="high" alt="Terrazza di ristorazione serale usata come immagine di atmosfera; non raffigura il lounge bar in cessione">
+    <picture class="hero-photo">
+      <source type="image/webp" media="(max-width:670px)" srcset="/hero-lounge-mobile-v1.webp">
+      <source type="image/webp" srcset="/hero-lounge-desktop-v1.webp">
+      <img src="/hero-lounge-scene-v1.jpg"
+        width="1254" height="1254" decoding="async" fetchpriority="high"
+        alt="Rielaborazione digitale da una fotografia del locale: piazza con tavoli, persone e grande albero illuminato. Alcuni dettagli non corrispondono necessariamente alla realtà.">
+    </picture>
   </div>
-  <a class="hero-image-note" href="https://unsplash.com/photos/rooftop-restaurant-terrace-with-tables-and-chairs-CL7YekNfTTA" target="_blank" rel="noopener noreferrer">Foto illustrativa · Monaz Nazary / Unsplash · non è il locale</a>
+  <span class="hero-image-note" title="Rielaborazione digitale basata su una fotografia fornita del locale: persone e dettagli possono differire dalla realtà">Immagine rielaborata digitalmente · dettagli illustrativi</span>
 </section>
 <section class="offer-section" id="formule" aria-labelledby="offer-heading">
   <div class="shell">
@@ -1192,7 +1207,7 @@
 </main>
 <footer class="site-footer">
   <div class="shell privacy-strip">
-    <p>Proposta riguardante la cessione o gestione di un'attività commerciale, non la vendita dell'immobile. I dati su durata, clientela e condizioni provengono dai titolari e richiedono verifica. Le fotografie sono illustrative: non mostrano il locale.</p>
+    <p>Proposta riguardante la cessione o gestione di un'attività commerciale, non la vendita dell'immobile. I dati su durata, clientela e condizioni provengono dai titolari e richiedono verifica. La vista della piazza è una rielaborazione digitale da una fotografia del locale e potrebbe differire dalla realtà; l'immagine del cocktail è illustrativa.</p>
     <div class="legal-links"><a href="/privacy">Privacy</a><a href="mailto:info@impresax.org">Email</a><a href="tel:+393294582962" aria-label="Chiama il 329 458 2962">329 458 2962</a></div>
   </div>
 </footer>
