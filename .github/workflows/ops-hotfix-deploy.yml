@@ -33,15 +33,13 @@ name: ImpresaX Ops Hotfix Deploy
 # OWNER PAUSE: V3.9 visually restored and matching white/navy/orange WhatsApp card verified live; no automatic deploy triggers.
 # OWNER PAUSE: approved header label OPPORTUNITÀ IMPRENDITORIALE released once; automated deploys remain disabled.
 # OWNER PAUSE: V3.11 mobile-only optimization published and verified; no automatic deploy triggers.
+# OWNER PAUSE: V3.12 all-section legibility fixes verified in Chromium at eight widths; recurring deployments remain disabled.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-full-qa-v312b'
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'push' }} # owner-authorized one-time V3.12 audit
+    if: ${{ false }} # owner pause
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
