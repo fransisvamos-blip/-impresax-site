@@ -988,6 +988,17 @@
  .hero-photo img{object-position:51% 63%}
  .hero-image-note{max-width:calc(100% - 24px);font-size:9px;line-height:1.35;right:12px;bottom:10px;padding:5px 8px}
 }
+
+/* Chapter 05 — image sourced from a photographed evening at the venue, digitally reworked. */
+.story-photo{display:block;width:100%;height:100%;overflow:hidden}
+.story-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 57%;filter:saturate(.94) contrast(1.035)}
+.story-media:after{pointer-events:none}
+.story-photo-note{pointer-events:none;font-size:10px;max-width:calc(100% - 24px);line-height:1.45;background:#09273bd9}
+@media(max-width:670px){
+ .story-media{height:clamp(230px,60vw,280px);min-height:230px}
+ .story-photo img{object-position:50% 58%}
+ .story-photo-note{font-size:9px;left:12px;bottom:12px}
+}
 </style>
 </head>
 <body>
@@ -1154,10 +1165,13 @@
 </section>
 <section class="story-section" id="storia" aria-labelledby="story-heading">
   <div class="story-media">
-    <img loading="lazy" decoding="async" width="1500" height="1200" src="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85"
-      srcset="https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=620&amp;q=78 620w, https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=960&amp;q=82 960w, https://images.unsplash.com/photo-1774806245018-a2bdd2eb620b?auto=format&amp;fit=crop&amp;w=1500&amp;q=85 1500w"
-      sizes="(max-width:670px) 100vw, (max-width:1100px) 50vw, 50vw" alt="Cocktail arancione su bancone, fotografia illustrativa non scattata nel lounge bar in trattativa">
-    <a class="story-photo-note" href="https://unsplash.com/photos/orange-cocktail-with-rosemary-and-dried-lime-0kWsgBYEhPw" target="_blank" rel="noopener noreferrer">Foto di atmosfera · Diego Arenas de Rodrigo / Unsplash · non è il locale</a>
+    <picture class="story-photo">
+      <source media="(max-width:670px)" type="image/webp" srcset="/story-serata-mobile-v1.webp">
+      <source type="image/webp" srcset="/story-serata-desktop-v1.webp">
+      <img loading="lazy" decoding="async" width="1536" height="1024" src="/story-serata-locale-v1.jpg"
+        alt="Scena di festa notturna rielaborata digitalmente da una fotografia della serata al locale, con persone e fontane luminose. Alcuni dettagli sono illustrativi.">
+    </picture>
+    <span class="story-photo-note">Serata al locale · immagine rielaborata digitalmente</span>
   </div>
   <div class="story-copy">
     <div class="index-line"><b>05</b><span class="line"></span></div>
@@ -1207,7 +1221,7 @@
 </main>
 <footer class="site-footer">
   <div class="shell privacy-strip">
-    <p>Proposta riguardante la cessione o gestione di un'attività commerciale, non la vendita dell'immobile. I dati su durata, clientela e condizioni provengono dai titolari e richiedono verifica. La vista della piazza è una rielaborazione digitale da una fotografia del locale e potrebbe differire dalla realtà; l'immagine del cocktail è illustrativa.</p>
+    <p>Proposta riguardante la cessione o gestione di un'attività commerciale, non la vendita dell'immobile. I dati su durata, clientela e condizioni provengono dai titolari e richiedono verifica. Le immagini della piazza e della serata sono rielaborazioni digitali da fotografie fornite; dettagli e volti possono differire dalla realtà.</p>
     <div class="legal-links"><a href="/privacy">Privacy</a><a href="mailto:info@impresax.org">Email</a><a href="tel:+393294582962" aria-label="Chiama il 329 458 2962">329 458 2962</a></div>
   </div>
 </footer>
