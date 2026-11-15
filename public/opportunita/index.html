@@ -763,6 +763,154 @@
  .hero-editorial-terrace{width:43px;flex-basis:43px}
  .hero-editorial-terrace svg{width:40px;height:40px}
 }
+
+
+/* V3.11 MOBILE-ONLY FIT & FUNNEL — preserve approved V3.9 desktop and V3.10 editorial hero */
+@media(min-width:671px) and (max-width:810px){
+ .header-inner{min-height:68px}
+ .menu-toggle{display:grid;place-items:center;min-width:44px;min-height:44px;margin-left:auto}
+ .desktop-nav{position:absolute;top:100%;left:0;right:0;display:none;flex-direction:column;align-items:stretch;gap:0;padding:10px 24px 18px;background:#fffcf8;box-shadow:0 19px 26px #0d2c4225;border-top:1px solid #dfe7ea}
+ .desktop-nav.is-open{display:flex}
+ .desktop-nav>a,.desktop-nav a:not(.header-cta){min-height:47px;display:flex;align-items:center;padding:12px;font-size:13px}
+ .desktop-nav .header-cta{margin-top:9px;justify-content:center}
+}
+@media(max-width:670px){
+ html{scroll-padding-top:68px}
+ body{overflow-x:clip}
+ .shell{width:calc(100% - 36px)}
+ .site-header{background:#fffcf9f5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+ .header-inner{min-height:62px;gap:8px}
+ .brand{flex:1 1 auto;max-width:calc(100% - 58px);gap:9px}
+ .brand-line{flex:0 0 20px;width:20px}
+ .brand strong{font-size:clamp(10px,3.35vw,13px);line-height:1.2;letter-spacing:-.045em;max-width:none;overflow-wrap:normal}
+ .menu-toggle{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;margin-left:auto;border:1px solid #dbe5e9;border-radius:10px;background:#ffffff9c}
+ .menu-toggle svg{width:24px;height:24px}
+ .menu-toggle[aria-expanded="true"]{border-color:#f3b48c;background:#fff0e5}
+ .desktop-nav{border-top:1px solid #e5ebee;padding:7px 18px 17px;box-shadow:0 17px 28px #0d2c4226}
+ .desktop-nav>a,.desktop-nav a:not(.header-cta){min-height:46px;display:flex;align-items:center;padding:11px 12px;font-size:12px}
+ .desktop-nav .header-cta{min-height:50px;justify-content:center;margin-top:9px}
+ #top,#formule,#contatto,#vantaggi,#storia,#come-funziona{scroll-margin-top:68px}
+ .hero-content{padding-top:22px;padding-bottom:7px}
+ .hero .eyebrow{font-size:9px;line-height:1.5;letter-spacing:.11em;gap:9px}
+ .hero .eyebrow:before{width:24px}
+ .hero h1{font-size:clamp(39px,10.25vw,58px);line-height:1.015;margin:12px 0 11px;letter-spacing:-.065em}
+ .hero h1 .hero-city-line{font-size:.78em;letter-spacing:-.05em}
+ .offer-ribbon{font-size:clamp(18px,4.8vw,26px);padding:6px 10px 7px;margin-bottom:8px}
+ .hero-editorial{margin:7px 0 11px}
+ .hero-editorial-place{padding:1px 0 7px 12px}
+ .hero-editorial-kicker{margin-bottom:5px;font-size:9px}
+ .hero-editorial-headline{font-size:clamp(24px,6.6vw,35px);line-height:1.11}
+ .hero-editorial-evidence{margin-top:12px;padding:11px 0;column-gap:9px}
+ .hero-editorial-seven{font-size:clamp(50px,12.5vw,65px)}
+ .hero-editorial-description b{font-size:clamp(11px,2.9vw,13px);line-height:1.25}
+ .hero-editorial-description small{font-size:clamp(10.5px,2.75vw,12px);line-height:1.42}
+ .hero-editorial-source{font-size:10px;line-height:1.45;margin-top:8px}
+ .hero .hero-editorial-intro{font-size:13px;line-height:1.65;margin-bottom:14px}
+ .hero-actions{display:flex;flex-direction:column;align-items:stretch;gap:3px}
+ .hero .primary-cta{width:100%;min-height:55px;justify-content:space-between;padding:14px 18px;font-size:12px;border-radius:10px}
+ .hero-phone{justify-content:center;min-height:43px;font-size:12px;white-space:normal;text-align:center}
+ .hero-assurance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+ .hero-assurance>span:first-child{display:none}
+ .hero-assurance>span{min-height:32px;justify-content:center;padding:6px 8px;font-size:9px;line-height:1.3;text-align:center}
+ .hero-media{height:clamp(190px,48vw,245px);margin-top:10px;clip-path:ellipse(86% 100% at 50% 0%)}
+ .hero-media img{object-position:52% 48%}
+ .hero-image-note{right:12px;bottom:10px;font-size:8px}
+ .offer-section{padding:30px 0 31px}
+ .offer-heading-row{gap:14px;margin-bottom:17px}
+ .offer-intro h2{font-size:clamp(23px,5.75vw,36px);line-height:1.08;margin-bottom:11px}
+ .offer-intro p{font-size:13.5px;line-height:1.67}
+ .offer-guidance{padding:12px 13px;border-radius:12px;gap:10px}
+ .offer-guidance strong{font-size:12px}
+ .offer-guidance span:not(.offer-guidance-icon){font-size:11.5px;line-height:1.5}
+ .offer-layout{gap:12px}
+ .offer-card{min-height:225px;padding:19px 19px 17px;border-radius:17px}
+ .offer-card-kicker{font-size:10px}
+ .offer-card-main{padding:14px 66px 18px 0}
+ .offer-card-title{font-size:clamp(32px,8.5vw,43px);line-height:1.01}
+ .offer-card-description{font-size:13px;line-height:1.6;margin-top:11px}
+ .offer-card-art{right:-15px;top:37px;width:123px;opacity:.065}
+ .offer-card-bottom{align-items:center;gap:10px;padding-top:13px}
+ .offer-card-detail{max-width:160px;font-size:10.5px;line-height:1.48}
+ .offer-card-action{white-space:normal;text-align:right;gap:8px;font-size:10px}
+ .offer-card .round-arrow{flex:0 0 35px;width:35px;height:35px}
+ .offer-subchoice{gap:10px;margin-top:16px}
+ .offer-subchoice p{font-size:11px;line-height:1.55}
+ .offer-both{min-height:49px;padding:11px 13px;font-size:11px}
+ .contact-section{padding:19px 10px 46px}
+ .contact-panel{padding:25px 17px 27px;gap:18px;border-radius:20px}
+ .contact-intro h2{font-size:clamp(36px,9vw,45px);line-height:1.03}
+ .contact-intro p{font-size:13.5px;line-height:1.7}
+ .contact-phone{min-height:43px;font-size:12px}
+ .contact-form{padding:18px 15px;gap:11px;border-radius:17px}
+ .form-kicker{font-size:10px;line-height:1.4}
+ .interest-selection{gap:8px;row-gap:9px}
+ .interest-selection>span{font-size:11px}
+ .interest-chip{min-height:44px;padding:10px 12px;font-size:11px}
+ .interest-help{font-size:11px;line-height:1.5}
+ .form-input{min-height:56px}
+ .form-input input{font-size:16px;line-height:1.25;min-height:52px}
+ .optional-email{padding:7px 11px}
+ .optional-email summary{min-height:44px;align-items:center;font-size:12px;gap:8px}
+ .optional-email summary span{font-size:10px}
+ .agreement{font-size:11.5px;line-height:1.6}
+ .agreement input{width:21px;height:21px}
+ .submit-button{width:100%;min-height:57px;padding:13px 10px;font-size:12px}
+ .form-note{font-size:11px}
+ .why-section{padding:37px 0 43px}
+ .why-layout{gap:11px}
+ .why-item{padding:17px 16px;gap:4px 13px;border-radius:15px}
+ .why-item h3{font-size:15px}
+ .why-item p{font-size:13px;line-height:1.57}
+ .proposal-facts{margin-top:22px;padding:13px 15px;border-radius:15px}
+ .proposal-fact{padding-top:11px;padding-bottom:11px}
+ .story-media{display:block;height:205px;min-height:205px}
+ .story-media img{height:100%;object-fit:cover;object-position:50% 48%}
+ .story-media:after{background:linear-gradient(0deg,#08263d55,transparent 65%)}
+ .story-photo-note{bottom:11px;left:12px;max-width:calc(100% - 24px);font-size:9px}
+ .story-copy{padding:34px 20px 40px}
+ .story-copy h2{font-size:clamp(32px,8.4vw,43px)}
+ .story-copy p{font-size:13.5px;line-height:1.75}
+ .steps-section{padding:38px 0 51px}
+ .steps-layout{gap:11px}
+ .step{padding:17px 16px;gap:3px 15px;border-radius:15px}
+ .step h3{font-size:15px}
+ .step p{font-size:13px;line-height:1.62}
+ .closing-cta{padding:23px 19px;margin-top:27px}
+ .closing-cta-copy h3{font-size:clamp(23px,6.1vw,29px)}
+ .closing-cta-button{min-height:55px}
+ .site-footer .privacy-strip{padding-top:25px;padding-bottom:calc(106px + env(safe-area-inset-bottom))}
+ .mobile-action{gap:9px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:#fffefaf5}
+ .mobile-action-primary{min-height:52px;font-size:12px}
+ .mobile-action-call{flex-basis:52px}
+}
+@media(max-width:400px){
+ .hero-editorial-evidence{grid-template-columns:1fr;row-gap:11px}
+ .hero-editorial-years{padding-right:0;gap:12px}
+ .hero-editorial-piazza{border-left:0;border-top:1px solid #d7e0e4;padding:10px 0 0;gap:12px}
+ .hero-editorial-seven{font-size:62px}
+ .hero-editorial-seven span{font-size:9px}
+ .hero-editorial-description b{font-size:13px}
+ .hero-editorial-description small{font-size:12px}
+ .hero-editorial-terrace{width:52px;height:50px;flex-basis:52px}
+ .hero-editorial-terrace svg{width:46px;height:46px}
+ .offer-card-main{padding-right:48px}
+ .offer-card-action{font-size:9px}
+ .offer-card-detail{font-size:10px}
+ .offer-intro h2{font-size:clamp(21px,5.8vw,26px)}
+}
+@media(max-width:350px){
+ .shell{width:calc(100% - 28px)}
+ .brand strong{font-size:10px}
+ .hero h1{font-size:38px}
+ .hero h1 .hero-city-line{font-size:.76em}
+ .hero-editorial-headline{font-size:25px}
+ .offer-card{padding:17px 15px}
+ .offer-card-main{padding-right:34px}
+ .offer-card-art{right:-34px;opacity:.045}
+ .contact-panel{padding:21px 12px 24px}
+ .contact-form{padding:16px 12px}
+}
+
 </style>
 </head>
 <body>
