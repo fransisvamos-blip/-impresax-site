@@ -512,3 +512,40 @@ test("Owner-supplied location, seven-year tenure and established piazza form an 
  assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
  assert.doesNotMatch(css,/PREMIUM EDITION V4/);
 });
+
+test("V3.11 only targets touch and mobile viewports while preserving approved V3.9 desktop composition",()=>{
+ const marker=css.indexOf('V3.11 MOBILE-ONLY FIT & FUNNEL');
+ assert.ok(marker>0);
+ const mobileCss=css.slice(marker);
+ assert.match(mobileCss,/@media\(min-width:671px\) and \(max-width:810px\)/);
+ assert.match(mobileCss,/@media\(max-width:670px\)/);
+ assert.match(mobileCss,/@media\(max-width:400px\)/);
+ assert.match(mobileCss,/@media\(max-width:350px\)/);
+ assert.doesNotMatch(mobileCss,/@media\(min-width:811px\)/);
+ assert.match(css,/REFERENCE V3/);
+ assert.match(css,/V3\.9 — targeted polish/);
+ assert.doesNotMatch(css,/PREMIUM EDITION V4/);
+ assert.match(html,/class="hero-editorial"/);
+ assert.match(html,/id="contact-heading">RICHIEDI<br>I DETTAGLI\./);
+ assert.equal((html.match(/<section\b/g)||[]).length,6);
+});
+test("V3.11 mobile CTA, no zoom inputs, card tap targets and compact decision funnel",()=>{
+ const mobileCss=css.slice(css.indexOf('V3.11 MOBILE-ONLY FIT & FUNNEL'));
+ for(const property of [
+ '.menu-toggle{display:grid;place-items:center',
+ '.hero .primary-cta{width:100%;min-height:55px',
+ '.offer-card{min-height:225px',
+ '.interest-chip{min-height:44px',
+ '.form-input input{font-size:16px',
+ '.optional-email summary{min-height:44px',
+ '.submit-button{width:100%;min-height:57px',
+ '.hero-assurance>span:first-child{display:none',
+ '.story-media{display:block;height:205px',
+ '.site-footer .privacy-strip{padding-top:25px;padding-bottom:calc(106px + env(safe-area-inset-bottom))'
+ ])assert.ok(mobileCss.includes(property),property);
+ assert.match(html,/class="mobile-action" role="navigation"/);
+ assert.match(html,/aria-controls="main-nav" aria-expanded="false"/);
+ assert.match(html,/og-social-v5\.jpg/);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ new Script(js,{filename:"opportunita-v3-11-mobile.js"});
+});
