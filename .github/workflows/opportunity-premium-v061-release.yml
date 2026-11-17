@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-approved-cinematic-v08b-20261117'
+      - 'public/opportunita/.release-approved-cinematic-v08c-20261117'
 
 permissions:
   contents: write
