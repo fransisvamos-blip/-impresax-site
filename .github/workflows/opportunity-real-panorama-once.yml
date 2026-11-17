@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ github.event.head_commit.message == 'venue-panorama-release' }}
+    if: ${{ github.event.head_commit.message == 'venue-panorama-retry' }}
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
