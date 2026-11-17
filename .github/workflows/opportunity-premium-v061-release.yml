@@ -1,14 +1,17 @@
-name: ImpresaX Opportunity — V11 Render-Faithful Unified Layout
-# OWNER PAUSE: V11 render-faithful navy/cyan deployed; staged and production 9-width browser, assets, preview, privacy and lead checks passed.
+name: ImpresaX Opportunity — V11.1 Vivid Contrast Correction One-Time
+# ONE-TIME owner-directed correction of washed-out V11 colors/photos; restore pause after QA.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-v111-vivid-cyan-20261117'
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ false }} # owner pause after successful render-faithful production verification
+    if: ${{ github.event_name == 'push' }} # one owner-authorized anti-fade color correction
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -42,7 +45,7 @@ jobs:
           sleep 2
           curl -fsS --max-time 8 'http://127.0.0.1:8191/' >/dev/null
           QA_BASE_URL='http://127.0.0.1:8191/' node scripts/qa-private-sale.mjs
-      - name: Deploy V11 Render-Faithful Unified Navy Cyan Website
+      - name: Deploy V11.1 Vivid Navy Cyan Photo and Contrast Correction
         id: production_deploy
         run: npx wrangler deploy --config wrangler.jsonc
       - name: Smoke-test production, exact sale positioning, assets and privacy
@@ -56,6 +59,7 @@ jobs:
                [[ "$html" == *'VENDITA O GESTIONE?'* ]] &&
                [[ "$html" == *'Due formule per la stessa'* ]] &&
                [[ "$html" == *'PRIVATE SALE 11 — VARIANT 1 / SINGLE SOURCE OF TRUTH'* ]] &&
+               [[ "$html" == *'V11.1 vivid contrast grade'* ]] &&
                [[ "$html" == *'family=DM+Sans:wght@400'* ]] &&
                [[ "$html" == *'family=Plus+Jakarta+Sans:wght@500'* ]] &&
                [[ "$html" == *'class="story-photo"'* ]] &&
@@ -107,6 +111,6 @@ jobs:
         if: ${{ failure() && steps.production_deploy.outcome == 'success' }}
         run: |
           echo 'PRODUCTION QA FAILED: restoring approved previous landing automatically'
-          cp backups/opportunita-v10-before-unified-render1-20261117.html public/opportunita/index.html
+          cp backups/opportunita-v11-before-vivid-cyan-20261117.html public/opportunita/index.html
           node scripts/build-opportunity-share.mjs
           npx wrangler deploy --config wrangler.jsonc
