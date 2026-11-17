@@ -383,6 +383,262 @@ svg{display:block;flex:none}
  .contact-intro h2{font-size:44px}
 }
 
+
+/* PRIVATE SALE 08.1 — PRECISION POLISH: TYPOGRAPHY, COLOR, MICRO-SPACING AND ICON SYSTEM.
+   Deliberately preserves approved cinematic layout, sources, contact logic and privacy. */
+:root{
+  --navy:#061722;--navy-2:#092535;--navy-3:#103447;
+  --orange:#e56a1f;--orange-bright:#ff9136;--gold:#f1a75c;
+  --ivory:#fcf7f1;--sand:#faefe3;--text:#132734;--muted:#526675;
+}
+html{scroll-padding-top:77px}
+body{background:#fcf7f1;font-size:14px;letter-spacing:-.007em;text-rendering:optimizeLegibility}
+:focus-visible{outline:3px solid #ffad64;outline-offset:3px}
+.section-no{color:#b74916;font-size:10px;line-height:1.55;letter-spacing:.16em}
+.section-no:before{background:#d75a20;width:26px;height:2px}
+.topbar{background:#061927f8;box-shadow:0 1px 0 #f39a5250,0 9px 26px #02121c1c}
+.header-inner{gap:27px}
+.brand-name{font-size:19px;line-height:.85;letter-spacing:.012em}
+.brand-mark i{background:linear-gradient(180deg,#ff9a44,#d34e0e)}
+.brand-mark i:last-child{background:linear-gradient(180deg,#f77a2c,#bd360c)}
+.header-location{color:#f4dfcc;letter-spacing:.25em}
+.nav{gap:clamp(17px,1.8vw,29px)}
+.nav a{color:#f5f1e9;font-size:10px;letter-spacing:.07em;position:relative}
+.nav a:after{content:"";height:2px;background:#ef8d46;position:absolute;bottom:-7px;left:0;right:100%;transition:right .25s ease}
+.nav a:hover:after,.nav a:focus-visible:after{right:0}
+.header-cta{background:linear-gradient(130deg,#f5832e,#cc4b13);border-color:#ffb26b99;min-height:42px;padding:0 19px;border-radius:8px;letter-spacing:.045em}
+.nav-toggle{border-color:#b3cbd36b;transition:border-color .2s,background .2s}
+.nav-toggle:hover{background:#143b52;border-color:#ffb47c}
+svg.proof-icon,svg.deal-icon,svg.step-icon,svg.field-icon{stroke-linecap:round;stroke-linejoin:round}
+svg.proof-icon{stroke-width:1.55;width:41px;height:41px;color:#ffad63}
+svg.deal-icon{stroke-width:1.55;color:#ffa85d}
+svg.step-icon{stroke-width:1.6}
+svg.field-icon{stroke-width:1.75;color:#f5dfca}
+/* HERO: more refined contrast, richer image, elegant type hierarchy and precise CTAs */
+.hero{background:#061722}
+.hero-photo{filter:saturate(1.18) contrast(1.075) brightness(.99);object-position:center 54%}
+.hero-vignette{background:
+ linear-gradient(90deg,#031520f4 0%,#041721e2 22%,#061b26a9 43%,#071b243b 69%,#071b2415 100%),
+ linear-gradient(0deg,#03141ce0 0%,transparent 34%,#06141e37 100%)}
+.hero:after{background:radial-gradient(ellipse at 78% 24%,#ffc15e17,transparent 44%)}
+.hero-core{min-height:454px;padding:42px 0 48px}
+.hero-kicker{color:#fff0df;letter-spacing:.29em;gap:14px;margin-bottom:19px}
+.hero-kicker span{height:2px;background:#ed812e;width:31px}
+.hero h1{font-size:clamp(80px,7.45vw,114px);line-height:.79;letter-spacing:-.048em;margin-bottom:19px;text-shadow:0 8px 22px #020e1761}
+.hero h1 .sale{color:#fff9ed}
+.hero h1 .accent{color:#ff9d50}
+.hero-sub{font-size:clamp(19px,1.85vw,23px);line-height:1.19;max-width:555px;color:#fcf3e7;margin:4px 0 25px;font-weight:500}
+.hero-sub strong{color:#ffbe79;font-weight:700}
+.hero-actions{gap:13px;align-items:center}
+.btn-orange{background:linear-gradient(120deg,#ff912d 0%,#e0641b 56%,#b9410c 100%);border-color:#ffc07b9e;
+ box-shadow:inset 0 1px #ffcb8c90,0 9px 22px #6a270f61;min-height:52px;padding:13px 21px;font-size:10.5px;letter-spacing:.037em;transition:transform .2s,box-shadow .2s,filter .2s}
+.btn-orange:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:inset 0 1px #ffd09b88,0 13px 26px #64220e75}
+.hero-secondary{min-height:52px;background:#061d2ac9;border-color:#f6dcc2ba;font-size:10px;letter-spacing:.025em;padding:12px 19px}
+.hero-secondary:hover{background:#163f4ed9;border-color:#ffb985}
+.button-arrow{stroke-width:1.9;width:17px;height:17px}
+.hero-foot{background:linear-gradient(110deg,#051a28,#0a2a3a 57%,#051a28);border-color:#ef9c5659}
+.hero-foot-inner{min-height:105px}
+.hero-proof{height:68px;padding-left:clamp(13px,2.8vw,34px);gap:18px;border-right-color:#f6ad6b56}
+.hero-proof strong{font-size:clamp(17px,1.58vw,21px);line-height:1.025;font-weight:600;letter-spacing:-.019em}
+.photo-disclaimer{background:#041723cd;color:#f5e5d6;font-size:9px;padding:5px 10px}
+/* VENDITA/GESTIONE: unified editorial surface, stronger type and quiet focal contrast */
+.deal{padding:58px 0 68px;background:linear-gradient(130deg,#fffaf3,#f9eede 55%,#fef7ee)}
+.deal:before{opacity:.14}
+.deal-layout{grid-template-columns:minmax(235px,.81fr) minmax(0,2.19fr);gap:33px}
+.deal-title h2{font-size:clamp(57px,4.9vw,78px);line-height:.83;letter-spacing:-.045em;margin:12px 0 13px}
+.deal-title h2 em{color:#d9581b}
+.deal-rule{background:#df6d32;margin:19px 0;width:56px}
+.deal-title p{font-size:13px;line-height:1.7;color:#445361;max-width:300px}
+.deal-grid{gap:17px}
+.deal-main,.deal-alt{min-height:264px;padding:31px 25px 26px;border-radius:13px}
+.deal-main{background:linear-gradient(107deg,#061924f7 0%,#082332f0 58%,#132a3980 100%),url('/story-serata-desktop-v2.webp') center 48%/cover;
+ border-color:#ed7b36;box-shadow:0 14px 30px #48281525}
+.deal-main:before{border-radius:11px}
+.deal-ribbon{font-size:9px;letter-spacing:.08em;padding:6px 21px;background:linear-gradient(110deg,#f18c3d,#bb4111)}
+.deal-icon{width:43px;height:43px}
+.deal-head{gap:13px;align-items:center}
+.deal-head h3{font-size:clamp(30px,2.75vw,40px);line-height:.94;letter-spacing:-.025em}
+.deal-main p,.deal-alt p{font-size:12.5px;line-height:1.72;margin:15px 0 19px}
+.deal-main p{color:#f4f1e8}
+.deal-alt p{color:#405463}
+.deal-main .btn-orange{min-height:47px;font-size:9.5px;border-radius:8px}
+.deal-alt{border-color:#d9baa3;background:radial-gradient(ellipse at 97% 3%,#f0d6bf,transparent 41%),linear-gradient(135deg,#fffdfa,#f5e7d8);box-shadow:0 12px 27px #6a432919}
+.deal-alt h3{color:#122a38}
+.deal-alt-link{background:#fffaf4;border-color:#d4b7a0;color:#163546;min-height:47px;font-size:9.5px;padding:11px 14px;transition:background .2s,border-color .2s,transform .2s}
+.deal-alt-link:hover{background:#fff;border-color:#da662b;transform:translateY(-1px)}
+/* STORY: photograph-led diptych, rich navy and an intentionally readable action */
+.editorial{min-height:332px;background:radial-gradient(ellipse at 91% 35%,#164254,#061b2b 69%)}
+.story-photo{min-height:332px}
+.story-photo img{filter:saturate(1.16) contrast(1.065);object-position:center 46%}
+.story-photo figcaption{bottom:15px;left:27px;font-size:9px;letter-spacing:.065em}
+.story-copy{padding:38px clamp(35px,5.6vw,90px) 32px 37px}
+.story-copy .section-no{color:#ffb16f}
+.story-copy h2{font-size:clamp(48px,4.35vw,69px);line-height:.86;letter-spacing:-.035em;margin:15px 0 17px}
+.story-copy h2 em{color:#ff9c56}
+.story-copy>p:not(.story-disclosure){font-size:13px;line-height:1.72;color:#e6eff0;max-width:505px}
+.story-action{margin-top:13px}
+.story-action a{font-size:10px;min-height:33px;color:#ffddc2;border-bottom:1px solid #e6a065a3;padding:7px 0}
+.story-action a:hover{color:#fff;border-bottom-color:#ffd5ae}
+.story-disclosure{font-size:9.5px;color:#bcd0d8;line-height:1.65;margin-top:15px}
+/* HOW IT WORKS: more readable compact graphic sequence, no default card template */
+.process{background:linear-gradient(125deg,#fef8ef,#f8eadd 62%,#fff9f2);padding:52px 0 57px}
+.process-layout{grid-template-columns:.34fr .66fr;gap:36px}
+.process-top{padding-right:23px;border-right:1px solid #c8774887}
+.process-top h2{font-size:clamp(45px,4.1vw,64px);line-height:.84;margin:13px 0 0}
+.process-grid{gap:19px}
+.process-step{gap:14px}
+.process-step:not(:last-child):after{color:#cc5722;font-size:27px}
+.step-marker{width:67px;height:67px;grid-template-rows:25px 25px;border:1px solid #df985f;
+ background:linear-gradient(144deg,#f7cb9e,#ffe9d0 58%,#fff8ee);box-shadow:0 0 0 4px #fffaf28c,0 5px 11px #9e492019}
+.process-num{color:#aa3c13;font-size:13px}
+.step-icon{width:23px;height:23px;color:#b94c18}
+.process-step h3{font-size:21px;line-height:1.04;margin-bottom:7px}
+.process-step p{font-size:11.5px;line-height:1.62;color:#405463;max-width:210px}
+/* CONTACT: quieter panel, credible interaction and better reading contrast */
+.contact{background:radial-gradient(ellipse at 18% 30%,#174153 0%,#061b2a 58%,#051720 100%);padding:67px 0 79px}
+.contact-glow{background:radial-gradient(ellipse at 43% 3%,#f4a25619,transparent 37%),radial-gradient(ellipse at 95% 91%,#f69a5018,transparent 28%)}
+.contact-grid{grid-template-columns:.85fr 1.15fr;gap:clamp(30px,5.2vw,76px)}
+.contact-intro h2{font-size:clamp(49px,5vw,73px);line-height:.89;margin:17px 0 21px}
+.contact-intro h2 em{color:#ffac68}
+.contact-intro>p{font-size:13.5px;line-height:1.75;color:#e9f0ef}
+.contact-intro .assurance{font-size:11.5px;line-height:1.75;padding-top:19px;margin-top:20px;color:#d4e5e9}
+.assurance strong{font-size:10px;color:#ffc18f}
+.demo-form{background:#0b2839;background-image:linear-gradient(150deg,#153546e8,#061c2def);
+ border:1px solid #e4aa7b;border-top:3px solid #f39b56;border-radius:13px;padding:28px 29px 25px;
+ box-shadow:0 1px 0 #ffffff0c inset,0 20px 46px #021018b8}
+.form-heading{margin-bottom:17px}
+.form-heading h3{font-size:clamp(29px,2.8vw,39px);line-height:1.05;letter-spacing:-.027em}
+.form-heading p{font-size:11.5px;line-height:1.6;color:#e0e7e7}
+.choice-group{margin-bottom:16px;gap:8px}
+.choice-group button{min-height:41px;font-size:10.5px;border-color:#89a2a6a6;border-radius:7px;background:#0c2a3bbd}
+.choice-group button[aria-pressed="true"]{background:linear-gradient(120deg,#fa8c2e,#cb4d11);border-color:#ffc184}
+.form-grid{gap:12px 14px}
+.form-field input,.form-field select{height:52px;min-height:52px;border-color:#8ba5afb8;background:#1b3a4cd1;border-radius:8px;
+ padding:11px 13px 11px 43px;color:#fff;font-size:16px}
+.form-field input::placeholder{color:#e8f1f2d8;font-size:12.5px}
+.form-field select{font-size:12.5px;color:#e8f1f2}
+.field-icon{width:19px;height:19px;top:16px;left:15px}
+.field-icon.select-icon{right:13px;left:auto}
+.privacy-check{font-size:11px;line-height:1.6;gap:11px;margin:17px 0}
+.privacy-check input{width:19px;height:19px}
+.form-button{min-height:53px;font-size:11.5px;letter-spacing:.04em}
+.form-caption{font-size:10px;line-height:1.7;margin-top:13px;color:#c5d5db}
+.footer{background:#051723;border-top-color:#f5a66542}
+.footer-inner{font-size:10.5px;line-height:1.6}
+.footer-inner strong{letter-spacing:.055em}
+/* Responsive refinements intentionally override only sizes and rhythm */
+@media(max-width:1270px){
+ .deal-layout{gap:24px}
+ .deal-main,.deal-alt{padding:27px 21px 23px}
+ .deal-head h3{font-size:clamp(28px,2.6vw,38px)}
+ .process-layout{gap:24px}
+ .process-grid{gap:15px}
+ .step-marker{width:59px;height:59px}
+ .process-step h3{font-size:19px}
+}
+@media(max-width:1050px){
+ .hero h1{font-size:clamp(74px,7.4vw,102px)}
+ .deal-layout{grid-template-columns:1fr;gap:24px}
+ .deal-title h2{font-size:clamp(56px,6vw,74px)}
+ .deal-title p{max-width:720px}
+ .deal-grid{grid-template-columns:1.08fr 1fr}
+ .deal-main,.deal-alt{min-height:257px;padding:29px 26px}
+ .deal-head h3{font-size:clamp(32px,3.6vw,40px)}
+ .process-layout{grid-template-columns:1fr;gap:21px}
+ .process-top{border:0;padding:0}
+ .process-top h2{font-size:56px}
+ .contact-grid{grid-template-columns:.8fr 1.2fr;gap:27px}
+ .contact-intro h2{font-size:clamp(46px,5vw,59px)}
+ .demo-form{padding:26px 24px}
+}
+@media(max-width:760px){
+ .hero-core{min-height:431px;padding:37px 0 47px}
+ .hero h1{font-size:clamp(70px,10vw,94px)}
+ .hero-sub{font-size:20px}
+ .hero-proof strong{font-size:clamp(15px,2.2vw,18px)}
+ .deal-title h2{font-size:60px}
+ .deal-grid{grid-template-columns:1fr 1fr}
+ .deal-main,.deal-alt{padding:28px 20px}
+ .deal-head h3{font-size:clamp(29px,4vw,36px)}
+ .editorial{grid-template-columns:1fr}
+ .story-photo{height:310px;min-height:310px}
+ .story-copy{padding:34px 31px 38px}
+ .story-copy h2{font-size:61px}
+ .process{padding:49px 0 54px}
+ .contact{padding:55px 0 65px}
+ .contact-grid{grid-template-columns:1fr;gap:24px}
+ .contact-intro h2{font-size:61px}
+ .demo-form{max-width:710px}
+}
+@media(max-width:480px){
+ .brand-name{font-size:16px}
+ .hero-core{min-height:392px;padding:25px 0 33px}
+ .hero-kicker{font-size:9.5px;margin-bottom:17px;letter-spacing:.22em}
+ .hero h1{font-size:clamp(58px,14.5vw,77px);line-height:.80;margin-bottom:17px}
+ .hero-sub{font-size:17px;line-height:1.2;margin:4px 0 21px}
+ .hero-actions{gap:10px}
+ .hero-actions .btn-orange,.hero-secondary{min-height:47px;font-size:10.5px;padding:11px 15px}
+ .hero-photo{object-position:55% 49%;filter:saturate(1.17) contrast(1.06) brightness(.98)}
+ .hero-vignette{background:linear-gradient(90deg,#061b27ed,#061b27c9 43%,#061b2764),linear-gradient(0deg,#061923bb,transparent 47%)}
+ .hero-foot-inner{min-height:126px}
+ .hero-proof{min-height:113px;gap:6px;padding:7px 6px}
+ .hero-proof strong{font-size:13px;line-height:1.07}
+ .hero-proof .proof-icon{width:31px;height:31px}
+ .deal{padding:44px 0 52px}
+ .deal-title{margin-bottom:24px}
+ .deal-title h2{font-size:clamp(48px,12.5vw,66px);line-height:.9}
+ .deal-title p{font-size:13px;line-height:1.7}
+ .deal-grid{grid-template-columns:1fr;gap:15px}
+ .deal-main,.deal-alt{min-height:0;padding:29px 24px 24px}
+ .deal-main{padding-top:33px}
+ .deal-head h3{font-size:clamp(32px,8.2vw,41px)}
+ .deal-main p,.deal-alt p{font-size:13px;line-height:1.7;margin:15px 0 19px}
+ .deal-main .btn-orange,.deal-alt-link{min-height:49px;font-size:10px}
+ .editorial{grid-template-columns:1fr}
+ .story-photo{height:261px;min-height:261px}
+ .story-photo figcaption{font-size:9px}
+ .story-copy{text-align:center;padding:27px 20px 35px}
+ .story-copy h2{font-size:clamp(48px,11.5vw,61px);line-height:.86}
+ .story-copy>p:not(.story-disclosure){font-size:13px;line-height:1.68}
+ .story-action a{font-size:10.5px}
+ .story-disclosure{font-size:9.5px}
+ .process{padding:43px 0 50px}
+ .process-top{margin-bottom:21px}
+ .process-top h2{font-size:clamp(48px,11.2vw,62px);line-height:.89}
+ .process-step{gap:14px;min-height:97px;padding:16px 0}
+ .step-marker{width:64px;height:64px}
+ .process-step h3{font-size:21px}
+ .process-step p{font-size:12px;line-height:1.6}
+ .contact{padding:49px 0 64px}
+ .contact-grid{gap:25px}
+ .contact-intro h2{font-size:clamp(49px,11vw,63px);line-height:.9}
+ .contact-intro>p{font-size:13px;line-height:1.75}
+ .contact-intro .assurance{font-size:11px}
+ .demo-form{padding:23px 20px 25px}
+ .form-heading h3{font-size:clamp(29px,7.2vw,34px)}
+ .form-heading p{font-size:11px}
+ .choice-group button{min-height:43px;font-size:10px;padding:9px 6px}
+ .form-grid{grid-template-columns:1fr;gap:11px}
+ .form-field input,.form-field select{height:51px;min-height:51px;font-size:16px}
+ .privacy-check{font-size:10.5px}
+ .form-button{min-height:54px;font-size:11.5px}
+ .form-caption{font-size:10px}
+ .footer{padding-bottom:91px}
+ .mobile-bar{border-top-color:#ffb77c8c}
+ .mobile-bar a{background:linear-gradient(120deg,#ff922f,#ca490d);box-shadow:0 7px 19px #3f1c1469;min-height:49px;font-size:11px}
+}
+@media(max-width:360px){
+ .hero h1{font-size:clamp(49px,14.2vw,55px)}
+ .hero-core{min-height:392px}
+ .hero-sub{font-size:16px}
+ .hero-proof strong{font-size:12px}
+ .deal-title h2{font-size:47px}
+ .deal-head h3{font-size:32px}
+ .story-copy h2{font-size:46px}
+ .contact-intro h2{font-size:47px}
+ .choice-group button{font-size:9.5px}
+}
+
 </style>
 </head>
 <body>
@@ -408,7 +664,7 @@ svg{display:block;flex:none}
   <div class="container hero-core">
     <p class="hero-kicker"><span aria-hidden="true"></span>CATANZARO LIDO<span aria-hidden="true"></span></p>
     <h1 id="hero-heading"><span class="sale">CEDESI</span> <span class="accent">LOUNGE BAR</span></h1>
-    <p class="hero-sub">A Catanzaro Lido, un’attività avviata nel cuore della movida universitaria, <strong>disponibile in vendita o gestione.</strong></p>
+    <p class="hero-sub">A Catanzaro Lido, <strong>sette anni di attività e clientela fidelizzata</strong> nel cuore della movida universitaria. Disponibile per vendita o gestione.</p>
     <div class="hero-actions">
       <a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <svg class="button-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a>
       <a class="hero-secondary" href="#vendita">SCOPRI ANCHE LA GESTIONE <svg class="button-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a>
@@ -428,19 +684,19 @@ svg{display:block;flex:none}
       <span class="section-no">DUE FORMULE · UN’ATTIVITÀ AVVIATA</span>
       <h2 id="deal-heading">VENDITA O <em>GESTIONE?</em></h2>
       <div class="deal-rule" aria-hidden="true"></div>
-      <p>Puoi manifestare interesse per l'acquisto del lounge bar o approfondire una possibile formula di gestione.</p>
+      <p>Valuta l'acquisto del lounge bar oppure richiedi informazioni riservate sulla gestione. Due formule, un solo primo passo.</p>
     </div>
     <div class="deal-grid">
       <article class="deal-main">
         <span class="deal-ribbon">PROPOSTA PRINCIPALE</span>
         <div class="deal-head"><svg class="deal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10 5 4h14l2 6v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 15v6h14v-6M10 21v-6h4v6"/></svg><h3>VENDITA<br>DELL’ATTIVITÀ</h3></div>
-        <p>Valuta l'acquisto di un lounge bar già avviato, con sette anni di attività e una clientela costruita nel tempo.</p>
+        <p>Un lounge bar con sette anni di attività e clientela fidelizzata. Richiedi i dettagli per valutare l'acquisto.</p>
         <a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <svg class="button-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a>
         <div class="deal-art" aria-hidden="true"><span></span><span></span><span></span></div>
       </article>
       <aside class="deal-alt">
         <div class="deal-head"><svg class="deal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m2 11 4-5 5 2 2-1 4-1 5 5-4 5-4 3-2-1-2 1-3-2z"/><path d="m7 13 4 4m2-6 4 4m-7-2 5 5"/></svg><h3>GESTIONE<br>DEL LOCALE</h3></div>
-        <p>Se preferisci valutare la gestione dell'attività, puoi richiedere informazioni sulle possibilità disponibili.</p>
+        <p>Preferisci la gestione? Richiedi informazioni sulla formula e sulle condizioni da approfondire.</p>
         <a class="deal-alt-link" href="#contatto" data-pref="gestione">RICHIEDI DETTAGLI SULLA GESTIONE <svg class="button-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a>
       </aside>
     </div>
@@ -459,7 +715,7 @@ svg{display:block;flex:none}
   <div class="story-copy">
     <span class="section-no">L’ATMOSFERA DEL LOCALE</span>
     <h2 id="editorial-heading">LA MOVIDA<br><em>DI CATANZARO LIDO</em></h2>
-    <p>Sette anni di attività, una clientela fidelizzata e una piazza con sedie e tavolini nel cuore della movida universitaria: gli elementi da cui partire per valutare il locale.</p>
+    <p>Una piazza con tavolini, serate partecipate e una clientela costruita nel tempo: uno sguardo sull'atmosfera del locale, secondo quanto riferito dai titolari.</p>
     <div class="story-action"><a href="#contatto" data-pref="vendita">RICHIEDI INFORMAZIONI <svg class="button-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a></div>
     <p class="story-disclosure">Informazioni secondo i titolari. Fotografie rielaborate digitalmente; dettagli e condizioni da verificare.</p>
   </div>
@@ -469,9 +725,9 @@ svg{display:block;flex:none}
   <div class="container process-layout">
     <div class="process-top"><span class="section-no">UN PERCORSO SEMPLICE E TRASPARENTE</span><h2 id="process-heading">IL PERCORSO<br>IN 3 PASSI</h2></div>
     <div class="process-grid">
-      <div class="process-step"><div class="step-marker"><span class="process-num">01</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 2h9l5 5v15H5zM14 2v5h5M8 12h8M8 16h8"/></svg></div><div><h3>Lascia i tuoi dati</h3><p>Indica la formula di interesse e i tuoi recapiti.</p></div></div>
-      <div class="process-step"><div class="step-marker"><span class="process-num">02</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 6 6"/></svg></div><div><h3>Approfondisci</h3><p>Un primo confronto riservato per valutare la proposta.</p></div></div>
-      <div class="process-step"><div class="step-marker"><span class="process-num">03</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 22V3M5 4c5-4 9 4 16 0v12c-7 4-11-4-16 0"/></svg></div><div><h3>Decidi</h3><p>Valuta le condizioni e scegli liberamente se procedere.</p></div></div>
+      <div class="process-step"><div class="step-marker"><span class="process-num">01</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 2h9l5 5v15H5zM14 2v5h5M8 12h8M8 16h8"/></svg></div><div><h3>Scegli la formula</h3><p>Acquisto, gestione o entrambe le possibilità.</p></div></div>
+      <div class="process-step"><div class="step-marker"><span class="process-num">02</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 6 6"/></svg></div><div><h3>Lascia i recapiti</h3><p>Nome e cellulare per essere ricontattato.</p></div></div>
+      <div class="process-step"><div class="step-marker"><span class="process-num">03</span><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 22V3M5 4c5-4 9 4 16 0v12c-7 4-11-4-16 0"/></svg></div><div><h3>Valuta i dettagli</h3><p>Un confronto riservato, senza impegno.</p></div></div>
     </div>
   </div>
 </section>
@@ -482,11 +738,11 @@ svg{display:block;flex:none}
     <div class="contact-intro">
       <span class="section-no">CONTATTO RISERVATO</span>
       <h2 id="contact-heading">VUOI VALUTARE<br><em>L’ACQUISTO O<br>LA GESTIONE?</em></h2>
-      <p>Richiedi informazioni sulla vendita o gestione del lounge bar a Catanzaro Lido. Ti ricontatteremo per un primo confronto riservato.</p>
+      <p>Lascia i tuoi recapiti per approfondire la vendita o la gestione del lounge bar. Il primo confronto è riservato e senza impegno.</p>
       <div class="assurance"><span class="dash" aria-hidden="true"></span><span><strong>NESSUN IMPEGNO</strong>La richiesta non comporta alcun obbligo di acquisto o gestione.</span></div>
     </div>
     <form class="demo-form" id="interest-form" action="/api/interesse" method="post" novalidate>
-      <div class="form-heading"><h3>Richiedi informazioni riservate.</h3><p>Compila il modulo: ti ricontatteremo per un confronto senza impegno.</p></div>
+      <div class="form-heading"><h3>Richiedi i dettagli riservati.</h3><p>Scegli la formula e lascia nome e cellulare. Ti ricontatteremo personalmente.</p></div>
       <div class="choice-group" role="group" aria-label="Formula di interesse">
         <button type="button" data-interest="vendita" aria-pressed="true">ACQUISTO</button>
         <button type="button" data-interest="gestione" aria-pressed="false">GESTIONE</button>
