@@ -10,103 +10,96 @@ const share=readFileSync(new URL('../scripts/build-opportunity-share.mjs',import
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??'';
 const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
 
-test('approved cinematic sale-led website, clear language and no public price',()=>{
+test('owner-requested V9 bold modern look is genuinely different from rejected V8 typography and colors',()=>{
+ assert.match(html,/fonts\.googleapis\.com\/css2\?family=DM\+Sans/);
+ assert.match(html,/family=Syne:wght@500;600;700;800/);
+ assert.doesNotMatch(html,/Cormorant\+Garamond|family=Manrope/);
+ assert.match(css,/--sans:'DM Sans',Arial,sans-serif;--serif:'Syne',Arial,sans-serif/);
+ assert.match(css,/PRIVATE SALE 09 — HIGH-CONTRAST MODERN HOSPITALITY/);
+ assert.match(css,/--orange:#fb5a20;--orange-bright:#ff7a34/);
+ assert.match(css,/\.hero h1\{max-width:950px;margin:0 0 23px;font:800 clamp\(69px,7\.9vw,117px\)/);
+ assert.match(css,/\.hero-foot\{background:#fff/);
+ assert.match(css,/\.deal\{background:#fff;padding:89px 0 101px\}/);
+ assert.match(css,/\.editorial\{min-height:475px;grid-template-columns:minmax\(0,51%\) minmax\(0,49%\);background:#07324d\}/);
+ assert.match(css,/\.process\{padding:94px 0 100px;background:#f4f8fa\}/);
+ assert.match(css,/\.demo-form\{background:#fff!important;background-image:none!important/);
+ assert.doesNotMatch(html,/PRIVATE SALE 08\.1 — PRECISION POLISH/);
+});
+test('public wording remains sale-led, factual, priced only in private and accessible',()=>{
  assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
  assert.match(html,/id="deal-heading">VENDITA O <em>GESTIONE\?<\/em>/);
- assert.match(html,/Nel cuore della/);
- assert.match(html,/movida universitaria/);
- assert.match(html,/7 anni di attività/);
+ assert.match(html,/movida universitaria/i);
+ assert.match(html,/sette anni di attività/);
  assert.match(html,/clientela fidelizzata/i);
  assert.match(html,/piazza consolidata/i);
  assert.match(html,/con sedie e tavolini/i);
- const chapterIds=['inizio','vendita','locale','come-funziona','contatto'];
- const indices=chapterIds.map(id=>html.indexOf('id="'+id+'"'));
- assert.ok(indices.every(x=>x>=0),'Each chapter must have an anchor');
- assert.deepEqual(indices,[...indices].sort((a,b)=>a-b));
+ const ids=['inizio','vendita','locale','come-funziona','contatto'].map(x=>html.indexOf('id="'+x+'"'));
+ assert.ok(ids.every(x=>x>=0),'all 5 chapters must exist');
+ assert.deepEqual(ids,[...ids].sort((a,b)=>a-b));
  assert.equal((html.match(/<section\b/g)||[]).length,5);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
- assert.doesNotMatch(html,/300\.000|€\s*[0-9]|fatturato garantito|subentro immediato/i);
+ assert.doesNotMatch(html,/300\.000|€\s*\d|rendimento garantito|subentro immediato/i);
  assert.doesNotMatch(html,/prototipo da approvare|modulo dimostrativo|non invia dati/i);
 });
-test('2026 cinematic design uses premium editorial fonts, proper icons and sections',()=>{
- assert.match(css,/PRIVATE SALE 08 — CINEMATIC EDITORIAL/);
- assert.match(html,/family=Cormorant\+Garamond/);
- assert.match(html,/family=Manrope/);
- assert.match(css,/--serif:'Cormorant Garamond'/);
- assert.match(css,/--sans:'Manrope'/);
- assert.match(css,/\.hero\{position:relative;min-height:0;background:#061a28/);
- assert.match(css,/\.hero-vignette\{position:absolute/);
- assert.match(css,/\.deal\{position:relative;isolation:isolate;background:linear-gradient/);
- assert.match(css,/\.editorial\{display:grid;grid-template-columns:minmax\(0,54%\)/);
- assert.match(css,/\.process\{position:relative;background:linear-gradient/);
- assert.match(css,/\.contact\{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient/);
- assert.match(html,/class="brand-mark"/);
- assert.equal((html.match(/class="proof-icon"/g)||[]).length,3);
- assert.equal((html.match(/class="deal-icon"/g)||[]).length,2);
- assert.equal((html.match(/class="step-icon"/g)||[]).length,3);
- assert.match(html,/class="container hero-foot-inner"/);
- assert.match(html,/class="story-photo"/);
- assert.match(html,/class="story-action"/);
- assert.match(html,/class="process-num">01/);
- assert.match(html,/class="process-num">03/);
- assert.match(html,/class="nav-toggle"/);
- assert.match(css,/@media\(max-width:480px\)/);
- assert.match(css,/@media\(max-width:360px\)/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-});
-test('venue derived images are used for both hero and party, explicitly disclosed',()=>{
- assert.match(html,/srcset="\/hero-lounge-desktop-v1\.webp"/);
- assert.match(html,/srcset="\/hero-lounge-mobile-v1\.webp"/);
- assert.match(html,/src="\/hero-lounge-scene-v1\.jpg"/);
- assert.match(html,/srcset="\/story-serata-desktop-v2\.webp"/);
- assert.match(html,/srcset="\/story-serata-mobile-v2\.webp"/);
- assert.match(html,/src="\/story-serata-locale-v2\.jpg"/);
- assert.match(html,/immagine rielaborata digitalmente/);
+test('first-party real venue source images preserved and visibly labeled, no Shopify',()=>{
+ for(const file of ['hero-lounge-desktop-v1.webp','hero-lounge-mobile-v1.webp','hero-lounge-scene-v1.jpg',
+                    'story-serata-desktop-v2.webp','story-serata-mobile-v2.webp','story-serata-locale-v2.jpg']){
+   assert.ok(html.includes('/'+file),file);
+   assert.ok(worker.includes('/'+file),file);
+ }
  assert.match(html,/Fotografia del locale rielaborata digitalmente/);
- assert.doesNotMatch(html,/images\.unsplash\.com|cdn\.shopify\.com/);
- assert.doesNotMatch(html,/asset.*cocktail\./i);
+ assert.match(html,/fotografia rielaborata con volti leggermente sfocati/);
+ assert.doesNotMatch(html,/cdn\.shopify\.com|images\.unsplash\.com/);
+ assert.match(html,/class="story-photo"/);
+ assert.match(html,/class="hero-vignette"/);
 });
-test('real production lead endpoint + validated phone, privacy, honeypot and optional notes retained',()=>{
+test('real production Neon lead endpoint retains consent, spam protection, contact options and error handling',()=>{
  assert.match(html,/<form class="demo-form" id="interest-form" action="\/api\/interesse" method="post" novalidate>/);
- assert.match(html,/name="transaction_interest"/);
- assert.match(html,/name="company_site"/);
- assert.match(html,/name="full_name"/);
- assert.match(html,/name="phone" type="tel" inputmode="tel"/);
+ for(const name of ['transaction_interest','company_site','full_name','phone','privacy_accepted','contact_preference','notes'])
+   assert.ok(html.includes('name="'+name+'"'),name);
  assert.match(html,/name="privacy_accepted" required/);
- assert.match(html,/name="contact_preference"/);
- assert.match(html,/name="notes"/);
  assert.match(html,/href="\/privacy"/);
+ assert.match(html,/name="phone" type="tel" inputmode="tel"/);
+ assert.match(html,/role="group" aria-label="Formula di interesse"/);
+ assert.match(html,/data-interest="vendita" aria-pressed="true"/);
+ assert.match(html,/data-interest="gestione" aria-pressed="false"/);
+ assert.match(html,/data-interest="entrambe" aria-pressed="false"/);
+ assert.match(html,/id="form-msg" class="form-msg" role="status" aria-live="polite"/);
  assert.match(js,/const mapping=\{vendita:'cessione',cessione:'cessione',gestione:'gestione',entrambe:'entrambe'\}/);
  assert.match(js,/fetch\('\/api\/interesse',\{method:'POST'/);
- assert.match(js,/notes:\[String\(fields\.get\('contact_preference'\)/);
- assert.match(js,/fields\.get\('notes'\)/);
  assert.match(js,/privacy_accepted:fields\.get\('privacy_accepted'\)==='on'/);
+ assert.match(js,/fields\.get\('notes'\)/);
  assert.match(js,/budget_band:'da-definire'/);
- assert.match(js,/source_page:location\.pathname/);
+ assert.match(js,/form\.checkValidity\(\)/);
  assert.match(js,/submit\.disabled=true/);
  assert.match(js,/controller\.abort\(\),16000/);
- assert.match(js,/form\.checkValidity\(\)/);
  assert.match(worker,/const TRANSACTIONS = new Set\(\["cessione","gestione","entrambe"\]\)/);
  assert.match(worker,/insert into public\.activity_sale_leads/);
  assert.match(worker,/data\?\.privacy_accepted!==true/);
  assert.match(privacy,/preferenza facoltativa sulla modalità di contatto/);
- assert.match(privacy,/eventuale messaggio facoltativo/);
  assert.equal((html.match(/<form\b/g)||[]).length,1);
- new Script(js,{filename:'opportunita-live-form.js'});
+ new Script(js,{filename:'opportunita-live-v9.js'});
 });
-test('all calls to action point to live form and consent checks are accessible',()=>{
+test('all key acquisition routes, mobile menu and readable high-contrast inputs',()=>{
  assert.match(html,/href="#contatto" data-pref="vendita"/);
  assert.match(html,/href="#contatto" data-pref="gestione"/);
- assert.match(html,/role="group" aria-label="Formula di interesse"/);
- assert.match(html,/data-interest="vendita" aria-pressed="true"/);
- assert.match(html,/id="form-msg" class="form-msg" role="status" aria-live="polite"/);
  assert.match(html,/href="tel:\+393294582962"/);
  assert.match(html,/aria-controls="nav"/);
  assert.match(html,/aria-label="Apri il menu"/);
- assert.match(css,/\.form-field input,\.form-field select\{display:block;width:100%;height:45px/);
+ assert.match(css,/\.form-field input,\.form-field select\{height:56px;min-height:56px;background:#f5f8fa;color:#0f334c/);
+ assert.match(css,/\.step-marker\{width:69px;height:69px;flex:0 0 69px;background:#0c3851/);
+ assert.match(css,/\.proof-icon\{width:43px;height:43px;color:#f65a23/);
+ assert.match(css,/@media\(max-width:1270px\)/);
+ assert.match(css,/@media\(max-width:1050px\)/);
+ assert.match(css,/@media\(max-width:760px\)/);
  assert.match(css,/@media\(max-width:480px\)/);
+ assert.match(css,/@media\(max-width:360px\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.equal((html.match(/class="proof-icon"/g)||[]).length,3);
+ assert.equal((html.match(/class="deal-icon"/g)||[]).length,2);
+ assert.equal((html.match(/class="step-icon"/g)||[]).length,3);
 });
-test('social sharing uses new permanent first-party dark 1200 by 630 artwork',()=>{
+test('social share and privacy policy remain first-party, no public price',()=>{
  assert.match(html,/<meta property="og:title" content="Lounge bar in vendita a Catanzaro Lido">/);
  assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v8\.jpg">/);
  assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v8\.jpg">/);
@@ -116,29 +109,6 @@ test('social sharing uses new permanent first-party dark 1200 by 630 artwork',()
  assert.match(share,/writeFile\('public\/opportunita\/og-social-v8\.jpg'/);
  assert.match(worker,/\/og-social-v8\.jpg/);
  assert.match(html,/<link rel="canonical" href="https:\/\/opportunita\.impresax\.org\/">/);
+ assert.match(privacy,/Informativa sulla privacy/);
  assert.doesNotMatch(html,/300\.000/);
-});
-
-test('V8.1 precision polish preserves cinematic art direction and improves typography, contrast and interactions',()=>{
- assert.match(css,/PRIVATE SALE 08\.1 — PRECISION POLISH/);
- assert.match(css,/--navy:#061722;--navy-2:#092535/);
- assert.match(css,/--orange:#e56a1f;--orange-bright:#ff9136/);
- assert.match(css,/\.hero h1\{font-size:clamp\(80px,7\.45vw,114px\)/);
- assert.match(css,/\.hero-proof strong\{font-size:clamp\(17px,1\.58vw,21px\)/);
- assert.match(css,/svg\.proof-icon,svg\.deal-icon,svg\.step-icon,svg\.field-icon\{stroke-linecap:round/);
- assert.match(css,/\.form-field input,\.form-field select\{height:52px;min-height:52px/);
- assert.match(css,/\.form-button\{min-height:53px/);
- assert.match(css,/@media\(max-width:480px\)/);
- assert.match(css,/@media\(max-width:360px\)/);
- assert.match(html,/Scegli la formula<\/h3>/);
- assert.match(html,/Lascia i recapiti<\/h3>/);
- assert.match(html,/Valuta i dettagli<\/h3>/);
- assert.match(html,/Richiedi i dettagli riservati\.<\/h3>/);
- assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
- assert.match(html,/data-pref="vendita"/);
- assert.match(html,/data-pref="gestione"/);
- assert.equal((html.match(/<section\b/g)||[]).length,5);
- assert.equal((html.match(/<form\b/g)||[]).length,1);
- assert.match(js,/fetch\('\/api\/interesse',\{method:'POST'/);
- assert.doesNotMatch(html,/300\.000|€\s*\d/);
 });
