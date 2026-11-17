@@ -1,5 +1,5 @@
 name: Opportunity — One-Time Venue Photo Optimization 2026-11-17
-# One-time photo-only enhancement of the existing real venue; no generated scenes.
+# One-time read-only verification of already-deployed real venue photograph. No deployment, no generated assets.
 on:
   push:
     branches: [main]
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ github.event.head_commit.message == 'photo-grade-once' }}
+    if: ${{ github.event.head_commit.message == 'photo-proof-once' }}
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
@@ -57,9 +57,6 @@ jobs:
           sleep 2
           curl -fsS --max-time 8 http://127.0.0.1:8191/ >/dev/null
           QA_BASE_URL='http://127.0.0.1:8191/' node scripts/qa-private-sale.mjs
-      - name: Deploy exactly once to existing Cloudflare Worker
-        id: deploy
-        run: npx wrangler deploy --config wrangler.jsonc
       - name: Verify live imagery, funnel and privacy
         shell: bash
         run: |
@@ -81,7 +78,8 @@ jobs:
             curl -fsSL --max-time 18 "https://opportunita.impresax.org/$asset" -o "/tmp/lounge-$asset"
             test "$(wc -c <"/tmp/lounge-$asset")" -gt 15000
           done
-          curl -fsSL --max-time 18 https://opportunita.impresax.org/privacy | grep -q 'Informativa sulla privacy'
+          curl -fsSL --max-time 18 https://opportunita.impresax.org/privacy -o /tmp/lounge-privacy-live.html
+          grep -q 'Informativa sulla privacy' /tmp/lounge-privacy-live.html
           echo "Opportunity venue imagery LIVE: all assets + original lead / privacy preserved"
       - name: After production - 9 responsive Chromium widths and mocked form
         run: QA_BASE_URL='https://opportunita.impresax.org/' node scripts/qa-private-sale.mjs
@@ -93,10 +91,3 @@ jobs:
           path: /tmp/opportunita-private-sale06-qa/*.png
           retention-days: 7
           if-no-files-found: ignore
-      - name: Roll back just the landing image presentation if production smoke tests failed
-        if: ${{ failure() && steps.deploy.outcome == 'success' }}
-        shell: bash
-        run: |
-          git show HEAD~2:public/opportunita/index.html > public/opportunita/index.html
-          grep -q 'object-position:center 44%;filter:saturate(1.07)' public/opportunita/index.html
-          npx wrangler deploy --config wrangler.jsonc
