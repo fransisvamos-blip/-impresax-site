@@ -48,6 +48,9 @@ try{
        ctaColor:getComputedStyle(document.querySelector('.hero-actions .btn-orange')).backgroundColor,
        ctaText:getComputedStyle(document.querySelector('.hero-actions .btn-orange')).color,
        proofColor:getComputedStyle(document.querySelector('.hero-foot')).backgroundColor,
+       proofBg:getComputedStyle(document.querySelector('.hero-foot')).backgroundImage,
+       venueInsetLoaded:!!document.querySelector('.venue-inset')?.naturalWidth,
+       firstVenueDetails:document.querySelector('.editorial').firstElementChild.classList.contains('story-copy'),
        stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
        heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
        accentOverflow:(()=>{const e=document.querySelector('.hero h1 .accent');return e.scrollWidth>e.clientWidth+3})(),
@@ -67,21 +70,22 @@ try{
    for(const badge of audit.stepNumbers){
      if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.bg===badge.color)throw Error('Unreadable step number '+JSON.stringify(badge));
    }
-   if(!audit.offerBg.includes('linear-gradient'))throw Error('Warm ivory offer gradient missing: '+audit.offerBg);
-   if(audit.storyColor!=='rgb(18, 61, 84)')throw Error('Rich petrol venue section missing: '+audit.storyColor);
-   if(!audit.offerAltGradient.includes('linear-gradient'))throw Error('Warm ivory management card missing');
-   if(!audit.processGradient.includes('linear-gradient'))throw Error('Warm ivory process canvas missing');
+   if(audit.offerColor!=='rgb(255, 255, 255)')throw Error('Variant 1 white offer surface missing: '+audit.offerColor);
+   if(audit.storyColor!=='rgb(241, 248, 251)')throw Error('Variant 1 pale-blue venue story surface missing: '+audit.storyColor);
+   if(!audit.offerAltGradient.includes('linear-gradient'))throw Error('Cyan Variant 1 management card missing');
+   
    if(!audit.contactGradient.includes('linear-gradient'))throw Error('Deep petrol contact stage missing');
-   if(audit.ctaColor!=='rgb(195, 72, 19)'||audit.ctaText!=='rgb(255, 255, 255)')throw Error('Primary CTA contrast grade changed: '+audit.ctaColor+'/'+audit.ctaText);
-   if(audit.proofColor!=='rgb(255, 248, 240)')throw Error('Warm proof strip missing: '+audit.proofColor);
+   if(audit.ctaColor!=='rgb(8, 215, 220)'||audit.ctaText!=='rgb(5, 40, 58)')throw Error('Variant 1 turquoise/dark primary button contrast missing: '+audit.ctaColor+'/'+audit.ctaText);
+   if(!audit.proofBg.includes('linear-gradient'))throw Error('Cinematic hero proof overlay missing: '+audit.proofBg);
+   if(!audit.firstVenueDetails)throw Error('Venue copy should precede photograph in Variant 1');
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
-   if(!audit.heroFont.includes('Plus Jakarta Sans'))throw Error('V9.1 Plus Jakarta Sans display font missing');
+   if(!audit.heroFont.includes('Plus Jakarta Sans'))throw Error('Approved Variant 1 geometric title font missing');
    if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px '+JSON.stringify(audit.headingMetrics));
    if(audit.inputBackground==='rgba(0, 0, 0, 0)')throw Error('Form fields lost white-card surface');
    if(audit.formBg==='rgba(0, 0, 0, 0)')throw Error('Contact form surface missing');
    if(audit.headline!=='CEDESI LOUNGE BAR')throw Error('Cedesi Lounge Bar missing: '+audit.headline);
    if(audit.primaryHref!=='#contatto')throw Error('CTA not pointing to contact');
-   if(!await page.locator('#deal-heading').textContent().then(t=>t.replace(/\s+/g,' ').includes('VENDITA O GESTIONE?')))throw Error('Two-formula section missing');
+   if(!await page.locator('#deal-heading').textContent().then(t=>t.includes('Due formule per la stessa opportunità')))throw Error('Variant 1 two-formula section missing');
    if(width<=430&&audit.inputs.some(n=>n<16))throw Error('iOS zoom risk');
    if(width<=430&&audit.heroCtaBottom>860)throw Error('First mobile CTA too low '+audit.heroCtaBottom);
    if(width<=640){
