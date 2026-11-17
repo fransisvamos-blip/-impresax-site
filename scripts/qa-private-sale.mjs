@@ -64,7 +64,7 @@ try{
    if(audit.offerColor!=='rgb(255, 255, 255)')throw Error('New V9 offer section not crisp white: '+audit.offerColor);
    if(audit.storyColor!=='rgb(7, 50, 77)')throw Error('New V9 story night blue missing: '+audit.storyColor);
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
-   if(!audit.heroFont.includes('Syne'))throw Error('V9 Syne display font missing');
+   if(!audit.heroFont.includes('Plus Jakarta Sans'))throw Error('V9.1 Plus Jakarta Sans display font missing');
    if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px '+JSON.stringify(audit.headingMetrics));
    if(audit.inputBackground==='rgba(0, 0, 0, 0)')throw Error('Form fields lost white-card surface');
    if(audit.formBg==='rgba(0, 0, 0, 0)')throw Error('Contact form surface missing');
