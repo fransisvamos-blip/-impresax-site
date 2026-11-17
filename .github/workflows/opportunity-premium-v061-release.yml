@@ -7,7 +7,7 @@ on:
       - 'public/opportunita/.release-v111-vivid-cyan-20261117'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -31,6 +31,18 @@ jobs:
           node scripts/build-opportunity-share.mjs
           test -s public/opportunita/og-social-v10.jpg
           node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('public/opportunita/og-social-v10.jpg').metadata();if(m.width!==1200||m.height!==630||m.format!=='jpeg')process.exit(1);console.log('Social preview',m.width,m.height,m.format)})"
+      - name: Save generated cyan social image as permanent first-party asset
+        run: |
+          set -euo pipefail
+          test -s public/opportunita/og-social-v10.jpg
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f public/opportunita/og-social-v10.jpg
+          if ! git diff --cached --quiet; then
+            git commit -m "assets(opportunita): persist actual cyan WhatsApp JPEG for Cloudflare"
+            git push origin HEAD:main
+          fi
+          git ls-files --error-unmatch public/opportunita/og-social-v10.jpg
       - name: Verify new landing, backend contract and untouched ImpresaX render tests
         run: |
           node --test test/opportunita-landing.test.mjs
