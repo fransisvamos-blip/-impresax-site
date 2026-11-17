@@ -10,7 +10,7 @@ const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??'';
 const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
 
 test('PRIVATE SALE 06: owner-approved clear sale-led message and five chapters',()=>{
- assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span><span class="accent">LOUNGE BAR<\/span><\/h1>/);
+ assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
  assert.match(html,/<div class="hero-kicker">CATANZARO LIDO/);
  assert.match(html,/RICHIEDI I DETTAGLI DI VENDITA/);
  assert.match(html,/07<\/span>/);
@@ -138,7 +138,7 @@ test('vibrant WhatsApp preview, current privacy/real form and rollback assets',(
 test('V6.2 actual single-font Manrope, CEDESI LOUNGE BAR and immediate 2-formula offer',()=>{
  assert.match(html,/fonts\.googleapis\.com\/css2\?family=Manrope:wght@400;500;600;700;800/);
  assert.doesNotMatch(html,/family=Cabin|family=EB\+Garamond/);
- assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span><span class="accent">LOUNGE BAR<\/span><\/h1>/);
+ assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
  assert.match(html,/<h2 id="deal-heading">VENDITA <em>O GESTIONE\?<\/em><\/h2>/);
  assert.match(html,/<h3>VENDITA<br>DELL’ATTIVITÀ\.<\/h3>/);
  assert.match(html,/<h3>GESTIONE<br>DEL LOCALE\.<\/h3>/);
