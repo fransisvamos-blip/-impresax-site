@@ -1,17 +1,14 @@
 name: ImpresaX Opportunity — V6.2 Cedesi Lounge Bar One-Time Release
-# ONE-TIME V6.2 approved by user. Restore owner pause immediately afterward.
+# OWNER PAUSE: V6.2 CEDESI + Manrope + Vendita/Gestione tested and live. Automatic deployment disabled.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-cedesi-manrope-v62b-20261117'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }} # one-time user-authorized header/font/offer update
+    if: ${{ false }} # owner pause after verified CEDESI + Manrope release
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
