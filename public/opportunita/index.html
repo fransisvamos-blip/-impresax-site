@@ -22,6 +22,8 @@
 <meta name="twitter:title" content="Lounge bar in vendita a Catanzaro Lido">
 <meta name="twitter:description" content="7 anni di attività, clientela fidelizzata e uno spazio con tavolini. Richiedi i dettagli della vendita.">
 <meta name="twitter:image" content="https://opportunita.impresax.org/og-social-v10.jpg">
+<link rel="preload" as="image" href="/hero-lounge-desktop-v1.webp" media="(min-width:641px)" fetchpriority="high">
+<link rel="preload" as="image" href="/hero-lounge-mobile-v1.webp" media="(max-width:640px)" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -77,8 +79,8 @@ svg{display:block;flex:none}
 /* HERO — hero photography, asymmetrical editorial layout, turquoise headline */
 .hero{position:relative;isolation:isolate;background:var(--navy-deep);color:#fff;overflow:hidden}
 .hero-photo-wrap{position:absolute;z-index:-3;inset:0;display:block;overflow:hidden}
-.hero-photo{width:100%;height:100%;object-fit:cover;object-position:center 52%;filter:saturate(1.50) contrast(1.18) brightness(1.13)}
-.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#031728f1 0%,#031728dc 25%,#0317288f 49%,#03172824 76%,#03172805 100%),linear-gradient(0deg,#031728bd 0%,transparent 43%,#03172810 100%);pointer-events:none}
+.hero-photo{width:100%;height:100%;object-fit:cover;object-position:63% 44%;filter:saturate(1.20) contrast(1.10) brightness(1.07)}
+.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#031728f0 0%,#031728d4 25%,#0317288e 49%,#03172816 78%,#03172805 100%),linear-gradient(0deg,#031728a3 0%,transparent 47%,#03172808 100%);pointer-events:none}
 .hero:after{content:'';position:absolute;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 81% 24%,#00eefa22,transparent 48%)}
 .hero-core{position:relative;z-index:1;min-height:615px;padding:75px 0 164px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
 .hero-kicker{display:flex;align-items:center;gap:13px;margin:0 0 24px;color:#ffffff;font:800 11px/1.4 var(--sans);letter-spacing:.21em}
@@ -116,7 +118,7 @@ svg{display:block;flex:none}
 .deal-title p{max-width:680px;margin:0;color:#2d5165;font:500 15px/1.68 var(--sans)}
 .deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch}
 .deal-main,.deal-alt{display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:339px;padding:37px 36px 34px;position:relative;isolation:isolate;overflow:hidden;border-radius:16px;box-shadow:0 13px 32px #0a32431a}
-.deal-main{background:linear-gradient(110deg,#031728ef,#042b40ca 60%,#06475b45),url('/story-serata-desktop-v2.webp') center 50%/cover;border:1px solid #06cad6;color:#fff}
+.deal-main{background:linear-gradient(110deg,#031728f2,#042b40cd 60%,#06475b39),url('/story-serata-desktop-v2.webp') center 44%/cover;border:1px solid #06cad6;color:#fff}
 .deal-main:before{content:'';position:absolute;inset:0;border-radius:16px;box-shadow:inset 0 1px #ffffff29;pointer-events:none}
 .deal-ribbon{position:relative;order:-1;margin:0 0 22px;padding:7px 12px;border-radius:6px;background:#0ed6da;color:#073247;font:800 10px/1.4 var(--sans);letter-spacing:.05em}
 .deal-head{display:flex;align-items:center;gap:15px;position:relative;z-index:1}
@@ -151,10 +153,10 @@ svg{display:block;flex:none}
 .story-disclosure{margin:18px 0 0;max-width:510px;color:#66808d;font:400 10px/1.65 var(--sans)}
 .story-photo{grid-column:2;grid-row:1;position:relative;min-width:0;width:100%;height:420px;margin:0;overflow:hidden;border-radius:16px;background:#05293a;box-shadow:0 22px 48px #002b4470}
 .story-photo picture{display:block;width:100%;height:100%}
-.story-photo picture img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 51%;filter:saturate(1.39) brightness(1.09) contrast(1.17)}
+.story-photo picture img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 48%;filter:saturate(1.16) brightness(1.05) contrast(1.09)}
 .story-photo:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#041b2c5a,transparent 32%);pointer-events:none}
 .story-photo figcaption{position:absolute;z-index:3;bottom:15px;left:16px;max-width:56%;padding:7px 8px;background:#041c2bc9;border-radius:5px;color:#fff;font:700 9px/1.45 var(--sans);letter-spacing:.02em}
-.story-photo .venue-inset{position:absolute;z-index:2;right:16px;bottom:16px;width:34%;height:38%;object-fit:cover;object-position:center;border:4px solid #fff;border-radius:12px;box-shadow:0 9px 23px #051c2a75}
+.story-photo .venue-inset{position:absolute;z-index:2;right:16px;bottom:16px;width:34%;height:38%;object-fit:cover;object-position:72% 42%;border:4px solid #fff;border-radius:12px;box-shadow:0 9px 23px #051c2a75;filter:saturate(1.12) contrast(1.07)}
 
 /* HOW IT WORKS — three readable steps with no generic boxed widget treatment */
 .process{background:#fff;padding:94px 0 103px}
@@ -172,7 +174,7 @@ svg{display:block;flex:none}
 .process-step p{margin:0;color:#244b62;font:500 13px/1.62 var(--sans);max-width:240px}
 
 /* PRIVATE CONTACT — atmospheric real-photo backdrop, completely readable light form */
-.contact{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(100deg,#031728ef,#05253dc9 57%,#062136a1),url('/story-serata-desktop-v2.webp') center 51%/cover;color:#fff;padding:100px 0 109px}
+.contact{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(100deg,#031728f2,#05253ddd 57%,#062136b3),url('/hero-lounge-desktop-v1.webp') center 40%/cover;color:#fff;padding:100px 0 109px}
 .contact-glow{position:absolute;z-index:-1;inset:0;background:radial-gradient(ellipse at 15% 30%,#00effa20,transparent 48%);pointer-events:none}
 .contact-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(39px,6vw,83px);align-items:center}
 .contact-intro .section-no{color:#23e4e3}
@@ -300,8 +302,11 @@ svg{display:block;flex:none}
  .hero-sub{max-width:390px;font-size:14.5px;line-height:1.68;margin-bottom:22px}
  .hero-actions{display:grid;grid-template-columns:minmax(0,1fr);width:100%;gap:10px}
  .hero-actions .btn-orange,.hero-secondary{width:100%;min-height:52px;justify-content:space-between;padding:11px 15px;font-size:10px}
- .hero-photo{object-position:56% 50%;filter:saturate(1.43) contrast(1.16) brightness(1.10)}
- .hero-vignette{background:linear-gradient(90deg,#031728e9,#031728b8 49%,#03172861),linear-gradient(0deg,#031728cf,transparent 53%)}
+ /* Mobile-specific source photos avoid downloading desktop backgrounds. */
+ .deal-main{background-image:linear-gradient(110deg,#031728f2,#042b40d5 60%,#06475b51),url('/story-serata-mobile-v2.webp');background-position:center 45%}
+ .contact{background-image:linear-gradient(100deg,#031728f4,#05253de5 57%,#062136c7),url('/hero-lounge-mobile-v1.webp');background-position:59% 43%}
+ .hero-photo{object-position:59% 45%;filter:saturate(1.18) contrast(1.09) brightness(1.07)}
+ .hero-vignette{background:linear-gradient(90deg,#031728ea,#031728bf 49%,#03172854),linear-gradient(0deg,#031728bb,transparent 56%)}
  .hero-foot{position:relative}
  .hero-foot-inner{min-height:123px}
  .hero-proof{min-height:119px;flex-direction:column;text-align:center;justify-content:center;align-items:center;gap:7px;padding:10px 5px}
@@ -327,6 +332,8 @@ svg{display:block;flex:none}
  .venue-highlights span{font-size:10px}
  .story-action a{display:flex;width:100%;justify-content:space-between}
  .story-photo{height:270px}
+ .story-photo picture img{object-position:51% 43%}
+ .story-photo .venue-inset{object-position:70% 42%}
  .story-photo figcaption{font-size:9px;left:10px;bottom:11px;max-width:58%}
  .story-photo .venue-inset{right:11px;bottom:12px;width:37%;height:43%;border-width:3px}
  .process{padding:59px 0 64px}
