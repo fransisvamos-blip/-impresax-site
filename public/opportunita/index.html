@@ -533,6 +533,253 @@ body,button,input,select,textarea{font-family:var(--sans)}
  .hero h1 .accent{font-size:.86em}
  .deal-main h3,.deal-alt h3{font-size:35px}
 }
+
+/* V6.3 SECTION-BY-SECTION ART DIRECTION — independent identities, one coherent funnel */
+:root{--deep:#0b2b40;--deepest:#071e2f;--ember:#df4d15;--orange:#cb4610;--snow:#fffefa;--cream:#f9f6f0;--line-blue:#d8e3e7}
+html{scroll-padding-top:82px}
+#inizio,#vendita,#locale,#come-funziona,#contatto{scroll-margin-top:76px}
+a,button{-webkit-tap-highlight-color:transparent}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #f18b56;outline-offset:3px}
+.section-no{font-size:11px;letter-spacing:.14em}
+.section-no:before{width:27px;height:3px}
+.topbar{box-shadow:0 4px 22px #0a2a4010}
+.header-inner{gap:22px}
+.nav{gap:26px}
+.nav a{font-size:11px;letter-spacing:.045em;position:relative}
+.nav a:after{content:'';position:absolute;left:0;right:100%;bottom:-8px;height:2px;background:var(--ember);transition:right .22s}
+.nav a:hover:after{right:0}
+.header-cta{border-radius:8px;box-shadow:0 4px 13px #112e4015}
+/* 01. Hero — premium bright lead story, camera-frame image, confident facts */
+.hero{background:linear-gradient(155deg,#fffefa 5%,#fff7ee 67%,#f8f4ee);color:var(--deep);overflow:hidden}
+.hero-photo-wrap{border-radius:3px 18px 18px 3px;inset:26px clamp(22px,3.5vw,58px) 118px 50%;box-shadow:0 27px 53px #0b2a3b27}
+.hero-photo-wrap:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#09283835,transparent 35%)}
+.hero-photo{filter:saturate(1.13) contrast(1.055) brightness(1.045);object-position:49% 51%}
+.hero-core{min-height:622px;padding-top:63px;padding-bottom:65px}
+.hero-kicker{margin-bottom:18px;color:#486374;font-weight:800}
+.hero h1{font-size:clamp(59px,5.6vw,87px);line-height:1.02;letter-spacing:-.07em;margin-bottom:20px}
+.hero h1 .sale{color:#12364c}
+.hero h1 .accent{color:#d84a15}
+.hero-sub{color:#375566;line-height:1.7;max-width:min(545px,48%);font-size:16px}
+.hero-actions{gap:14px 21px;align-items:center}
+.hero-actions .btn-orange{min-height:58px}
+.hero-secondary{font-weight:800;text-decoration:none;border-bottom:2px solid #c6d4da;padding-bottom:9px}
+.hero-foot{background:#10364c;box-shadow:inset 0 1px #ffffff29}
+.hero-foot-inner{min-height:111px;gap:22px}
+.hero-proof{min-height:62px;gap:17px;border-right-color:#ffffff30}
+.hero-proof strong{font-size:13px;letter-spacing:.014em}
+.hero-proof small{font-size:11px;color:#d4e5ec}
+.proof-figure{font-size:52px;color:#ff915b}
+.proof-symbol{background:#f3793b;transform:none;height:34px;width:3px}
+.photo-disclaimer{font-size:9px;border-radius:4px;letter-spacing:.01em}
+/* 02. Offer — staged editorial comparison, no decorative cards repeated elsewhere */
+.deal{background:linear-gradient(165deg,#fffdfa 0%,#fcf4e9 100%);padding:86px 0 105px;position:relative;overflow:hidden}
+.deal:before{content:'';position:absolute;top:-275px;right:-140px;width:530px;height:530px;border-radius:50%;border:1px solid #e9d6c5;pointer-events:none;opacity:.7}
+.deal-strap{display:flex;align-items:center;gap:16px;color:#6b7e87;font-size:10px;letter-spacing:.15em;font-weight:800;margin-bottom:26px}
+.deal-strap i{height:1px;background:#bdcfd6;width:68px}
+.deal-title{margin-bottom:32px;align-items:center}
+.deal-title h2{font-size:clamp(45px,5vw,73px);line-height:1.07;letter-spacing:-.06em;margin-top:14px}
+.deal-title h2 em{color:#d54a16}
+.deal-title p{max-width:370px;border-left:3px solid #e46930;padding-left:17px;line-height:1.7;font-size:14px}
+.deal-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:20px;align-items:stretch}
+.deal-main,.deal-alt{position:relative;isolation:isolate;border-radius:13px;overflow:hidden;padding:34px 38px 31px;min-height:389px;box-shadow:none}
+.deal-main{background:linear-gradient(130deg,#143e59,#0a2b42 75%);border:1px solid #15425a;border-top:4px solid #fa7a3b;box-shadow:0 19px 40px #0a2c421b}
+.deal-main:before{right:-200px;bottom:-300px}
+.deal-main:after{content:'';position:absolute;right:0;top:0;width:45%;height:100%;background:radial-gradient(ellipse at 80% 70%,#eb78361c,transparent 75%);pointer-events:none;z-index:-1}
+.deal-alt{background:#fff; border:1px solid #dce5e8;border-top:4px solid #bccbd1;box-shadow:0 10px 30px #0a2a3a0c}
+.deal-option-index{position:absolute;top:24px;right:30px;font-size:56px;line-height:1;font-weight:800;letter-spacing:-.09em;opacity:.12;pointer-events:none}
+.deal-main .deal-option-index{color:#fff}
+.deal-alt .deal-option-index{color:#123e57;opacity:.09}
+.deal-main .mini,.deal-alt .mini{font-size:10px;letter-spacing:.11em;line-height:1.5;max-width:calc(100% - 66px);font-weight:800}
+.deal-main .mini{color:#ffbe98}
+.deal-alt .mini{color:#9d492c}
+.deal-main h3,.deal-alt h3{font-size:clamp(33px,3.5vw,50px);line-height:1.11;letter-spacing:-.06em;margin:26px 0 13px;max-width:560px}
+.deal-alt h3{color:#14354a}
+.deal-main p,.deal-alt p{font-size:14px;line-height:1.68;max-width:470px;margin:0 0 21px}
+.deal-main p{color:#d9e9ee}
+.deal-alt p{color:#445d68}
+.deal-main .btn-orange{min-height:54px;font-size:11px;box-shadow:none}
+.deal-main small{color:#cee0e8;font-size:10px;line-height:1.55}
+.deal-alt a{font-weight:800;font-size:11px;border:0;border-top:1px solid #dce6ea;padding-top:17px;padding-bottom:4px;width:100%;justify-content:space-between}
+.deal-alt a:hover{color:#b9400e}
+/* 03. Actual venue — immersive, dark editorial spread; photo and 7 years as genuine proof */
+.editorial{background:radial-gradient(ellipse at 100% 25%,#174762 0%,#0b3047 52%,#082537 100%);color:#fff;padding:95px 0 84px;position:relative;overflow:hidden}
+.editorial:before{content:'07';position:absolute;right:-3vw;top:-110px;font-size:clamp(220px,31vw,430px);font-weight:800;letter-spacing:-.12em;color:#ffffff06;line-height:1;pointer-events:none}
+.editorial .container{position:relative}
+.editorial .section-no{color:#ffb085}
+.editorial-head{grid-template-columns:1.02fr .98fr;align-items:end;margin-bottom:37px;gap:55px}
+.editorial-heading h2{color:#fff;font-size:clamp(45px,4.5vw,67px);line-height:1.03}
+.editorial-heading h2 em{color:#ffb07f;font-weight:800;font-size:.72em;line-height:1.4;letter-spacing:-.045em}
+.editorial-head>p{color:#d6e8ee;font-size:16px;line-height:1.75;margin-bottom:4px}
+.editorial-stage{grid-template-columns:.67fr 1.33fr;min-height:430px;box-shadow:0 26px 53px #0619235e;border-radius:13px;overflow:hidden}
+.editorial-count{background:#fff9ee;color:#14374c;min-height:430px;padding:34px 37px}
+.count-label{color:#55707b;font-size:11px;font-weight:800}
+.massive-seven{color:#d44c17;font-size:clamp(165px,18vw,274px);line-height:.85}
+.editorial-count>p,.editorial-count>p b{color:#183b50;line-height:1.66}
+.stage-photo{min-height:430px}
+.stage-photo img{filter:saturate(1.18) contrast(1.04);object-position:center 51%}
+.stage-photo figcaption{bottom:23px;left:25px;border-left:3px solid #ff905b;padding:7px 0 7px 14px;letter-spacing:.11em;font-size:10px}
+.section-footnote{color:#c2d3dc;font-size:10px;line-height:1.65;margin-top:14px}
+.story-after{border-top:1px solid #ffffff3b;margin-top:39px;padding-top:27px;gap:32px}
+.story-after>div{grid-template-columns:45px 1fr;gap:14px}
+.story-number{display:grid;place-items:center;width:37px;height:37px;border:1px solid #ee8851;color:#ffac81;font:800 12px/1 var(--sans);letter-spacing:0;border-radius:50%}
+.story-after h3{color:#fff;font-size:16px;letter-spacing:-.024em;margin:1px 0 7px}
+.story-after p{color:#c8dbe5;font-size:13px;line-height:1.7}
+.story-action{margin-top:28px;display:flex;align-items:center;justify-content:space-between;gap:15px;border-top:1px solid #ffffff21;padding-top:24px}
+.story-action>span{color:#d7e5ea;font-size:13px}
+.story-action a{display:inline-flex;align-items:center;justify-content:center;gap:15px;color:#fff;border:1px solid #ffffff69;padding:12px 19px;min-height:47px;border-radius:7px;font-size:11px;letter-spacing:.055em;font-weight:800}
+.story-action a:hover{background:#ffffff16;border-color:#fff}
+/* 04. Decision journey — clear timeline, ample whitespace, numbers with confirmed contrast */
+.process{background:#fcfcfa;padding:90px 0 104px}
+.process-top{align-items:end;margin-bottom:37px}
+.process-top h2{font-size:clamp(42px,4.5vw,66px);letter-spacing:-.059em}
+.process-top p{font-size:15px;line-height:1.7;color:#465d69}
+.process-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;border:0}
+.process-step,.process-step:not(:first-child){position:relative;border:1px solid #d9e4e9;border-top:3px solid #dee7ea;background:linear-gradient(155deg,#fff,#f6f9fa);border-radius:12px;min-height:228px;padding:25px 27px 25px;transition:border-color .2s,transform .2s,box-shadow .2s;display:flex;flex-direction:column;align-items:flex-start}
+.process-step:first-child{border-top-color:#e9692f}
+.process-step:hover{border-color:#aec5cf;box-shadow:0 12px 26px #15374a12;transform:translateY(-3px)}
+.process-num{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:#113d56;color:#fff;font:800 16px/1 var(--sans);letter-spacing:0;flex:0 0 50px;box-shadow:0 0 0 5px #e9f1f4}
+.process-step:first-child .process-num{background:#c94b18;box-shadow:0 0 0 5px #f9eadd}
+.process-step h3{font-size:17px;font-weight:800;line-height:1.35;margin:22px 0 7px}
+.process-step p{font-size:13px;line-height:1.7;color:#526977;margin:0}
+/* 05. Contact — high-contrast, quiet luxury, powerful legible form */
+.contact{background:linear-gradient(130deg,#0c3148 0%,#082538 76%);padding:100px 0 111px}
+.contact:before{content:'';position:absolute;right:-250px;top:-250px;width:650px;height:650px;border:1px solid #ffffff17;border-radius:50%;box-shadow:0 0 0 90px #ffffff04,0 0 0 180px #ffffff03;pointer-events:none}
+.contact-grid{grid-template-columns:1fr 1fr;gap:clamp(34px,5.5vw,91px);align-items:center}
+.contact-intro{padding-top:0}
+.contact-intro .section-no{color:#fbb38a}
+.contact-intro h2{font-size:clamp(46px,5vw,74px);line-height:1.09;letter-spacing:-.061em;margin:24px 0 23px}
+.contact-intro h2 em{color:#ffab7e}
+.contact-intro p{font-size:16px;color:#d5e7ed;line-height:1.75}
+.contact-intro .assurance{max-width:510px;border-top:1px solid #ffffff37;padding-top:20px;color:#e4eff3;gap:12px;font-size:12px;line-height:1.8}
+.contact-intro .assurance strong{display:block;color:#ffb78f;font-size:11px;letter-spacing:.105em;margin-bottom:7px}
+.assurance .dash{height:3px;width:28px;background:#ff8a4b;margin-top:9px}
+.demo-form{background:#fffefa;color:#12384d;border-radius:12px;border:1px solid #e5eaec;border-top:5px solid #e9692e;box-shadow:0 27px 75px #0418237a;padding:35px clamp(22px,3.1vw,42px)}
+.demo-form h3{font-size:clamp(23px,2.2vw,29px);line-height:1.3;letter-spacing:-.045em}
+.demo-form>p{font-size:13px;color:#506b79;line-height:1.65}
+.choice-group{gap:8px;margin-bottom:21px}
+.choice-group button{min-height:49px;font-size:11px;border-radius:7px;border-color:#d4e0e4;font-weight:800}
+.choice-group button[aria-pressed=true]{background:#113d55;border-color:#113d55;color:#fff;box-shadow:0 4px 13px #0b36531d}
+.choice-group button:hover{border-color:#e97941}
+.form-field>span{font-size:11px;color:#22465b}
+.form-field input{min-height:56px;background:#fff;border:1px solid #b8cdd6;border-radius:7px;padding:15px 14px;transition:border-color .2s,box-shadow .2s;font-size:16px}
+.form-field input:focus{border-color:#db561f;box-shadow:0 0 0 3px #ee8c5c24;outline:0}
+.privacy-check{font-size:11px;color:#456170;line-height:1.7}
+.privacy-check input{width:20px;height:20px;accent-color:#c84a15}
+.form-button{min-height:56px;font-size:12px;letter-spacing:.045em}
+.form-caption{font-size:10px;color:#5e7580;line-height:1.75}
+.footer{background:#071f30;border-top:1px solid #ffffff16}
+.footer-inner strong{letter-spacing:.04em}
+.mobile-bar{box-shadow:0 -6px 19px #071e2b15}
+/* Tablet and mobile — independently fitted; no visual or functional regressions */
+@media(max-width:980px){
+ .hero-core{padding:42px 0 28px;min-height:0}
+ .hero h1{font-size:clamp(56px,8vw,75px)}
+ .hero-photo-wrap{width:calc(100% - 66px);height:345px;border-radius:12px;inset:auto;box-shadow:0 13px 30px #11384917}
+ .photo-disclaimer{margin-top:5px;margin-bottom:10px}
+ .deal-title{align-items:flex-start}
+ .deal-grid{grid-template-columns:1fr 1fr;gap:14px}
+ .deal-main,.deal-alt{min-height:370px;padding:28px 25px}
+ .deal-main h3,.deal-alt h3{font-size:clamp(30px,3.8vw,43px)}
+ .editorial-head{grid-template-columns:1fr 1fr;gap:27px}
+ .editorial-heading h2{font-size:clamp(40px,5vw,56px)}
+ .editorial-stage{grid-template-columns:.7fr 1.3fr}
+ .editorial-count{padding:24px 26px;min-height:365px}
+ .massive-seven{font-size:clamp(150px,20vw,215px)}
+ .stage-photo{min-height:365px}
+ .process-step,.process-step:not(:first-child){padding:23px 18px;min-height:240px}
+ .process-step h3{font-size:15px}
+ .contact-grid{gap:26px}
+ .contact-intro h2{font-size:clamp(40px,5vw,58px)}
+ .demo-form{padding:28px 23px}
+}
+@media(max-width:640px){
+ html{scroll-padding-top:66px}
+ .topbar{height:64px}
+ .nav{background:#fffefa}
+ .hero{display:flex;flex-direction:column}
+ .hero-core{width:calc(100% - 34px);padding:25px 0 18px}
+ .hero-kicker{font-size:9px;line-height:1.55;letter-spacing:.075em;margin-bottom:13px}
+ .hero h1{font-size:clamp(45px,10.9vw,66px);margin-bottom:14px;line-height:1.08}
+ .hero h1 .accent{font-size:.88em}
+ .hero-sub{font-size:13.5px;line-height:1.7;margin-bottom:17px}
+ .hero-actions{gap:13px}
+ .hero-actions .btn-orange{font-size:11px;min-height:55px}
+ .hero-secondary{font-size:11px}
+ .hero-photo-wrap{width:calc(100% - 34px);height:clamp(210px,59vw,290px);border-radius:10px}
+ .hero-photo{object-position:49% 50%}
+ .photo-disclaimer{font-size:9px}
+ .hero-foot-inner{min-height:129px;gap:2px}
+ .hero-proof{min-height:53px;gap:7px}
+ .hero-proof:first-child{border-right:1px solid #ffffff35}
+ .hero-proof strong{font-size:11px}
+ .hero-proof small{font-size:10px}
+ .proof-figure{font-size:50px}
+ .deal{padding:53px 0 64px}
+ .deal-strap{font-size:9px;gap:10px;margin-bottom:14px}
+ .deal-strap i{width:30px}
+ .deal-title{margin-bottom:23px}
+ .deal-title h2{font-size:clamp(35px,9vw,52px);line-height:1.11}
+ .deal-title p{font-size:13px;max-width:500px;line-height:1.7;border-left:0;padding-left:0}
+ .deal-grid{grid-template-columns:1fr;gap:12px}
+ .deal-main,.deal-alt{min-height:0;padding:26px 22px}
+ .deal-main h3,.deal-alt h3{font-size:clamp(35px,9vw,46px);line-height:1.12;margin:23px 0 14px}
+ .deal-main p,.deal-alt p{font-size:13px;line-height:1.73;margin-bottom:21px}
+ .deal-main .btn-orange{width:100%;font-size:10px;min-height:54px}
+ .deal-main small{font-size:10px}
+ .deal-alt a{font-size:11px;min-height:48px}
+ .editorial{padding:62px 0 64px}
+ .editorial:before{font-size:240px;top:-25px;right:0}
+ .editorial-head{grid-template-columns:1fr;gap:15px;margin-bottom:23px}
+ .editorial-heading h2{font-size:clamp(40px,9.8vw,55px);margin:14px 0 0}
+ .editorial-heading h2 em{font-size:.77em}
+ .editorial-head>p{font-size:13.5px;line-height:1.75}
+ .editorial-stage{grid-template-columns:1fr}
+ .editorial-count{min-height:206px;padding:20px 22px;grid-template-columns:1fr 1fr;gap:4px}
+ .massive-seven{font-size:clamp(108px,32vw,160px)}
+ .editorial-count>p{font-size:12px;line-height:1.58}
+ .stage-photo{min-height:clamp(240px,64vw,315px)}
+ .stage-photo figcaption{font-size:10px;bottom:14px;left:17px}
+ .section-footnote{font-size:10px;line-height:1.65}
+ .story-after{gap:23px;margin-top:27px;padding-top:25px}
+ .story-after>div{grid-template-columns:39px minmax(0,1fr);gap:12px}
+ .story-after h3{font-size:15px;line-height:1.5}
+ .story-after p{font-size:12px;line-height:1.74}
+ .story-number{width:35px;height:35px}
+ .story-action{flex-direction:column;align-items:stretch;gap:13px;margin-top:23px}
+ .story-action>span{font-size:12px}
+ .story-action a{width:100%;min-height:52px;font-size:11px}
+ .process{padding:57px 0 67px}
+ .process-top{margin-bottom:25px}
+ .process-top h2{font-size:clamp(36px,8.7vw,50px);line-height:1.11}
+ .process-top p{font-size:13px}
+ .process-grid{grid-template-columns:1fr;gap:11px}
+ .process-step,.process-step:not(:first-child){display:grid;grid-template-columns:54px minmax(0,1fr);grid-template-rows:auto auto;gap:5px 15px;align-items:center;border:1px solid #d6e4e8;border-top:2px solid #d5e2e6;border-radius:11px;min-height:110px;padding:17px 17px}
+ .process-step:first-child{border-top-color:#e9692f}
+ .process-num{grid-column:1;grid-row:1/3;align-self:center;width:46px;height:46px;flex-basis:46px;font-size:15px}
+ .process-step h3{grid-column:2;grid-row:1;margin:0;font-size:15px}
+ .process-step p{grid-column:2;grid-row:2;margin:0;font-size:12px;line-height:1.6}
+ .contact{padding:68px 0 78px}
+ .contact-grid{grid-template-columns:1fr;gap:22px}
+ .contact-intro h2{font-size:clamp(41px,9.5vw,58px);line-height:1.09;margin:19px 0 15px}
+ .contact-intro p{font-size:13px}
+ .demo-form{padding:25px 19px}
+ .demo-form h3{font-size:23px}
+ .demo-form>p{font-size:12px}
+ .choice-group button{font-size:10px;padding:10px 7px}
+ .footer{padding-bottom:91px}
+ .footer-inner{gap:10px}
+}
+@media(max-width:360px){
+ .hero h1{font-size:clamp(40px,11.5vw,45px)}
+ .hero h1 .accent{font-size:.86em}
+ .deal-title h2{font-size:34px}
+ .deal-main h3,.deal-alt h3{font-size:34px}
+ .editorial-count{padding:17px;grid-template-columns:.82fr 1.18fr}
+ .massive-seven{font-size:108px}
+ .process-step,.process-step:not(:first-child){padding:15px 13px;column-gap:11px}
+ .process-step p{font-size:11.5px}
+ .choice-group button{font-size:9.5px}
+}
 </style>
 </head>
 <body>
@@ -562,10 +809,11 @@ body,button,input,select,textarea{font-family:var(--sans)}
 </section>
 <section class="deal" id="vendita" aria-labelledby="deal-heading">
  <div class="container">
+  <div class="deal-strap" aria-hidden="true"><span>UNA SOLA ATTIVITÀ</span><i></i><span>DUE POSSIBILITÀ</span></div>
   <div class="deal-title"><div><span class="section-no">01 / IN VENDITA</span><h2 id="deal-heading">VENDITA <em>O GESTIONE?</em></h2></div><p>Due formule per un’attività già avviata. Scegli quella che vuoi approfondire e richiedi i dettagli riservati.</p></div>
   <div class="deal-grid">
-   <article class="deal-main"><span class="mini">PROPOSTA PRINCIPALE / VENDITA</span><h3>VENDITA<br>DELL’ATTIVITÀ.</h3><p>Valuta l'acquisto di un lounge bar già avviato, con una storia commerciale e una clientela costruita nel tempo.</p><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><small>La vendita riguarda l'attività commerciale, non la proprietà dell'immobile.</small></article>
-   <aside class="deal-alt"><span class="mini">FORMULA ALTERNATIVA / GESTIONE</span><h3>GESTIONE<br>DEL LOCALE.</h3><p>Puoi indicare il tuo interesse per una gestione dell'attività. Le eventuali condizioni vengono discusse privatamente.</p><a href="#contatto" data-pref="gestione">CHIEDI INFORMAZIONI SULLA GESTIONE <span aria-hidden="true">↗</span></a></aside>
+   <article class="deal-main"><span class="deal-option-index" aria-hidden="true">01</span><span class="mini">PROPOSTA PRINCIPALE / VENDITA</span><h3>VENDITA<br>DELL’ATTIVITÀ.</h3><p>Valuta l'acquisto di un lounge bar già avviato, con una storia commerciale e una clientela costruita nel tempo.</p><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><small>La vendita riguarda l'attività commerciale, non la proprietà dell'immobile.</small></article>
+   <aside class="deal-alt"><span class="deal-option-index" aria-hidden="true">02</span><span class="mini">FORMULA ALTERNATIVA / GESTIONE</span><h3>GESTIONE<br>DEL LOCALE.</h3><p>Puoi indicare il tuo interesse per una gestione dell'attività. Le eventuali condizioni vengono discusse privatamente.</p><a href="#contatto" data-pref="gestione">CHIEDI INFORMAZIONI SULLA GESTIONE <span aria-hidden="true">↗</span></a></aside>
   </div>
  </div>
 </section>
@@ -581,9 +829,10 @@ body,button,input,select,textarea{font-family:var(--sans)}
   </div>
   <p class="section-footnote">Le fotografie sono rielaborazioni digitali da immagini fornite; alcuni dettagli possono differire dalla realtà. Le informazioni sull'attività richiedono verifica nel corso della trattativa.</p>
   <div class="story-after">
-   <div><b>↗</b><div><h3>Nel cuore della movida universitaria</h3><p>Un contesto serale riconoscibile, nella zona di Catanzaro Lido indicata dai titolari.</p></div></div>
-   <div><b>↗</b><div><h3>Una piazza con sedie e tavolini</h3><p>Uno spazio esterno che contribuisce all'atmosfera del locale. Disponibilità e titoli d'uso da verificare.</p></div></div>
+   <div><span class="story-number" aria-hidden="true">01</span><div><h3>Nel cuore della movida universitaria</h3><p>Un contesto serale riconoscibile, nella zona di Catanzaro Lido indicata dai titolari.</p></div></div>
+   <div><span class="story-number" aria-hidden="true">02</span><div><h3>Una piazza con sedie e tavolini</h3><p>Uno spazio esterno che contribuisce all'atmosfera del locale. Disponibilità e titoli d'uso da verificare.</p></div></div>
   </div>
+  <div class="story-action"><span>Vuoi conoscere i dettagli dell'attività?</span><a href="#contatto" data-pref="vendita">RICHIEDI INFORMAZIONI <span aria-hidden="true">↗</span></a></div>
  </div>
 </section>
 <section class="process" id="come-funziona" aria-labelledby="process-heading">
@@ -594,7 +843,7 @@ body,button,input,select,textarea{font-family:var(--sans)}
 </section>
 <section class="contact" id="contatto" aria-labelledby="contact-heading">
  <div class="container contact-grid">
-  <div class="contact-intro"><span class="section-no">04 / CONTATTO RISERVATO</span><h2 id="contact-heading">VUOI<br>VALUTARE<br><em>L'ACQUISTO?</em></h2><p>Richiedi un primo confronto riservato sulla vendita del lounge bar a Catanzaro Lido.</p><div class="assurance"><span class="dash"></span><span>Nessun impegno a proseguire. I dettagli vengono approfonditi privatamente, dopo un primo contatto.</span></div></div>
+  <div class="contact-intro"><span class="section-no">04 / CONTATTO RISERVATO</span><h2 id="contact-heading">VUOI<br>VALUTARE<br><em>L'ACQUISTO?</em></h2><p>Richiedi un primo confronto riservato sulla vendita del lounge bar a Catanzaro Lido.</p><div class="assurance"><span class="dash"></span><span><strong>TRATTATIVA RISERVATA</strong>Nessun impegno a proseguire. I dettagli vengono approfonditi privatamente, dopo un primo contatto.</span></div></div>
   <form class="demo-form" id="interest-form" action="/api/interesse" method="post" novalidate>
    <h3>Richiedi informazioni riservate.</h3><p>Compila i campi essenziali. Ti ricontatteremo per un primo confronto riservato, senza impegno.</p>
    <div class="choice-group" role="group" aria-label="Formula di interesse"><button type="button" data-interest="vendita" aria-pressed="true">ACQUISTO</button><button type="button" data-interest="gestione" aria-pressed="false">GESTIONE</button><button type="button" data-interest="entrambe" aria-pressed="false">ENTRAMBE</button></div>
