@@ -22,8 +22,8 @@
 <meta name="twitter:title" content="Lounge bar in vendita a Catanzaro Lido">
 <meta name="twitter:description" content="7 anni di attività, clientela fidelizzata e uno spazio con tavolini. Richiedi i dettagli della vendita.">
 <meta name="twitter:image" content="https://opportunita.impresax.org/og-social-v10.jpg">
-<link rel="preload" as="image" href="/hero-venue-panorama-real-v1.webp" media="(min-width:641px)" fetchpriority="high">
-<link rel="preload" as="image" href="/hero-venue-mobile-real-v1.webp" media="(max-width:640px)" fetchpriority="high">
+<link rel="preload" as="image" href="/hero-venue-panorama-real-v1.webp?view=hero-visible-20261117" media="(min-width:641px)" fetchpriority="high">
+<link rel="preload" as="image" href="/hero-venue-mobile-real-v1.webp?view=hero-visible-20261117" media="(max-width:640px)" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -78,11 +78,11 @@ svg{display:block;flex:none}
 
 /* HERO — hero photography, asymmetrical editorial layout, turquoise headline */
 .hero{position:relative;isolation:isolate;background:var(--navy-deep);color:#fff;overflow:hidden}
-.hero-photo-wrap{position:absolute;z-index:-3;inset:0;width:100%;height:100%;display:block;overflow:hidden;background:#061b2a;border:0;border-radius:0;box-shadow:none}
+.hero-photo-wrap{position:absolute;z-index:0;inset:0;width:100%;height:100%;display:block;overflow:hidden;background:#061b2a;border:0;border-radius:0;box-shadow:none}
 .hero-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center 50%;filter:none;transform:none}
-.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#041928a8 0%,#04192865 34%,transparent 65%),linear-gradient(0deg,#04192899,transparent 31%);pointer-events:none}
-.hero:after{content:'';position:absolute;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 81% 24%,#00eefa22,transparent 48%)}
-.hero-core{position:relative;z-index:1;min-height:615px;padding:75px 0 164px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+.hero-vignette{position:absolute;z-index:1;inset:0;background:linear-gradient(90deg,#04192845 0%,#0419281c 34%,transparent 64%),linear-gradient(0deg,#0419284d,transparent 28%);pointer-events:none}
+.hero:after{content:'';position:absolute;z-index:1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 81% 24%,#00eefa08,transparent 48%)}
+.hero-core{position:relative;z-index:2;min-height:615px;padding:75px 0 164px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
 .hero-kicker{display:flex;align-items:center;gap:13px;margin:0 0 24px;color:#ffffff;font:800 11px/1.4 var(--sans);letter-spacing:.21em}
 .hero-kicker span{width:29px;height:3px;display:block;background:var(--cyan)}
 .hero h1{font:800 clamp(68px,7.2vw,108px)/.99 var(--display);letter-spacing:-.072em;margin:0 0 20px;max-width:850px;text-shadow:0 4px 20px #04152354}
@@ -400,8 +400,8 @@ svg{display:block;flex:none}
 <main>
 <section class="hero" id="inizio" aria-labelledby="hero-heading">
   <picture class="hero-photo-wrap">
-    <source media="(max-width:640px)" type="image/webp" srcset="/hero-venue-mobile-real-v1.webp">
-    <source type="image/webp" srcset="/hero-venue-panorama-real-v1.webp">
+    <source media="(max-width:640px)" type="image/webp" srcset="/hero-venue-mobile-real-v1.webp?view=hero-visible-20261117">
+    <source type="image/webp" srcset="/hero-venue-panorama-real-v1.webp?view=hero-visible-20261117">
     <img class="hero-photo" src="/hero-lounge-scene-v1.jpg" width="2400" height="1350" decoding="async" fetchpriority="high" alt="Serata al lounge bar reale, con persone rese non identificabili e dettagli del locale volutamente attenuati; fotografia rielaborata">
   </picture>
   <div class="hero-vignette" aria-hidden="true"></div>
