@@ -10,11 +10,11 @@ const share=readFileSync(new URL('../scripts/build-opportunity-share.mjs',import
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??'';
 const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
 
-test('owner-requested V9 bold modern look is genuinely different from rejected V8 typography and colors',()=>{
+test('owner-requested V9.1 high-contrast modern hospitality look is genuinely different from rejected V8 typography and colors',()=>{
  assert.match(html,/fonts\.googleapis\.com\/css2\?family=DM\+Sans/);
- assert.match(html,/family=Syne:wght@500;600;700;800/);
+ assert.match(html,/family=Plus\+Jakarta\+Sans:wght@500;600;700;800/);
  assert.doesNotMatch(html,/Cormorant\+Garamond|family=Manrope/);
- assert.match(css,/--sans:'DM Sans',Arial,sans-serif;--serif:'Syne',Arial,sans-serif/);
+ assert.match(css,/--sans:'DM Sans',Arial,sans-serif;--serif:'Plus Jakarta Sans',Arial,sans-serif/);
  assert.match(css,/PRIVATE SALE 09 — HIGH-CONTRAST MODERN HOSPITALITY/);
  assert.match(css,/--orange:#fb5a20;--orange-bright:#ff7a34/);
  assert.match(css,/\.hero h1\{max-width:950px;margin:0 0 23px;font:800 clamp\(69px,7\.9vw,117px\)/);
