@@ -74,7 +74,7 @@ export async function serveOpportunity(request,env) {
   const out=await env.ASSETS.fetch(new Request(assetUrl,request));
   const headers=new Headers(out.headers);
   const heroImage=/^\/(hero-venue-(panorama-real-v1|mobile-real-v1)\.webp|hero-lounge-(scene-v1\.jpg|desktop-v1\.webp|mobile-v1\.webp)|story-serata-(locale-v[12]\.jpg|desktop-v[12]\.webp|mobile-v[12]\.webp))$/.test(url.pathname);
-  headers.set("Cache-Control",heroImage?"public, max-age=31536000, immutable":(url.pathname==="/og-social-v4.jpg"||url.pathname==="/og-social-v5.jpg"||url.pathname==="/og-social-v6.jpg"||url.pathname==="/og-social-v7.jpg"||url.pathname==="/og-social-v8.jpg"||url.pathname==="/og-social-v10.jpg")?"public, max-age=86400, immutable":"public, max-age=300");
+  headers.set("Cache-Control",(url.pathname==="/"||url.pathname==="/privacy"||url.pathname==="/privacy/")?"no-store, max-age=0":heroImage?"public, max-age=31536000, immutable":(url.pathname==="/og-social-v4.jpg"||url.pathname==="/og-social-v5.jpg"||url.pathname==="/og-social-v6.jpg"||url.pathname==="/og-social-v7.jpg"||url.pathname==="/og-social-v8.jpg"||url.pathname==="/og-social-v10.jpg")?"public, max-age=86400, immutable":"public, max-age=300");
   headers.set("X-Content-Type-Options","nosniff");
   headers.set("Referrer-Policy","strict-origin-when-cross-origin");
   headers.set("X-Frame-Options","DENY");
