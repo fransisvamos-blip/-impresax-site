@@ -78,9 +78,9 @@ svg{display:block;flex:none}
 
 /* HERO — hero photography, asymmetrical editorial layout, turquoise headline */
 .hero{position:relative;isolation:isolate;background:var(--navy-deep);color:#fff;overflow:hidden}
-.hero-photo-wrap{position:absolute;z-index:-3;inset:0;display:block;overflow:hidden}
-.hero-photo{width:100%;height:100%;object-fit:cover;object-position:63% 44%;filter:saturate(1.20) contrast(1.10) brightness(1.07)}
-.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#031728f0 0%,#031728d4 25%,#0317288e 49%,#03172816 78%,#03172805 100%),linear-gradient(0deg,#031728a3 0%,transparent 47%,#03172808 100%);pointer-events:none}
+.hero-photo-wrap{position:absolute;z-index:-3;top:26px;bottom:150px;right:max(22px,calc((100vw - 1188px)/2));left:auto;width:min(45vw,610px);display:block;overflow:hidden;border:1px solid #93b5bb40;border-radius:18px;box-shadow:0 28px 60px #010c16a3}
+.hero-photo{width:100%;height:100%;object-fit:cover;object-position:center 44%;filter:saturate(1.07) contrast(1.05) brightness(1.04)}
+.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#021522 0%,#021522f5 28%,#021522be 47%,#0215222c 72%,transparent 100%);pointer-events:none}
 .hero:after{content:'';position:absolute;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 81% 24%,#00eefa22,transparent 48%)}
 .hero-core{position:relative;z-index:1;min-height:615px;padding:75px 0 164px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
 .hero-kicker{display:flex;align-items:center;gap:13px;margin:0 0 24px;color:#ffffff;font:800 11px/1.4 var(--sans);letter-spacing:.21em}
@@ -232,6 +232,7 @@ svg{display:block;flex:none}
  .header-cta{display:none}
  .nav{gap:17px}
  .hero-core{min-height:595px}
+ .hero-photo-wrap{right:22px;top:33px;bottom:146px;width:49vw}
  .hero h1{font-size:clamp(62px,8vw,84px)}
  .deal{padding:78px 0 85px}
  .deal-grid{gap:16px}
@@ -295,7 +296,10 @@ svg{display:block;flex:none}
  .brand-mark,.brand-mark i{height:26px}
  .nav{top:62px}
  .nav-toggle{width:42px;height:42px}
- .hero-core{min-height:0;padding:43px 0 31px}
+ .hero{display:flex;flex-direction:column}
+ .hero-core{order:1;min-height:0;padding:43px 0 27px}
+ .hero-photo-wrap{position:relative;order:2;inset:auto;z-index:1;width:calc(100% - 34px);height:auto;aspect-ratio:1/.88;max-height:none;margin:0 auto 22px;border-radius:14px;box-shadow:0 14px 38px #000a15a6}
+ .hero-vignette,.hero:after{display:none}
  .hero-kicker{margin-bottom:23px;font-size:9.5px;letter-spacing:.15em}
  .hero h1{font-size:clamp(42px,11.7vw,61px);letter-spacing:-.072em;line-height:1.02;margin-bottom:17px}
  .hero h1 .accent{font-size:.79em}
@@ -305,9 +309,9 @@ svg{display:block;flex:none}
  /* Mobile-specific source photos avoid downloading desktop backgrounds. */
  .deal-main{background-image:linear-gradient(110deg,#031728f2,#042b40d5 60%,#06475b51),url('/story-serata-mobile-v2.webp');background-position:center 45%}
  .contact{background-image:linear-gradient(100deg,#031728f4,#05253de5 57%,#062136c7),url('/hero-lounge-mobile-v1.webp');background-position:59% 43%}
- .hero-photo{object-position:59% 45%;filter:saturate(1.18) contrast(1.09) brightness(1.07)}
+ .hero-photo{object-position:center 44%;filter:saturate(1.06) contrast(1.04) brightness(1.03)}
  .hero-vignette{background:linear-gradient(90deg,#031728ea,#031728bf 49%,#03172854),linear-gradient(0deg,#031728bb,transparent 56%)}
- .hero-foot{position:relative}
+ .hero-foot{position:relative;order:3}
  .hero-foot-inner{min-height:123px}
  .hero-proof{min-height:119px;flex-direction:column;text-align:center;justify-content:center;align-items:center;gap:7px;padding:10px 5px}
  .hero-proof:first-child{padding-left:0}
