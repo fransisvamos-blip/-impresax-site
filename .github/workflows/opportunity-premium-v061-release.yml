@@ -1,14 +1,17 @@
-name: ImpresaX Opportunity — V9.2 Warm Color Grade One-Time
-# OWNER PAUSE: V9.2 color-grade released; all 9-width live visual/lead checks passed; no automatic deployments.
+name: ImpresaX Opportunity — V10 Approved Cyan Variant 1 Release
+# ONE-TIME user-approved Variant 1; re-pause immediately after production QA.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-v10-cyan-variant1-20261117'
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ false }} # owner pause after verified V9.2 palette release
+    if: ${{ github.event_name == 'push' }} # one-shot user-approved cyan first concept
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -26,8 +29,8 @@ jobs:
       - name: Generate first-party sale-specific WhatsApp preview
         run: |
           node scripts/build-opportunity-share.mjs
-          test -s public/opportunita/og-social-v8.jpg
-          node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('public/opportunita/og-social-v8.jpg').metadata();if(m.width!==1200||m.height!==630||m.format!=='jpeg')process.exit(1);console.log('Social preview',m.width,m.height,m.format)})"
+          test -s public/opportunita/og-social-v10.jpg
+          node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('public/opportunita/og-social-v10.jpg').metadata();if(m.width!==1200||m.height!==630||m.format!=='jpeg')process.exit(1);console.log('Social preview',m.width,m.height,m.format)})"
       - name: Verify new landing, backend contract and untouched ImpresaX render tests
         run: |
           node --test test/opportunita-landing.test.mjs
@@ -42,7 +45,7 @@ jobs:
           sleep 2
           curl -fsS --max-time 8 'http://127.0.0.1:8191/' >/dev/null
           QA_BASE_URL='http://127.0.0.1:8191/' node scripts/qa-private-sale.mjs
-      - name: Deploy Owner-Requested PRIVATE SALE 09 High-Contrast Website
+      - name: Deploy User-Approved PRIVATE SALE 10 Cyan Variant 1
         id: production_deploy
         run: npx wrangler deploy --config wrangler.jsonc
       - name: Smoke-test production, exact sale positioning, assets and privacy
@@ -60,6 +63,8 @@ jobs:
                [[ "$html" == *'PRIVATE SALE 08 — CINEMATIC EDITORIAL'* ]] &&
                [[ "$html" == *'PRIVATE SALE 09 — HIGH-CONTRAST MODERN HOSPITALITY'* ]] &&
                [[ "$html" == *'PRIVATE SALE 09.2 — WARM LUXURY COLOR GRADE'* ]] &&
+               [[ "$html" == *'PRIVATE SALE 10 — VARIANTE 1 CYAN SIGNATURE'* ]] &&
+               [[ "$html" == *'Due formule per la stessa'* ]] &&
                [[ "$html" != *'PRIVATE SALE 08.1 — PRECISION POLISH'* ]] &&
                [[ "$html" == *'class="story-photo"'* ]] &&
                [[ "$html" == *'class="story-action"'* ]] &&
@@ -67,7 +72,7 @@ jobs:
                [[ "$html" != *'Cormorant+Garamond'* ]] &&
                [[ "$html" != *'Proposta di design dimostrativa'* ]] &&
                [[ "$html" == *'RICHIEDI I DETTAGLI DI VENDITA'* ]] &&
-               [[ "$html" == *'og-social-v8.jpg'* ]] &&
+               [[ "$html" == *'og-social-v10.jpg'* ]] &&
                [[ "$html" == *"fetch('/api/interesse'"* ]] &&
                [[ "$html" == *'name="privacy_accepted"'* ]] &&
                [[ "$html" != *'Concept 06'* ]] &&
@@ -77,7 +82,7 @@ jobs:
             sleep 5
           done
           test "$ready" = '1'
-          for asset in 'hero-lounge-desktop-v1.webp' 'hero-lounge-mobile-v1.webp' 'story-serata-desktop-v2.webp' 'story-serata-mobile-v2.webp' 'og-social-v8.jpg'; do
+          for asset in 'hero-lounge-desktop-v1.webp' 'hero-lounge-mobile-v1.webp' 'story-serata-desktop-v2.webp' 'story-serata-mobile-v2.webp' 'og-social-v10.jpg'; do
             asset_ready=0
             for attempt in {1..12}; do
               code=$(curl -L -sS --max-time 20 -o "/tmp/$asset" -w '%{http_code}' "https://opportunita.impresax.org/$asset" || true)
@@ -90,7 +95,7 @@ jobs:
           done
           curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' -o /tmp/opportunita-privacy-live.html
           grep -q 'Informativa sulla privacy' /tmp/opportunita-privacy-live.html
-          node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('/tmp/og-social-v8.jpg').metadata();if(m.width!==1200||m.height!==630)process.exit(1);console.log('Live social',m.width,m.height)})"
+          node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('/tmp/og-social-v10.jpg').metadata();if(m.width!==1200||m.height!==630)process.exit(1);console.log('Live social',m.width,m.height)})"
           status=$(curl -sS --max-time 18 -o /tmp/private-sale-invalid.json -w '%{http_code}' -X POST 'https://opportunita.impresax.org/api/interesse' -H 'Content-Type: application/json' --data '{"full_name":"QA","phone":"000","transaction_interest":"cessione","privacy_accepted":false}')
           test "$status" = '422'
           grep -q '"error":"DATI_NON_VALIDI"' /tmp/private-sale-invalid.json
@@ -110,6 +115,6 @@ jobs:
         if: ${{ failure() && steps.production_deploy.outcome == 'success' }}
         run: |
           echo 'PRODUCTION QA FAILED: restoring approved previous landing automatically'
-          cp backups/opportunita-v91-before-color-grade-20261117.html public/opportunita/index.html
+          cp backups/opportunita-v092-before-cyan-variant1-20261117.html public/opportunita/index.html
           node scripts/build-opportunity-share.mjs
           npx wrangler deploy --config wrangler.jsonc
