@@ -1,0 +1,1 @@
+Owner-approved live site V9 release after test-driven correction of Syne font widths across 320–1600px, mobile grid min-width and form. No public price or external project changes. Deploy only if all staged browser tests pass; rollback on live QA failure; restore owner pause.
