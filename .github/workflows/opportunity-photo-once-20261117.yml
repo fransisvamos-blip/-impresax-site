@@ -1,10 +1,7 @@
 name: Opportunity — One-Time Venue Photo Optimization 2026-11-17
-# One-time owner-requested image release. No scheduled or recurring job.
+# SEALED: one-time owner-requested image release succeeded; no push, cron, or runnable manual job.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/opportunity-photo-once-20261117.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +12,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ github.event.head_commit.message == 'photo release run' }}
+    if: ${{ false }} # one-time release completed and owner pause restored
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
