@@ -69,7 +69,7 @@ jobs:
             if [[ "$html" == *'LOUNGE BAR'* ]] &&
                [[ "$html" == *'CEDESI'* ]] &&
                [[ "$html" == *'LOUNGE BAR'* ]] &&
-               [[ "$html" == *'VENDITA <em>O GESTIONE?'* ]] &&
+               [[ "$html" == *'VENDITA O <em>GESTIONE?'* ]] &&
                [[ "$html" == *'Manrope:wght@400'* ]] &&
                [[ "$html" == *'PRIVATE SALE 08 — CINEMATIC EDITORIAL'* ]] &&
                [[ "$html" == *'class="story-photo"'* ]] &&
