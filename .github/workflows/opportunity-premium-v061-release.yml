@@ -1,4 +1,4 @@
-name: ImpresaX Opportunity — V9 High-Contrast Visual Rebuild One-Time
+name: ImpresaX Opportunity — V9.1 Premium Hospitality Rebuild One-Time
 # ONE-TIME user-approved typography and color rebuild; restore pause after finished deployment QA.
 on:
   push:
@@ -59,7 +59,7 @@ jobs:
                [[ "$html" == *'LOUNGE BAR'* ]] &&
                [[ "$html" == *'VENDITA O <em>GESTIONE?'* ]] &&
                [[ "$html" == *'family=DM+Sans:wght@400'* ]] &&
-               [[ "$html" == *'family=Syne:wght@500'* ]] &&
+               [[ "$html" == *'family=Plus+Jakarta+Sans:wght@500'* ]] &&
                [[ "$html" == *'PRIVATE SALE 08 — CINEMATIC EDITORIAL'* ]] &&
                [[ "$html" == *'PRIVATE SALE 09 — HIGH-CONTRAST MODERN HOSPITALITY'* ]] &&
                [[ "$html" != *'PRIVATE SALE 08.1 — PRECISION POLISH'* ]] &&
