@@ -90,7 +90,8 @@ jobs:
             done
             test "$asset_ready" = "1"
           done
-          curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' | grep -q 'Informativa sulla privacy'
+          curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' -o /tmp/opportunita-privacy-live.html
+          grep -q 'Informativa sulla privacy' /tmp/opportunita-privacy-live.html
           node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('/tmp/og-social-v8.jpg').metadata();if(m.width!==1200||m.height!==630)process.exit(1);console.log('Live social',m.width,m.height)})"
           status=$(curl -sS --max-time 18 -o /tmp/private-sale-invalid.json -w '%{http_code}' -X POST 'https://opportunita.impresax.org/api/interesse' -H 'Content-Type: application/json' --data '{"full_name":"QA","phone":"000","transaction_interest":"cessione","privacy_accepted":false}')
           test "$status" = '422'
