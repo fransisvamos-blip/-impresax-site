@@ -64,7 +64,9 @@ test('only supplied real venue photo derivations, not fictitious cocktail/bar ph
  }
  assert.match(html,/class="venue-inset" src="\/hero-lounge-desktop-v1\.webp"/);
  assert.match(html,/class="venue-highlights"/);
- assert.match(html,/Fotografia del locale rielaborata digitalmente/);
+ assert.match(html,/Fotografia reale rielaborata · volti e dettagli identificativi oscurati/);
+ assert.match(html,/hero-venue-panorama-real-v1\.webp/);
+ assert.match(html,/hero-venue-mobile-real-v1\.webp/);
  assert.match(html,/fotografia rielaborata con volti leggermente sfocati/);
  assert.match(html,/Informazioni secondo i titolari/);
  assert.doesNotMatch(html,/images\.unsplash\.com|cdn\.shopify\.com/);
