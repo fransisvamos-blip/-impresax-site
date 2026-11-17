@@ -1,17 +1,14 @@
 name: ImpresaX Opportunity — V9.1 Premium Hospitality Rebuild One-Time
-# ONE-TIME user-approved typography and color rebuild; restore pause after finished deployment QA.
+# OWNER PAUSE: Premium V9.1 published; staged and production visual, asset, lead, privacy QA passed. No automatic deploys.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-v09f-bold-color-type-20261117'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }} # one-time user-approved V9 color and typography redesign
+    if: ${{ false }} # owner pause after verified V9.1 live deployment
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
