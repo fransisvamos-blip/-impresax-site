@@ -24,9 +24,9 @@
 <meta name="twitter:image" content="https://opportunita.impresax.org/og-social-v7.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700;800&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#11232b;--black:#09181d;--cream:#f3f0e9;--paper:#faf8f3;--white:#fff;--orange:#bf5122;--copper:#df8c59;--muted:#626f72;--line:#dedbd1;--sans:'Cabin','Arial',sans-serif;--serif:'EB Garamond',Georgia,serif}
+:root{--ink:#11232b;--black:#09181d;--cream:#f3f0e9;--paper:#faf8f3;--white:#fff;--orange:#bf5122;--copper:#df8c59;--muted:#626f72;--line:#dedbd1;--sans:'Manrope',Arial,sans-serif;--serif:'Manrope',Arial,sans-serif}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:86px}
 body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
@@ -476,6 +476,63 @@ body{background:var(--cream)}
  .deal-alt h3{font-size:43px}
 }
 
+
+/* V6.2 — TYPOGRAPHY & TWO-FORMULA OFFER. Single modern sans, clear sale headline. */
+:root{--sans:'Manrope',Arial,sans-serif;--serif:'Manrope',Arial,sans-serif}
+body,button,input,select,textarea{font-family:var(--sans)}
+.brand-name{font-weight:800;letter-spacing:-.035em}
+.hero h1{font-family:var(--sans);font-weight:800;letter-spacing:-.068em;font-size:clamp(56px,5.35vw,82px);line-height:1.04;max-width:51%;text-wrap:initial}
+.hero h1 .sale,.hero h1 .accent{display:block;white-space:nowrap}
+.hero h1 .accent{font-size:.9em;letter-spacing:-.064em}
+.hero-sub{font-weight:500;line-height:1.62}
+.hero-actions{max-width:51%}
+.editorial-heading h2,.deal-title h2,.process-top h2,.contact-intro h2{font-family:var(--sans);font-weight:800;letter-spacing:-.058em}
+.editorial-heading h2 em,.deal-title h2 em,.contact-intro h2 em{font-family:var(--sans);font-style:normal;font-weight:800;letter-spacing:-.052em}
+.massive-seven{font-family:var(--sans);font-size:clamp(140px,18vw,250px);line-height:.92;font-weight:800;letter-spacing:-.115em}
+.deal-title h2{font-size:clamp(43px,4.55vw,67px)}
+.deal-title p{max-width:395px}
+.deal-grid{grid-template-columns:1.12fr 1fr;gap:17px}
+.deal-main,.deal-alt{min-height:345px;padding:33px 34px}
+.deal-main h3,.deal-alt h3{font-family:var(--sans);font-style:normal;font-weight:800;letter-spacing:-.055em;line-height:1.09;margin:24px 0 13px;font-size:clamp(33px,3.35vw,49px)}
+.deal-main h3{color:#fff}
+.deal-alt h3{color:#103148}
+.deal-main p,.deal-alt p{font-size:14px;line-height:1.64}
+.deal-main small{line-height:1.6}
+.deal-alt a{gap:10px;line-height:1.55}
+.proof-figure{font-family:var(--sans);font-size:47px;font-weight:800;letter-spacing:-.085em}
+@media(min-width:981px) and (max-width:1250px){
+ .hero h1{font-size:clamp(51px,5.15vw,67px)}
+ .hero h1 .accent{font-size:.89em}
+}
+@media(max-width:980px){
+ .hero h1{max-width:100%;font-size:clamp(57px,8.5vw,76px);letter-spacing:-.073em}
+ .hero h1 .accent{font-size:.9em}
+ .hero-actions{max-width:100%}
+ .deal-grid{grid-template-columns:1.04fr 1fr}
+ .deal-main,.deal-alt{padding:28px 27px}
+ .deal-main h3,.deal-alt h3{font-size:clamp(31px,3.85vw,44px)}
+}
+@media(max-width:640px){
+ .hero h1{font-size:clamp(47px,11.1vw,65px);line-height:1.055;margin-bottom:15px}
+ .hero h1 .accent{font-size:.88em}
+ .hero-core{padding-top:26px}
+ .hero-sub{font-size:14px;line-height:1.62}
+ .hero-actions{max-width:100%}
+ .deal-title h2{font-size:clamp(34px,8.5vw,50px);line-height:1.13}
+ .deal-grid{grid-template-columns:1fr;gap:11px}
+ .deal-main,.deal-alt{min-height:0;padding:26px 24px}
+ .deal-main h3,.deal-alt h3{font-size:clamp(35px,9vw,47px);margin:21px 0 13px}
+ .deal-main p,.deal-alt p{font-size:14px}
+ .deal-main .btn-orange{width:100%;font-size:10px}
+ .editorial-heading h2{font-size:clamp(37px,9vw,54px)}
+ .massive-seven{font-size:clamp(105px,32vw,175px)}
+ .contact-intro h2{font-size:clamp(38px,9.6vw,55px)}
+}
+@media(max-width:360px){
+ .hero h1{font-size:clamp(42px,11.7vw,46px)}
+ .hero h1 .accent{font-size:.86em}
+ .deal-main h3,.deal-alt h3{font-size:35px}
+}
 </style>
 </head>
 <body>
@@ -492,9 +549,9 @@ body{background:var(--cream)}
  <picture class="hero-photo-wrap"><source type="image/webp" media="(max-width:640px)" srcset="/hero-lounge-mobile-v1.webp"><source type="image/webp" srcset="/hero-lounge-desktop-v1.webp"><img class="hero-photo" src="/hero-lounge-scene-v1.jpg" alt="Piazza con tavolini sotto un albero illuminato, immagine rielaborata digitalmente a partire da una fotografia fornita del locale" width="1254" height="1254" fetchpriority="high" decoding="async"></picture>
  <div class="container hero-core">
   <div class="hero-kicker">CATANZARO LIDO <span aria-hidden="true">/</span> VENDITA DI ATTIVITÀ COMMERCIALE</div>
-  <h1 id="hero-heading"><span class="sale">LOUNGE BAR</span><span class="accent">IN VENDITA.</span></h1>
-  <p class="hero-sub">Nel cuore della movida universitaria: <strong>7 anni di attività</strong>, clientela fidelizzata e una piazza con sedie e tavolini.</p>
-  <div class="hero-actions"><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><a class="hero-secondary" href="#vendita">Valuti anche la gestione? <span aria-hidden="true">↗</span></a></div>
+  <h1 id="hero-heading"><span class="sale">CEDESI</span><span class="accent">LOUNGE BAR</span></h1>
+  <p class="hero-sub">Nel cuore di Catanzaro Lido: <strong>7 anni di attività</strong>, clientela fidelizzata e una piazza con tavolini nella movida universitaria.</p>
+  <div class="hero-actions"><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><a class="hero-secondary" href="#vendita">Vendita o gestione: scopri le formule <span aria-hidden="true">↗</span></a></div>
  </div>
  <div class="photo-disclaimer">Immagine rielaborata digitalmente</div>
  <div class="hero-foot"><div class="container hero-foot-inner">
@@ -505,10 +562,10 @@ body{background:var(--cream)}
 </section>
 <section class="deal" id="vendita" aria-labelledby="deal-heading">
  <div class="container">
-  <div class="deal-title"><div><span class="section-no">01 / IN VENDITA</span><h2 id="deal-heading">L'ATTIVITÀ È <em>IN VENDITA.</em></h2></div><p>La proposta riguarda la vendita dell’attività commerciale. È possibile richiedere informazioni riservate anche su un’eventuale gestione.</p></div>
+  <div class="deal-title"><div><span class="section-no">01 / IN VENDITA</span><h2 id="deal-heading">VENDITA <em>O GESTIONE?</em></h2></div><p>Due formule per un’attività già avviata. Scegli quella che vuoi approfondire e richiedi i dettagli riservati.</p></div>
   <div class="deal-grid">
-   <article class="deal-main"><span class="mini">PROPOSTA PRINCIPALE / VENDITA</span><h3>ACQUISTA<br>L'ATTIVITÀ.</h3><p>Valuta l'acquisto di un lounge bar già avviato, con una storia commerciale e una clientela costruita nel tempo.</p><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><small>La vendita riguarda l'attività commerciale, non la proprietà dell'immobile.</small></article>
-   <aside class="deal-alt"><span class="mini">FORMULA ALTERNATIVA / GESTIONE</span><h3>VALUTI<br>LA GESTIONE?</h3><p>Puoi indicare il tuo interesse per una gestione dell'attività. Le eventuali condizioni vengono discusse privatamente.</p><a href="#contatto" data-pref="gestione">CHIEDI INFORMAZIONI SULLA GESTIONE <span aria-hidden="true">↗</span></a></aside>
+   <article class="deal-main"><span class="mini">PROPOSTA PRINCIPALE / VENDITA</span><h3>VENDITA<br>DELL’ATTIVITÀ.</h3><p>Valuta l'acquisto di un lounge bar già avviato, con una storia commerciale e una clientela costruita nel tempo.</p><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><small>La vendita riguarda l'attività commerciale, non la proprietà dell'immobile.</small></article>
+   <aside class="deal-alt"><span class="mini">FORMULA ALTERNATIVA / GESTIONE</span><h3>GESTIONE<br>DEL LOCALE.</h3><p>Puoi indicare il tuo interesse per una gestione dell'attività. Le eventuali condizioni vengono discusse privatamente.</p><a href="#contatto" data-pref="gestione">CHIEDI INFORMAZIONI SULLA GESTIONE <span aria-hidden="true">↗</span></a></aside>
   </div>
  </div>
 </section>
