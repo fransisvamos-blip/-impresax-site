@@ -1,31 +1,39 @@
-// PRIVATE SALE 06 — first-party 1200×630 social share image, generated at deploy.
+// PRIVATE SALE 06.1 — vibrant, first-party WhatsApp cover from the actual venue-derived photograph.
 import sharp from 'sharp';
 import {readFile,writeFile} from 'node:fs/promises';
-const input='public/opportunita/hero-lounge-scene-v1.jpg';
-const output='public/opportunita/og-social-v6.jpg';
-const WIDTH=1200,HEIGHT=630;
-const original=await readFile(input);
-const meta=await sharp(original).metadata();
-if(meta.width<1000||meta.height<1000)throw Error('Missing first-party venue hero for OG');
-const back=await sharp(original).resize(WIDTH,HEIGHT,{fit:'cover',position:'attention'}).png().toBuffer();
+const W=1200,H=630;
+const raw=await readFile('public/opportunita/hero-lounge-scene-v1.jpg');
+const source=await sharp(raw).metadata();
+if(source.width<1000||source.height<1000)throw Error('First-party venue photograph is unavailable');
+const photo=await sharp(raw).resize(650,H,{fit:'cover',position:sharp.strategy.attention})
+ .modulate({saturation:1.1,brightness:1.045}).jpeg({quality:92}).toBuffer();
+const background=await sharp({create:{width:W,height:H,channels:4,background:'#fffaf4'}})
+ .composite([{input:photo,left:550,top:0}]).png().toBuffer();
 const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-<defs><linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#061319" stop-opacity=".99"/><stop offset=".38" stop-color="#061319" stop-opacity=".95"/><stop offset=".73" stop-color="#061319" stop-opacity=".37"/><stop offset="1" stop-color="#061319" stop-opacity=".08"/></linearGradient><linearGradient id="bottom" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#061319" stop-opacity="0"/><stop offset="1" stop-color="#061319" stop-opacity=".85"/></linearGradient></defs>
-<rect width="1200" height="630" fill="url(#shade)"/><rect width="1200" height="630" fill="url(#bottom)"/>
-<path d="M63 69 l9 -24" stroke="#e9884a" stroke-width="9" stroke-linecap="round"/>
-<text x="92" y="66" font-family="DejaVu Sans,sans-serif" font-size="17" font-weight="800" letter-spacing="1" fill="#ffffff">OPPORTUNITÀ IMPRENDITORIALE</text>
-<rect x="64" y="117" width="40" height="3" fill="#e9884a"/>
-<text x="119" y="123" font-family="DejaVu Sans,sans-serif" font-size="18" font-weight="700" letter-spacing="2.4" fill="#f7e9dc">CATANZARO LIDO</text>
-<text x="62" y="248" font-family="DejaVu Sans,sans-serif" font-size="69" font-weight="800" letter-spacing="-3.8" fill="#fffaf2">LOUNGE BAR</text>
-<text x="62" y="346" font-family="DejaVu Sans,sans-serif" font-size="88" font-weight="800" letter-spacing="-4.2" fill="#f09b62">IN VENDITA.</text>
-<rect x="63" y="382" width="485" height="1" fill="#c1a08d" opacity=".7"/>
-<text x="64" y="428" font-family="DejaVu Sans,sans-serif" font-size="20" font-weight="700" fill="#fff9f1">7 ANNI DI ATTIVITÀ</text>
-<text x="64" y="464" font-family="DejaVu Sans,sans-serif" font-size="19" fill="#f3e6d8">Clientela fidelizzata · Piazza con tavolini</text>
-<rect x="62" y="505" width="365" height="53" rx="4" fill="#bf5122"/>
-<text x="88" y="539" font-family="DejaVu Sans,sans-serif" font-size="18" font-weight="800" fill="#ffffff">DETTAGLI RISERVATI</text>
-<text x="1176" y="608" text-anchor="end" font-family="DejaVu Sans,sans-serif" font-size="12" font-weight="500" fill="#ffffff">Immagine del locale rielaborata digitalmente</text>
+<defs>
+ <linearGradient id="transition"><stop offset="0" stop-color="#fffaf4"/><stop offset=".7" stop-color="#fffaf4" stop-opacity=".75"/><stop offset="1" stop-color="#fffaf4" stop-opacity="0"/></linearGradient>
+ <linearGradient id="photofoot" x1="0" x2="0" y1="0" y2="1"><stop offset=".35" stop-color="#092434" stop-opacity="0"/><stop offset="1" stop-color="#092434" stop-opacity=".88"/></linearGradient>
+</defs>
+<rect x="535" width="205" height="630" fill="url(#transition)"/>
+<rect x="550" y="480" width="650" height="150" fill="url(#photofoot)"/>
+<rect x="52" y="48" width="8" height="39" rx="2" fill="#ef682d" transform="skewX(-13)"/>
+<text x="76" y="65" fill="#103148" font-family="DejaVu Sans,sans-serif" font-weight="800" font-size="17" letter-spacing=".3">OPPORTUNITÀ IMPRENDITORIALE</text>
+<rect x="54" y="132" width="34" height="3" fill="#ef682d"/>
+<text x="102" y="139" fill="#456274" font-family="DejaVu Sans,sans-serif" font-weight="700" font-size="16" letter-spacing="2">CATANZARO LIDO</text>
+<text x="49" y="258" fill="#103148" font-family="DejaVu Sans,sans-serif" font-weight="800" font-size="68" letter-spacing="-3">LOUNGE BAR</text>
+<text x="49" y="342" fill="#d64b16" font-family="DejaVu Sans,sans-serif" font-weight="800" font-size="74" letter-spacing="-3.5">IN VENDITA.</text>
+<path d="M54 379H514" stroke="#d1dfe3" stroke-width="2"/>
+<text x="55" y="421" fill="#24495a" font-family="DejaVu Sans,sans-serif" font-weight="700" font-size="19">7 ANNI DI ATTIVITÀ</text>
+<text x="55" y="457" fill="#42616f" font-family="DejaVu Sans,sans-serif" font-size="17">Clientela fidelizzata</text>
+<text x="55" y="484" fill="#42616f" font-family="DejaVu Sans,sans-serif" font-size="17">Piazza con tavolini</text>
+<rect x="54" y="529" width="356" height="56" rx="7" fill="#cb4610"/>
+<text x="73" y="564" fill="#fff" font-family="DejaVu Sans,sans-serif" font-weight="800" font-size="18" letter-spacing=".4">INFORMAZIONI RISERVATE</text>
+<text x="1175" y="601" text-anchor="end" fill="#fff" font-family="DejaVu Sans,sans-serif" font-weight="600" font-size="11">Immagine del locale rielaborata digitalmente</text>
 </svg>`;
-const file=await sharp(back).composite([{input:Buffer.from(svg)}]).jpeg({quality:87,mozjpeg:true,progressive:true}).toBuffer();
-const result=await sharp(file).metadata();
-if(result.width!==1200||result.height!==630||file.length<18000)throw Error('Invalid OG image');
-await writeFile(output,file);
-console.log('PRIVATE SALE 06 social image generated',output,result.width,result.height,file.length);
+const jpeg=await sharp(background).composite([{input:Buffer.from(svg)}]).jpeg({quality:91,mozjpeg:true,progressive:true}).toBuffer();
+const meta=await sharp(jpeg).metadata();
+if(meta.width!==W||meta.height!==H||meta.format!=='jpeg'||jpeg.length<25000)throw Error('WhatsApp card invalid');
+await writeFile('public/opportunita/og-social-v7.jpg',jpeg);
+// Preserve the old URL for WhatsApp caches and previously shared conversations.
+await writeFile('public/opportunita/og-social-v6.jpg',jpeg);
+console.log('Private Sale premium share artwork generated: 1200x630',jpeg.length,'bytes');
