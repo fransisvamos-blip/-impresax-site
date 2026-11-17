@@ -1,14 +1,17 @@
-name: ImpresaX Opportunity — V10 Approved Cyan Variant 1 Release
-# OWNER PAUSE: V10 cyan Variant 1 released; staging and production Chromium, images, social and lead privacy QA passed.
+name: ImpresaX Opportunity — V11 Render-Faithful Unified Layout
+# ONE-TIME user-authorized improvement matching approved first render. Re-pause after production QA.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-v11-render1-unified-20261117'
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ false }} # owner pause after approved cyan Variant 1 live QA
+    if: ${{ github.event_name == 'push' }} # one user-authorized render-fidelity release only
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -42,7 +45,7 @@ jobs:
           sleep 2
           curl -fsS --max-time 8 'http://127.0.0.1:8191/' >/dev/null
           QA_BASE_URL='http://127.0.0.1:8191/' node scripts/qa-private-sale.mjs
-      - name: Deploy User-Approved PRIVATE SALE 10 Cyan Variant 1
+      - name: Deploy V11 Render-Faithful Unified Navy Cyan Website
         id: production_deploy
         run: npx wrangler deploy --config wrangler.jsonc
       - name: Smoke-test production, exact sale positioning, assets and privacy
@@ -51,29 +54,23 @@ jobs:
           ready=0
           for attempt in {1..9}; do
             html=$(curl -fsSL --max-time 18 'https://opportunita.impresax.org/' || true)
-            if [[ "$html" == *'LOUNGE BAR'* ]] &&
-               [[ "$html" == *'CEDESI'* ]] &&
+            if [[ "$html" == *'CEDESI'* ]] &&
                [[ "$html" == *'LOUNGE BAR'* ]] &&
                [[ "$html" == *'VENDITA O GESTIONE?'* ]] &&
                [[ "$html" == *'Due formule per la stessa'* ]] &&
+               [[ "$html" == *'PRIVATE SALE 11 — VARIANT 1 / SINGLE SOURCE OF TRUTH'* ]] &&
                [[ "$html" == *'family=DM+Sans:wght@400'* ]] &&
                [[ "$html" == *'family=Plus+Jakarta+Sans:wght@500'* ]] &&
-               [[ "$html" == *'PRIVATE SALE 08 — CINEMATIC EDITORIAL'* ]] &&
-               [[ "$html" == *'PRIVATE SALE 09 — HIGH-CONTRAST MODERN HOSPITALITY'* ]] &&
-               [[ "$html" == *'PRIVATE SALE 09.2 — WARM LUXURY COLOR GRADE'* ]] &&
-               [[ "$html" == *'PRIVATE SALE 10 — VARIANTE 1 CYAN SIGNATURE'* ]] &&
-               [[ "$html" == *'Due formule per la stessa'* ]] &&
-               [[ "$html" != *'PRIVATE SALE 08.1 — PRECISION POLISH'* ]] &&
                [[ "$html" == *'class="story-photo"'* ]] &&
-               [[ "$html" == *'class="story-action"'* ]] &&
+               [[ "$html" == *'class="venue-inset"'* ]] &&
                [[ "$html" == *'class="proof-icon"'* ]] &&
-               [[ "$html" != *'Cormorant+Garamond'* ]] &&
+               [[ "$html" != *'PRIVATE SALE 10 — VARIANTE 1 CYAN SIGNATURE'* ]] &&
+               [[ "$html" != *'PRIVATE SALE 09 — HIGH-CONTRAST'* ]] &&
                [[ "$html" != *'Proposta di design dimostrativa'* ]] &&
                [[ "$html" == *'RICHIEDI I DETTAGLI DI VENDITA'* ]] &&
                [[ "$html" == *'og-social-v10.jpg'* ]] &&
                [[ "$html" == *"fetch('/api/interesse'"* ]] &&
                [[ "$html" == *'name="privacy_accepted"'* ]] &&
-               [[ "$html" != *'Concept 06'* ]] &&
                [[ "$html" != *'300.000'* ]]; then
               ready=1; break
             fi
@@ -113,6 +110,6 @@ jobs:
         if: ${{ failure() && steps.production_deploy.outcome == 'success' }}
         run: |
           echo 'PRODUCTION QA FAILED: restoring approved previous landing automatically'
-          cp backups/opportunita-v092-before-cyan-variant1-20261117.html public/opportunita/index.html
+          cp backups/opportunita-v10-before-unified-render1-20261117.html public/opportunita/index.html
           node scripts/build-opportunity-share.mjs
           npx wrangler deploy --config wrangler.jsonc
