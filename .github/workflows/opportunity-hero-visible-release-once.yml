@@ -1,10 +1,7 @@
 name: Opportunity — Visible Real-Photo Hero One-Time Release
-# One explicit user-requested publish only; no recurring trigger.
+# SEALED after successful one-time release and live 9-viewport QA; deployment automation disabled.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/opportunity-hero-visible-release-once.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,6 +11,7 @@ concurrency:
 
 jobs:
   release:
+    if: ${{ false }} # owner-requested release completed and verified
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
