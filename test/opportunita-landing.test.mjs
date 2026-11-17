@@ -154,3 +154,30 @@ test('V6.2 actual single-font Manrope, CEDESI LOUNGE BAR and immediate 2-formula
  assert.ok(hero<sale&&sale<story);
  assert.match(html,/fetch\('\/api\/interesse'/);
 });
+
+test('V6.3 each section has its own consistent premium visual treatment',()=>{
+ assert.match(css,/V6\.3 SECTION-BY-SECTION ART DIRECTION/);
+ assert.match(html,/class="deal-strap" aria-hidden="true"/);
+ assert.match(html,/class="deal-option-index" aria-hidden="true">01/);
+ assert.match(html,/class="deal-option-index" aria-hidden="true">02/);
+ assert.match(html,/class="story-number" aria-hidden="true">01/);
+ assert.match(html,/class="story-number" aria-hidden="true">02/);
+ assert.match(html,/class="story-action"/);
+ assert.match(html,/href="#contatto" data-pref="vendita">RICHIEDI INFORMAZIONI/);
+ assert.match(html,/TRATTATIVA RISERVATA/);
+ assert.match(css,/\.hero\{background:linear-gradient\(155deg,#fffefa/);
+ assert.match(css,/\.deal\{background:linear-gradient\(165deg,#fffdfa/);
+ assert.match(css,/\.editorial\{background:radial-gradient\(ellipse at 100% 25%,#174762/);
+ assert.match(css,/\.process\{background:#fcfcfa/);
+ assert.match(css,/\.contact\{background:linear-gradient\(130deg,#0c3148/);
+ assert.match(css,/\.process-num\{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:#113d56;color:#fff/);
+ assert.match(css,/\.process-step:first-child \.process-num\{background:#c94b18/);
+ assert.match(css,/\.choice-group button\[aria-pressed=true\]\{background:#113d55/);
+ assert.match(css,/\.form-field input\{min-height:56px/);
+ assert.match(css,/@media\(max-width:980px\)/);
+ assert.match(css,/@media\(max-width:640px\)/);
+ assert.match(css,/@media\(max-width:360px\)/);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.equal((html.match(/<section\b/g)||[]).length,5);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+});
