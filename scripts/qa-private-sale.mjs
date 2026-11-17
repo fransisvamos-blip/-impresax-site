@@ -26,18 +26,31 @@ try{
    if(!resp||resp.status()!==200)throw Error('Landing HTTP '+resp?.status());
    await page.waitForFunction(()=>document.querySelector('.hero-photo')?.complete&&document.querySelector('.hero-photo')?.naturalWidth>0,null,{timeout:18000});
    const audit=await page.evaluate(()=>{
-     const selectors=['.brand','.hero h1','.hero-sub','.hero-actions','.deal-title h2','.deal-main h3','.deal-alt h3','.contact-intro h2','.form-button'];
+     const selectors=['.brand','.hero h1','.hero-sub','.hero-actions','.deal-title h2','.deal-main h3','.deal-alt h3','.editorial-heading h2','.story-action a','.process-top h2','.contact-intro h2','.form-button'];
      const broken=selectors.map(s=>{const el=document.querySelector(s),r=el?.getBoundingClientRect();return {s,r};}).filter(x=>!x.r||x.r.right>innerWidth+3||x.r.left< -3).map(x=>x.s);
      const heroCTA=document.querySelector('.hero-actions .btn-orange').getBoundingClientRect();
      const inputs=[...document.querySelectorAll('.form-field input')].map(el=>parseFloat(getComputedStyle(el).fontSize));
      return {w:innerWidth,scroll:document.documentElement.scrollWidth,body:document.body.scrollWidth,chapters:document.querySelectorAll('main>section').length,
        headline:document.querySelector('h1')?.textContent.replace(/\s+/g,' ').trim(),broken,heroCtaBottom:heroCTA.bottom,inputs,
        primaryHref:document.querySelector('.hero-actions .btn-orange')?.getAttribute('href'),
-       heroImage:document.querySelector('.hero-photo')?.naturalWidth};
+       heroImage:document.querySelector('.hero-photo')?.naturalWidth,
+       storyBg:getComputedStyle(document.querySelector('.editorial')).backgroundImage,
+       offerBg:getComputedStyle(document.querySelector('.deal')).backgroundImage,
+       stepNumbers:[...document.querySelectorAll('.process-num')].map(e=>({text:e.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,width:e.getBoundingClientRect().width})),
+       storyAction:document.querySelector('.story-action a')?.getAttribute('href'),
+       formBg:getComputedStyle(document.querySelector('.demo-form')).backgroundColor};
    });
    if(audit.scroll>width+3||audit.body>width+3)throw Error('horizontal overflow '+JSON.stringify(audit));
    if(audit.broken.length)throw Error('clipped essentials '+JSON.stringify(audit.broken));
    if(audit.chapters!==5)throw Error('Expected five chapters');
+   if(audit.stepNumbers.length!==3)throw Error('Expected 3 readable steps');
+   for(const badge of audit.stepNumbers){
+     if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.color===badge.bg)throw Error('Unclear step number '+JSON.stringify(badge));
+   }
+   if(!audit.offerBg.includes('linear-gradient'))throw Error('Offer not premium designed');
+   if(!audit.storyBg.includes('radial-gradient'))throw Error('Story not immersive');
+   if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
+   if(audit.formBg==='rgba(0, 0, 0, 0)')throw Error('Contact form surface missing');
    if(audit.headline!=='CEDESI LOUNGE BAR')throw Error('Cedesi Lounge Bar missing: '+audit.headline);
    if(audit.primaryHref!=='#contatto')throw Error('CTA not pointing to contact');
    if(!await page.locator('#deal-heading').textContent().then(t=>t.replace(/\s+/g,' ').includes('VENDITA O GESTIONE?')))throw Error('Two-formula section missing');
