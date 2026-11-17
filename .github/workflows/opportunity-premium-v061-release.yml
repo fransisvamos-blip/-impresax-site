@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-visual-sections-v63-20261117'
+      - 'public/opportunita/.release-visual-sections-v63b-20261117'
 
 permissions:
   contents: read
@@ -76,8 +76,15 @@ jobs:
           done
           test "$ready" = '1'
           for asset in 'hero-lounge-desktop-v1.webp' 'hero-lounge-mobile-v1.webp' 'story-serata-desktop-v2.webp' 'story-serata-mobile-v2.webp' 'og-social-v7.jpg'; do
-            curl -fsS --max-time 20 "https://opportunita.impresax.org/$asset" -o "/tmp/$asset"
-            test "$(wc -c < "/tmp/$asset")" -gt 15000
+            asset_ready=0
+            for attempt in {1..12}; do
+              code=$(curl -L -sS --max-time 20 -o "/tmp/$asset" -w '%{http_code}' "https://opportunita.impresax.org/$asset" || true)
+              size=$(wc -c < "/tmp/$asset" 2>/dev/null || echo 0)
+              echo "ASSET PROBE $asset attempt=$attempt code=$code bytes=$size"
+              if [[ "$code" == "200" ]] && (( size > 15000 )); then asset_ready=1; break; fi
+              sleep 3
+            done
+            test "$asset_ready" = "1"
           done
           curl -fsSL --max-time 18 'https://opportunita.impresax.org/privacy' | grep -q 'Informativa sulla privacy'
           node -e "import('sharp').then(async({default:sharp})=>{const m=await sharp('/tmp/og-social-v7.jpg').metadata();if(m.width!==1200||m.height!==630)process.exit(1);console.log('Live social',m.width,m.height)})"
