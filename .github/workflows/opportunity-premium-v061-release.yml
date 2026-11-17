@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-v10b-cyan-variant1-20261117'
+      - 'public/opportunita/.release-v10c-cyan-variant1-20261117'
 
 permissions:
   contents: read
