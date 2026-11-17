@@ -1,10 +1,7 @@
 name: Opportunity — Real Venue Panoramic Hero (One Time)
-# Strictly first-party source photo. Anonymized and extended by optical compositing, never generative AI.
+# SEALED after successful real-venue panorama deployment, QA and privacy verification; no automatic runs.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/opportunity-real-panorama-once.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,7 +12,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ github.event.head_commit.message == 'venue-photo-route-fix' }}
+    if: ${{ false }} # completed and verified one-time publication, not scheduled
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
