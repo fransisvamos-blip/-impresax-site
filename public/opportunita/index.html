@@ -25,7 +25,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700;800&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
-<meta name="description" content="Proposta di design dimostrativa per la vendita di un'attività commerciale avviata a Catanzaro Lido. Nessun dato viene inviato.">
 <style>
 :root{--ink:#11232b;--black:#09181d;--cream:#f3f0e9;--paper:#faf8f3;--white:#fff;--orange:#bf5122;--copper:#df8c59;--muted:#626f72;--line:#dedbd1;--sans:'Cabin','Arial',sans-serif;--serif:'EB Garamond',Georgia,serif}
 *{box-sizing:border-box}
@@ -297,13 +296,193 @@ img{max-width:100%}
 .hero-photo-wrap source{display:none}
 .hero-photo-wrap img{width:100%;height:100%}
 @media(max-width:640px){.hero-photo-wrap{inset:0}.stage-photo picture{height:100%}.choice-group button{min-height:48px}.form-field input{min-height:54px;font-size:16px}.form-button{min-height:55px}.footer a{min-height:38px}.mobile-bar a{min-height:52px}}
+
+/* PRIVATE SALE 06.1 — LIVE PREMIUM UPGRADE • stronger contrast + sale-first funnel.
+   Desktop & mobile refinement of the actual published landing; original photo and form preserved. */
+:root{--ink:#103148;--black:#092434;--cream:#fffaf4;--paper:#fffefd;--white:#ffffff;--orange:#cb4610;--copper:#f2672b;--muted:#4f6671;--line:#dbe4e7}
+body{background:var(--cream)}
+.topbar{position:sticky;top:0;height:76px;background:#fffefdF5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid #dce4e5}
+.brand-name{color:#103148;font-weight:800;letter-spacing:-.036em}
+.brand-mark{background:#f2672b}
+.nav a{color:#193f52}
+.nav a:hover{color:#c44311}
+.header-cta{background:#103148;border-radius:7px}
+.header-cta:hover{background:#0c425e}
+.btn-orange,.mobile-bar a{background:#cb4610;color:#fff;border-radius:8px;box-shadow:0 10px 24px #cb46101f}
+.btn-orange:hover,.mobile-bar a:hover{background:#b93e0c}
+.hero{background:#fffaf4;color:#103148;min-height:0;isolation:isolate}
+.hero:before,.hero:after{display:none}
+.hero-photo-wrap{position:absolute;z-index:0;inset:24px clamp(22px,3.5vw,58px) 116px 50%;width:auto;height:auto;border-radius:16px;box-shadow:0 20px 45px #0e304325;overflow:hidden}
+.hero-photo{width:100%;height:100%;object-position:53% 48%;filter:saturate(1.13) contrast(1.045) brightness(1.055)}
+.hero-core{position:relative;z-index:1;min-height:618px;padding:56px 0 64px;justify-content:center;align-items:flex-start}
+.hero-kicker{color:#506c7a;font-size:11px;letter-spacing:.11em;max-width:48%;margin-bottom:21px}
+.hero-kicker:before{background:#e95e24}
+.hero h1{font-size:clamp(61px,5.9vw,91px);line-height:.99;max-width:48%;letter-spacing:-.073em;margin-bottom:23px}
+.hero h1 .sale{color:#103148}
+.hero h1 .accent{color:#dc4f15}
+.hero-sub{font-size:17px;color:#314b5a;max-width:min(550px,47%);line-height:1.6;margin-bottom:25px;font-weight:500}
+.hero-sub strong{font-weight:800;color:#103148}
+.hero-actions{max-width:48%;gap:15px 22px}
+.hero-actions .btn-orange{min-height:59px;padding:17px 20px}
+.hero-secondary{color:#20475b;border-color:#aebfc6;font-size:12px}
+.hero-secondary:hover{color:#bd4211}
+.hero-foot{position:relative;bottom:auto;left:auto;right:auto;background:#103148;backdrop-filter:none;border:0;z-index:2}
+.hero-foot-inner{min-height:112px}
+.hero-proof{border-color:#ffffff3b}
+.hero-proof strong{color:#fff;font-size:14px}
+.hero-proof small{color:#e2edf1;font-size:11px}
+.proof-symbol{background:#f2672b}
+.proof-figure{color:#ff9159}
+.photo-disclaimer{z-index:2;right:clamp(30px,4.1vw,70px);bottom:133px;border-radius:5px;font-size:10px;background:#062537c9;color:#fff}
+.deal{padding:90px 0 97px;background:#fffefd}
+.deal-title{margin-bottom:31px;gap:34px}
+.deal-title h2{font-size:clamp(45px,5vw,71px);line-height:1.05}
+.deal-title h2 em{color:#dc4f15}
+.deal-title p{color:#3d5968;max-width:365px;font-size:14px}
+.section-no{color:#466474}
+.section-no:before{background:#ed6227}
+.deal-grid{grid-template-columns:1.38fr 1fr;gap:17px}
+.deal-main{min-height:370px;background:linear-gradient(125deg,#123b55 0%,#0d2f47 60%,#092333 100%);border-top:5px solid #ee6026;border-radius:15px;padding:35px 39px 31px;box-shadow:0 18px 40px #0c335019}
+.deal-main:before{width:560px;height:560px;right:-29%;bottom:-85%}
+.deal-main h3{font-size:clamp(43px,4.6vw,66px);margin:24px 0 11px;line-height:1.05}
+.deal-main p{font-size:15px;max-width:500px;line-height:1.55;margin-bottom:18px}
+.deal-main .mini{color:#ffb184;font-size:10px}
+.deal-main small{color:#e0eff4;margin-top:13px}
+.deal-alt{min-height:370px;background:#fff8f0;border:1px solid #e7d8ca;border-radius:15px;padding:36px 34px;box-shadow:0 9px 22px #24394a0a}
+.deal-alt h3{font-size:clamp(42px,4.1vw,60px);margin:32px 0 13px}
+.deal-alt p{font-size:15px;line-height:1.6}
+.deal-alt a{color:#173b50;font-size:11px}
+.editorial{background:#f4f8f8;padding:90px 0 93px}
+.editorial-head{margin-bottom:32px;gap:45px}
+.editorial-heading h2{font-size:clamp(43px,4.5vw,68px);margin-top:15px}
+.editorial-heading h2 em{color:#cb4610}
+.editorial-head>p{font-size:17px;color:#345362;line-height:1.65}
+.editorial-stage{min-height:420px;grid-template-columns:.7fr 1.3fr;box-shadow:0 20px 44px #193f4b0e;border-radius:15px;overflow:hidden}
+.editorial-count{background:#e7eff1;padding:30px 38px}
+.massive-seven{font-size:clamp(160px,20vw,290px);color:#cd4917;line-height:.84}
+.editorial-count>p{font-size:15px;line-height:1.55}
+.stage-photo{min-height:420px}
+.stage-photo img{filter:saturate(1.11) contrast(1.045)}
+.section-footnote{color:#526b78}
+.story-after{margin-top:37px;padding-top:24px;gap:32px;border-color:#cbd8da}
+.story-after h3{color:#12374d}
+.story-after p{color:#496475}
+.process{padding:77px 0 84px;background:#fffefd}
+.process-top{margin-bottom:29px}
+.process-top h2{font-size:clamp(42px,4.4vw,64px)}
+.process-top p{color:#456070}
+.process-grid{border-top:2px solid #d4e0e3}
+.process-step{padding-top:24px;min-height:170px}
+.process-step:not(:first-child){padding-left:26px}
+.process-num{color:#cb4610;font-family:var(--sans);font-size:38px;font-weight:800;letter-spacing:-.06em}
+.process-step h3{margin:11px 0 7px;color:#163b51}
+.process-step p{color:#456070}
+.contact{background:linear-gradient(135deg,#123a53,#082638);padding:90px 0 99px}
+.contact-intro .section-no{color:#f6aa7e}
+.contact-intro h2{font-size:clamp(49px,5.2vw,78px);margin:22px 0 20px}
+.contact-intro h2 em{color:#ffae80}
+.contact-intro p{color:#d9e7ec}
+.contact-intro .assurance{color:#e6f0f4}
+.contact-grid{gap:clamp(35px,6vw,96px)}
+.demo-form{background:#fffdfa;border-radius:13px;padding:34px 36px;box-shadow:0 22px 60px #081e2940}
+.demo-form h3{color:#103148}
+.choice-group button{border-radius:6px}
+.choice-group button[aria-pressed=true]{background:#103148;border-color:#103148}
+.form-field input{border:1px solid #b9c8cf;border-radius:6px;min-height:54px}
+.form-field input:focus{border-color:#cb4610;outline:2px solid #cb461036}
+.privacy-check a{color:#b43e10;font-weight:700}
+.form-button{box-shadow:none}
+.footer{background:#082638}
+@media(max-width:980px){
+ .hero{display:flex;flex-direction:column}
+ .hero-core{order:0;width:calc(100% - 66px);min-height:0;padding:40px 0 30px;align-items:flex-start}
+ .hero-kicker,.hero h1,.hero-sub,.hero-actions{max-width:100%}
+ .hero h1{font-size:clamp(62px,9vw,83px);margin:0 0 20px}
+ .hero-sub{font-size:16px;max-width:690px}
+ .hero-photo-wrap{order:1;position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;width:calc(100% - 66px);height:320px;margin:0 auto;z-index:1;border-radius:14px;box-shadow:none}
+ .photo-disclaimer{order:2;position:relative;right:auto;bottom:auto;margin:4px 33px 11px 0;align-self:flex-end;color:#57717f;background:transparent;padding:2px 0}
+ .hero-foot{order:3;position:relative}
+ .deal-grid{grid-template-columns:1.1fr 1fr}
+ .deal-main,.deal-alt{min-height:355px}
+ .deal-main h3{font-size:clamp(41px,5.1vw,57px)}
+ .deal-alt h3{font-size:clamp(38px,5vw,54px)}
+ .editorial-stage{grid-template-columns:.75fr 1.25fr}
+ .editorial-head{gap:30px}
+ .massive-seven{font-size:clamp(150px,20vw,240px)}
+}
+@media(max-width:640px){
+ html{scroll-padding-top:68px}
+ .topbar{height:64px}
+ .hero-core{width:calc(100% - 34px);padding:29px 0 18px}
+ .hero-kicker{font-size:9px;margin:0 0 16px;letter-spacing:.065em}
+ .hero h1{font-size:clamp(45px,12vw,68px);line-height:.98;margin:0 0 16px}
+ .hero-sub{font-size:14px;line-height:1.56;margin:0 0 17px}
+ .hero-actions{width:100%;gap:12px}
+ .hero-actions .btn-orange{width:100%;font-size:11px;min-height:55px;padding:12px 14px}
+ .hero-secondary{margin-bottom:4px;font-size:11px}
+ .hero-photo-wrap{width:calc(100% - 34px);height:clamp(205px,58vw,290px);border-radius:10px}
+ .hero-photo{object-position:49% 49%}
+ .photo-disclaimer{font-size:9px;margin:5px 17px 10px 0}
+ .hero-foot-inner{min-height:124px;padding:11px 0}
+ .hero-proof{min-height:53px;padding:3px 8px}
+ .hero-proof:first-child{padding-left:0}
+ .hero-proof strong{font-size:11px}
+ .hero-proof small{font-size:10px}
+ .proof-figure{font-size:56px}
+ .deal{padding:49px 0 57px}
+ .deal-title{margin-bottom:21px}
+ .deal-title h2{font-size:clamp(35px,9.5vw,55px)}
+ .deal-title p{font-size:13px}
+ .deal-grid{grid-template-columns:1fr;gap:12px}
+ .deal-main{min-height:350px;padding:25px 23px 24px}
+ .deal-main h3{font-size:clamp(43px,10.5vw,58px);margin:22px 0 13px}
+ .deal-main p{font-size:14px}
+ .deal-main .btn-orange{font-size:11px;min-height:53px}
+ .deal-alt{min-height:250px;padding:24px 23px}
+ .deal-alt h3{margin:20px 0 11px;font-size:clamp(42px,10vw,55px)}
+ .deal-alt p{font-size:14px}
+ .editorial{padding:55px 0 59px}
+ .editorial-head{margin-bottom:21px}
+ .editorial-heading h2{font-size:clamp(42px,10vw,58px)}
+ .editorial-head>p{font-size:14px}
+ .editorial-stage{grid-template-columns:1fr;min-height:0;border-radius:12px}
+ .editorial-count{min-height:215px;padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:0 6px}
+ .editorial-count .count-label{grid-column:1 / -1;align-self:start}
+ .massive-seven{font-size:clamp(117px,35vw,185px);align-self:center;margin:0}
+ .editorial-count>p{font-size:13px;align-self:center}
+ .stage-photo{min-height:245px}
+ .story-after{margin-top:24px}
+ .process{padding:52px 0 56px}
+ .process-top h2{font-size:clamp(35px,8.4vw,47px)}
+ .process-step,.process-step:not(:first-child){padding:16px 0;min-height:0}
+ .process-num{font-size:33px}
+ .process-step h3{font-size:15px}
+ .process-step p{font-size:12px}
+ .contact{padding:56px 0 65px}
+ .contact-intro h2{font-size:clamp(43px,10.4vw,58px)}
+ .demo-form{padding:24px 20px}
+ .footer{padding-bottom:90px}
+ .mobile-bar{background:#fffefdf5}
+ .mobile-bar a{border-radius:7px;background:#cb4610}
+}
+@media(max-width:360px){
+ .hero h1{font-size:clamp(40px,12.4vw,45px)}
+ .hero-core{padding-top:24px}
+ .hero-kicker{font-size:8px}
+ .hero-proof strong{font-size:10px}
+ .editorial-count{padding:17px}
+ .massive-seven{font-size:110px}
+ .deal-main h3{font-size:42px}
+ .deal-alt h3{font-size:43px}
+}
+
 </style>
 </head>
 <body>
 <header class="topbar" id="page-top">
  <div class="header-inner">
   <a class="brand" href="#page-top" aria-label="Opportunità Imprenditoriale, torna all'inizio"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name"><span>OPPORTUNITÀ</span><span>IMPRENDITORIALE</span></span></a>
-  <nav class="nav" id="nav" aria-label="Navigazione principale"><a href="#locale">IL LOCALE</a><a href="#vendita">LA VENDITA</a><a href="#come-funziona">COME FUNZIONA</a></nav>
+  <nav class="nav" id="nav" aria-label="Navigazione principale"><a href="#vendita">LA VENDITA</a><a href="#locale">IL LOCALE</a><a href="#come-funziona">COME FUNZIONA</a></nav>
   <a class="header-cta" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI <span aria-hidden="true">↗</span></a>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Apri il menu">☰</button>
  </div>
@@ -312,9 +491,9 @@ img{max-width:100%}
 <section class="hero" id="inizio" aria-labelledby="hero-heading">
  <picture class="hero-photo-wrap"><source type="image/webp" media="(max-width:640px)" srcset="/hero-lounge-mobile-v1.webp"><source type="image/webp" srcset="/hero-lounge-desktop-v1.webp"><img class="hero-photo" src="/hero-lounge-scene-v1.jpg" alt="Piazza con tavolini sotto un albero illuminato, immagine rielaborata digitalmente a partire da una fotografia fornita del locale" width="1254" height="1254" fetchpriority="high" decoding="async"></picture>
  <div class="container hero-core">
-  <div class="hero-kicker">CATANZARO LIDO <span aria-hidden="true">/</span> ATTIVITÀ COMMERCIALE</div>
+  <div class="hero-kicker">CATANZARO LIDO <span aria-hidden="true">/</span> VENDITA DI ATTIVITÀ COMMERCIALE</div>
   <h1 id="hero-heading"><span class="sale">LOUNGE BAR</span><span class="accent">IN VENDITA.</span></h1>
-  <p class="hero-sub">Sette anni di attività, clientela fidelizzata e una piazza con sedie e tavolini nel cuore della movida universitaria.</p>
+  <p class="hero-sub">Nel cuore della movida universitaria: <strong>7 anni di attività</strong>, clientela fidelizzata e una piazza con sedie e tavolini.</p>
   <div class="hero-actions"><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><a class="hero-secondary" href="#vendita">Valuti anche la gestione? <span aria-hidden="true">↗</span></a></div>
  </div>
  <div class="photo-disclaimer">Immagine rielaborata digitalmente</div>
@@ -324,11 +503,20 @@ img{max-width:100%}
   <div class="hero-proof"><span class="proof-symbol" aria-hidden="true"></span><span><strong>PIAZZA CON TAVOLINI</strong><small>Movida universitaria</small></span></div>
  </div></div>
 </section>
+<section class="deal" id="vendita" aria-labelledby="deal-heading">
+ <div class="container">
+  <div class="deal-title"><div><span class="section-no">01 / IN VENDITA</span><h2 id="deal-heading">L'ATTIVITÀ È <em>IN VENDITA.</em></h2></div><p>La proposta riguarda la vendita dell’attività commerciale. È possibile richiedere informazioni riservate anche su un’eventuale gestione.</p></div>
+  <div class="deal-grid">
+   <article class="deal-main"><span class="mini">PROPOSTA PRINCIPALE / VENDITA</span><h3>ACQUISTA<br>L'ATTIVITÀ.</h3><p>Valuta l'acquisto di un lounge bar già avviato, con una storia commerciale e una clientela costruita nel tempo.</p><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><small>La vendita riguarda l'attività commerciale, non la proprietà dell'immobile.</small></article>
+   <aside class="deal-alt"><span class="mini">FORMULA ALTERNATIVA / GESTIONE</span><h3>VALUTI<br>LA GESTIONE?</h3><p>Puoi indicare il tuo interesse per una gestione dell'attività. Le eventuali condizioni vengono discusse privatamente.</p><a href="#contatto" data-pref="gestione">CHIEDI INFORMAZIONI SULLA GESTIONE <span aria-hidden="true">↗</span></a></aside>
+  </div>
+ </div>
+</section>
 <section class="editorial" id="locale" aria-labelledby="editorial-heading">
  <div class="container">
   <div class="editorial-head">
-   <div class="editorial-heading"><span class="section-no">01 / IL LOCALE</span><h2 id="editorial-heading">NON PARTI<br>DA ZERO.<em>Parti da una storia.</em></h2></div>
-   <p>La proposta riguarda un lounge bar già operativo a Catanzaro Lido. Un'attività che, secondo i titolari, ha costruito una propria clientela nel corso degli anni.</p>
+   <div class="editorial-heading"><span class="section-no">02 / IL LOCALE</span><h2 id="editorial-heading">NON PARTI<br>DA ZERO.<em>Parti da una storia.</em></h2></div>
+   <p>Una piazza vissuta, tavolini all’aperto e serate che raccontano la vita del locale. La storia dell’attività, secondo i titolari, dura da sette anni.</p>
   </div>
   <div class="editorial-stage">
    <div class="editorial-count"><span class="count-label">ATTIVITÀ AVVIATA</span><span class="massive-seven">7</span><p><b>Anni di attività.</b> Una storia imprenditoriale da conoscere e valutare attraverso le informazioni disponibili.</p></div>
@@ -338,15 +526,6 @@ img{max-width:100%}
   <div class="story-after">
    <div><b>↗</b><div><h3>Nel cuore della movida universitaria</h3><p>Un contesto serale riconoscibile, nella zona di Catanzaro Lido indicata dai titolari.</p></div></div>
    <div><b>↗</b><div><h3>Una piazza con sedie e tavolini</h3><p>Uno spazio esterno che contribuisce all'atmosfera del locale. Disponibilità e titoli d'uso da verificare.</p></div></div>
-  </div>
- </div>
-</section>
-<section class="deal" id="vendita" aria-labelledby="deal-heading">
- <div class="container">
-  <div class="deal-title"><div><span class="section-no">02 / LA PROPOSTA</span><h2 id="deal-heading">L'ATTIVITÀ È <em>IN VENDITA.</em></h2></div><p>La vendita è la proposta principale. È possibile manifestare interesse anche per una formula di gestione.</p></div>
-  <div class="deal-grid">
-   <article class="deal-main"><span class="mini">PROPOSTA PRINCIPALE / VENDITA</span><h3>ACQUISTA<br>L'ATTIVITÀ.</h3><p>Valuta l'acquisto di un lounge bar già avviato, con una storia commerciale e una clientela costruita nel tempo.</p><a class="btn-orange" href="#contatto" data-pref="vendita">RICHIEDI I DETTAGLI DI VENDITA <span class="arr" aria-hidden="true">↗</span></a><small>La vendita riguarda l'attività commerciale, non la proprietà dell'immobile.</small></article>
-   <aside class="deal-alt"><span class="mini">FORMULA ALTERNATIVA / GESTIONE</span><h3>VALUTI<br>LA GESTIONE?</h3><p>Puoi indicare il tuo interesse per una gestione dell'attività. Le eventuali condizioni vengono discusse privatamente.</p><a href="#contatto" data-pref="gestione">CHIEDI INFORMAZIONI SULLA GESTIONE <span aria-hidden="true">↗</span></a></aside>
   </div>
  </div>
 </section>
