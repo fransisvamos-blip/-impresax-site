@@ -3,3 +3,5 @@ Owner-authorized V9 responsive gate for true 320px mobile layout; heading min-co
 320px staging screenshot and layout geometry diagnostic before production gate.
 
 V9.1 refines the approved new high-contrast art direction with Plus Jakarta Sans instead of experimental Syne after review of desktop/mobile screenshots. Preflight all widths before deployment.
+
+Retry after removing spurious SIGPIPE from privacy smoke test; staged V9.1 browser QA previously passed all nine viewport widths.
