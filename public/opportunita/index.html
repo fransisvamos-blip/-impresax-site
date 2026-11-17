@@ -734,6 +734,34 @@ a,button{transition:background .2s ease,color .2s ease,border-color .2s ease,tra
  .deal-head h3{font-size:23px}
  .deal-title h2{font-size:36px}
 }
+
+/* V9 verified Syne glyph fitting: prevent intrinsic min-width expansion at 320px and 1600px. */
+.hero h1 .accent{font-size:.74em;letter-spacing:-.068em}
+@media(max-width:760px){
+ .editorial{grid-template-columns:minmax(0,1fr)}
+ .story-photo,.story-copy{min-width:0;width:100%}
+ .contact-grid{grid-template-columns:minmax(0,1fr)}
+ .contact-intro,.demo-form{min-width:0;max-width:100%}
+ .deal-grid{min-width:0}
+}
+@media(max-width:480px){
+ .hero h1 .accent{font-size:.63em;letter-spacing:-.078em}
+ .deal-layout,.deal-title,.deal-grid{min-width:0}
+ .deal-grid{grid-template-columns:minmax(0,1fr)}
+ .story-copy h2{overflow-wrap:break-word}
+ .contact-intro h2{font-size:clamp(34px,8.6vw,45px);overflow-wrap:break-word}
+ .demo-form{width:100%;padding:25px 17px}
+ .choice-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .choice-group button{min-width:0;white-space:normal;overflow-wrap:anywhere;letter-spacing:-.02em;font-size:9.5px;padding:8px 4px}
+ .form-grid{grid-template-columns:minmax(0,1fr)}
+ .form-field{min-width:0}
+}
+@media(max-width:360px){
+ .hero h1 .accent{font-size:.61em}
+ .story-copy h2{font-size:33px}
+ .contact-intro h2{font-size:34px}
+ .choice-group button{font-size:9px}
+}
 </style>
 </head>
 <body>
