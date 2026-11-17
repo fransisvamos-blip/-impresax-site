@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-cedesi-manrope-v62-20261117'
+      - 'public/opportunita/.release-cedesi-manrope-v62b-20261117'
 
 permissions:
   contents: read
