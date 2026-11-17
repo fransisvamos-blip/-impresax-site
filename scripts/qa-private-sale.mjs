@@ -26,6 +26,9 @@ try{
    if(!resp||resp.status()!==200)throw Error('Landing HTTP '+resp?.status());
    await page.waitForFunction(()=>document.querySelector('.hero-photo')?.complete&&document.querySelector('.hero-photo')?.naturalWidth>0,null,{timeout:18000});
    await page.evaluate(()=>document.fonts.ready);
+   if(width===320){
+     await page.screenshot({path:shots+'/staged-320-diagnostic.png',fullPage:true,animations:'disabled',timeout:30000});
+   }
    const audit=await page.evaluate(()=>{
      const selectors=['.brand','.hero h1','.hero-sub','.hero-actions','.deal-title h2','.deal-main h3','.deal-alt h3','.story-copy h2','.story-action a','.process-top h2','.contact-intro h2','.form-button'];
      const broken=selectors.map(s=>{const el=document.querySelector(s),r=el?.getBoundingClientRect();return {s,r};}).filter(x=>!x.r||x.r.right>innerWidth+3||x.r.left< -3).map(x=>x.s);
@@ -43,6 +46,7 @@ try{
        heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
        accentOverflow:(()=>{const e=document.querySelector('.hero h1 .accent');return e.scrollWidth>e.clientWidth+3})(),
        physicalWidth:screen.width,
+       rootGeometry:{innerWidth:innerWidth,visualWidth:visualViewport?.width,docClient:document.documentElement.clientWidth,docWidth:document.documentElement.getBoundingClientRect().width,bodyClient:document.body.clientWidth,bodyRect:document.body.getBoundingClientRect().width,viewportMeta:document.querySelector('meta[name="viewport"]')?.content,match360:matchMedia('(max-width:360px)').matches},
        headingMetrics:[...document.querySelectorAll('.hero h1,.hero h1 .sale,.hero h1 .accent,.deal-main h3')].map(e=>({text:e.textContent.trim(),font:getComputedStyle(e).fontSize,client:e.clientWidth,scroll:e.scrollWidth,left:Math.round(e.getBoundingClientRect().left),right:Math.round(e.getBoundingClientRect().right),cssWidth:getComputedStyle(e).width})),
        overflowingNodes:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>1&&r.right>screen.width+3&&getComputedStyle(e).display!=='none'}).slice(0,22).map(e=>({tag:e.tagName,cls:typeof e.className==='string'?e.className.slice(0,40):'',right:Math.round(e.getBoundingClientRect().right),scroll:e.scrollWidth,client:e.clientWidth})),
        inputBackground:getComputedStyle(document.querySelector('.form-field input')).backgroundColor,
