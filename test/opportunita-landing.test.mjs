@@ -10,7 +10,7 @@ const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??'';
 const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
 
 test('PRIVATE SALE 06: owner-approved clear sale-led message and five chapters',()=>{
- assert.match(html,/<h1 id="hero-heading"><span class="sale">LOUNGE BAR<\/span><span class="accent">IN VENDITA\.<\/span><\/h1>/);
+ assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span><span class="accent">LOUNGE BAR<\/span><\/h1>/);
  assert.match(html,/<div class="hero-kicker">CATANZARO LIDO/);
  assert.match(html,/RICHIEDI I DETTAGLI DI VENDITA/);
  assert.match(html,/07<\/span>/);
@@ -28,7 +28,7 @@ test('PRIVATE SALE 06: owner-approved clear sale-led message and five chapters',
 test('approved visual identity: warm editorial PRIVATE SALE 06, primary sale and secondary management',()=>{
  assert.match(css,/--ink:#11232b/);
  assert.match(css,/--orange:#bf5122/);
- assert.match(css,/--serif:'EB Garamond'/);
+ assert.match(css,/--serif:'Manrope'/);
  assert.match(css,/\.hero h1\{font-size:clamp\(63px,7\.4vw,121px\)/);
  assert.match(css,/\.deal-grid\{display:grid;grid-template-columns:1\.54fr 1fr/);
  assert.match(html,/<article class="deal-main">/);
@@ -109,7 +109,7 @@ test('V6.1 sale-first premium conversion hierarchy replaces muted dark photo ove
  assert.match(html,/01 \/ IN VENDITA/);
  assert.match(html,/02 \/ IL LOCALE/);
  assert.match(html,/VENDITA DI ATTIVITÀ COMMERCIALE/);
- assert.match(html,/Nel cuore della movida universitaria: <strong>7 anni di attività<\/strong>/);
+ assert.match(html,/Nel cuore di Catanzaro Lido: <strong>7 anni di attività<\/strong>/);
  assert.match(css,/PRIVATE SALE 06\.1 — LIVE PREMIUM UPGRADE/);
  assert.match(css,/:root\{--ink:#103148;--black:#092434;--cream:#fffaf4/);
  assert.match(css,/--orange:#cb4610/);
@@ -133,4 +133,24 @@ test('vibrant WhatsApp preview, current privacy/real form and rollback assets',(
  assert.match(js,/fetch\('\/api\/interesse'/);
  assert.match(worker,/insert into public\.activity_sale_leads/);
  assert.equal((html.match(/<section\b/g)||[]).length,5);
+});
+
+test('V6.2 actual single-font Manrope, CEDESI LOUNGE BAR and immediate 2-formula offer',()=>{
+ assert.match(html,/fonts\.googleapis\.com\/css2\?family=Manrope:wght@400;500;600;700;800/);
+ assert.doesNotMatch(html,/family=Cabin|family=EB\+Garamond/);
+ assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span><span class="accent">LOUNGE BAR<\/span><\/h1>/);
+ assert.match(html,/<h2 id="deal-heading">VENDITA <em>O GESTIONE\?<\/em><\/h2>/);
+ assert.match(html,/<h3>VENDITA<br>DELL’ATTIVITÀ\.<\/h3>/);
+ assert.match(html,/<h3>GESTIONE<br>DEL LOCALE\.<\/h3>/);
+ assert.match(html,/Vendita o gestione: scopri le formule/);
+ assert.match(css,/V6\.2 — TYPOGRAPHY & TWO-FORMULA OFFER/);
+ assert.match(css,/:root\{--sans:'Manrope',Arial,sans-serif;--serif:'Manrope',Arial,sans-serif\}/);
+ assert.match(css,/\.hero h1 \.sale,\.hero h1 \.accent\{display:block;white-space:nowrap\}/);
+ assert.match(css,/@media\(max-width:360px\)/);
+ assert.doesNotMatch(html,/300\.000|€\s*\d/);
+ const hero=html.indexOf('id="hero-heading"');
+ const sale=html.indexOf('id="vendita"');
+ const story=html.indexOf('id="locale"');
+ assert.ok(hero<sale&&sale<story);
+ assert.match(html,/fetch\('\/api\/interesse'/);
 });
