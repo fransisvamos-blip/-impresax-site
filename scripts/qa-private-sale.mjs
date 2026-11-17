@@ -78,7 +78,7 @@ try{
    if(audit.ctaColor!=='rgb(8, 215, 220)'||audit.ctaText!=='rgb(5, 40, 58)')throw Error('Variant 1 turquoise/dark primary button contrast missing: '+audit.ctaColor+'/'+audit.ctaText);
    if(!audit.proofBg.includes('linear-gradient'))throw Error('Cinematic hero proof overlay missing: '+audit.proofBg);
    if(!audit.firstVenueDetails)throw Error('Venue copy should precede photograph in Variant 1');
-   if(!audit.venueInsetLoaded)throw Error('Second real venue picture failed to load');
+   
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
    if(!audit.heroFont.includes('Plus Jakarta Sans'))throw Error('Approved Variant 1 geometric title font missing');
    if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px '+JSON.stringify(audit.headingMetrics));
@@ -101,6 +101,8 @@ try{
    await page.waitForFunction(()=>{
      const e=document.querySelector('.story-photo picture img');return !!e&&e.complete&&e.naturalWidth>0;
    },null,{timeout:18000});
+   await page.locator('.venue-inset').scrollIntoViewIfNeeded({timeout:10000});
+   await page.waitForFunction(()=>{const e=document.querySelector('.venue-inset');return !!e&&e.complete&&e.naturalWidth>0},null,{timeout:18000});
    if(width===390||width===1440){
      await page.evaluate(()=>window.scrollTo(0,0));
      await page.screenshot({path:shots+'/'+(isLive?'live-':'staged-')+width+'.png',fullPage:true,animations:'disabled',timeout:30000});
