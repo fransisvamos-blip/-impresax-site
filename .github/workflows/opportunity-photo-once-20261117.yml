@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ github.event.head_commit.message == 'release: one-time venue photography optimization 2026-11-17' }}
+    if: ${{ github.event.head_commit.message == 'photo release run' }}
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
