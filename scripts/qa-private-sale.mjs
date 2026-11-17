@@ -25,6 +25,7 @@ try{
    const resp=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
    if(!resp||resp.status()!==200)throw Error('Landing HTTP '+resp?.status());
    await page.waitForFunction(()=>document.querySelector('.hero-photo')?.complete&&document.querySelector('.hero-photo')?.naturalWidth>0,null,{timeout:18000});
+   await page.evaluate(()=>document.fonts.ready);
    const audit=await page.evaluate(()=>{
      const selectors=['.brand','.hero h1','.hero-sub','.hero-actions','.deal-title h2','.deal-main h3','.deal-alt h3','.story-copy h2','.story-action a','.process-top h2','.contact-intro h2','.form-button'];
      const broken=selectors.map(s=>{const el=document.querySelector(s),r=el?.getBoundingClientRect();return {s,r};}).filter(x=>!x.r||x.r.right>innerWidth+3||x.r.left< -3).map(x=>x.s);
@@ -36,8 +37,11 @@ try{
        heroImage:document.querySelector('.hero-photo')?.naturalWidth,
        storyBg:getComputedStyle(document.querySelector('.editorial')).backgroundImage,
        offerBg:getComputedStyle(document.querySelector('.deal')).backgroundImage,
-       stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundImage,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
+       stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
        heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
+       accentOverflow:(()=>{const e=document.querySelector('.hero h1 .accent');return e.scrollWidth>e.clientWidth+3})(),
+       inputBackground:getComputedStyle(document.querySelector('.form-field input')).backgroundColor,
+       formText:getComputedStyle(document.querySelector('.demo-form')).color,
        storyAction:document.querySelector('.story-action a')?.getAttribute('href'),
        formBg:getComputedStyle(document.querySelector('.demo-form')).backgroundColor};
    });
@@ -46,12 +50,14 @@ try{
    if(audit.chapters!==5)throw Error('Expected five chapters');
    if(audit.stepNumbers.length!==3)throw Error('Expected 3 readable steps');
    for(const badge of audit.stepNumbers){
-     if(badge.width<40||!badge.bg.includes('linear-gradient')||!badge.color)throw Error('Unclear step number '+JSON.stringify(badge));
+     if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.bg===badge.color)throw Error('Unreadable step number '+JSON.stringify(badge));
    }
    if(!audit.offerBg.includes('linear-gradient'))throw Error('Offer not premium designed');
    if(!audit.storyBg.includes('radial-gradient'))throw Error('Story not immersive');
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
-   if(!audit.heroFont.includes('Cormorant Garamond'))throw Error('Approved editorial font missing');
+   if(!audit.heroFont.includes('Syne'))throw Error('V9 Syne display font missing');
+   if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px');
+   if(audit.inputBackground==='rgba(0, 0, 0, 0)')throw Error('Form fields lost white-card surface');
    if(audit.formBg==='rgba(0, 0, 0, 0)')throw Error('Contact form surface missing');
    if(audit.headline!=='CEDESI LOUNGE BAR')throw Error('Cedesi Lounge Bar missing: '+audit.headline);
    if(audit.primaryHref!=='#contatto')throw Error('CTA not pointing to contact');
