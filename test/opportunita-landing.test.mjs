@@ -12,17 +12,18 @@ const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
 
 test('V11 unified render-faithful cyan art direction: no historical overrides',()=>{
  assert.match(css,/PRIVATE SALE 11 — VARIANT 1 \/ SINGLE SOURCE OF TRUTH/);
+ assert.match(css,/V11\.1 vivid contrast grade/);
  assert.equal((css.match(/PRIVATE SALE \d+ —/g)||[]).length,1,'only one active design system');
  assert.ok(css.length<32000,'previous cascade removed instead of layering more old styles');
- assert.match(css,/--navy:#061d2e;--navy-deep:#041726;--navy-soft:#10384c/);
- assert.match(css,/--cyan:#0ed6da;--cyan-hover:#51e6e6/);
+ assert.match(css,/--navy:#041a2a;--navy-deep:#021522;--navy-soft:#08334c/);
+ assert.match(css,/--cyan:#00e8f2;--cyan-hover:#63faff/);
  assert.match(css,/\.hero h1 \.accent\{color:var\(--cyan\)/);
  assert.match(css,/\.hero-foot\{position:absolute;bottom:0/);
  assert.match(css,/\.btn-orange\{display:inline-flex;align-items:center/);
- assert.match(css,/background:var\(--cyan\);border:1px solid #64f3f1/);
+ assert.match(css,/background:var\(--cyan\);border:1px solid #80ffff/);
  assert.match(css,/\.deal\{background:#fff;padding:98px/);
- assert.match(css,/\.deal-alt\{background:linear-gradient\(132deg,#f6fbfd,#eaf4f8\)/);
- assert.match(css,/\.editorial\{background:#f0f7fa/);
+ assert.match(css,/\.deal-alt\{background:linear-gradient\(132deg,#eefcff,#d9f3fa\)/);
+ assert.match(css,/\.editorial\{background:#dcf4fa/);
  assert.match(css,/\.story-copy\{grid-column:1;grid-row:1/);
  assert.match(css,/\.story-photo\{grid-column:2;grid-row:1/);
  assert.match(css,/\.process\{background:#fff;padding:94px/);
@@ -99,7 +100,7 @@ test('user-facing routes, accessible icons and responsive-first input typography
  assert.match(html,/aria-controls="nav"/);
  assert.match(html,/aria-label="Apri il menu"/);
  assert.match(css,/\.form-field input,\.form-field select\{display:block;appearance:none/);
- assert.match(css,/\.process-step:first-child \.step-marker\{background:#04b9c6\}/);
+ assert.match(css,/\.process-step:first-child \.step-marker\{background:#007e9d\}/);
  assert.match(css,/@media\(max-width:1200px\)/);
  assert.match(css,/@media\(max-width:1020px\)/);
  assert.match(css,/@media\(max-width:780px\)/);
