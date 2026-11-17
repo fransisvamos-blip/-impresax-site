@@ -27,7 +27,7 @@ test('V11 unified render-faithful cyan art direction: no historical overrides',(
  assert.match(css,/\.story-copy\{grid-column:1;grid-row:1/);
  assert.match(css,/\.story-photo\{grid-column:2;grid-row:1/);
  assert.match(css,/\.process\{background:#fff;padding:94px/);
- assert.match(css,/\.contact\{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient\(100deg,#061b2cf5/);
+ assert.match(css,/\.contact\{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient\(100deg,#031728ef/);
  assert.match(css,/\.demo-form\{width:100%;margin:0;background:#fff/);
  assert.match(css,/\.mobile-bar a\{display:flex;align-items:center;justify-content:center;width:100%/);
  assert.match(css,/@media\(max-width:1200px\)/);
