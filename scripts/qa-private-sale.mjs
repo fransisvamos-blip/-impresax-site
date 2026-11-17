@@ -38,8 +38,9 @@ try{
    if(audit.scroll>width+3||audit.body>width+3)throw Error('horizontal overflow '+JSON.stringify(audit));
    if(audit.broken.length)throw Error('clipped essentials '+JSON.stringify(audit.broken));
    if(audit.chapters!==5)throw Error('Expected five chapters');
-   if(!audit.headline.includes('IN VENDITA.'))throw Error('Sale statement missing');
+   if(audit.headline!=='CEDESI LOUNGE BAR')throw Error('Cedesi Lounge Bar missing: '+audit.headline);
    if(audit.primaryHref!=='#contatto')throw Error('CTA not pointing to contact');
+   if(!await page.locator('#deal-heading').textContent().then(t=>t.replace(/\s+/g,' ').includes('VENDITA O GESTIONE?')))throw Error('Two-formula section missing');
    if(width<=430&&audit.inputs.some(n=>n<16))throw Error('iOS zoom risk');
    if(width<=430&&audit.heroCtaBottom>860)throw Error('First mobile CTA too low '+audit.heroCtaBottom);
    if(width<=640){
