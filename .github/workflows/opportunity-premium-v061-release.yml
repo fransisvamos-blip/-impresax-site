@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'public/opportunita/.release-v10c-cyan-variant1-20261117'
+      - 'public/opportunita/.release-v10d-cyan-variant1-20261117'
 
 permissions:
   contents: read
@@ -57,7 +57,8 @@ jobs:
             if [[ "$html" == *'LOUNGE BAR'* ]] &&
                [[ "$html" == *'CEDESI'* ]] &&
                [[ "$html" == *'LOUNGE BAR'* ]] &&
-               [[ "$html" == *'VENDITA O <em>GESTIONE?'* ]] &&
+               [[ "$html" == *'VENDITA O GESTIONE?'* ]] &&
+               [[ "$html" == *'Due formule per la stessa'* ]] &&
                [[ "$html" == *'family=DM+Sans:wght@400'* ]] &&
                [[ "$html" == *'family=Plus+Jakarta+Sans:wght@500'* ]] &&
                [[ "$html" == *'PRIVATE SALE 08 — CINEMATIC EDITORIAL'* ]] &&
