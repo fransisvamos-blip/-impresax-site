@@ -1,0 +1,98 @@
+name: Opportunity — Real Venue Panoramic Hero (One Time)
+# Strictly first-party source photo. Anonymized and extended by optical compositing, never generative AI.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opportunity-real-panorama-once.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opportunity-real-photo-panorama-v1
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ github.event.head_commit.message == 'venue-panorama-release' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install build and visual QA dependencies
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund sharp playwright-core
+      - name: Generate panorama exclusively from the venue photograph
+        run: |
+          node scripts/build-opportunity-real-hero.mjs
+          test -s public/opportunita/hero-venue-panorama-real-v1.webp
+          test -s public/opportunita/hero-venue-mobile-real-v1.webp
+          node -e "import('sharp').then(async({default:sharp})=>{for(const [n,w,h] of [['hero-venue-panorama-real-v1.webp',2400,1350],['hero-venue-mobile-real-v1.webp',1080,1260]]){const m=await sharp('public/opportunita/'+n).metadata();if(m.width!==w||m.height!==h||m.format!=='webp')process.exit(1);console.log(n,m.width,m.height)}})"
+      - name: Verify no marketing copy or lead backend regressions
+        run: |
+          node --test test/opportunita-landing.test.mjs
+          node --test test/render-preview.test.mjs
+          node --check scripts/qa-private-sale.mjs
+      - name: Before release visual test at nine responsive viewports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8191 --bind 127.0.0.1 --directory public/opportunita >/tmp/venue-real-preview.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" || true' EXIT
+          sleep 2
+          QA_BASE_URL=http://127.0.0.1:8191/ node scripts/qa-private-sale.mjs
+      - name: Persist durable first-party photo assets to main branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/opportunita/hero-venue-panorama-real-v1.webp public/opportunita/hero-venue-mobile-real-v1.webp
+          git commit -m "Persist verified real-venue panoramic hero photos"
+          git push origin HEAD:main
+      - name: Publish new panorama to existing production Cloudflare Worker
+        id: deployed
+        run: npx wrangler deploy --config wrangler.jsonc
+      - name: Verify live photo assets, exact copy, lead form and privacy
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for i in {1..12}; do
+            curl -fsSL --max-time 18 https://opportunita.impresax.org/ -o /tmp/opportunita-panorama-live.html || true
+            if grep -q 'hero-venue-panorama-real-v1.webp' /tmp/opportunita-panorama-live.html &&
+               grep -q 'hero-venue-mobile-real-v1.webp' /tmp/opportunita-panorama-live.html &&
+               grep -q 'Fotografia reale rielaborata' /tmp/opportunita-panorama-live.html &&
+               grep -q 'name="privacy_accepted"' /tmp/opportunita-panorama-live.html &&
+               grep -q 'CEDESI' /tmp/opportunita-panorama-live.html; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+          for n in hero-venue-panorama-real-v1.webp hero-venue-mobile-real-v1.webp; do
+            curl -fsSL --max-time 20 "https://opportunita.impresax.org/$n" -o "/tmp/$n"
+            test "$(wc -c <"/tmp/$n")" -gt 20000
+          done
+          curl -fsSL --max-time 18 https://opportunita.impresax.org/privacy -o /tmp/opportunita-private-privacy.html
+          grep -q 'Informativa sulla privacy' /tmp/opportunita-private-privacy.html
+      - name: After release visual test at nine responsive viewports
+        run: QA_BASE_URL=https://opportunita.impresax.org/ node scripts/qa-private-sale.mjs
+      - name: Save QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opportunita-real-venue-hero-qa
+          path: /tmp/opportunita-private-sale06-qa/*.png
+          retention-days: 7
+          if-no-files-found: ignore
