@@ -1,0 +1,97 @@
+name: Opportunity — One-Time Venue Photo Optimization 2026-11-17
+# One-time owner-requested image release. No scheduled or recurring job.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opportunity-photo-once-20261117.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: impresax-opportunity-venue-photo-once
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ github.event.head_commit.message == 'release: one-time venue photography optimization 2026-11-17' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install production dependencies and visual QA
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright-core
+      - name: Check that all photo variations exist
+        run: |
+          set -euo pipefail
+          for f in hero-lounge-desktop-v1.webp hero-lounge-mobile-v1.webp hero-lounge-scene-v1.jpg story-serata-desktop-v2.webp story-serata-mobile-v2.webp story-serata-locale-v2.jpg og-social-v10.jpg; do
+            test -s "public/opportunita/$f"
+          done
+          grep -q 'object-position:63% 44%;filter:saturate(1.20)' public/opportunita/index.html
+          grep -q "url('/hero-lounge-mobile-v1.webp')" public/opportunita/index.html
+          grep -q "url('/story-serata-mobile-v2.webp')" public/opportunita/index.html
+      - name: Before production - regression tests
+        run: |
+          node --test test/opportunita-landing.test.mjs
+          node --test test/render-preview.test.mjs
+          node --check scripts/qa-private-sale.mjs
+      - name: Before production - 9 responsive Chromium widths and mocked form
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8191 --bind 127.0.0.1 --directory public/opportunita >/tmp/venue-photo-pre-release.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" || true' EXIT
+          sleep 2
+          curl -fsS --max-time 8 http://127.0.0.1:8191/ >/dev/null
+          QA_BASE_URL='http://127.0.0.1:8191/' node scripts/qa-private-sale.mjs
+      - name: Deploy exactly once to existing Cloudflare Worker
+        id: deploy
+        run: npx wrangler deploy --config wrangler.jsonc
+      - name: Verify live imagery, funnel and privacy
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for i in {1..12}; do
+            curl -fsSL --max-time 15 https://opportunita.impresax.org/ -o /tmp/lounge-live.html || true
+            if grep -q 'object-position:63% 44%;filter:saturate(1.20)' /tmp/lounge-live.html &&
+               grep -q "url('/hero-lounge-mobile-v1.webp')" /tmp/lounge-live.html &&
+               grep -q "url('/story-serata-mobile-v2.webp')" /tmp/lounge-live.html &&
+               grep -q 'fetchpriority="high"' /tmp/lounge-live.html &&
+               grep -q 'name="privacy_accepted"' /tmp/lounge-live.html; then ready=1; break; fi
+            sleep 5
+          done
+          test "$ready" = 1
+          for asset in hero-lounge-desktop-v1.webp hero-lounge-mobile-v1.webp story-serata-desktop-v2.webp story-serata-mobile-v2.webp og-social-v10.jpg; do
+            curl -fsSL --max-time 18 "https://opportunita.impresax.org/$asset" -o "/tmp/lounge-$asset"
+            test "$(wc -c <"/tmp/lounge-$asset")" -gt 15000
+          done
+          curl -fsSL --max-time 18 https://opportunita.impresax.org/privacy | grep -q 'Informativa sulla privacy'
+          echo "Opportunity venue imagery LIVE: all assets + original lead / privacy preserved"
+      - name: After production - 9 responsive Chromium widths and mocked form
+        run: QA_BASE_URL='https://opportunita.impresax.org/' node scripts/qa-private-sale.mjs
+      - name: Keep visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opportunity-venue-photos-20261117
+          path: /tmp/opportunita-private-sale06-qa/*.png
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Roll back just the landing image presentation if production smoke tests failed
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        shell: bash
+        run: |
+          git show HEAD~3:public/opportunita/index.html > public/opportunita/index.html
+          grep -q 'saturate(1.50) contrast(1.18) brightness(1.13)' public/opportunita/index.html
+          npx wrangler deploy --config wrangler.jsonc
