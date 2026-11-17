@@ -118,3 +118,27 @@ test('social sharing uses new permanent first-party dark 1200 by 630 artwork',()
  assert.match(html,/<link rel="canonical" href="https:\/\/opportunita\.impresax\.org\/">/);
  assert.doesNotMatch(html,/300\.000/);
 });
+
+test('V8.1 precision polish preserves cinematic art direction and improves typography, contrast and interactions',()=>{
+ assert.match(css,/PRIVATE SALE 08\.1 — PRECISION POLISH/);
+ assert.match(css,/--navy:#061722;--navy-2:#092535/);
+ assert.match(css,/--orange:#e56a1f;--orange-bright:#ff9136/);
+ assert.match(css,/\.hero h1\{font-size:clamp\(80px,7\.45vw,114px\)/);
+ assert.match(css,/\.hero-proof strong\{font-size:clamp\(17px,1\.58vw,21px\)/);
+ assert.match(css,/svg\.proof-icon,svg\.deal-icon,svg\.step-icon,svg\.field-icon\{stroke-linecap:round/);
+ assert.match(css,/\.form-field input,\.form-field select\{height:52px;min-height:52px/);
+ assert.match(css,/\.form-button\{min-height:53px/);
+ assert.match(css,/@media\(max-width:480px\)/);
+ assert.match(css,/@media\(max-width:360px\)/);
+ assert.match(html,/Scegli la formula<\/h3>/);
+ assert.match(html,/Lascia i recapiti<\/h3>/);
+ assert.match(html,/Valuta i dettagli<\/h3>/);
+ assert.match(html,/Richiedi i dettagli riservati\.<\/h3>/);
+ assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
+ assert.match(html,/data-pref="vendita"/);
+ assert.match(html,/data-pref="gestione"/);
+ assert.equal((html.match(/<section\b/g)||[]).length,5);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.match(js,/fetch\('\/api\/interesse',\{method:'POST'/);
+ assert.doesNotMatch(html,/300\.000|€\s*\d/);
+});
