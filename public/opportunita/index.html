@@ -787,6 +787,135 @@ a,button{transition:background .2s ease,color .2s ease,border-color .2s ease,tra
  .hero h1 .accent{font-size:.67em}
  .deal-title h2{font-size:32px}
 }
+
+/* PRIVATE SALE 09.2 — WARM LUXURY COLOR GRADE.
+   Color-only art direction: approved V9.1 layout, fonts, sections, images and live lead flow unchanged.
+   CTA contrast: white text on #c34813 (>4.5:1). #ff7134 reserved for large highlights. */
+:root{
+ --navy:#071b2d;--navy-2:#123d54;--navy-3:#17485f;
+ --orange:#c34813;--orange-bright:#ff7134;--gold:#f3a06b;
+ --ivory:#fff9f2;--sand:#f8eee3;--text:#102a38;--muted:#536777
+}
+body{background:#fff9f2;color:#102a38}
+::selection{background:#e86d36;color:#071b2d}
+/* HEADER — more depth, warmer accents */
+.topbar{background:#061a2aef;box-shadow:0 1px 0 #f3a06b3f,0 7px 27px #02172527}
+.nav a:hover,.nav a:focus-visible{color:#ffc18e}
+.header-location{color:#ebddd0}
+.brand-mark i{background:#ff8b4c}
+.brand-mark i:last-child{background:#e85b23}
+.header-cta{background:#c34813;border-color:#f3a06b;color:#fff;box-shadow:0 7px 19px #a83d1433}
+.header-cta:hover{background:#a9370b;color:#fff}
+.nav-toggle{background:#123d54;border-color:#b4c5ce}
+/* HERO — richer petrol blacks; slightly brighter real venue; copper light on sale headline */
+.hero{background:#071b2d}
+.hero-photo{filter:saturate(1.26) contrast(1.07) brightness(1.12)}
+.hero-vignette{background:
+ linear-gradient(90deg,#051929f5 0%,#071b2dea 22%,#092638c0 43%,#09263849 70%,#09263809 100%),
+ linear-gradient(0deg,#071b2dbf 0%,transparent 37%,#071b2d24 100%)}
+.hero:after{background:radial-gradient(ellipse at 78% 26%,#f3a06b1a,transparent 46%)}
+.hero h1 .sale{color:#fffdf8}
+.hero h1 .accent{color:#ff975b}
+.hero-kicker{color:#fff4e9}
+.hero-kicker span{background:#ff8748}
+.hero-sub{color:#f9f2eb}
+.hero-sub strong{color:#fff}
+.hero-secondary{background:#0c3447d9;border-color:#f3c39ba3;color:#fffaf5}
+.hero-secondary:hover{background:#17485f;border-color:#f3a06b}
+.photo-disclaimer{background:#061b2ad9;color:#f4e1cf}
+/* Primary actions: accessible contrast without garish neon backgrounds */
+.btn-orange,.story-action a,.mobile-bar a{background:#c34813;border-color:#e98753;color:#fff;box-shadow:0 10px 24px #9b381935}
+.btn-orange:hover,.story-action a:hover,.mobile-bar a:hover{background:#aa390d;border-color:#f3a06b;color:#fff;box-shadow:0 12px 26px #8d310c40}
+.hero-foot{background:#fff8f0;border-bottom-color:#ecdccf;box-shadow:0 10px 25px #2c1e1412}
+.hero-proof{border-right-color:#e7d8cb}
+.hero-proof strong{color:#123d54}
+.proof-icon{color:#d3541d}
+/* VENDITA / GESTIONE — vivid deep petrol against restrained warm ivory */
+.deal{background:linear-gradient(165deg,#fffdf9 0%,#fff8f0 74%,#fff2e7 100%)}
+.deal-title h2{color:#102d3e}
+.deal-title h2 em{color:#cb4a14}
+.deal-title p{color:#495e6a;border-left-color:#e2763b}
+.deal-main{border-color:#de8352;background:
+ linear-gradient(106deg,#071e30f4 0%,#10374ae9 60%,#16445c87 100%),
+ url('/story-serata-desktop-v2.webp') center/cover;
+ box-shadow:0 20px 43px #102f4224}
+.deal-ribbon{background:#c34813;color:#fff}
+.deal-icon{color:#f3a06b}
+.deal-main p{color:#fff5ed}
+.deal-main .btn-orange{background:#c34813;border-color:#ed9468;color:#fff}
+.deal-main .btn-orange:hover{background:#aa390d}
+.deal-alt{background:linear-gradient(140deg,#fffdf9,#fff4e9 68%,#f8eadc);
+ border-color:#e6cbb5;box-shadow:0 12px 29px #64422712}
+.deal-alt .deal-icon{color:#c34813}
+.deal-alt h3{color:#153c50}
+.deal-alt p{color:#4f615f}
+.deal-alt-link{background:#fffdfa;border-color:#cdb7a4;color:#123d54}
+.deal-alt-link:hover{background:#fff0df;border-color:#cf5a21;color:#123d54}
+/* IL LOCALE — warm highlights on rich petrol; authentic photo legible */
+.editorial{background:#123d54}
+.story-photo img{filter:saturate(1.24) contrast(1.08) brightness(1.10)}
+.story-photo:after{background:linear-gradient(90deg,transparent 73%,#123d54bb),linear-gradient(0deg,#071b2d82,transparent 30%)}
+.story-photo figcaption{background:#082536c9;color:#fff6ed}
+.story-copy .section-no{color:#ffbe91}
+.story-copy .section-no:after{background:#f3a06b}
+.story-copy h2{color:#fffdf8}
+.story-copy h2 em{color:#ffb17e}
+.story-copy>p:not(.story-disclosure){color:#f0f7f6}
+.story-disclosure{color:#d4e3e6}
+.story-action a{background:#c34813;border-color:#e98753;color:#fff}
+/* COME FUNZIONA — ivory canvas with dark petrol badges and copper emphasis */
+.process{background:linear-gradient(180deg,#fffaf4,#fff5e9 100%)}
+.process-top h2,.process-step h3{color:#123d54}
+.process-step{border-top-color:#ddcbb9}
+.process-step:first-child{border-top-color:#cd521f}
+.process-step p{color:#526373}
+.step-marker{background:#123d54}
+.process-step:first-child .step-marker{background:#c34813}
+.process-num,.step-icon{color:#fff}
+.step-icon{stroke:#fff}
+/* CONTATTO — velvet blue backdrop, pearl-white form, warm selection controls */
+.contact{background:linear-gradient(125deg,#071b2d 0%,#123d54 58%,#092e43 100%)}
+.contact-glow{background:radial-gradient(ellipse at 13% 15%,#3d829b28,transparent 42%),radial-gradient(ellipse at 84% 90%,#f3a06b28,transparent 35%)}
+.contact-intro .section-no{color:#ffbd91}
+.contact-intro h2{color:#fff}
+.contact-intro h2 em{color:#ffb17e}
+.contact-intro>p{color:#eff7fa}
+.contact-intro .assurance{color:#dce9ee;border-color:#e7c9aa49}
+.assurance strong{color:#ffbe91}
+.assurance .dash{background:#ff945a}
+.demo-form{background:#fffdfa!important;background-image:none!important;color:#123d54;
+ border-color:#ebd9cb;border-top-color:#d85a20;box-shadow:0 25px 65px #031b2a74}
+.form-heading h3{color:#123d54}
+.form-heading p{color:#566878}
+.choice-group button{background:#fff7ef;border-color:#e2cab6;color:#123d54}
+.choice-group button[aria-pressed="true"]{background:#123d54;border-color:#123d54;color:#fff}
+.choice-group button:hover{border-color:#c34813}
+.form-field input,.form-field select{background:#fffcf8;color:#123d54;border-color:#d4c6b9}
+.form-field input::placeholder{color:#61747f}
+.form-field select{color:#526a78}
+.form-field:focus-within input,.form-field:focus-within select{border-color:#bd4a16;box-shadow:0 0 0 3px #e68c5826}
+.field-icon{color:#577584}
+.privacy-check{color:#526777}
+.privacy-check input{accent-color:#c34813}
+.privacy-check a,.form-caption a{color:#a83b0e}
+.form-caption{color:#607481}
+/* FOOTER / MOBILE — consistent warm accents without changing the UI geometry */
+.footer{background:#071b2d;border-color:#f3a06b38;color:#d9e7ed}
+.footer-inner a{color:#fff}
+.mobile-bar{background:#071b2dee;border-top-color:#f3a06b7d}
+.mobile-bar a{background:#c34813;border-color:#e98753;color:#fff}
+@media(max-width:760px){
+ .nav{background:#071b2df8}
+ .hero-vignette{background:linear-gradient(90deg,#071b2df4,#092838d9 46%,#0928386b),linear-gradient(0deg,#071b2dd8,transparent 47%)}
+ .story-photo:after{background:linear-gradient(0deg,#071b2d83,transparent 35%)}
+}
+@media(max-width:480px){
+ .hero-photo{filter:saturate(1.20) contrast(1.06) brightness(1.11)}
+ .hero-vignette{background:linear-gradient(90deg,#071b2df1,#092838d9 48%,#09283888),linear-gradient(0deg,#071b2dcf,transparent 54%)}
+ .mobile-bar{background:#071b2df2}
+ .mobile-bar a{background:#c34813;border-color:#f3a06b}
+}
+
 </style>
 </head>
 <body>
