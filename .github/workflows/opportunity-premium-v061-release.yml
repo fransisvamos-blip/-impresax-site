@@ -1,14 +1,17 @@
-name: ImpresaX Opportunity — V6.2 Cedesi Lounge Bar One-Time Release
-# OWNER PAUSE: V6.2 CEDESI + Manrope + Vendita/Gestione tested and live. Automatic deployment disabled.
+name: ImpresaX Opportunity — V6.3 Section Art Direction One-Time Release
+# ONE-TIME owner-directed section-by-section upgrade; restore pause after full QA.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-visual-sections-v63-20261117'
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ false }} # owner pause after verified CEDESI + Manrope release
+    if: ${{ github.event_name == 'push' }} # single user-authorized visual revision
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -56,6 +59,9 @@ jobs:
                [[ "$html" == *'LOUNGE BAR'* ]] &&
                [[ "$html" == *'VENDITA <em>O GESTIONE?'* ]] &&
                [[ "$html" == *'Manrope:wght@400'* ]] &&
+               [[ "$html" == *'V6.3 SECTION-BY-SECTION ART DIRECTION'* ]] &&
+               [[ "$html" == *'class="story-number"'* ]] &&
+               [[ "$html" == *'class="story-action"'* ]] &&
                [[ "$html" == *'PRIVATE SALE 06.1 — LIVE PREMIUM UPGRADE'* ]] &&
                [[ "$html" != *'Proposta di design dimostrativa'* ]] &&
                [[ "$html" == *'RICHIEDI I DETTAGLI DI VENDITA'* ]] &&
@@ -94,6 +100,6 @@ jobs:
         if: ${{ failure() && steps.production_deploy.outcome == 'success' }}
         run: |
           echo 'PRODUCTION QA FAILED: restoring approved previous landing automatically'
-          cp backups/opportunita-v61-pre-manrope-cedesi-20261117.html public/opportunita/index.html
+          cp backups/opportunita-v62-before-section-art-direction-20261117.html public/opportunita/index.html
           node scripts/build-opportunity-share.mjs
           npx wrangler deploy --config wrangler.jsonc
