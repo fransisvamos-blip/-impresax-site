@@ -44,7 +44,7 @@ test('2026 cinematic design uses premium editorial fonts, proper icons and secti
  assert.equal((html.match(/class="proof-icon"/g)||[]).length,3);
  assert.equal((html.match(/class="deal-icon"/g)||[]).length,2);
  assert.equal((html.match(/class="step-icon"/g)||[]).length,3);
- assert.match(html,/class="hero-foot-inner"/);
+ assert.match(html,/class="container hero-foot-inner"/);
  assert.match(html,/class="story-photo"/);
  assert.match(html,/class="story-action"/);
  assert.match(html,/class="process-num">01/);
