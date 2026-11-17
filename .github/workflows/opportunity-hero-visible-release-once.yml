@@ -1,0 +1,84 @@
+name: Opportunity — Visible Real-Photo Hero One-Time Release
+# One explicit user-requested publish only; no recurring trigger.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opportunity-hero-visible-release-once.yml'
+
+permissions:
+  contents: read
+concurrency:
+  group: opportunity-real-hero-visible-one-off
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test and deployment dependencies
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright-core
+      - name: Assert real image assets and correct render layers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s public/opportunita/hero-venue-panorama-real-v1.webp
+          test -s public/opportunita/hero-venue-mobile-real-v1.webp
+          grep -Fq '.hero-photo-wrap{position:absolute;z-index:0;' public/opportunita/index.html
+          grep -Fq '.hero-core{position:relative;z-index:2;' public/opportunita/index.html
+          grep -Fq 'hero-visible-20261117' public/opportunita/index.html
+          grep -Fq 'url.pathname==="/"||url.pathname==="/privacy"' src/opportunity.js
+          grep -Fq 'fetch('\''/api/interesse'\''' public/opportunita/index.html
+      - name: Existing lead/privacy/landing regression tests
+        run: |
+          node --test test/opportunita-landing.test.mjs
+          node --test test/render-preview.test.mjs
+      - name: Nine-screen browser checks before production
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8191 --bind 127.0.0.1 --directory public/opportunita >/tmp/opportunity-hero-pre.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" || true' EXIT
+          sleep 2
+          QA_BASE_URL=http://127.0.0.1:8191/ node scripts/qa-private-sale.mjs
+      - name: Deploy the existing ImpresaX Worker once
+        id: deploy
+        run: npx wrangler deploy --config wrangler.jsonc
+      - name: Verify production hero is visible, images served, no stale HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --max-time 30 -D /tmp/opportunity-live-headers.txt "https://opportunita.impresax.org/?verify=hero-visible-20261117" -o /tmp/opportunity-live.html
+          grep -Fq '.hero-photo-wrap{position:absolute;z-index:0;' /tmp/opportunity-live.html
+          grep -Fq 'hero-visible-20261117' /tmp/opportunity-live.html
+          grep -Fq 'hero-venue-panorama-real-v1.webp' /tmp/opportunity-live.html
+          grep -Fq 'hero-venue-mobile-real-v1.webp' /tmp/opportunity-live.html
+          grep -Fq 'name="privacy_accepted"' /tmp/opportunity-live.html
+          grep -Fiq 'cache-control: no-store' /tmp/opportunity-live-headers.txt
+          for n in hero-venue-panorama-real-v1.webp hero-venue-mobile-real-v1.webp; do
+            curl -fsSL --max-time 30 "https://opportunita.impresax.org/$n?view=hero-visible-20261117" -o "/tmp/$n"
+            test "$(wc -c <"/tmp/$n")" -gt 20000
+          done
+          curl -fsSL --max-time 20 "https://opportunita.impresax.org/privacy" -o /tmp/opportunity-privacy.html
+          grep -Fq 'Informativa sulla privacy' /tmp/opportunity-privacy.html
+      - name: Nine-screen browser checks on live site
+        run: QA_BASE_URL=https://opportunita.impresax.org/ node scripts/qa-private-sale.mjs
+      - name: Save browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opportunity-real-hero-visible-qa
+          path: /tmp/opportunita-private-sale06-qa/*.png
+          retention-days: 7
+          if-no-files-found: ignore
