@@ -112,3 +112,28 @@ test('social share and privacy policy remain first-party, no public price',()=>{
  assert.match(privacy,/Informativa sulla privacy/);
  assert.doesNotMatch(html,/300\.000/);
 });
+
+test('V9.2 warm luxury color grade preserves approved V9.1 layout and type',()=>{
+ assert.match(css,/PRIVATE SALE 09\.2 — WARM LUXURY COLOR GRADE/);
+ assert.match(css,/--navy:#071b2d;--navy-2:#123d54;--navy-3:#17485f/);
+ assert.match(css,/--orange:#c34813;--orange-bright:#ff7134;--gold:#f3a06b/);
+ assert.match(css,/\.hero-photo\{filter:saturate\(1\.26\) contrast\(1\.07\) brightness\(1\.12\)\}/);
+ assert.match(css,/\.hero h1 \.accent\{color:#ff975b\}/);
+ assert.match(css,/\.hero-foot\{background:#fff8f0/);
+ assert.match(css,/\.deal\{background:linear-gradient\(165deg,#fffdf9/);
+ assert.match(css,/\.deal-alt\{background:linear-gradient\(140deg,#fffdf9,#fff4e9/);
+ assert.match(css,/\.editorial\{background:#123d54\}/);
+ assert.match(css,/\.process\{background:linear-gradient\(180deg,#fffaf4,#fff5e9/);
+ assert.match(css,/\.contact\{background:linear-gradient\(125deg,#071b2d/);
+ assert.match(css,/\.demo-form\{background:#fffdfa!important/);
+ assert.match(css,/\.btn-orange,\.story-action a,\.mobile-bar a\{background:#c34813;border-color:#e98753;color:#fff/);
+ assert.match(css,/\.choice-group button\[aria-pressed="true"\]\{background:#123d54/);
+ assert.match(css,/@media\(max-width:760px\)/);
+ assert.match(css,/@media\(max-width:480px\)/);
+ assert.match(html,/family=DM\+Sans/);
+ assert.match(html,/family=Plus\+Jakarta\+Sans/);
+ assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
+ assert.equal((html.match(/<form\b/g)||[]).length,1);
+ assert.match(js,/fetch\('\/api\/interesse',\{method:'POST'/);
+ assert.doesNotMatch(html,/300\.000|€\s*\d/);
+});
