@@ -1,0 +1,1 @@
+User-authorized V9 final high-contrast landing release after all QA failures fixed including 320px Syne min-content title. Publish only after nine viewport tests, confirm live API/venue assets/social image and mock-only lead form; rollback if live QA fails and restore owner pause.
