@@ -1,14 +1,17 @@
-name: ImpresaX Opportunity — Premium V6.1 Owner-Requested Release
-# OWNER PAUSE: V6.1 released and live visual/lead QA verified. No automatic releases.
+name: ImpresaX Opportunity — V6.2 Cedesi Lounge Bar One-Time Release
+# ONE-TIME V6.2 approved by user. Restore owner pause immediately afterward.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-cedesi-manrope-v62-20261117'
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ false }} # owner pause after complete successful live QA
+    if: ${{ github.event_name == 'push' }} # one-time user-authorized header/font/offer update
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -42,7 +45,7 @@ jobs:
           sleep 2
           curl -fsS --max-time 8 'http://127.0.0.1:8191/' >/dev/null
           QA_BASE_URL='http://127.0.0.1:8191/' node scripts/qa-private-sale.mjs
-      - name: Deploy owner-approved PRIVATE SALE 06.1
+      - name: Deploy CEDESI LOUNGE BAR + Manrope and Vendita/Gestione
         id: production_deploy
         run: npx wrangler deploy --config wrangler.jsonc
       - name: Smoke-test production, exact sale positioning, assets and privacy
@@ -52,7 +55,10 @@ jobs:
           for attempt in {1..9}; do
             html=$(curl -fsSL --max-time 18 'https://opportunita.impresax.org/' || true)
             if [[ "$html" == *'LOUNGE BAR'* ]] &&
-               [[ "$html" == *'IN VENDITA.'* ]] &&
+               [[ "$html" == *'CEDESI'* ]] &&
+               [[ "$html" == *'LOUNGE BAR'* ]] &&
+               [[ "$html" == *'VENDITA <em>O GESTIONE?'* ]] &&
+               [[ "$html" == *'Manrope:wght@400'* ]] &&
                [[ "$html" == *'PRIVATE SALE 06.1 — LIVE PREMIUM UPGRADE'* ]] &&
                [[ "$html" != *'Proposta di design dimostrativa'* ]] &&
                [[ "$html" == *'RICHIEDI I DETTAGLI DI VENDITA'* ]] &&
@@ -91,6 +97,6 @@ jobs:
         if: ${{ failure() && steps.production_deploy.outcome == 'success' }}
         run: |
           echo 'PRODUCTION QA FAILED: restoring approved previous landing automatically'
-          cp backups/opportunita-private-sale06-before-vibrant-20261117.html public/opportunita/index.html
+          cp backups/opportunita-v61-pre-manrope-cedesi-20261117.html public/opportunita/index.html
           node scripts/build-opportunity-share.mjs
           npx wrangler deploy --config wrangler.jsonc
