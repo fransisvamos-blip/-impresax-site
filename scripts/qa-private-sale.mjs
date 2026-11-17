@@ -36,7 +36,9 @@ try{
        primaryHref:document.querySelector('.hero-actions .btn-orange')?.getAttribute('href'),
        heroImage:document.querySelector('.hero-photo')?.naturalWidth,
        storyBg:getComputedStyle(document.querySelector('.editorial')).backgroundImage,
+       storyColor:getComputedStyle(document.querySelector('.editorial')).backgroundColor,
        offerBg:getComputedStyle(document.querySelector('.deal')).backgroundImage,
+       offerColor:getComputedStyle(document.querySelector('.deal')).backgroundColor,
        stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
        heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
        accentOverflow:(()=>{const e=document.querySelector('.hero h1 .accent');return e.scrollWidth>e.clientWidth+3})(),
@@ -52,8 +54,8 @@ try{
    for(const badge of audit.stepNumbers){
      if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.bg===badge.color)throw Error('Unreadable step number '+JSON.stringify(badge));
    }
-   if(!audit.offerBg.includes('linear-gradient'))throw Error('Offer not premium designed');
-   if(!audit.storyBg.includes('radial-gradient'))throw Error('Story not immersive');
+   if(audit.offerColor!=='rgb(255, 255, 255)')throw Error('New V9 offer section not crisp white: '+audit.offerColor);
+   if(audit.storyColor!=='rgb(7, 50, 77)')throw Error('New V9 story night blue missing: '+audit.storyColor);
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
    if(!audit.heroFont.includes('Syne'))throw Error('V9 Syne display font missing');
    if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px');
