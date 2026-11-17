@@ -1,7 +1,10 @@
 name: Opportunity — One-Time Venue Photo Optimization 2026-11-17
-# SEALED: one-time owner-requested image release succeeded; no push, cron, or runnable manual job.
+# Second owner-requested one-time hero-photo reframe using the real venue photo, no synthetic imagery.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opportunity-photo-once-20261117.yml'
 
 permissions:
   contents: read
@@ -12,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ false }} # one-time release completed and owner pause restored
+    if: ${{ github.event.head_commit.message == 'release: real venue hero 2026-11-17' }}
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
@@ -33,7 +36,9 @@ jobs:
           for f in hero-lounge-desktop-v1.webp hero-lounge-mobile-v1.webp hero-lounge-scene-v1.jpg story-serata-desktop-v2.webp story-serata-mobile-v2.webp story-serata-locale-v2.jpg og-social-v10.jpg; do
             test -s "public/opportunita/$f"
           done
-          grep -q 'object-position:63% 44%;filter:saturate(1.20)' public/opportunita/index.html
+          grep -q 'object-position:center 44%;filter:saturate(1.07)' public/opportunita/index.html
+          grep -q 'aspect-ratio:1/.88' public/opportunita/index.html
+          grep -q 'hero-lounge-scene-v1.jpg' public/opportunita/index.html
           grep -q "url('/hero-lounge-mobile-v1.webp')" public/opportunita/index.html
           grep -q "url('/story-serata-mobile-v2.webp')" public/opportunita/index.html
       - name: Before production - regression tests
@@ -61,7 +66,8 @@ jobs:
           ready=0
           for i in {1..12}; do
             curl -fsSL --max-time 15 https://opportunita.impresax.org/ -o /tmp/lounge-live.html || true
-            if grep -q 'object-position:63% 44%;filter:saturate(1.20)' /tmp/lounge-live.html &&
+            if grep -q 'object-position:center 44%;filter:saturate(1.07)' /tmp/lounge-live.html &&
+               grep -q 'aspect-ratio:1/.88' /tmp/lounge-live.html &&
                grep -q "url('/hero-lounge-mobile-v1.webp')" /tmp/lounge-live.html &&
                grep -q "url('/story-serata-mobile-v2.webp')" /tmp/lounge-live.html &&
                grep -q 'fetchpriority="high"' /tmp/lounge-live.html &&
@@ -89,6 +95,6 @@ jobs:
         if: ${{ failure() && steps.deploy.outcome == 'success' }}
         shell: bash
         run: |
-          git show HEAD~3:public/opportunita/index.html > public/opportunita/index.html
-          grep -q 'saturate(1.50) contrast(1.18) brightness(1.13)' public/opportunita/index.html
+          git show HEAD~2:public/opportunita/index.html > public/opportunita/index.html
+          grep -q 'object-position:63% 44%;filter:saturate(1.20)' public/opportunita/index.html
           npx wrangler deploy --config wrangler.jsonc
