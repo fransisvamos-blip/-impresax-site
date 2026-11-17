@@ -1,17 +1,14 @@
 name: ImpresaX Opportunity — V8.1 Precision Polish One-Time Release
-# ONE-TIME user-authorized premium polish. Immediately re-pause this workflow after production verification.
+# OWNER PAUSE: V8.1 live, all nine viewports and production lead QA passed; no push or recurring deploys.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-v081-polish-20261117'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }} # one-time owner-authorized V8.1 visual polish
+    if: ${{ false }} # owner pause after verified V8.1 release
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
