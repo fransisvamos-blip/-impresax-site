@@ -24,7 +24,7 @@
 <meta name="twitter:image" content="https://opportunita.impresax.org/og-social-v8.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
 /* PRIVATE SALE 08 — CINEMATIC EDITORIAL, APPROVED DESIGN • 2026-11-17 */
@@ -32,7 +32,7 @@
   --navy:#061c2a;--navy-2:#0a293b;--navy-3:#103346;
   --orange:#da5b15;--orange-bright:#f47b24;--gold:#f2a454;
   --ivory:#fff9f0;--sand:#f8f0e5;--text:#122a36;--muted:#56636b;
-  --sans:'DM Sans',Arial,sans-serif;--serif:'Syne',Arial,sans-serif
+  --sans:'DM Sans',Arial,sans-serif;--serif:'Plus Jakarta Sans',Arial,sans-serif
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:78px}
@@ -390,7 +390,7 @@ svg{display:block;flex:none}
  --navy:#071b2d;--navy-2:#0d3653;--navy-3:#144966;
  --orange:#fb5a20;--orange-bright:#ff7a34;--gold:#ffaa68;
  --ivory:#ffffff;--sand:#f3f7f9;--text:#102c3f;--muted:#496477;
- --sans:'DM Sans',Arial,sans-serif;--serif:'Syne',Arial,sans-serif
+ --sans:'DM Sans',Arial,sans-serif;--serif:'Plus Jakarta Sans',Arial,sans-serif
 }
 html{scroll-padding-top:79px}
 body{background:#fff;color:#102c3f;font-size:15px;line-height:1.65;letter-spacing:0}
@@ -735,7 +735,7 @@ a,button{transition:background .2s ease,color .2s ease,border-color .2s ease,tra
  .deal-title h2{font-size:36px}
 }
 
-/* V9 verified Syne glyph fitting: prevent intrinsic min-width expansion at 320px and 1600px. */
+/* V9 verified Jakarta glyph fitting: prevent intrinsic min-width expansion at 320px and 1600px. */
 .hero h1 .accent{font-size:.74em;letter-spacing:-.068em}
 @media(max-width:760px){
  .editorial{grid-template-columns:minmax(0,1fr)}
@@ -764,13 +764,28 @@ a,button{transition:background .2s ease,color .2s ease,border-color .2s ease,tra
  .choice-group button{font-size:9px}
 }
 
-/* 320px Syne actual glyph-width correction: maintain exact viewport rather than Safari layout expansion */
+/* 320px Jakarta glyph-width correction: maintain exact viewport rather than Safari layout expansion */
 @media(max-width:360px){
  .deal-title{display:block;width:100%;max-width:100%}
  .deal-title h2{font-size:30px;letter-spacing:-.085em;line-height:1.1}
  .deal-title h2 em{display:inline}
  .deal-title p{max-width:100%}
  .mobile-bar{max-width:100vw}
+}
+
+/* V9.1 — stronger but more refined typographic personality: Plus Jakarta Sans / DM Sans */
+.hero h1{font-weight:800;letter-spacing:-.075em;line-height:.97}
+.hero h1 .accent{font-size:.80em;letter-spacing:-.065em}
+.deal-title h2,.story-copy h2,.process-top h2,.contact-intro h2{letter-spacing:-.067em}
+.deal-head h3{letter-spacing:-.065em}
+@media(max-width:480px){
+ .hero h1 .accent{font-size:.68em;letter-spacing:-.068em}
+ .deal-title h2{font-size:clamp(33px,8.6vw,41px)}
+ .deal-head h3{font-size:clamp(23px,6.7vw,30px)}
+}
+@media(max-width:360px){
+ .hero h1 .accent{font-size:.67em}
+ .deal-title h2{font-size:32px}
 }
 </style>
 </head>
