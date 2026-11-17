@@ -1,17 +1,14 @@
 name: ImpresaX Opportunity — V10 Approved Cyan Variant 1 Release
-# ONE-TIME user-approved Variant 1; re-pause immediately after production QA.
+# OWNER PAUSE: V10 cyan Variant 1 released; staging and production Chromium, images, social and lead privacy QA passed.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-v10d-cyan-variant1-20261117'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }} # one-shot user-approved cyan first concept
+    if: ${{ false }} # owner pause after approved cyan Variant 1 live QA
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
