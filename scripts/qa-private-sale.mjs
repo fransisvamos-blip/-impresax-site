@@ -42,6 +42,12 @@ try{
        storyColor:getComputedStyle(document.querySelector('.editorial')).backgroundColor,
        offerBg:getComputedStyle(document.querySelector('.deal')).backgroundImage,
        offerColor:getComputedStyle(document.querySelector('.deal')).backgroundColor,
+       offerAltGradient:getComputedStyle(document.querySelector('.deal-alt')).backgroundImage,
+       processGradient:getComputedStyle(document.querySelector('.process')).backgroundImage,
+       contactGradient:getComputedStyle(document.querySelector('.contact')).backgroundImage,
+       ctaColor:getComputedStyle(document.querySelector('.hero-actions .btn-orange')).backgroundColor,
+       ctaText:getComputedStyle(document.querySelector('.hero-actions .btn-orange')).color,
+       proofColor:getComputedStyle(document.querySelector('.hero-foot')).backgroundColor,
        stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
        heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
        accentOverflow:(()=>{const e=document.querySelector('.hero h1 .accent');return e.scrollWidth>e.clientWidth+3})(),
@@ -61,8 +67,13 @@ try{
    for(const badge of audit.stepNumbers){
      if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.bg===badge.color)throw Error('Unreadable step number '+JSON.stringify(badge));
    }
-   if(audit.offerColor!=='rgb(255, 255, 255)')throw Error('New V9 offer section not crisp white: '+audit.offerColor);
-   if(audit.storyColor!=='rgb(7, 50, 77)')throw Error('New V9 story night blue missing: '+audit.storyColor);
+   if(!audit.offerBg.includes('linear-gradient'))throw Error('Warm ivory offer gradient missing: '+audit.offerBg);
+   if(audit.storyColor!=='rgb(18, 61, 84)')throw Error('Rich petrol venue section missing: '+audit.storyColor);
+   if(!audit.offerAltGradient.includes('linear-gradient'))throw Error('Warm ivory management card missing');
+   if(!audit.processGradient.includes('linear-gradient'))throw Error('Warm ivory process canvas missing');
+   if(!audit.contactGradient.includes('linear-gradient'))throw Error('Deep petrol contact stage missing');
+   if(audit.ctaColor!=='rgb(195, 72, 19)'||audit.ctaText!=='rgb(255, 255, 255)')throw Error('Primary CTA contrast grade changed: '+audit.ctaColor+'/'+audit.ctaText);
+   if(audit.proofColor!=='rgb(255, 248, 240)')throw Error('Warm proof strip missing: '+audit.proofColor);
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
    if(!audit.heroFont.includes('Plus Jakarta Sans'))throw Error('V9.1 Plus Jakarta Sans display font missing');
    if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px '+JSON.stringify(audit.headingMetrics));
