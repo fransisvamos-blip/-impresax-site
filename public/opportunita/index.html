@@ -22,8 +22,8 @@
 <meta name="twitter:title" content="Lounge bar in vendita a Catanzaro Lido">
 <meta name="twitter:description" content="7 anni di attività, clientela fidelizzata e uno spazio con tavolini. Richiedi i dettagli della vendita.">
 <meta name="twitter:image" content="https://opportunita.impresax.org/og-social-v10.jpg">
-<link rel="preload" as="image" href="/hero-lounge-desktop-v1.webp" media="(min-width:641px)" fetchpriority="high">
-<link rel="preload" as="image" href="/hero-lounge-mobile-v1.webp" media="(max-width:640px)" fetchpriority="high">
+<link rel="preload" as="image" href="/hero-venue-panorama-real-v1.webp" media="(min-width:641px)" fetchpriority="high">
+<link rel="preload" as="image" href="/hero-venue-mobile-real-v1.webp" media="(max-width:640px)" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -78,9 +78,9 @@ svg{display:block;flex:none}
 
 /* HERO — hero photography, asymmetrical editorial layout, turquoise headline */
 .hero{position:relative;isolation:isolate;background:var(--navy-deep);color:#fff;overflow:hidden}
-.hero-photo-wrap{position:absolute;z-index:-3;top:25px;bottom:137px;right:max(22px,calc((100vw - 1188px)/2));left:auto;width:min(49vw,650px);display:block;overflow:hidden;background:#1b2e35;border:1px solid #e1b87288;border-radius:18px;box-shadow:0 30px 70px #000b16b0,0 0 0 1px #eac78b2b,0 0 52px #d5a44f20}
-.hero-photo{width:100%;height:100%;object-fit:cover;object-position:center 44%;filter:brightness(1.24) saturate(1.32) contrast(1.13);transform:scale(1.015)}
-.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#021522 0%,#021522f2 27%,#021522b0 45%,#0215221b 73%,transparent 100%),radial-gradient(ellipse at 77% 45%,#d39b3030,transparent 49%);pointer-events:none}
+.hero-photo-wrap{position:absolute;z-index:-3;inset:0;width:100%;height:100%;display:block;overflow:hidden;background:#061b2a;border:0;border-radius:0;box-shadow:none}
+.hero-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center 50%;filter:none;transform:none}
+.hero-vignette{position:absolute;z-index:-2;inset:0;background:linear-gradient(90deg,#041928a8 0%,#04192865 34%,transparent 65%),linear-gradient(0deg,#04192899,transparent 31%);pointer-events:none}
 .hero:after{content:'';position:absolute;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 81% 24%,#00eefa22,transparent 48%)}
 .hero-core{position:relative;z-index:1;min-height:615px;padding:75px 0 164px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
 .hero-kicker{display:flex;align-items:center;gap:13px;margin:0 0 24px;color:#ffffff;font:800 11px/1.4 var(--sans);letter-spacing:.21em}
@@ -232,7 +232,7 @@ svg{display:block;flex:none}
  .header-cta{display:none}
  .nav{gap:17px}
  .hero-core{min-height:595px}
- .hero-photo-wrap{right:22px;top:32px;bottom:136px;width:49vw}
+ .hero-photo-wrap{inset:0;width:100%;height:100%}
  .hero h1{font-size:clamp(62px,8vw,84px)}
  .deal{padding:78px 0 85px}
  .deal-grid{gap:16px}
@@ -298,7 +298,7 @@ svg{display:block;flex:none}
  .nav-toggle{width:42px;height:42px}
  .hero{display:flex;flex-direction:column}
  .hero-core{order:1;min-height:0;padding:43px 0 27px}
- .hero-photo-wrap{position:relative;order:2;inset:auto;z-index:1;width:calc(100% - 34px);height:auto;aspect-ratio:1/.88;max-height:none;margin:0 auto 22px;border-radius:14px;box-shadow:0 16px 44px #000a15ae,0 0 0 1px #d7af7366}
+ .hero-photo-wrap{position:relative;order:2;inset:auto;z-index:1;width:calc(100% - 34px);height:auto;aspect-ratio:1/1;max-height:none;margin:0 auto 20px;border:1px solid #b5c2bf35;border-radius:13px;box-shadow:0 16px 44px #000a15ae}
  .hero-vignette,.hero:after{display:none}
  .hero-kicker{margin-bottom:23px;font-size:9.5px;letter-spacing:.15em}
  .hero h1{font-size:clamp(42px,11.7vw,61px);letter-spacing:-.072em;line-height:1.02;margin-bottom:17px}
@@ -309,7 +309,7 @@ svg{display:block;flex:none}
  /* Mobile-specific source photos avoid downloading desktop backgrounds. */
  .deal-main{background-image:linear-gradient(110deg,#031728f2,#042b40d5 60%,#06475b51),url('/story-serata-mobile-v2.webp');background-position:center 45%}
  .contact{background-image:linear-gradient(100deg,#031728f4,#05253de5 57%,#062136c7),url('/hero-lounge-mobile-v1.webp');background-position:59% 43%}
- .hero-photo{object-position:center 44%;filter:brightness(1.21) saturate(1.28) contrast(1.11);transform:scale(1.01)}
+ .hero-photo{object-position:center 40%;filter:none;transform:none}
  .hero-vignette{background:linear-gradient(90deg,#031728ea,#031728bf 49%,#03172854),linear-gradient(0deg,#031728bb,transparent 56%)}
  .hero-foot{position:relative;order:3}
  .hero-foot-inner{min-height:123px}
@@ -400,9 +400,9 @@ svg{display:block;flex:none}
 <main>
 <section class="hero" id="inizio" aria-labelledby="hero-heading">
   <picture class="hero-photo-wrap">
-    <source media="(max-width:640px)" type="image/webp" srcset="/hero-lounge-mobile-v1.webp">
-    <source type="image/webp" srcset="/hero-lounge-desktop-v1.webp">
-    <img class="hero-photo" src="/hero-lounge-scene-v1.jpg" width="1254" height="1254" decoding="async" fetchpriority="high" alt="Piazza con tavolini e albero illuminato del lounge bar, immagine rielaborata digitalmente da una fotografia fornita">
+    <source media="(max-width:640px)" type="image/webp" srcset="/hero-venue-mobile-real-v1.webp">
+    <source type="image/webp" srcset="/hero-venue-panorama-real-v1.webp">
+    <img class="hero-photo" src="/hero-lounge-scene-v1.jpg" width="2400" height="1350" decoding="async" fetchpriority="high" alt="Serata al lounge bar reale, con persone rese non identificabili e dettagli del locale volutamente attenuati; fotografia rielaborata">
   </picture>
   <div class="hero-vignette" aria-hidden="true"></div>
   <div class="container hero-core">
@@ -414,7 +414,7 @@ svg{display:block;flex:none}
       <a class="hero-secondary" href="#vendita">SCOPRI LE FORMULE <svg class="button-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h16M14 6l6 6-6 6"/></svg></a>
     </div>
   </div>
-  <p class="photo-disclaimer">Fotografia del locale rielaborata digitalmente</p>
+  <p class="photo-disclaimer">Fotografia reale rielaborata · volti e dettagli identificativi oscurati</p>
   <div class="hero-foot"><div class="container hero-foot-inner">
     <div class="hero-proof"><svg class="proof-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11.5V16c0 3 12 3 12 0v-4.5M22 9v7"/></svg><span><strong>Nel cuore della</strong><strong>movida universitaria</strong></span></div>
     <div class="hero-proof"><svg class="proof-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg><span><strong>7 anni di attività</strong><strong>con clientela fidelizzata</strong></span></div>
