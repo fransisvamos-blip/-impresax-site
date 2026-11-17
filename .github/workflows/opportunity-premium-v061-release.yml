@@ -1,14 +1,17 @@
-name: ImpresaX Opportunity — V9.1 Premium Hospitality Rebuild One-Time
-# OWNER PAUSE: Premium V9.1 published; staged and production visual, asset, lead, privacy QA passed. No automatic deploys.
+name: ImpresaX Opportunity — V9.2 Warm Color Grade One-Time
+# ONE-TIME owner-approved color correction; restore pause immediately after staged and production QA.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/opportunita/.release-v092-warm-color-20261117'
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ false }} # owner pause after verified V9.1 live deployment
+    if: ${{ github.event_name == 'push' }} # one-time user-authorized warm palette refinement
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -59,6 +62,7 @@ jobs:
                [[ "$html" == *'family=Plus+Jakarta+Sans:wght@500'* ]] &&
                [[ "$html" == *'PRIVATE SALE 08 — CINEMATIC EDITORIAL'* ]] &&
                [[ "$html" == *'PRIVATE SALE 09 — HIGH-CONTRAST MODERN HOSPITALITY'* ]] &&
+               [[ "$html" == *'PRIVATE SALE 09.2 — WARM LUXURY COLOR GRADE'* ]] &&
                [[ "$html" != *'PRIVATE SALE 08.1 — PRECISION POLISH'* ]] &&
                [[ "$html" == *'class="story-photo"'* ]] &&
                [[ "$html" == *'class="story-action"'* ]] &&
@@ -109,6 +113,6 @@ jobs:
         if: ${{ failure() && steps.production_deploy.outcome == 'success' }}
         run: |
           echo 'PRODUCTION QA FAILED: restoring approved previous landing automatically'
-          cp backups/opportunita-v081-before-v09-visual-rebuild-20261117.html public/opportunita/index.html
+          cp backups/opportunita-v91-before-color-grade-20261117.html public/opportunita/index.html
           node scripts/build-opportunity-share.mjs
           npx wrangler deploy --config wrangler.jsonc
