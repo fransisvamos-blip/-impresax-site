@@ -26,7 +26,7 @@ try{
    if(!resp||resp.status()!==200)throw Error('Landing HTTP '+resp?.status());
    await page.waitForFunction(()=>document.querySelector('.hero-photo')?.complete&&document.querySelector('.hero-photo')?.naturalWidth>0,null,{timeout:18000});
    const audit=await page.evaluate(()=>{
-     const selectors=['.brand','.hero h1','.hero-sub','.hero-actions','.deal-title h2','.deal-main h3','.deal-alt h3','.editorial-heading h2','.story-action a','.process-top h2','.contact-intro h2','.form-button'];
+     const selectors=['.brand','.hero h1','.hero-sub','.hero-actions','.deal-title h2','.deal-main h3','.deal-alt h3','.story-copy h2','.story-action a','.process-top h2','.contact-intro h2','.form-button'];
      const broken=selectors.map(s=>{const el=document.querySelector(s),r=el?.getBoundingClientRect();return {s,r};}).filter(x=>!x.r||x.r.right>innerWidth+3||x.r.left< -3).map(x=>x.s);
      const heroCTA=document.querySelector('.hero-actions .btn-orange').getBoundingClientRect();
      const inputs=[...document.querySelectorAll('.form-field input')].map(el=>parseFloat(getComputedStyle(el).fontSize));
@@ -36,7 +36,8 @@ try{
        heroImage:document.querySelector('.hero-photo')?.naturalWidth,
        storyBg:getComputedStyle(document.querySelector('.editorial')).backgroundImage,
        offerBg:getComputedStyle(document.querySelector('.deal')).backgroundImage,
-       stepNumbers:[...document.querySelectorAll('.process-num')].map(e=>({text:e.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,width:e.getBoundingClientRect().width})),
+       stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundImage,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
+       heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
        storyAction:document.querySelector('.story-action a')?.getAttribute('href'),
        formBg:getComputedStyle(document.querySelector('.demo-form')).backgroundColor};
    });
@@ -45,11 +46,12 @@ try{
    if(audit.chapters!==5)throw Error('Expected five chapters');
    if(audit.stepNumbers.length!==3)throw Error('Expected 3 readable steps');
    for(const badge of audit.stepNumbers){
-     if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.color===badge.bg)throw Error('Unclear step number '+JSON.stringify(badge));
+     if(badge.width<40||!badge.bg.includes('linear-gradient')||!badge.color)throw Error('Unclear step number '+JSON.stringify(badge));
    }
    if(!audit.offerBg.includes('linear-gradient'))throw Error('Offer not premium designed');
    if(!audit.storyBg.includes('radial-gradient'))throw Error('Story not immersive');
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
+   if(!audit.heroFont.includes('Cormorant Garamond'))throw Error('Approved editorial font missing');
    if(audit.formBg==='rgba(0, 0, 0, 0)')throw Error('Contact form surface missing');
    if(audit.headline!=='CEDESI LOUNGE BAR')throw Error('Cedesi Lounge Bar missing: '+audit.headline);
    if(audit.primaryHref!=='#contatto')throw Error('CTA not pointing to contact');
@@ -63,10 +65,10 @@ try{
      await nav.click();
      if(await nav.getAttribute('aria-expanded')!=='false')throw Error('mobile nav failed to close');
    }
-   const stage=page.locator('.stage-photo img');
+   const stage=page.locator('.story-photo img');
    await stage.scrollIntoViewIfNeeded({timeout:10000});
    await page.waitForFunction(()=>{
-     const e=document.querySelector('.stage-photo img');return !!e&&e.complete&&e.naturalWidth>0;
+     const e=document.querySelector('.story-photo img');return !!e&&e.complete&&e.naturalWidth>0;
    },null,{timeout:18000});
    if(width===390||width===1440){
      await page.evaluate(()=>window.scrollTo(0,0));
@@ -78,12 +80,14 @@ try{
      if(await page.locator('#interesse').inputValue()!=='gestione')throw Error('Management selection not transferred to form');
      await page.locator('#name').fill('QA locale');
      await page.locator('#phone').fill('+39 333 1234567');
+     await page.locator('#contact-preference').selectOption('whatsapp');
+     await page.locator('#notes').fill('Richiedo informazioni riservate');
      await page.locator('#privacy').check();
      await page.locator('#interest-form button[type=submit]').click();
      await page.waitForTimeout(150);
      if(intercepted.length!==1)throw Error('Form failed to send one intercepted JSON request: '+intercepted.length);
      const data=intercepted[0];
-     if(data.transaction_interest!=='gestione'||data.privacy_accepted!==true||data.budget_band!=='da-definire'||data.full_name!=='QA locale')throw Error('Wrong lead payload: '+JSON.stringify(data));
+     if(data.transaction_interest!=='gestione'||data.privacy_accepted!==true||data.budget_band!=='da-definire'||data.full_name!=='QA locale'||!data.notes.includes('whatsapp')||!data.notes.includes('Richiedo informazioni riservate'))throw Error('Wrong lead payload: '+JSON.stringify(data));
      if(!await page.locator('#form-msg.success').isVisible())throw Error('Missing success feedback');
    }
    if(errors.length)throw Error('Browser JS errors: '+errors.join('; '));
