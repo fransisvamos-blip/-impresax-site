@@ -1,17 +1,14 @@
 name: ImpresaX Opportunity — V11 Render-Faithful Unified Layout
-# ONE-TIME user-authorized improvement matching approved first render. Re-pause after production QA.
+# OWNER PAUSE: V11 render-faithful navy/cyan deployed; staged and production 9-width browser, assets, preview, privacy and lead checks passed.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-v11-render1-unified-20261117'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }} # one user-authorized render-fidelity release only
+    if: ${{ false }} # owner pause after successful render-faithful production verification
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
