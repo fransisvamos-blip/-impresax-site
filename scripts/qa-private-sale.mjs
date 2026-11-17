@@ -71,11 +71,11 @@ try{
      if(badge.width<40||badge.bg==='rgba(0, 0, 0, 0)'||badge.bg===badge.color)throw Error('Unreadable step number '+JSON.stringify(badge));
    }
    if(audit.offerColor!=='rgb(255, 255, 255)')throw Error('Variant 1 white offer surface missing: '+audit.offerColor);
-   if(audit.storyColor!=='rgb(241, 248, 251)')throw Error('Variant 1 pale-blue venue story surface missing: '+audit.storyColor);
-   if(!audit.offerAltGradient.includes('linear-gradient'))throw Error('Cyan Variant 1 management card missing');
+   if(audit.storyColor!=='rgb(240, 247, 250)')throw Error('Render 1 pale-blue venue story surface missing: '+audit.storyColor);
+   if(!audit.offerAltGradient.includes('linear-gradient'))throw Error('Render 1 light management card missing');
    
-   if(!audit.contactGradient.includes('linear-gradient'))throw Error('Deep petrol contact stage missing');
-   if(audit.ctaColor!=='rgb(8, 215, 220)'||audit.ctaText!=='rgb(5, 40, 58)')throw Error('Variant 1 turquoise/dark primary button contrast missing: '+audit.ctaColor+'/'+audit.ctaText);
+   if(!audit.contactGradient.includes('linear-gradient'))throw Error('Render 1 dark photographic contact stage missing');
+   if(audit.ctaColor!=='rgb(14, 214, 218)'||audit.ctaText!=='rgb(5, 44, 64)')throw Error('Render 1 turquoise/dark CTA contrast missing: '+audit.ctaColor+'/'+audit.ctaText);
    if(!audit.proofBg.includes('linear-gradient'))throw Error('Cinematic hero proof overlay missing: '+audit.proofBg);
    if(!audit.firstVenueDetails)throw Error('Venue copy should precede photograph in Variant 1');
    
