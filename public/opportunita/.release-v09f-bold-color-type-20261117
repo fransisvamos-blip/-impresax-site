@@ -1,3 +1,5 @@
 Owner-authorized V9 responsive gate for true 320px mobile layout; heading min-content corrections now applied at max480 breakpoint to prevent Chrome viewport expansion. Deploy only on full preflight success, preserve backend and existing first-party images, roll back V8.1 if needed.
 
 320px staging screenshot and layout geometry diagnostic before production gate.
+
+V9.1 refines the approved new high-contrast art direction with Plus Jakarta Sans instead of experimental Syne after review of desktop/mobile screenshots. Preflight all widths before deployment.
