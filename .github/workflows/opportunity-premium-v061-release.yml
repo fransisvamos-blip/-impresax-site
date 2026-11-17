@@ -1,17 +1,14 @@
 name: ImpresaX Opportunity — Premium V6.1 Owner-Requested Release
-# ONE-TIME approved user change. No schedule, no continued push deployments after success.
+# OWNER PAUSE: V6.1 released and live visual/lead QA verified. No automatic releases.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/opportunita/.release-premium-sale-061-20261117'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: ${{ github.event_name == 'push' }} # one approved release only
+    if: ${{ false }} # owner pause after complete successful live QA
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
