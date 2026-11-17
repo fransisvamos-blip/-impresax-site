@@ -17,7 +17,7 @@ test('PRIVATE SALE 06: owner-approved clear sale-led message and five chapters',
  assert.match(html,/CLIENTELA FIDELIZZATA/);
  assert.match(html,/PIAZZA CON TAVOLINI/);
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
- const ids=['id="inizio"','id="locale"','id="vendita"','id="come-funziona"','id="contatto"'];
+ const ids=['id="inizio"','id="vendita"','id="locale"','id="come-funziona"','id="contatto"'];
  const positions=ids.map(x=>html.indexOf(x));
  assert.ok(positions.every(x=>x>0),JSON.stringify(positions));
  assert.deepEqual(positions,[...positions].sort((a,b)=>a-b));
@@ -78,11 +78,11 @@ test('both source-based venue photos served from this ImpresaX property, mobile 
 });
 test('social preview prominently says SALE and never mentions a public price',()=>{
  assert.match(html,/<meta property="og:title" content="Lounge bar in vendita a Catanzaro Lido">/);
- assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v6\.jpg">/);
+ assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v7\.jpg">/);
  assert.match(html,/<meta property="og:image:width" content="1200">/);
  assert.match(html,/<meta property="og:image:height" content="630">/);
- assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v6\.jpg">/);
- assert.match(worker,/\/og-social-v6\.jpg/);
+ assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v7\.jpg">/);
+ assert.match(worker,/\/og-social-v7\.jpg/);
  assert.match(html,/<link rel="canonical" href="https:\/\/opportunita\.impresax\.org\/">/);
 });
 test('responsive and accessible behavior stays complete from 320px',()=>{
@@ -100,4 +100,37 @@ test('responsive and accessible behavior stays complete from 320px',()=>{
  assert.match(js,/form\.checkValidity\(\)/);
  assert.match(html,/href="tel:\+393294582962"/);
  assert.match(privacy,/Informativa sulla privacy/);
+});
+
+test('V6.1 sale-first premium conversion hierarchy replaces muted dark photo overlay',()=>{
+ const ids=['id="inizio"','id="vendita"','id="locale"','id="come-funziona"','id="contatto"'];
+ const start=ids.map(x=>html.indexOf(x));
+ assert.deepEqual(start,[...start].sort((a,b)=>a-b),'sale panel must precede editorial');
+ assert.match(html,/01 \/ IN VENDITA/);
+ assert.match(html,/02 \/ IL LOCALE/);
+ assert.match(html,/VENDITA DI ATTIVITÀ COMMERCIALE/);
+ assert.match(html,/Nel cuore della movida universitaria: <strong>7 anni di attività<\/strong>/);
+ assert.match(css,/PRIVATE SALE 06\.1 — LIVE PREMIUM UPGRADE/);
+ assert.match(css,/:root\{--ink:#103148;--black:#092434;--cream:#fffaf4/);
+ assert.match(css,/--orange:#cb4610/);
+ assert.match(css,/\.hero-photo-wrap\{position:absolute;z-index:0;inset:24px/);
+ assert.match(css,/@media\(max-width:980px\)/);
+ assert.match(css,/@media\(max-width:640px\)/);
+ assert.match(css,/\.hero-foot\{position:relative/);
+ assert.doesNotMatch(html,/Proposta di design dimostrativa|Nessun dato viene inviato/);
+ assert.equal((html.match(/<meta name="description"/g)||[]).length,1);
+ assert.doesNotMatch(html,/PRIVATE SALE 07|\/assets\/piazza/);
+ assert.doesNotMatch(html,/300\.000|€\s*\d/);
+});
+test('vibrant WhatsApp preview, current privacy/real form and rollback assets',()=>{
+ assert.match(html,/<meta property="og:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v7\.jpg">/);
+ assert.match(html,/<meta name="twitter:image" content="https:\/\/opportunita\.impresax\.org\/og-social-v7\.jpg">/);
+ assert.match(worker,/\/og-social-v7\.jpg/);
+ assert.match(worker,/\/og-social-v6\.jpg/);
+ assert.match(html,/id="interest-form" action="\/api\/interesse"/);
+ assert.match(html,/name="privacy_accepted" required/);
+ assert.match(html,/href="\/privacy"/);
+ assert.match(js,/fetch\('\/api\/interesse'/);
+ assert.match(worker,/insert into public\.activity_sale_leads/);
+ assert.equal((html.match(/<section\b/g)||[]).length,5);
 });
