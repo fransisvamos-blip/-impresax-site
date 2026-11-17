@@ -10,24 +10,33 @@ const share=readFileSync(new URL('../scripts/build-opportunity-share.mjs',import
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??'';
 const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
 
-test('approved Variant 1: real navy/cyan and airy editorial layout, no orange as active design',()=>{
- assert.match(css,/PRIVATE SALE 10 — VARIANTE 1 CYAN SIGNATURE/);
- assert.match(css,/--navy:#051b2c;--navy-2:#092e45/);
- assert.match(css,/--orange:#08d8dc;--orange-bright:#06ceda/);
- assert.match(css,/\.hero h1 \.accent\{color:#05d9dd/);
+test('V11 unified render-faithful cyan art direction: no historical overrides',()=>{
+ assert.match(css,/PRIVATE SALE 11 — VARIANT 1 \/ SINGLE SOURCE OF TRUTH/);
+ assert.equal((css.match(/PRIVATE SALE \d+ —/g)||[]).length,1,'only one active design system');
+ assert.ok(css.length<32000,'previous cascade removed instead of layering more old styles');
+ assert.match(css,/--navy:#061d2e;--navy-deep:#041726;--navy-soft:#10384c/);
+ assert.match(css,/--cyan:#0ed6da;--cyan-hover:#51e6e6/);
+ assert.match(css,/\.hero h1 \.accent\{color:var\(--cyan\)/);
  assert.match(css,/\.hero-foot\{position:absolute;bottom:0/);
- assert.match(css,/\.btn-orange\{background:#08d7dc;border:1px solid #21e6e5;color:#05283a/);
- assert.match(css,/\.deal\{background:#fff;padding:84px/);
- assert.match(css,/\.deal-alt\{background:linear-gradient\(120deg,#f5f9fc,#eaf4f9\)/);
- assert.match(css,/\.editorial\{background:#f1f8fb/);
- assert.match(css,/\.story-copy\{grid-row:1;grid-column:1/);
- assert.match(css,/\.story-photo\{grid-row:1;grid-column:2/);
- assert.match(css,/\.process\{background:#fff;padding:78px/);
- assert.match(css,/\.contact\{background:linear-gradient\(106deg,#051e32ef/);
- assert.match(css,/\.demo-form\{background:#fff!important/);
- assert.match(css,/\.mobile-bar a\{background:#08d7dc/);
+ assert.match(css,/\.btn-orange\{display:inline-flex;align-items:center/);
+ assert.match(css,/background:var\(--cyan\);border:1px solid #64f3f1/);
+ assert.match(css,/\.deal\{background:#fff;padding:98px/);
+ assert.match(css,/\.deal-alt\{background:linear-gradient\(132deg,#f6fbfd,#eaf4f8\)/);
+ assert.match(css,/\.editorial\{background:#f0f7fa/);
+ assert.match(css,/\.story-copy\{grid-column:1;grid-row:1/);
+ assert.match(css,/\.story-photo\{grid-column:2;grid-row:1/);
+ assert.match(css,/\.process\{background:#fff;padding:94px/);
+ assert.match(css,/\.contact\{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient\(100deg,#061b2cf5/);
+ assert.match(css,/\.demo-form\{width:100%;margin:0;background:#fff/);
+ assert.match(css,/\.mobile-bar a\{display:flex;align-items:center;justify-content:center;width:100%/);
+ assert.match(css,/@media\(max-width:1200px\)/);
+ assert.match(css,/@media\(max-width:1020px\)/);
+ assert.match(css,/@media\(max-width:780px\)/);
+ assert.match(css,/@media\(max-width:540px\)/);
+ assert.match(css,/@media\(max-width:360px\)/);
  assert.match(html,/family=DM\+Sans/);
  assert.match(html,/family=Plus\+Jakarta\+Sans/);
+ assert.doesNotMatch(css,/--orange|Cormorant Garamond|#c34813|PRIVATE SALE 09/);
 });
 test('immediate and unambiguous sale message, two formulas, true facts, no public price',()=>{
  assert.match(html,/<h1 id="hero-heading"><span class="sale">CEDESI<\/span>\s*<span class="accent">LOUNGE BAR<\/span><\/h1>/);
@@ -89,12 +98,12 @@ test('user-facing routes, accessible icons and responsive-first input typography
  assert.match(html,/href="tel:\+393294582962"/);
  assert.match(html,/aria-controls="nav"/);
  assert.match(html,/aria-label="Apri il menu"/);
- assert.match(css,/\.form-field input,\.form-field select\{background:#f7fafb/);
- assert.match(css,/\.process-step:first-child \.step-marker\{background:#04bdc6\}/);
+ assert.match(css,/\.form-field input,\.form-field select\{display:block;appearance:none/);
+ assert.match(css,/\.process-step:first-child \.step-marker\{background:#04b9c6\}/);
  assert.match(css,/@media\(max-width:1200px\)/);
- assert.match(css,/@media\(max-width:1050px\)/);
- assert.match(css,/@media\(max-width:760px\)/);
- assert.match(css,/@media\(max-width:480px\)/);
+ assert.match(css,/@media\(max-width:1020px\)/);
+ assert.match(css,/@media\(max-width:780px\)/);
+ assert.match(css,/@media\(max-width:540px\)/);
  assert.match(css,/@media\(max-width:360px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.equal((html.match(/class="proof-icon"/g)||[]).length,3);
