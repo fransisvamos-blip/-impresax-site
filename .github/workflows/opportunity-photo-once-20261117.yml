@@ -1,10 +1,7 @@
 name: Opportunity — One-Time Venue Photo Optimization 2026-11-17
-# One-time read-only verification of already-deployed real venue photograph. No deployment, no generated assets.
+# SEALED: original real venue photo enhanced and verified live; no scheduled, push or executable manual releases.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/opportunity-photo-once-20261117.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +12,7 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ github.event.head_commit.message == 'photo-proof-once' }}
+    if: ${{ false }} # owner's one-time verified release complete
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:
