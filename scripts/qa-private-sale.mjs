@@ -42,13 +42,16 @@ try{
        stepNumbers:[...document.querySelectorAll('.step-marker')].map(e=>({text:e.querySelector('.process-num')?.textContent.trim(),bg:getComputedStyle(e).backgroundColor,color:getComputedStyle(e.querySelector('.process-num')).color,width:e.getBoundingClientRect().width})),
        heroFont:getComputedStyle(document.querySelector('.hero h1')).fontFamily,
        accentOverflow:(()=>{const e=document.querySelector('.hero h1 .accent');return e.scrollWidth>e.clientWidth+3})(),
+       physicalWidth:screen.width,
+       headingMetrics:[...document.querySelectorAll('.hero h1,.hero h1 .sale,.hero h1 .accent,.deal-main h3')].map(e=>({text:e.textContent.trim(),font:getComputedStyle(e).fontSize,client:e.clientWidth,scroll:e.scrollWidth,left:Math.round(e.getBoundingClientRect().left),right:Math.round(e.getBoundingClientRect().right),cssWidth:getComputedStyle(e).width})),
+       overflowingNodes:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>1&&r.right>screen.width+3&&getComputedStyle(e).display!=='none'}).slice(0,22).map(e=>({tag:e.tagName,cls:typeof e.className==='string'?e.className.slice(0,40):'',right:Math.round(e.getBoundingClientRect().right),scroll:e.scrollWidth,client:e.clientWidth})),
        inputBackground:getComputedStyle(document.querySelector('.form-field input')).backgroundColor,
        formText:getComputedStyle(document.querySelector('.demo-form')).color,
        storyAction:document.querySelector('.story-action a')?.getAttribute('href'),
        formBg:getComputedStyle(document.querySelector('.demo-form')).backgroundColor};
    });
    if(audit.scroll>width+3||audit.body>width+3)throw Error('horizontal overflow '+JSON.stringify(audit));
-   if(audit.broken.length)throw Error('clipped essentials '+JSON.stringify(audit.broken));
+   if(audit.broken.length)throw Error('clipped essentials '+JSON.stringify(audit.broken)+' '+JSON.stringify(audit.headingMetrics));
    if(audit.chapters!==5)throw Error('Expected five chapters');
    if(audit.stepNumbers.length!==3)throw Error('Expected 3 readable steps');
    for(const badge of audit.stepNumbers){
@@ -58,7 +61,7 @@ try{
    if(audit.storyColor!=='rgb(7, 50, 77)')throw Error('New V9 story night blue missing: '+audit.storyColor);
    if(audit.storyAction!=='#contatto')throw Error('Photo story CTA missing');
    if(!audit.heroFont.includes('Syne'))throw Error('V9 Syne display font missing');
-   if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px');
+   if(audit.accentOverflow)throw Error('LOUNGE BAR title clipped at '+width+'px '+JSON.stringify(audit.headingMetrics));
    if(audit.inputBackground==='rgba(0, 0, 0, 0)')throw Error('Form fields lost white-card surface');
    if(audit.formBg==='rgba(0, 0, 0, 0)')throw Error('Contact form surface missing');
    if(audit.headline!=='CEDESI LOUNGE BAR')throw Error('Cedesi Lounge Bar missing: '+audit.headline);
