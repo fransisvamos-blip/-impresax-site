@@ -26,6 +26,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script>
+/* Consent-first GTM loader: only starts after an explicit opt-in. */
+window.dataLayer=window.dataLayer||[];
+function gtag(){window.dataLayer.push(arguments)}
+gtag('consent','default',{ad_storage:'denied',analytics_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+window.__opportunityTrackingConsent=false;
+window.loadOpportunityGTM=function(){
+ if(window.__opportunityGtmLoaded)return;
+ window.__opportunityGtmLoaded=true;
+ (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
+ var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+ j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+ })(window,document,'script','dataLayer','GTM-M5Q2VHTT');
+};
+</script>
 <style>
 
 /* PRIVATE SALE 11 — VARIANT 1 / SINGLE SOURCE OF TRUTH.
@@ -382,6 +397,21 @@ svg{display:block;flex:none}
  *,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
 
+
+/* Paid-search measurement consent, scoped to the lounge-bar landing only. */
+#op-cookie-banner[hidden]{display:none!important}
+#op-cookie-banner{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:14px;z-index:10020;
+ width:min(430px,calc(100vw - 28px));background:#06263a;color:#f5fdff;border:1px solid #379daf;
+ border-radius:16px;box-shadow:0 16px 55px rgba(0,13,28,.36);padding:17px 19px;font-family:Arial,sans-serif}
+#op-cookie-banner h2{color:#fff;font-size:16px;line-height:1.3;margin:0 0 7px}
+#op-cookie-banner p{color:#dae9f0;font-size:12px;line-height:1.55;margin:0 0 11px}
+#op-cookie-banner a{color:#90f3fd;text-decoration:underline}
+.op-cookie-actions{display:flex;flex-wrap:wrap;gap:8px}
+.op-cookie-actions button{border-radius:9px;min-height:41px;padding:10px 13px;cursor:pointer;font-size:12px;font-weight:800;flex:1;min-width:130px}
+#op-cookie-reject{background:transparent;border:1px solid #9ebdcb;color:#fff}
+#op-cookie-accept{background:#00e8f2;border:1px solid #00e8f2;color:#051b2c}
+#op-cookie-settings{background:transparent;border:0;cursor:pointer;text-decoration:underline;color:inherit;font:inherit;font-size:11px;padding:4px}
+
 </style>
 </head>
 <body>
@@ -509,7 +539,13 @@ svg{display:block;flex:none}
   </div>
 </section>
 </main>
-<footer class="footer"><div class="container footer-inner"><strong>OPPORTUNITÀ IMPRENDITORIALE</strong><span>La vendita riguarda l'attività, non la proprietà dell'immobile. Condizioni riservate.</span><a href="#page-top">TORNA ALL’INIZIO ↑</a></div></footer>
+<footer class="footer"><div class="container footer-inner"><strong>OPPORTUNITÀ IMPRENDITORIALE</strong><span>La vendita riguarda l'attività, non la proprietà dell'immobile. Condizioni riservate.</span><a href="#page-top">TORNA ALL’INIZIO ↑</a><button type="button" id="op-cookie-settings">Preferenze cookie</button></div></footer>
+
+<div id="op-cookie-banner" role="dialog" aria-label="Preferenze di misurazione" aria-modal="false" hidden>
+ <h2>Privacy e misurazione</h2>
+ <p>Usiamo servizi di Google per misurare le richieste provenienti dagli annunci solo con il tuo consenso. Puoi rifiutare e continuare a usare il sito. <a href="/privacy" target="_blank" rel="noopener noreferrer">Informativa privacy</a>.</p>
+ <div class="op-cookie-actions"><button type="button" id="op-cookie-reject">Solo necessari</button><button type="button" id="op-cookie-accept">Accetta misurazione</button></div>
+</div>
 <div class="mobile-bar" id="mobile-bar"><a href="#contatto" data-pref="vendita">RICHIEDI DETTAGLI DI VENDITA →</a></div>
 <script>
 (()=>{
@@ -568,6 +604,10 @@ svg{display:block;flex:none}
      show('Richiesta ricevuta. Ti ricontatteremo per un primo confronto riservato.',false);
      form.reset();
      submit.textContent='RICHIESTA INVIATA ✓';
+     // Count only a real persisted lead (HTTP 201 + request_id), never a honeypot 202 or a CTA click.
+     if(window.__opportunityTrackingConsent===true && res.status===201 && out?.request_id && Array.isArray(window.dataLayer)){
+       window.dataLayer.push({event:'opportunity_lead_submit_success',transaction_interest:payload.transaction_interest,listing_code:'CZ_LIDO_LOUNGE_2026'});
+     }
      window.dispatchEvent(new CustomEvent('opportunita:funnel',{detail:{stage:'richiesta_completata',formula:payload.transaction_interest}}));
    }catch(error){
      show('Non siamo riusciti a inviare la richiesta. Riprova o chiama il 329 458 2962.',true);
@@ -582,6 +622,37 @@ svg{display:block;flex:none}
    new IntersectionObserver(es=>{contact=es[0].isIntersecting;update()},{threshold:0}).observe(document.querySelector('.contact'));
    new IntersectionObserver(es=>{footer=es[0].isIntersecting;update()},{threshold:0}).observe(document.querySelector('.footer'));
  }
+})();
+</script>
+<script>
+(function(){
+ 'use strict';
+ var banner=document.getElementById('op-cookie-banner');
+ var settings=document.getElementById('op-cookie-settings');
+ var key='opportunita_measurement_consent_v1';
+ function read(){try{return localStorage.getItem(key)}catch(e){return null}}
+ function store(v){try{localStorage.setItem(key,v)}catch(e){}}
+ function setConsent(accepted,persist){
+   var wasGranted=window.__opportunityTrackingConsent===true;
+   window.__opportunityTrackingConsent=accepted;
+   if(persist)store(accepted?'accepted':'rejected');
+   if(window.gtag)window.gtag('consent','update',{
+     ad_storage:accepted?'granted':'denied',
+     analytics_storage:accepted?'granted':'denied',
+     ad_user_data:accepted?'granted':'denied',
+     ad_personalization:'denied'
+   });
+   banner.hidden=true;
+   if(accepted && typeof window.loadOpportunityGTM==='function')window.loadOpportunityGTM();
+   if(!accepted && wasGranted)location.reload(); // Revoke previously loaded scripts on this page.
+ }
+ document.getElementById('op-cookie-accept').addEventListener('click',function(){setConsent(true,true)});
+ document.getElementById('op-cookie-reject').addEventListener('click',function(){setConsent(false,true)});
+ settings.addEventListener('click',function(){banner.hidden=false;document.getElementById('op-cookie-reject').focus()});
+ var saved=read();
+ if(saved==='accepted')setConsent(true,false);
+ else if(saved==='rejected')setConsent(false,false);
+ else banner.hidden=false;
 })();
 </script>
 </body></html>
