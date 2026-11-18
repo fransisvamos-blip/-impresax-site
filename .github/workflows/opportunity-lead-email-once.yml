@@ -1,11 +1,8 @@
 name: Opportunity — Two-recipient Lead Email Setup (One Time)
-# Explicitly requested: configure lounge-bar lead alerts to two chosen email addresses.
+# SEALED after successful lead-email deployment and frontend QA. Cloudflare destination verification remains an external prerequisite.
 # No scheduled runs. Other ImpresaX projects remain untouched.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/opportunity-lead-email-once.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,7 +13,7 @@ concurrency:
 
 jobs:
   lead-email:
-    if: ${{ github.event.head_commit.message == 'enable-lounge-two-recipient-email' }}
+    if: ${{ false }} # completed one-time deploy; owner has not enabled any recurring activity
     runs-on: ubuntu-latest
     timeout-minutes: 16
     env:
