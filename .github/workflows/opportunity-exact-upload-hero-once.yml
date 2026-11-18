@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    if: ${{ github.event.head_commit.message == 'publish-original-image-impresax-only' }}
+    if: ${{ github.event.head_commit.message == 'publish-user-exact-hero-after-test-fix' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
