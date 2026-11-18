@@ -36,6 +36,10 @@
       "name": "EMAIL",
       "allowed_sender_addresses": [
         "info@impresax.org"
+      ],
+      "allowed_destination_addresses": [
+        "valerianogaetano@hotmail.com",
+        "fransisvamos@gmail.com"
       ]
     }
   ],
