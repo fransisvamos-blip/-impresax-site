@@ -17,7 +17,7 @@ const formatInterest = (value) =>
   ({ cessione: "Acquisto dell'attività", gestione: "Gestione del locale", entrambe: "Acquisto o gestione" })[value] || value;
 
 const readable = (value, fallback = "Non specificato") => {
-  const v = String(value == null ? "" : value).replace(/[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]/g, "").trim();
+  const v = String(value == null ? "" : value).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").trim();
   return v || fallback;
 };
 
@@ -141,7 +141,7 @@ export async function handleOpportunityLead(request,env,ctx) {
       full_name: fullName,
       phone,
       transaction_interest: transaction,
-      contact_preference: clean(data?.notes,1500).match(/(?:^|\\n)Contatto preferito:\\s*(Telefonata|WhatsApp)/i)?.[1] || "",
+      contact_preference: clean(data?.notes,1500).match(/(?:^|\n)Contatto preferito:\s*(Telefonata|WhatsApp)/i)?.[1] || "",
       notes: clean(data?.notes,1500),
       source_page: clean(data?.source_page,500),
     };
