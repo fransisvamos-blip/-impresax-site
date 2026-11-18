@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    if: ${{ github.event.head_commit.message == 'retry-pixel-verified-hero' }}
+    if: ${{ github.event.head_commit.message == 'publish-original-image-impresax-only' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -31,16 +31,15 @@ jobs:
       - name: Install test and deploy dependencies
         run: |
           npm install --no-audit --no-fund
-          npm install --no-save --no-audit --no-fund playwright-core sharp
-      - name: Copy the unchanged user-selected image into the existing site
+          npm install --no-save --no-audit --no-fund playwright-core
+      - name: Reassemble byte-identical uploaded PNG from Impresa X repository
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --silent --show-error --max-time 60 --retry 2 'https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax_lounge_hero_source_20261118.png?v=1795000716' -o public/opportunita/hero-selected-original-20261118.png
+          cat .image-transfer/lounge-20261118/original.part*.b64 | base64 --decode > public/opportunita/hero-selected-original-20261118.png
+          echo '64c1d33693f2c7507bae7c4ba85c053ade15c08630bc09bd295798582fbd7835  public/opportunita/hero-selected-original-20261118.png' | sha256sum --check
           file public/opportunita/hero-selected-original-20261118.png
-          test "$(wc -c < public/opportunita/hero-selected-original-20261118.png)" -gt 250000
-          node --input-type=module -e "import sharp from 'sharp'; import {createHash} from 'node:crypto'; const file='public/opportunita/hero-selected-original-20261118.png'; const img=sharp(file); const meta=await img.metadata(); if(meta.width!==1774||meta.height!==887)throw Error('Wrong image dimensions'); const raw=await img.ensureAlpha().raw().toBuffer(); const pixelHash=createHash('sha256').update(raw).digest('hex'); console.log('Source pixel SHA256:',pixelHash); if(pixelHash!=='cd43ad97dca40518114a20e36d04e03cfc6e3503df909128f7e551190b87d7ac1')throw Error('The image pixels were changed');"
-          echo "Exact source PIXELS confirmed; image was not visually modified"
+          test "$(wc -c < public/opportunita/hero-selected-original-20261118.png)" -gt 3000000
       - name: Regression checks — no form or layout changes
         shell: bash
         run: |
@@ -80,8 +79,8 @@ jobs:
           grep -Fq 'name="privacy_accepted"' /tmp/exact-hero-live.html
           grep -Fq 'filter:none;transform:none' /tmp/exact-hero-live.html
           curl --fail --location --silent --show-error --max-time 35 'https://opportunita.impresax.org/hero-selected-original-20261118.png' -o /tmp/verified-hero.png
-          node --input-type=module -e "import sharp from 'sharp'; import {createHash} from 'node:crypto'; const img=sharp('/tmp/verified-hero.png'); const meta=await img.metadata(); if(meta.width!==1774||meta.height!==887)throw Error('Wrong live dimensions'); const raw=await img.ensureAlpha().raw().toBuffer(); const hash=createHash('sha256').update(raw).digest('hex'); if(hash!=='cd43ad97dca40518114a20e36d04e03cfc6e3503df909128f7e551190b87d7ac1')throw Error('Live photo pixels differ from user's original'); console.log('LIVE pixel SHA256 verified:',hash);"
-          echo 'Live hero matches the user-selected source image pixel for pixel'
+          echo '64c1d33693f2c7507bae7c4ba85c053ade15c08630bc09bd295798582fbd7835  /tmp/verified-hero.png' | sha256sum --check
+          echo 'Live hero is exactly the original PNG uploaded by the user, byte for byte'
       - name: QA live landing on nine responsive widths
         run: QA_BASE_URL=https://opportunita.impresax.org/ node scripts/qa-private-sale.mjs
       - name: Save screenshot evidence
