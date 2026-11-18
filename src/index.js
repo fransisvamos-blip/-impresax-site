@@ -33,7 +33,7 @@ export default {
 
     // Dedicated commercial landing. Never enters the automated tenant/render pipeline.
     if (host === "opportunita.impresax.org") {
-      return serveOpportunity(request, env);
+      return serveOpportunity(request, env, ctx);
     }
 
     // Private ImpresaX Ops / Control Room.
