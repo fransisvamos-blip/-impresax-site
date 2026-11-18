@@ -1,0 +1,93 @@
+name: Opportunity — Publish User's Exact Hero Image Once
+# User-selected attached PNG, byte-for-byte; no AI edits or CSS image filters.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opportunity-exact-upload-hero-once.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: opportunity-exact-hero-20261118
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Copy the unchanged user-selected image into the existing site
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --max-time 60 --retry 2 'https://cdn.shopify.com/s/files/1/1025/0744/6616/files/impresax_lounge_hero_source_20261118.png?v=1795000716' -o public/opportunita/hero-selected-original-20261118.png
+          file public/opportunita/hero-selected-original-20261118.png
+          test "$(wc -c < public/opportunita/hero-selected-original-20261118.png)" -gt 250000
+          echo '64c1d33693f2c7507bae7c4ba85c053ade15c08630bc09bd295798582fbd7835  public/opportunita/hero-selected-original-20261118.png' | sha256sum --check --status
+          echo "Exact source PNG checksum confirmed"
+      - name: Install test and deploy dependencies
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright-core
+      - name: Regression checks — no form or layout changes
+        shell: bash
+        run: |
+          node --test test/opportunita-landing.test.mjs
+          node --test test/render-preview.test.mjs
+          node --check src/opportunity.js
+          grep -Fq '.hero-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center 50%;filter:none;transform:none}' public/opportunita/index.html
+          grep -Fq 'src="/hero-selected-original-20261118.png"' public/opportunita/index.html
+          grep -Fq 'aspect-ratio:1774 / 887' public/opportunita/index.html
+      - name: Local QA across nine viewport widths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8191 --bind 127.0.0.1 --directory public/opportunita > /tmp/exact-hero-local.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" || true' EXIT
+          sleep 2
+          QA_BASE_URL=http://127.0.0.1:8191/ node scripts/qa-private-sale.mjs
+      - name: Persist exact selected PNG into the existing GitHub repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/opportunita/hero-selected-original-20261118.png
+          git commit -m 'Store exact user-selected lounge photo without visual modifications'
+          git push origin HEAD:main
+      - name: Publish to existing Cloudflare Worker once
+        run: npx wrangler deploy --config wrangler.jsonc
+      - name: Verify exact live source asset and correct hero markup
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --max-time 35 'https://opportunita.impresax.org/?hero=source-20261118' -o /tmp/exact-hero-live.html
+          grep -Fq 'src="/hero-selected-original-20261118.png"' /tmp/exact-hero-live.html
+          grep -Fq 'href="/hero-selected-original-20261118.png"' /tmp/exact-hero-live.html
+          grep -Fq 'name="privacy_accepted"' /tmp/exact-hero-live.html
+          grep -Fq 'filter:none;transform:none' /tmp/exact-hero-live.html
+          curl --fail --location --silent --show-error --max-time 35 'https://opportunita.impresax.org/hero-selected-original-20261118.png' -o /tmp/verified-hero.png
+          echo '64c1d33693f2c7507bae7c4ba85c053ade15c08630bc09bd295798582fbd7835  /tmp/verified-hero.png' | sha256sum --check --status
+          echo 'Live hero uses the exact unchanged uploaded source image'
+      - name: QA live landing on nine responsive widths
+        run: QA_BASE_URL=https://opportunita.impresax.org/ node scripts/qa-private-sale.mjs
+      - name: Save screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opportunity-user-exact-hero-20261118
+          path: /tmp/opportunita-private-sale06-qa/*.png
+          retention-days: 7
+          if-no-files-found: ignore
