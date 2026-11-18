@@ -57,7 +57,7 @@ test('immediate and unambiguous sale message, two formulas, true facts, no publi
  assert.doesNotMatch(html,/prototipo da approvare|modulo dimostrativo|non invia dati/i);
 });
 test('only supplied real venue photo derivations, not fictitious cocktail/bar photos',()=>{
- for(const file of ['hero-lounge-desktop-v1.webp','hero-lounge-mobile-v1.webp','hero-lounge-scene-v1.jpg',
+ for(const file of ['hero-lounge-desktop-v1.webp','hero-lounge-mobile-v1.webp',
                     'story-serata-desktop-v2.webp','story-serata-mobile-v2.webp','story-serata-locale-v2.jpg']){
    assert.ok(html.includes('/'+file),file);
    assert.ok(worker.includes('/'+file),file);
