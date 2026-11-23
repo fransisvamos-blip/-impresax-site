@@ -10,7 +10,6 @@ const TRANSACTIONS = new Set(["cessione","gestione","entrambe"]);
 const LEAD_NOTIFICATION_FROM = "info@impresax.org";
 export const OPPORTUNITY_LEAD_RECIPIENTS = Object.freeze([
   "valerianogaetano@hotmail.com",
-  "fransisvamos@gmail.com",
 ]);
 
 const formatInterest = (value) =>
