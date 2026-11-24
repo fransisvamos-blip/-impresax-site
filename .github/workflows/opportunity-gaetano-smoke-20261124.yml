@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   smoke:
-    if: "github.event.head_commit.message == 'release(lounge) Cloudflare email binding smoke test'"
+    if: "github.event.head_commit.message == 'release(lounge) Cloudflare email binding smoke test v2'"
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
@@ -47,12 +47,15 @@ jobs:
             }
           };
           JS
-          cat > gaetano-smoke-wrangler.jsonc <<'JSON'
+          key=$(openssl rand -hex 32)
+          echo "::add-mask::$key"
+          cat > gaetano-smoke-wrangler.jsonc <<JSON
           {
             "name":"impresax-gaetano-email-smoke-20261124",
             "main":"gaetano-smoke-worker.mjs",
             "compatibility_date":"2026-10-11",
             "workers_dev":true,
+            "vars":{"SMOKE_KEY":"${key}"},
             "send_email":[{
               "name":"EMAIL",
               "allowed_sender_addresses":["info@impresax.org"],
@@ -66,8 +69,7 @@ jobs:
           }
           trap cleanup EXIT
           npx wrangler deploy --config gaetano-smoke-wrangler.jsonc
-          key=$(openssl rand -hex 32)
-          printf '%s' "${key}" | npx wrangler secret put SMOKE_KEY --config gaetano-smoke-wrangler.jsonc >/tmp/gaetano-secret.log 2>&1
+          sleep 4
           url='https://impresax-gaetano-email-smoke-20261124.fransisvamos.workers.dev/'
           code=$(curl -sS --max-time 25 -o /tmp/gaetano-binding-result.json -w '%{http_code}' -X POST "${url}" -H "x-smoke-key: ${key}" || true)
           echo "EMAIL_BINDING_TEST_HTTP_${code}"
