@@ -8,7 +8,7 @@ const privacy=readFileSync(new URL('../public/opportunita/privacy.html',import.m
 const worker=readFileSync(new URL('../src/opportunity.js',import.meta.url),'utf8');
 const share=readFileSync(new URL('../scripts/build-opportunity-share.mjs',import.meta.url),'utf8');
 const css=html.match(/<style>([\s\S]*?)<\/style>/)?.[1]??'';
-const js=html.match(/<script>([\s\S]*?)<\/script>/)?.[1]??'';
+const js=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n');
 
 test('V11 unified render-faithful cyan art direction: no historical overrides',()=>{
  assert.match(css,/PRIVATE SALE 11 — VARIANT 1 \/ SINGLE SOURCE OF TRUTH/);
