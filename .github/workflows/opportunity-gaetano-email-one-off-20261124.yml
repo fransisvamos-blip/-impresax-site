@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'release(lounge): one-time Gaetano lead email'
+    if: "github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'release(lounge) one-time Gaetano email v2'"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
