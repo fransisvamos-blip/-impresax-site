@@ -1,0 +1,102 @@
+name: Lounge Bar — Gaetano Lead Notifications One-Time Release
+# One-time owner-requested production release; no cron, no recurring deployments.
+on:
+  push:
+    paths:
+      - .github/workflows/opportunity-gaetano-email-one-off-20261124.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: opportunity-gaetano-email-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'release(lounge): one-time Gaetano lead email'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing Worker dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate Gaetano-only notifications and regression tests
+        run: |
+          set -euo pipefail
+          node --check src/opportunity.js
+          node --check src/index.js
+          node --test test/opportunita-notifications.test.mjs
+          node --test test/opportunita-landing.test.mjs
+          node --test test/render-preview.test.mjs
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {strict as assert} from 'node:assert';
+          import {OPPORTUNITY_LEAD_RECIPIENTS} from './src/opportunity.js';
+          const config=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          assert.deepEqual(OPPORTUNITY_LEAD_RECIPIENTS,['valerianogaetano@hotmail.com']);
+          assert.deepEqual(config.send_email[0].allowed_destination_addresses,['valerianogaetano@hotmail.com']);
+          assert.deepEqual(config.send_email[0].allowed_sender_addresses,['info@impresax.org']);
+          console.log('GAETANO_ONLY_SENDER_BINDING_VALIDATED');
+          NODE
+      - name: Check Cloudflare destination verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo 'CLOUDFLARE_TOKEN_MISSING'; exit 1; }
+          endpoint="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/email/routing/addresses"
+          code=$(curl -sS --max-time 25 -o /tmp/email-dest.json -w '%{http_code}' -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "${endpoint}" || true)
+          echo "DESTINATION_CHECK_HTTP_${code}"
+          if [ "${code}" = "200" ]; then
+            node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const data=JSON.parse(readFileSync('/tmp/email-dest.json','utf8'));
+          const found=(Array.isArray(data.result)?data.result:[]).find(x=>String(x.email||'').toLowerCase()==='valerianogaetano@hotmail.com');
+          console.log('GAETANO_DESTINATION_STATUS',!found?'NOT_REGISTERED':(found.verified===true||Boolean(found.verified))?'VERIFIED':'PENDING');
+          NODE
+            found=$(node -e "const d=require('/tmp/email-dest.json');console.log((Array.isArray(d.result)?d.result:[]).some(x=>String(x.email||'').toLowerCase()==='valerianogaetano@hotmail.com')?'yes':'no')")
+            if [ "${found}" = "no" ]; then
+              register=$(curl -sS --max-time 25 -o /tmp/gaetano-register.json -w '%{http_code}' -X POST "${endpoint}" -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json' --data '{"email":"valerianogaetano@hotmail.com"}' || true)
+              echo "GAETANO_DESTINATION_REGISTRATION_HTTP_${register}"
+              node -e "try{const d=require('/tmp/gaetano-register.json');console.log('VERIFICATION_EMAIL_REQUESTED',Boolean(d.success))}catch{console.log('VERIFICATION_UNCONFIRMED')}"
+            fi
+          else
+            echo 'DESTINATION_STATUS_NOT_READABLE_WITH_WORKERS_TOKEN'
+          fi
+      - name: Deploy existing ImpresaX Worker (one time)
+        id: deploy
+        run: npx wrangler deploy --config wrangler.jsonc
+      - name: Verify live landing and reject invalid leads without side effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --max-time 35 'https://opportunita.impresax.org/' -o /tmp/lounge-live.html
+          grep -Fq 'id="interest-form"' /tmp/lounge-live.html
+          grep -Fq 'name="privacy_accepted"' /tmp/lounge-live.html
+          code=$(curl -sS --max-time 25 -o /tmp/lounge-invalid.json -w '%{http_code}' -X POST 'https://opportunita.impresax.org/api/interesse' -H 'Content-Type: application/json' --data '{"full_name":"QA","phone":"000","transaction_interest":"cessione","privacy_accepted":false}')
+          test "${code}" = "422"
+          grep -Fq '"error":"DATI_NON_VALIDI"' /tmp/lounge-invalid.json
+          echo 'LIVE_SITE_AND_NO_FAKE_LEAD_SMOKE_PASS'
+      - name: Send one test email via Cloudflare API if permissions allow
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/email/sending/send"
+          code=$(curl -sS --max-time 30 -o /tmp/gaetano-email-test.json -w '%{http_code}' -X POST "${endpoint}" -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" -H 'Content-Type: application/json' --data '{"to":"valerianogaetano@hotmail.com","from":"info@impresax.org","subject":"[ImpresaX] Test automatico notifiche Lounge Bar","text":"Test tecnico delle notifiche email per Lounge Bar Catanzaro Lido: non e un lead reale. I prossimi contatti arriveranno a questa casella."}' || true)
+          echo "EMAIL_TEST_API_HTTP_${code}"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          let data={};try{data=JSON.parse(readFileSync('/tmp/gaetano-email-test.json','utf8'))}catch{}
+          const r=data.result||{};
+          console.log('EMAIL_TEST_STATUS',JSON.stringify({accepted:data.success===true,delivered:(r.delivered||[]).length,queued:(r.queued||[]).length,bounced:(r.permanent_bounces||[]).length,errors:(data.errors||[]).map(x=>x.code||'UNKNOWN')}));
+          NODE
+          if [ "${code}" != "200" ]; then
+            echo 'EMAIL_TEST_NOT_CONFIRMED; REST token may lack email sending scope, independent of Worker binding.'
+          fi
