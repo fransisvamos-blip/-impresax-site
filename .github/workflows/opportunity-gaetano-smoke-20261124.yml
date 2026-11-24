@@ -1,0 +1,77 @@
+name: Lounge Bar — Verify Email Binding Once
+# Disposable smoke test only; no recurring deploy or customer data created.
+on:
+  push:
+    paths:
+      - .github/workflows/opportunity-gaetano-smoke-20261124.yml
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: "github.event.head_commit.message == 'release(lounge) Cloudflare email binding smoke test'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: feca9a311477f890b71cf1116f1d6273
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Deploy temporary authenticated Worker to exercise real Cloudflare email binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > gaetano-smoke-worker.mjs <<'JS'
+          export default {
+            async fetch(request,env){
+              if(request.method!=='POST'||!env.SMOKE_KEY||request.headers.get('x-smoke-key')!==env.SMOKE_KEY){
+                return new Response('Not found',{status:404});
+              }
+              try{
+                const result=await env.EMAIL.send({
+                  from:{email:'info@impresax.org',name:'ImpresaX · Lounge Bar'},
+                  to:'valerianogaetano@hotmail.com',
+                  subject:'[ImpresaX] Prova invio automatico lead Lounge Bar',
+                  text:'TEST TECNICO, non e un nuovo lead. La notifica automatica del lounge bar viene verificata tramite Cloudflare.',
+                  html:'<p><strong>TEST TECNICO</strong> delle notifiche Lounge Bar. Non e un nuovo lead.</p>'
+                });
+                return new Response(JSON.stringify({ok:!!result?.messageId,providerAccepted:!!result?.messageId}),{status:result?.messageId?200:502,headers:{'Content-Type':'application/json'}});
+              }catch(error){
+                return new Response(JSON.stringify({ok:false,code:error?.code||'EMAIL_ERROR'}),{status:502,headers:{'Content-Type':'application/json'}});
+              }
+            }
+          };
+          JS
+          cat > gaetano-smoke-wrangler.jsonc <<'JSON'
+          {
+            "name":"impresax-gaetano-email-smoke-20261124",
+            "main":"gaetano-smoke-worker.mjs",
+            "compatibility_date":"2026-10-11",
+            "workers_dev":true,
+            "send_email":[{
+              "name":"EMAIL",
+              "allowed_sender_addresses":["info@impresax.org"],
+              "allowed_destination_addresses":["valerianogaetano@hotmail.com"]
+            }]
+          }
+          JSON
+          cleanup() {
+            echo 'DELETING_TEMPORARY_EMAIL_TEST_WORKER'
+            npx wrangler delete --config gaetano-smoke-wrangler.jsonc --force || true
+          }
+          trap cleanup EXIT
+          npx wrangler deploy --config gaetano-smoke-wrangler.jsonc
+          key=$(openssl rand -hex 32)
+          printf '%s' "${key}" | npx wrangler secret put SMOKE_KEY --config gaetano-smoke-wrangler.jsonc >/tmp/gaetano-secret.log 2>&1
+          url='https://impresax-gaetano-email-smoke-20261124.fransisvamos.workers.dev/'
+          code=$(curl -sS --max-time 25 -o /tmp/gaetano-binding-result.json -w '%{http_code}' -X POST "${url}" -H "x-smoke-key: ${key}" || true)
+          echo "EMAIL_BINDING_TEST_HTTP_${code}"
+          cat /tmp/gaetano-binding-result.json
+          echo
+          node -e "const r=require('/tmp/gaetano-binding-result.json');if(!r.ok)process.exit(1)"
+          echo 'REAL_CLOUDFLARE_BINDING_ACCEPTED_TEST_EMAIL'
