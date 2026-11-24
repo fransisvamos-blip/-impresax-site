@@ -38,7 +38,10 @@ export async function notifyOpportunityLead(env, lead) {
     ["Codice annuncio", CODE],
     ["ID richiesta", readable(lead.id)],
     ["Data e ora (UTC)", readable(lead.created_at)],
-    ["Origine", readable(lead.source_page)],
+    ["Pagina di origine", readable(lead.source_page)],
+    ["Fonte pubblicitaria", readable(lead.utm_source)],
+    ["Canale", readable(lead.utm_medium)],
+    ["Campagna pubblicitaria", readable(lead.utm_campaign)],
   ];
   const subject = "[Lounge Bar Catanzaro Lido] Nuova richiesta di " +
     (lead.transaction_interest === "gestione" ? "gestione" : lead.transaction_interest === "entrambe" ? "vendita/gestione" : "acquisto");
