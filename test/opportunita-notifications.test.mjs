@@ -17,9 +17,9 @@ const sample={
   created_at:'2026-11-18T12:00:00Z',
 };
 
-test('two exact recipient allowlist scoped to lounge notifications and same existing sender',()=>{
+test('single recipient allowlist scoped to lounge notifications and same existing sender',()=>{
   assert.deepEqual(OPPORTUNITY_LEAD_RECIPIENTS,[
-    'valerianogaetano@hotmail.com','fransisvamos@gmail.com',
+    'valerianogaetano@hotmail.com',
   ]);
   assert.equal(config.send_email.length,1);
   assert.equal(config.send_email[0].name,'EMAIL');
@@ -30,15 +30,15 @@ test('two exact recipient allowlist scoped to lounge notifications and same exis
   assert.match(worker,/ctx\.waitUntil\(mailWork\)/);
 });
 
-test('each saved lounge lead emails BOTH recipients with essential fields; HTML is escaped',async()=>{
+test('each saved lounge lead emails Gaetano only with essential fields; HTML is escaped',async()=>{
   const sends=[];
   const fake={EMAIL:{send:async(payload)=>{
     sends.push(payload);
     return {messageId:'provider-id-'+sends.length};
   }}};
   const result=await notifyOpportunityLead(fake,sample);
-  assert.deepEqual(result,{sent:2,failed:0});
-  assert.equal(sends.length,2);
+  assert.deepEqual(result,{sent:1,failed:0});
+  assert.equal(sends.length,1);
   assert.deepEqual(sends.map(x=>x.to),OPPORTUNITY_LEAD_RECIPIENTS);
   for(const msg of sends){
     assert.equal(msg.from.email,'info@impresax.org');
@@ -52,20 +52,18 @@ test('each saved lounge lead emails BOTH recipients with essential fields; HTML 
   }
 });
 
-test('partial delivery failure never rejects and second recipient still receives lead',async()=>{
+test('recipient delivery failure never throws and persists lead independently',async()=>{
   let calls=0;
   const fake={EMAIL:{send:async(msg)=>{
     calls++;
-    if(msg.to===OPPORTUNITY_LEAD_RECIPIENTS[0]){
-      const error=new Error('Unverified destination');error.code='E_RECIPIENT_NOT_ALLOWED';throw error;
-    }
-    return {messageId:'ok'};
+    assert.equal(msg.to,'valerianogaetano@hotmail.com');
+    const error=new Error('Unverified destination');error.code='E_RECIPIENT_NOT_ALLOWED';throw error;
   }}};
   const result=await notifyOpportunityLead(fake,sample);
-  assert.equal(calls,2);
-  assert.deepEqual(result,{sent:1,failed:1});
+  assert.equal(calls,1);
+  assert.deepEqual(result,{sent:0,failed:1});
 });
 
 test('missing mail binding returns failure without throwing, so lead persistence remains independent',async()=>{
-  assert.deepEqual(await notifyOpportunityLead({},sample),{sent:0,failed:2});
+  assert.deepEqual(await notifyOpportunityLead({},sample),{sent:0,failed:1});
 });
